@@ -94,6 +94,19 @@ COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messa
 #     && rm -rf /var/lib/apt/lists/"
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
+# ==============================================================================
+#                    Build fs_msgs - ROS 2 Messages
+# ==============================================================================
+WORKDIR /home/${USERNAME}/bridge_ws/src
+RUN git clone https://github.com/ros2/ros1_bridge.git && \
+    cd .. && \
+    /bin/bash -c "source /opt/ros/noetic/setup.bash; \
+    source /opt/ros/foxy/setup.bash; \
+    source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/install_isolated/setup.bash; \
+    source /home/${USERNAME}/ros_2_messages_ws/install/local_setup.bash; \
+    colcon build --packages-select ros1_bridge --cmake-force-configure; \
+    source /home/${USERNAME}/bridge_ws/install/local_setup.bash; \
+    ros2 run ros1_bridge dynamic_bridge --print-pairs"
 
 # https://github.com/osrf/docker_images/blob/e95025e4b17349438a4b68951bd6d8702b0020be/ros/foxy/ubuntu/focal/ros1-bridge/Dockerfile
 
