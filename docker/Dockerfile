@@ -59,14 +59,16 @@ RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.d
 WORKDIR /home/${USERNAME}
 RUN git clone https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator.git --recurse-submodules
 
-# run setup
+# run airsim setup
 WORKDIR /home/${USERNAME}/Formula-Student-Driverless-Simulator
 RUN ./AirSim/setup.sh
+
+# change to ros
+WORKDIR /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros
 
 # install ros deps
 RUN /bin/bash -c \
     "source /opt/ros/noetic/setup.bash; \
-    cd /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros && \
     rosdep update && \
     apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y &&\
@@ -75,17 +77,22 @@ RUN /bin/bash -c \
         ros-noetic-tf2-geometry-msgs \
     && rm -rf /var/lib/apt/lists/"
 
-WORKDIR /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros
+# run a build
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; catkin_make_isolated --install"
 
 
 # ==============================================================================
 #                    Build fs_msgs - ROS 2 Messages
 # ==============================================================================
-
-# WORKDIR /home/${USERNAME}/ros_2_messages_ws
-# COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messages_ws/src
-# RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
+WORKDIR /home/${USERNAME}/ros_2_messages_ws
+COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messages_ws/src
+# RUN /bin/bash -c \
+#     "source /opt/ros/foxy/setup.bash; \
+#     rosdep update && \
+#     apt-get update && \
+#     rosdep install --from-paths src --ignore-src -r -y \
+#     && rm -rf /var/lib/apt/lists/"
+RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
 
 # https://github.com/osrf/docker_images/blob/e95025e4b17349438a4b68951bd6d8702b0020be/ros/foxy/ubuntu/focal/ros1-bridge/Dockerfile
