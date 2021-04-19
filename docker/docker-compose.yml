@@ -1,0 +1,62 @@
+version: "2.3"
+
+
+# ==============================================================================
+#                                 Components
+# ==============================================================================
+
+x-build: &build
+    build:
+        context: ../
+        dockerfile: ./docker/Dockerfile
+        args:
+            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+
+x-user: &user
+    user: ${USERNAME}
+
+x-volumes_local: &volumes_local
+    volumes:
+        - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
+        - ../src:/home/${USERNAME}/driverless_ws/src
+        - ../datasets:/home/${USERNAME}/datasets
+
+x-devices: &devices
+    devices:
+       - /dev/dri:/dev/dri
+
+x-environment: &environment
+    environment:
+        DISPLAY: $DISPLAY
+
+x-network: &network
+    network_mode: "host"
+    privileged: true
+
+x-interactive: &interactive
+    stdin_open: true
+    tty: true
+
+x-visible: &visible
+    tty: true
+
+
+# ==============================================================================
+#                                 Services
+# ==============================================================================
+services:
+    core:
+        image: ros:melodic-ros-base
+        <<: *network
+        <<: *visible
+        command: roscore
+
+    ros:
+        <<: *build
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *environment
+        <<: *network
+        <<: *interactive
