@@ -117,6 +117,7 @@ RUN git clone https://github.com/ros2/ros1_bridge.git && \
 # cleanup
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
+RUN ln -s /usr/bin/python3 /usr/bin/python
 WORKDIR /home/$USERNAME
 
 
