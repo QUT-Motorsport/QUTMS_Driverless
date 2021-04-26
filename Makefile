@@ -1,4 +1,4 @@
-.PHONY: build run run_core
+.PHONY: build run_ros run_sim_bridge
 
 include .env
 
@@ -12,17 +12,12 @@ all:
 
 build:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build ros
-
-build_sim_bridge:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build sim_bridge
 
-
-run_core:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d core
-
-run:
+run_ros:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run ros
 
 run_sim_bridge:
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d core
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d ros_1_bridge
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up sim_bridge

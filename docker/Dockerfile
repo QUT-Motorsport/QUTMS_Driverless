@@ -91,17 +91,11 @@ RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; \
 # ==============================================================================
 WORKDIR /home/${USERNAME}/ros_2_messages_ws
 COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messages_ws/src
-# RUN /bin/bash -c \
-#     "source /opt/ros/foxy/setup.bash; \
-#     rosdep update && \
-#     apt-get update && \
-#     rosdep install --from-paths src --ignore-src -r -y \
-#     && rm -rf /var/lib/apt/lists/"
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
 
 # ==============================================================================
-#                    Build fs_msgs - ROS 2 Messages
+#                     Build ROS1 -> ROS2 bridge
 # ==============================================================================
 WORKDIR /home/${USERNAME}/bridge_ws/src
 RUN git clone https://github.com/ros2/ros1_bridge.git && \
@@ -114,11 +108,28 @@ RUN git clone https://github.com/ros2/ros1_bridge.git && \
     source /home/${USERNAME}/bridge_ws/install/local_setup.bash; \
     ros2 run ros1_bridge dynamic_bridge --print-pairs"
 
-# cleanup
+# set python3 as python command
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+
+# ==============================================================================
+#                      Install src Dependencies
+# ==============================================================================
+
+# make driverless workspace
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
-RUN ln -s /usr/bin/python3 /usr/bin/python
-WORKDIR /home/$USERNAME
+WORKDIR /home/$USERNAME/driverless_ws
+
+# copy in files and install dependencies
+COPY --chown=${HOST_UID}:${HOST_GROUP} src/ /home/${USERNAME}/driverless_ws/src
+RUN rosdep update && \
+    apt-get update && \
+    rosdep install -i --from-path src -y --rosdistro foxy -y \
+    && rm -rf /var/lib/apt/lists/
+
+# remove files
+RUN rm -r /home/${USERNAME}/driverless_ws/src/*
 
 
 # ==============================================================================
