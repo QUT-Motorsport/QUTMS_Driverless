@@ -90,7 +90,7 @@ RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; \
 #                    Build fs_msgs - ROS 2 Messages
 # ==============================================================================
 WORKDIR /home/${USERNAME}/ros_2_messages_ws
-COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messages_ws/src
+COPY --chown=${HOST_UID}:${HOST_GROUP} src/fs_msgs /home/${USERNAME}/ros_2_messages_ws/src/fs_msgs
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
 
@@ -102,7 +102,7 @@ RUN git clone https://github.com/ros2/ros1_bridge.git && \
     cd .. && \
     /bin/bash -c "source /opt/ros/noetic/setup.bash; \
     source /opt/ros/foxy/setup.bash; \
-    source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/install_isolated/setup.bash; \
+    source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/devel/setup.bash; \
     source /home/${USERNAME}/ros_2_messages_ws/install/local_setup.bash; \
     colcon build --packages-select ros1_bridge --cmake-force-configure; \
     source /home/${USERNAME}/bridge_ws/install/local_setup.bash; \

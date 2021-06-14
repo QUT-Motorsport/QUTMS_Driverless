@@ -81,7 +81,5 @@ services:
         <<: *environment
         <<: *network
         <<: *interactive
-        command: /bin/bash -c "source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/install_isolated/setup.bash;
-                               source /home/${USERNAME}/ros_2_messages_ws/install/local_setup.bash;
-                               source /home/${USERNAME}/bridge_ws/install/local_setup.bash;
+        command: /bin/bash -c "source /home/${USERNAME}/bridge_ws/install/setup.bash;
                                ros2 run ros1_bridge dynamic_bridge --bridge-all-topics"
