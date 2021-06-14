@@ -10,4 +10,5 @@
 		"eamodio.gitlens",
 		"ms-azuretools.vscode-docker"
 	],
+	"containerUser": "developer"
 }

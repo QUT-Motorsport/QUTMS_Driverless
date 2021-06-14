@@ -1,1 +1,5 @@
 .env
+
+# VSCode
+.vscode
+!.vscode/cpp_properties.json
