@@ -13,6 +13,8 @@ all:
 build:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build ros
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build sim_bridge
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build ros_1_bridge
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build reset_sim
 
 run_ros:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run ros
@@ -21,3 +23,6 @@ run_sim_bridge:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d core
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d ros_1_bridge
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up sim_bridge
+
+reset_sim:
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run reset_sim
