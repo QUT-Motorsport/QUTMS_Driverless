@@ -11,11 +11,12 @@ find_package(OpenCV REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(fs_msgs REQUIRED)
 
 message(STATUS "Found OpenCV version ${OpenCV_VERSION}")
 
 add_executable(main src/main.cpp)
-ament_target_dependencies(main OpenCV rclcpp sensor_msgs cv_bridge)
+ament_target_dependencies(main OpenCV rclcpp sensor_msgs cv_bridge fs_msgs)
 
 install(TARGETS
   main

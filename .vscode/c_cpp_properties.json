@@ -6,7 +6,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/ros/foxy/include/",
-                "/usr/include/opencv4"
+                "/usr/include/opencv4/",
+                "/home/developer/ros_2_messages_ws/install/fs_msgs/include/"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

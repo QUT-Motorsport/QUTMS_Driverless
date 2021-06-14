@@ -9,6 +9,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include "fs_msgs/msg/control_command.hpp"
+
 using std::placeholders::_1;
 
 class ImageSubscriber : public rclcpp::Node
@@ -17,13 +19,15 @@ class ImageSubscriber : public rclcpp::Node
     ImageSubscriber()
     : Node("minimal_subscriber")
     {
-        subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::topic_callback, this, _1)
+        camera_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
+            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1)
         );
+        control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
 
   private:
-    void topic_callback(const sensor_msgs::msg::Image::SharedPtr msg) const
+    // Callback
+    void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) const
     {
         cv_bridge::CvImagePtr cv_ptr;
         try
@@ -35,10 +39,19 @@ class ImageSubscriber : public rclcpp::Node
             RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
             return;
         }
-        cv::imshow("da image", cv_ptr->image);
+        cv::imshow("Camera View", cv_ptr->image);
         cv::waitKey(1);
+
+        auto message = fs_msgs::msg::ControlCommand();
+        message.throttle = 0.5;
+        message.steering = -1;
+        message.brake = 0;
+        control_publisher_->publish(message);
     }
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr subscription_;
+
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
+    rclcpp::Publisher<fs_msgs::msg::ControlCommand>::SharedPtr control_publisher_;
+
 };
 
 
