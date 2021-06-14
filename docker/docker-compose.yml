@@ -74,7 +74,7 @@ services:
         <<: *network
         <<: *interactive
         command: /bin/bash -c "source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/devel/setup.bash;
-                               roslaunch fsds_ros_bridge fsds_ros_bridge.launch host:=${SIM_HOST?SIM_HOST not set in .env file} manual_mode:=true"
+                               roslaunch fsds_ros_bridge fsds_ros_bridge.launch host:=${SIM_HOST?SIM_HOST not set in .env file} manual_mode:=${MANUAL_MODE?MANUAL_MODE not set in .env file}"
     
     ros_1_bridge:
         <<: *build
