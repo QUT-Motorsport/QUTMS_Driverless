@@ -1,6 +1,7 @@
 .PHONY: build run_ros run_sim_bridge
 
 include .env
+export  # export all variables from .env
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
