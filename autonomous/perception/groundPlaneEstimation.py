@@ -99,10 +99,25 @@ for i in range(M):
 
 print(segments_bins_prototype)
 
+# - Ground plane estimation now proceeds with extracting lines from the prototype sets of every segment. - 
+# The prototype points are ordered, thus we can directly apply the Incremental Algorithm known for its simplicity and effectiveness. 
+
+#Incremental Algorithm [9], [22], [20] – a.k.a Line-Tracking [18].
+#1.	Start by the first 2 points, construct a line.
+#2.	Add the next point to the current line model.
+#3.	Recompute the line parameters.
+#4.	If it satisfies line condition, continue (go to 2).
+#5.	Otherwise, put back the last point, recompute the linear parameters, return the line.
+#6.	Continue with the next 2 points, go to 2.
+
+T_M = math.pi / 4 # the max angle we’re considering to be the ground plane (45deg or less)
+T_M_SMALL = math.pi / 64 # For small slopes m<T_(m_small ), the line’s absolute y-intercept b must not exceed a certain threshold T_b_small. This way, plateaus are excluded from the ground plane. 
+T_B = 0.02 # the line’s absolute y-intercept b must not exceed a certain threshold T_b for m < T_M_SMALL. (2cm or less increase in ground is acceptable)
+T_RMSE = None # The root mean square error of the fit must not exceed a certain threshold T_RMSE (don't know what this value should be yet)
+T_D_PREV = None # The distance of the first point of a line to the line previously fitted must not exceed T_(d_prev ), enforcing smooth transitions between pairs of successive lines. (Don't know what this value should be yet)
 
 
-
-
+1
 # Todo
 # - If a datapoint is at origin, [0, 0, 0] it might break get_segment. Although a data point of [0, 0, 0] shouldn't be possible.
 # - maybe should make print functions to show segments / bins in an easy to read format 
