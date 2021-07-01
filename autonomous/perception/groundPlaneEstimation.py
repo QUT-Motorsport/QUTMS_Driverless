@@ -1,4 +1,5 @@
 import math
+import copy
 
 # many points [x, y, z]
 test_data = [[0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1], [0, 0, -1], [0, -1, 0], [0, -1, -1], [-1, 0, 0], [-1, 0, -1], [-1, -1, 0], [-1, -1, -1], [0, -1, 1], [-1, 0, 1], [-1, 1, 0], [-1, 1, 1], [0, 1, -1], [1, 0, -1], [1, -1, 0], [1, -1, 1], [1, 1, -1], [-1, -1, 1], [1, -1, -1], [-1, 1, -1]]
@@ -66,9 +67,25 @@ for i in range(M):
 
 print(segments_bins)
 
+# Next is to convert these 3D points in the bins to 2D points
+# This is done by getting the distance x and y are from the origin and a prime point 
+# is simply a 2 dimensional vector of this norm and the z height
+# We are reducing the 'resolution' of our data down to the number of bins we have
+# This function also orders the points in each bin in ascending range (distance from origin)
+segments_bins_prime = copy.deepcopy(segments_bins) # bruh referencing always trips me up
+for i in range(M):
+    for j in range(num_bins):
+        for k in range(len(segments_bins[i][j])):
+            x = segments_bins[i][j][k][0]
+            y = segments_bins[i][j][k][1]
+            z = segments_bins[i][j][k][2]
+            point_prime = [math.sqrt(x**2 + y**2), z]
+            segments_bins_prime[i][j][k] = point_prime
 
+print(segments_bins_prime)
 
-# Next is to convert these 3D points in the bins to 2D points, this is rather straight forward
+# I need to add in the ordering ^^^
+
 
 
 
