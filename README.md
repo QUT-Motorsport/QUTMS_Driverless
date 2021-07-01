@@ -18,6 +18,15 @@ and:
 > `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart`
 
 Restart your machine following this.
+
+To ensure WSL2 is being used, download the MSI from the link here:
+
+> https://docs.microsoft.com/en-us/windows/wsl/install-win10#step-4---download-the-linux-kernel-update-package
+
+Run the MSI installer. 
+Once installed, open command prompt and type:
+
+> `wsl --set-default-version 2`
  
  
 ### Install Ubuntu
@@ -85,6 +94,12 @@ Ensure "Expose daemon on tcp://localhost:2375 without TLS" is unchecked.
 
 To avoid conflicts with multiple distros, uncheck any "Enable integration with additional distros:".
 (our environment is being built in windows anyway).
+
+
+![Docker Experimental Settings](/images/docker_settings3.png)
+
+Ensure Docker Compose v2 is unchecked, or the container will be unable to make with out lowercase letters in the repo.
+This means the repo name QUTMS_Driverless would not be valid.
 
 
 ### Building Images

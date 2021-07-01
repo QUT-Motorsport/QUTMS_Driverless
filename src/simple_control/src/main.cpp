@@ -25,7 +25,7 @@ class ImageSubscriber : public rclcpp::Node
         control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
 
-  private:
+    private:
     // Callback
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) const
     {
