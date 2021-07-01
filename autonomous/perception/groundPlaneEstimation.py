@@ -65,15 +65,15 @@ for i in range(M):
         bin_index = get_bin(x, y)
         segments_bins[i][bin_index].append(segments[i][j])
 
-print(segments_bins)
-print("\n\n\n")
+#print(segments_bins)
+#print("\n\n\n")
 
 # Next is to convert these 3D points in the bins to 2D points
 # This is done by getting the distance x and y are from the origin and a prime point 
 # is simply a 2 dimensional vector of this norm and the z height
 # We are reducing the 'resolution' of our data down to the number of bins we have
 # This function also orders the points in each bin in ascending range (distance from origin)
-segments_bins_prime = copy.deepcopy(segments_bins) # bruh referencing always trips me up
+segments_bins_2D = copy.deepcopy(segments_bins) # bruh referencing always trips me up
 for i in range(M):
     for j in range(num_bins):
         for k in range(len(segments_bins[i][j])):
@@ -81,15 +81,28 @@ for i in range(M):
             y = segments_bins[i][j][k][1]
             z = segments_bins[i][j][k][2]
             point_prime = [math.sqrt(x**2 + y**2), z]
-            segments_bins_prime[i][j][k] = point_prime
-        segments_bins_prime[i][j] = sorted(segments_bins_prime[i][j], key=lambda lam: lam[0]) # This should order by range for each bin
+            segments_bins_2D[i][j][k] = point_prime
+        segments_bins_2D[i][j] = sorted(segments_bins_2D[i][j], key=lambda lam: lam[0]) # This should order by range for each bin
 
-print(segments_bins_prime)
+#print(segments_bins_2D)
 
+# Prototype points. Obviously, the point-to-bin mapping is not one-to-one, and P_(b_j^s)^' may contain more than one point, or no points at all.
+# There are several possibilities of how to calculate the prototype points, for example by taking the mean of all bin points. 
+# Using the point with the lowest z-coordinate yields good results as it is most likely to lie on the ground plane.
+segments_bins_prototype = [] 
+for i in range(M):
+    segments_bins_prototype.append([])
+    for j in range(num_bins):
+        segments_bins_prototype[i].append([])
+        if len(segments_bins_2D[i][j]) > 0:
+            segments_bins_prototype[i][j] = segments_bins_2D[i][j][0]
+
+print(segments_bins_prototype)
 
 
 
 
 
 # Todo
-# - If a datapoint is at origin, [0, 0, 0] it might break get_segment. Although a data point of [0, 0, 0] shouldn't be possible. 
+# - If a datapoint is at origin, [0, 0, 0] it might break get_segment. Although a data point of [0, 0, 0] shouldn't be possible.
+# - maybe should make print functions to show segments / bins in an easy to read format 
