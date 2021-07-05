@@ -1,4 +1,3 @@
-#%%
 import math
 import copy
 
@@ -126,7 +125,48 @@ T_D_PREV = None # The distance of the first point of a line to the line previous
 def dist_point_line(m, b, point):
     return 0 # distance point is from line
 
+# Implementation of Total Least Squares
 def fit_line(points):
+    # [[x1, y1, z1], ..., [xn, yn, zn]]
+    num_points = len(points)
+
+    alpha = [] # this might just be the alpha i set earlier
+
+    theta = []
+
+    rho = []
+
+    # The weights can be chosen as the inverses of the variances
+
+    # Weights
+    w = []
+    w_sum = sum(w)
+
+    # Weighted Means
+    x_w_sigma = 0
+    for i in range(num_points):
+        x_w_sigma += w[i] * rho[i] * math.cos(theta[i])
+    y_w_sigma = 0
+    for i in range(num_points):
+        y_w_sigma += w[i] * rho[i] * math.sin(theta[i])
+    x_bar_w = (1/w_sum) * x_w_sigma
+    y_bar_w = (1/w_sum) * y_w_sigma
+
+    # tan_2_alpha
+    tan_2_alpha_numer = 0
+    for i in range(num_points):
+        tan_2_alpha_numer += w[i] * (y_bar_w - y[i]) * (x_bar_w - x[i])
+    tan_2_alpha_numer *= -2
+
+    tan_2_alpha_denom = 0
+    for i in range(num_points):
+        tan_2_alpha_denom += w[i] * ((y_bar_w - y[i])**2 - (x_bar_w - x[i])**2)
+
+    tan_2_alpha = tan_2_alpha_numer / tan_2_alpha_denom
+
+    # r
+    r = x_bar_w * math.cos(alpha) + y_bar_w * math.sin(alpha)
+
     m = 1
     b = 0
     return [m, b]
@@ -165,13 +205,16 @@ def incremental_algorithm(segment):
 # - If a datapoint is at origin, [0, 0, 0] it might break get_segment. Although a data point of [0, 0, 0] shouldn't be possible.
 # - maybe should make print functions to show segments / bins in an easy to read format
 
-
+# Plotting test_data.
 from mpl_toolkits import mplot3d
 import numpy as np
 import matplotlib.pyplot as plt
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
+xdata = [coords[0] for coords in test_data]
+ydata = [coords[1] for coords in test_data]
+zdata = [coords[2] for coords in test_data]
 
-ax.scatter3D([1, 10, 20], [20, 10, 1], [5, 15, 30], c=[5, 15, 30], cmap='greens');
+ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens');
 # %%
