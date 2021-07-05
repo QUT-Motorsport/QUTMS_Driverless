@@ -1,3 +1,4 @@
+#%%
 import math
 import copy
 
@@ -162,4 +163,15 @@ def incremental_algorithm(segment):
 
 # Todo
 # - If a datapoint is at origin, [0, 0, 0] it might break get_segment. Although a data point of [0, 0, 0] shouldn't be possible.
-# - maybe should make print functions to show segments / bins in an easy to read format 
+# - maybe should make print functions to show segments / bins in an easy to read format
+
+
+from mpl_toolkits import mplot3d
+import numpy as np
+import matplotlib.pyplot as plt
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+
+
+ax.scatter3D([1, 10, 20], [20, 10, 1], [5, 15, 30], c=[5, 15, 30], cmap='greens');
+# %%
