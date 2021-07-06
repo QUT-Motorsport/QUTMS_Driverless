@@ -111,6 +111,17 @@ RUN git clone https://github.com/ros2/ros1_bridge.git && \
 # set python3 as python command
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+# ==============================================================================
+#                      Install src Dependencies
+# ==============================================================================
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    # add more stuff here if needed
+    && rm -rf /var/lib/apt/lists/
+
+RUN pip3 install numpy
+
 
 # ==============================================================================
 #                      Install src Dependencies
