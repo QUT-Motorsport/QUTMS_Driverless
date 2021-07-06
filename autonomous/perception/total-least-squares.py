@@ -3,9 +3,9 @@ import math
 # INCORRECT POINT WISE VARIANCE. HACKY FIX:
 # Point Wise Variance 
 def get_point_var(x, y, x_mean, y_mean):
-    x_var = (x - x_mean)**2
-    y_var = (y - y_mean)**2
-    return (x_var + y_var) / 2
+    point_x_var = (x - x_mean)**2
+    point_y_var = (y - y_mean)**2
+    return (point_x_var + point_y_var) / 2
 
 # Sample Variances
 def get_sample_vars(points, x_mean, y_mean, num_points):
@@ -98,3 +98,19 @@ def fit_line(points):
     r = get_r(x_weight, y_weight, alpha)
     
     return ([get_m(alpha), get_b(r, alpha)])
+
+# Notes
+#   - The get_point_var() is incorrectly implemented for the time being as I was unable to 
+#     understand how to calculate point-wise variance. In the paper, it is made clear that 
+#     each point has a weight and that "The weights can be chosen as the inverses of the 
+#     variances giving most weight to data points with low variability". 
+#   - This current implementation of get_point_var() finds the variance of the x value and 
+#     the variance of the y value. It returns the average of these two variances. 
+#   - Currently get_sample_vars() is unused since only the variance of each point is neeeded
+#     and I'm unsure if the variance of a point is related to the sample variances.
+
+# Sources
+#   - Paper: Feature Extraction and Scene Interpretation for Map-Based Navigation and Map Building
+#   - Paper: Range Finding and Feature Extraction by Segmentation of Images for Mobile Robot Navigation
+#   - https://socratic.org/questions/5a1e20e711ef6b70b8538562
+#     IMPORTANT: The site above appears to use rho / p where the papers instead use r, and vice versa
