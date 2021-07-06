@@ -73,3 +73,28 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
 # r
 def get_r(x_weight, y_weight, alpha):
     return x_weight * math.cos(alpha) + y_weight * math.sin(alpha)
+
+# Gradient, m
+def get_m(alpha):
+    return math.tan(alpha)
+
+# Intercept, b
+def get_b(r, alpha):
+    return r / math.cos((math.pi / 2) - alpha)
+
+# Total Least Squares Fitting Method
+def fit_line(points):
+    num_points = len(points)
+    x_mean = sum([point[0] for point in points])
+    y_mean = sum([point[1] for point in points])
+
+    rho_mat = get_rho_vector(points, num_points)
+    theta_mat = get_theta_vector(points, num_points)
+    w_mat = get_weights(points, num_points, x_mean, y_mean)
+    w_mean = sum(w_mat)
+    x_weight = get_x_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
+    y_weight = get_y_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
+    alpha = get_alpha(points, num_points, w_mat, x_weight, y_weight)
+    r = get_r(x_weight, y_weight, alpha)
+    
+    return ([get_m(alpha), get_b(r, alpha)])
