@@ -110,7 +110,7 @@ In the CMD terminal, type:
 
 and copy the value next to 'IPV4 Address'.
 
-Rename the file `env` to `.env`. This allows environment variables to be passed from windows into the container.
+Make a copy of the file `env` and rename this copy to `.env`. This file allows environment variables to be passed from windows into the container.
 
 Using a text editor of choice (recommend VS Code), open and edit the `.env` file included in the parent directory of the repo.
 This file handles user specific data each time the image is run. - might be a better explanation later
