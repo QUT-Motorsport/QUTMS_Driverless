@@ -1,0 +1,79 @@
+import math
+import total_least_squares
+
+T_M = math.pi / 4 # Max angle that will be considered as ground plane # 45 deg
+T_M_SMALL = math.pi / 32 # Angle considered to be a small slope # 5.625 deg
+T_B = 0.05 # Max y-intercept for a ground plane line # 5 cm 
+T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
+T_D_PREV = 1 # Max distance of the first point of a line to the line previously fitted # 1 m
+
+# Returns the distance from a point to a line
+def dist_point_line(point, m_c, b_c):
+    x_p = point[0]
+    y_p = point[1]
+    m_p = (-1) / m_c # gradient perpendicular line
+    b_p = -(y_p - m_p) * x_p # intercept of perpendicular line
+    x_shared = (b_p - b_c) / (m_c - m_p)
+    y_shared = m_p*x_p + b_p # or m_c*x + b_c # at x_shared, y_p = y_c
+    return math.sqrt((x_shared + x_p)**2 + y_shared**2)
+
+# Returns the Root Mean Square Error (RMSE) of points about a regression line
+def fit_error(m, b, points):
+    num_points = len(points)
+    x_mean = sum([point[0] for point in points]) / num_points
+    y_mean = sum([point[1] for point in points]) / num_points
+
+    ssr = 0 # Sums of squares due to regression 
+    sse = 0 # Sums of squares error
+    sd_y = 0 # sample standard deviation of y
+    for i in range(num_points):
+        ssr += (points[i][1] - y_mean)**2
+        sse += ((m*points[i][0] + b) - points[i][1])**2
+        sd_y += (points[i][0] - x_mean)**2
+    sst = ssr + sse
+    r2 = ssr / sst
+    sd_y = math.sqrt(sd_y / (num_points - 1))
+
+    return math.sqrt(1 - r2) * sd_y
+
+# The Incremental Algorithm
+def extract_segment_lines(segment, num_bins):
+    lines = []
+    new_line_points = []
+    lines_created = 0
+
+    i = 0
+    while i < num_bins:
+        if len(segment[i]) == 1:
+            new_point = segment[0]
+            if len(new_line_points) >= 2:
+                [m_new, b_new] = total_least_squares.fit_line(new_line_points.append(new_point))
+                if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points.append(new_point)) <= T_RMSE):
+                    new_line_points = new_line_points.append(new_point)
+                else:
+                    [m_new, b_new] = total_least_squares.fit_line(new_line_points)
+                    lines = lines.append([m_new, b_new])
+                    new_line_points = []
+                    lines_created += 1
+                    i = i - 1
+            else:
+                if dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV or lines_created == 0 or len(new_line_points) != 0:
+                    new_line_points = new_line_points.append(new_point) 
+        elif len(segment[i]) > 1:
+            raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
+        i += 1
+
+# Notes
+#   - Constant T_M_SMALL and T_B: For small slopes m < T_M_SMALL, 
+#     the line’s absolute y-intercept b must not exceed a certain 
+#     threshold T_B. This way, plateaus are excluded from the 
+#     ground plane. 
+#   - Constant T_RMSE: The root mean square error of the fit must 
+#     not exceed a certain threshold T_RMSE. I'm unsure what this
+#     value should be yet.
+#   - Constant T_D_PREV: The distance of the first point of a line
+#     to the line previously fitted must not exceed T_D_PREV, 
+#     enforcing smooth transitions between pairs of successive 
+#     lines. 
+#   - extract_segment_lines(): Only one prototype point is expected 
+#     since each bin is reduced to one point with the lowest z value. 
