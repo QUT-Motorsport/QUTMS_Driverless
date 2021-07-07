@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(simple_control)
+project(control_movement)
 
 # Set standards
 set(CMAKE_C_STANDARD 11)
@@ -15,11 +15,11 @@ find_package(fs_msgs REQUIRED)
 
 message(STATUS "Found OpenCV version ${OpenCV_VERSION}")
 
-add_executable(control_steering src/control_steering.cpp)
+add_executable(control_movement src/control_movement.cpp)
 
-ament_target_dependencies(control_steering OpenCV rclcpp sensor_msgs cv_bridge fs_msgs)
+ament_target_dependencies(control_movement OpenCV rclcpp sensor_msgs cv_bridge fs_msgs)
 
-install(TARGETS control_steering
+install(TARGETS control_movement
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
