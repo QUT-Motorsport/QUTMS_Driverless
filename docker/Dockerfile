@@ -121,6 +121,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/
 
 RUN pip3 install numpy
+RUN pip3 install matplotlib
 
 
 # ==============================================================================
