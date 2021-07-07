@@ -36,7 +36,7 @@ class LidarSubscriber(Node):
 class MathPublisher(Node):
     def __init__(self):
         super().__init__('math_publisher')
-        self.publisher_ = self.create_publisher(String, 'lidar_output', 10)
+        self.publisher_ = self.create_publisher(String, 'math_output', 10)
         timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -59,9 +59,9 @@ def main(args=None):
     # when the garbage collector destroys the node object)
     math_publisher.destroy_node()
 
-    math_subscriber = MathSubscriber()
-    rclpy.spin(math_subscriber)
-    math_subscriber.destroy_node()
+    lidar_subscriber = LidarSubscriber()
+    rclpy.spin(lidar_subscriber)
+    lidar_subscriber.destroy_node()
 
     rclpy.shutdown()
 
