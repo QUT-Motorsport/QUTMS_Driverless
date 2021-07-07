@@ -21,8 +21,9 @@ class ImageSubscriber : public rclcpp::Node
     {
         camera_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
             "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
-        math_subscriber_ = this->create_subscription<std_msgs::msg::>(
-            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
+            
+        // math_subscriber_ = this->create_subscription<std_msgs::msg::String>(
+        //     "math_output", 10, std::bind(&MathSubscriber::image_callback, this, _1));
 
         control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
@@ -52,6 +53,7 @@ class ImageSubscriber : public rclcpp::Node
     }
 
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr math_subscriber_;
     rclcpp::Publisher<fs_msgs::msg::ControlCommand>::SharedPtr control_publisher_;
 
 };
@@ -59,8 +61,8 @@ class ImageSubscriber : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<ImageSubscriber>());
-  rclcpp::shutdown();
-  return 0;
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<ImageSubscriber>());
+    rclcpp::shutdown();
+    return 0;
 }

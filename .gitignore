@@ -3,8 +3,5 @@
 # VSCode
 .vscode
 !.vscode/cpp_properties.json
-<<<<<<< HEAD
-=======
 
->>>>>>> 30fd974b4536b3b27777c4d7ce8d0dccb38d3703
-autonomous/venv
+autonomous/venv/*
