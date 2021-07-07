@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(control_movement)
+project(control_package)
 
 # Set standards
 set(CMAKE_C_STANDARD 11)

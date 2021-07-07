@@ -20,8 +20,10 @@ class ImageSubscriber : public rclcpp::Node
     : Node("minimal_subscriber")
     {
         camera_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1)
-        );
+            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
+        math_subscriber_ = this->create_subscription<std_msgs::msg::>(
+            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
+
         control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
 
