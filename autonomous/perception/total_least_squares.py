@@ -85,13 +85,13 @@ def get_b(r, alpha):
 # Total Least Squares Fitting Method
 def fit_line(points):
     num_points = len(points)
-    x_mean = sum([point[0] for point in points])
-    y_mean = sum([point[1] for point in points])
+    x_mean = sum([point[0] for point in points]) / num_points
+    y_mean = sum([point[1] for point in points]) / num_points
 
     rho_mat = get_rho_vector(points, num_points)
     theta_mat = get_theta_vector(points, num_points)
     w_mat = get_weights(points, num_points, x_mean, y_mean)
-    w_mean = sum(w_mat)
+    w_mean = sum(w_mat) / num_points
     x_weight = get_x_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
     y_weight = get_y_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
     alpha = get_alpha(points, num_points, w_mat, x_weight, y_weight)
