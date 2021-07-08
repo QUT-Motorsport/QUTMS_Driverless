@@ -13,17 +13,17 @@
 
 using std::placeholders::_1;
 
-class ImageSubscriber : public rclcpp::Node
+class MovementControl : public rclcpp::Node
 {
     public:
-    ImageSubscriber()
-    : Node("minimal_subscriber")
+    MovementControl()
+    : Node("control_node")
     {
         camera_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
+            "/fsds/camera/cam1", 10, std::bind(&MovementControl::image_callback, this, _1));
             
-        // math_subscriber_ = this->create_subscription<std_msgs::msg::String>(
-        //     "math_output", 10, std::bind(&MathSubscriber::image_callback, this, _1));
+        math_subscriber_ = this->create_subscription<std_msgs::msg::String>(
+            "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
 
         control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
@@ -44,12 +44,16 @@ class ImageSubscriber : public rclcpp::Node
         }
         cv::imshow("Camera View", cv_ptr->image);
         cv::waitKey(1);
+    }
 
+    void move_callback(const std_msgs::msg::String::SharedPtr msg) const{
         auto message = fs_msgs::msg::ControlCommand();
-        message.throttle = 0.5;
+        message.throttle = 0.2;
         message.steering = -1;
         message.brake = 0;
         control_publisher_->publish(message);
+        
+        RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
     }
 
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
@@ -62,7 +66,7 @@ class ImageSubscriber : public rclcpp::Node
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<ImageSubscriber>());
+    rclcpp::spin(std::make_shared<MovementControl>());
     rclcpp::shutdown();
     return 0;
 }
