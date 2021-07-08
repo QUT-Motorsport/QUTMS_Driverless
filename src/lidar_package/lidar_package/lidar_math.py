@@ -16,9 +16,9 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
-from std_msgs.msg import String
-from std_msgs.msg import Int8
+from std_msgs.msg import Float32
 
+# import simple_lidar
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -31,23 +31,35 @@ class LidarProcessing(Node):
         self.lidar_subscription  # prevent unused variable warning
 
         self.math_publisher = self.create_publisher(
-            String, 
+            Float32, 
             'math_output', 
             10)
         timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
+        self.left = 0
 
     def listener_callback(self, pcl2):
         self.frame = pcl2.data
     """ In here, we will call calculations to ideally get the [distance, angle, reflectivity] of the cone"""
 
     def timer_callback(self):
-        txt = String()
-        txt.data = 'Distance is: %d' % self.i
-        self.math_publisher.publish(txt)
-        self.get_logger().info('Publishing: "%s"' % txt.data)
-        self.i += 1
+        # example steering code back right and left
+        if self.left == 0:
+            if self.i < 0.5:
+                self.i += 0.05
+            elif self.i >= 0.5:
+                self.left = 1
+
+        elif self.left == 1:
+            if self.i > -0.5:
+                self.i -= 0.05
+            elif self.i <= -0.5:
+                self.left = 0
+
+        msg = Float32()
+        msg.data = self.i
+        self.math_publisher.publish(msg)
 
 
 def main(args=None):
@@ -55,9 +67,7 @@ def main(args=None):
 
     lidar_processing = LidarProcessing()
     rclpy.spin(lidar_processing)
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
+    
     lidar_processing.destroy_node()
 
     rclpy.shutdown()
