@@ -17,17 +17,18 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import String
+from std_msgs.msg import Int8
 
 
 class LidarProcessing(Node):
     def __init__(self):
         super().__init__('lidar_processing')
-        # self.lidar_subscription = self.create_subscription(
-        #     PointCloud2,
-        #     '/fsds/lidar/Lidar2',
-        #     self.listener_callback,
-        #     10)
-        # self.lidar_subscription  # prevent unused variable warning
+        self.lidar_subscription = self.create_subscription(
+            PointCloud2,
+            '/fsds/lidar/Lidar2',
+            self.listener_callback,
+            10)
+        self.lidar_subscription  # prevent unused variable warning
 
         self.math_publisher = self.create_publisher(
             String, 
@@ -37,8 +38,9 @@ class LidarProcessing(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
 
-    # def listener_callback(self, msg):
-    #     self.get_logger().info('Scan: "%s"' % msg.data)
+    def listener_callback(self, pcl2):
+        self.frame = pcl2.data
+    """ In here, we will call calculations to ideally get the [distance, angle, reflectivity] of the cone"""
 
     def timer_callback(self):
         txt = String()
@@ -50,7 +52,6 @@ class LidarProcessing(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
 
     lidar_processing = LidarProcessing()
     rclpy.spin(lidar_processing)
