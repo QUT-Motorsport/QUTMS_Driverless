@@ -20,17 +20,10 @@ class MovementControl : public rclcpp::Node
     : Node("control_node")
     {
         camera_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-<<<<<<< HEAD
             "/fsds/camera/cam1", 10, std::bind(&MovementControl::image_callback, this, _1));
             
         math_subscriber_ = this->create_subscription<std_msgs::msg::String>(
             "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
-=======
-            "/fsds/camera/cam1", 10, std::bind(&ImageSubscriber::image_callback, this, _1));
-            
-        // math_subscriber_ = this->create_subscription<std_msgs::msg::String>(
-        //     "math_output", 10, std::bind(&MathSubscriber::image_callback, this, _1));
->>>>>>> master
 
         control_publisher_ = this->create_publisher<fs_msgs::msg::ControlCommand>("/fsds/control_command", 10);
     }
