@@ -1,24 +1,13 @@
-# Copyright 2016 Open Source Robotics Foundation, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32
 
-import simple_lidar
+from .sub_module.simple_lidar import find_avg, find_points
+from .sub_module.simple_lidar import find_cones
+
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -26,31 +15,46 @@ class LidarProcessing(Node):
         self.lidar_subscription = self.create_subscription(
             PointCloud2,
             '/fsds/lidar/Lidar2',
-            self.listener_callback,
+            self.lidar_callback,
             10)
         self.lidar_subscription  # prevent unused variable warning
 
         self.math_publisher = self.create_publisher(
-            Float32MultiArray, 
+            Float32, # will change if we return all cones back
             'math_output', 
             10)
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        # self.i = 0
+        self.avg = 0.0
         # self.left = 0
 
-    def listener_callback(self, pcl):
+    def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
-        self.cones = simple_lidar.find_cones(pcl.data) 
-        # for now just a simple cone left or right weighting algorithm
+        self.get_logger().info('data: "%s"' % len(pcl_msg.data))
+
+        self.points = find_points(pcl_msg.data) 
+        self.get_logger().info('points: "%s"' % self.points)
+
+        self.cones = find_cones(self.points)
+        self.get_logger().info('cones: "%s"' % self.cones)
+
+        self.avg = find_avg(self.cones) 
+        self.get_logger().info('avg: "%s"' % self.avg)
 
 
     def timer_callback(self):
 
-        msg = Float32MultiArray()
-        msg.data = self.cones
+        # msg = Float32MultiArray()
+        # msg.data = self.cones
+
+        msg = Float32()
+        msg.data = float(self.avg)
+
         self.math_publisher.publish(msg)
+
+        # self.get_logger().info('found: "%s"' % self.avg)
+
 
 """ 
         # example steering code right and left
@@ -69,6 +73,8 @@ class LidarProcessing(Node):
         msg = Float32()
         msg.data = self.i
         self.math_publisher.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data)
+
  """
 
 def main(args=None):

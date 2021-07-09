@@ -59,15 +59,18 @@ def pointgroup_to_cone(group):
 def distance(x1, y1, x2, y2):
     return math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
 
-def find_cones(pcl):
+def find_points(pcl):
     # no points
     if len(pcl) < 3:
         return []
 
     # Convert the list of floats into a list of xyz coordinates
-    points = numpy.array(pcl, dtype=numpy.dtype('f4'))
+    points = numpy.array(pcl, dtype=numpy.dtype('i4'))
     points = numpy.reshape(points, (int(points.shape[0]/3), 3))
 
+    return points
+
+def find_cones(points):
     # Go through all the points and find nearby groups of points that are close together as those will probably be cones.
     current_group = []
     cones = []
@@ -89,3 +92,14 @@ def find_cones(pcl):
                 current_group = []
     return cones
 
+def find_avg(cones):
+    if len(cones) != 0:
+        average_y = 0
+        for cone in cones:
+            average_y += cone[1]
+        average_y = average_y / len(cones)
+
+        return average_y
+    
+    else:
+        return 0
