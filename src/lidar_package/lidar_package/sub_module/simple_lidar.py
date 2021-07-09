@@ -44,10 +44,6 @@ Use the following settings.json:
 import numpy
 import math
 
-# Autonomous system constatns
-max_throttle = 0.2 # m/s^2
-target_speed = 4 # m/s
-max_steering = 0.3
 cones_range_cutoff = 7 # meters
 
 def pointgroup_to_cone(group):
@@ -63,20 +59,16 @@ def pointgroup_to_cone(group):
 def distance(x1, y1, x2, y2):
     return math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
 
-def find_cones():
-    # Get the pointcloud
-    lidardata = client.getLidarData(lidar_name = 'Lidar')
-
+def find_cones(pcl):
     # no points
-    if len(lidardata.point_cloud) < 3:
+    if len(pcl) < 3:
         return []
 
     # Convert the list of floats into a list of xyz coordinates
-    points = numpy.array(lidardata.point_cloud, dtype=numpy.dtype('f4'))
+    points = numpy.array(pcl, dtype=numpy.dtype('f4'))
     points = numpy.reshape(points, (int(points.shape[0]/3), 3))
 
     # Go through all the points and find nearby groups of points that are close together as those will probably be cones.
-
     current_group = []
     cones = []
     for i in range(1, len(points)):
@@ -97,34 +89,3 @@ def find_cones():
                 current_group = []
     return cones
 
-def calculate_steering(cones):
-    # If there are more cones on the left, go to the left, else go to the right.
-    average_y = 0
-    for cone in cones:
-        average_y += cone[1]
-    average_y = average_y / len(cones)
-
-    if average_y > 0:
-        return -max_steering
-    else:
-        return max_steering
-
-def calculate_throttle():
-    gps = client.getGpsData()
-
-    # Calculate the velocity in the vehicle's frame
-    velocity = math.sqrt(math.pow(gps.gnss.velocity.x_val, 2) + math.pow(gps.gnss.velocity.y_val, 2))
-
-    # the lower the velocity, the more throttle, up to max_throttle
-    return max_throttle * max(1 - velocity / target_speed, 0)
-
-while True:
-    
-    cones = find_cones()
-    if len(cones) == 0:
-        continue
-
-    car_controls = fsds.CarControls()
-    car_controls.steering = calculate_steering(cones)
-    car_controls.throttle = calculate_throttle()
-    car_controls.brake = 0

@@ -31,7 +31,7 @@ class LidarProcessing(Node):
         self.lidar_subscription  # prevent unused variable warning
 
         self.math_publisher = self.create_publisher(
-            Float32, 
+            Float32MultiArray, 
             'math_output', 
             10)
         timer_period = 0.1  # seconds
@@ -39,15 +39,16 @@ class LidarProcessing(Node):
         # self.i = 0
         # self.left = 0
 
-    def listener_callback(self, pcl2):
+    def listener_callback(self, pcl):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
-        self.cones = simple_lidar.find_cones(pcl2.data)
+        self.cones = simple_lidar.find_cones(pcl.data) 
+        # for now just a simple cone left or right weighting algorithm
 
 
     def timer_callback(self):
 
-        msg = Float32()
+        msg = Float32MultiArray()
         msg.data = self.cones
         self.math_publisher.publish(msg)
 
