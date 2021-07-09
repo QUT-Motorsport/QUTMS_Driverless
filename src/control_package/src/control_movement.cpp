@@ -47,6 +47,18 @@ class MovementControl : public rclcpp::Node
     }
 
     void move_callback(const std_msgs::msg::Float32::SharedPtr msg) const{
+        """
+        PSUDOCODE
+        # Autonomous system constatns
+        max_throttle = 0.2 # m/s^2
+        target_speed = 4 # m/s
+        max_steering = 0.3
+        cones_range_cutoff = 7 # meters
+            
+
+        
+        """
+
 
         auto message = fs_msgs::msg::ControlCommand();
         message.throttle = 0.2;
@@ -54,8 +66,6 @@ class MovementControl : public rclcpp::Node
         message.brake = 0;
 
         control_publisher_->publish(message);
-        
-        RCLCPP_INFO(this->get_logger(), "Throttle: '%d'", msg->data);
     }
 
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;

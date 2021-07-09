@@ -16,9 +16,9 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32MultiArray
 
-# import simple_lidar
+import simple_lidar
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -34,33 +34,41 @@ class LidarProcessing(Node):
             Float32, 
             'math_output', 
             10)
-        timer_period = 0.5  # seconds
+        timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.i = 0
-        self.left = 0
+        # self.i = 0
+        # self.left = 0
 
     def listener_callback(self, pcl2):
-        self.frame = pcl2.data
-    """ In here, we will call calculations to ideally get the [distance, angle, reflectivity] of the cone"""
+        """ In here, we will call calculations to ideally get the 
+        distance, angle, and reflectivity of the cones"""
+        self.cones = simple_lidar.find_cones(pcl2.data)
+
 
     def timer_callback(self):
-        # example steering code back right and left
+
+        msg = Float32()
+        msg.data = self.cones
+        self.math_publisher.publish(msg)
+
+""" 
+        # example steering code right and left
         if self.left == 0:
-            if self.i < 0.5:
-                self.i += 0.05
-            elif self.i >= 0.5:
+            if self.i < 1:
+                self.i += 0.1
+            elif self.i >= 1:
                 self.left = 1
 
         elif self.left == 1:
-            if self.i > -0.5:
-                self.i -= 0.05
-            elif self.i <= -0.5:
+            if self.i > -1:
+                self.i -= 0.1
+            elif self.i <= -1:
                 self.left = 0
 
         msg = Float32()
         msg.data = self.i
         self.math_publisher.publish(msg)
-
+ """
 
 def main(args=None):
     rclpy.init(args=args)

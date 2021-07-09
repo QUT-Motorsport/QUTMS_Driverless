@@ -43,7 +43,6 @@ Use the following settings.json:
 
 import numpy
 import math
-import matplotlib.pyplot as plt
 
 # Autonomous system constatns
 max_throttle = 0.2 # m/s^2
@@ -55,11 +54,11 @@ def pointgroup_to_cone(group):
     average_x = 0
     average_y = 0
     for point in group:
-        average_x += point['x']
-        average_y += point['y']
+        average_x += point[0]
+        average_y += point[1]
     average_x = average_x / len(group)
     average_y = average_y / len(group)
-    return {'x': average_x, 'y': average_y}
+    return [average_x, average_y]
 
 def distance(x1, y1, x2, y2):
     return math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
@@ -87,13 +86,13 @@ def find_cones():
 
         if distance_to_last_point < 0.1:
             # Points closer together then 10 cm are part of the same group
-            current_group.append({'x': points[i][0], 'y': points[i][1]})
+            current_group.append([points[i][0], points[i][1]])
         else:
             # points further away indiate a split between groups
             if len(current_group) > 0:
                 cone = pointgroup_to_cone(current_group)
                 # calculate distance between lidar and cone
-                if distance(0, 0, cone['x'], cone['y']) < cones_range_cutoff:
+                if distance(0, 0, cone[0], cone[1]) < cones_range_cutoff:
                     cones.append(cone)
                 current_group = []
     return cones
@@ -102,7 +101,7 @@ def calculate_steering(cones):
     # If there are more cones on the left, go to the left, else go to the right.
     average_y = 0
     for cone in cones:
-        average_y += cone['y']
+        average_y += cone[1]
     average_y = average_y / len(cones)
 
     if average_y > 0:
