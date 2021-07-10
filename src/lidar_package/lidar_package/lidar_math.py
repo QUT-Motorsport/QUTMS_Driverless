@@ -1,13 +1,11 @@
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, PointCloud
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float32
 
-from .sub_module.simple_lidar import find_avg, find_points
-from .sub_module.simple_lidar import find_cones
-
+from .sub_module.simple_lidar import find_points
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -23,24 +21,41 @@ class LidarProcessing(Node):
             Float32, # will change if we return all cones back
             'math_output', 
             10)
-        timer_period = 0.1  # seconds
+        timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.avg = 0.0
-        # self.left = 0
+
+        self.geo_subscription = self.create_subscription(
+            PointCloud2,
+            '/fsds/lidar/Lidar2',
+            self.lidar_callback,
+            10)
+        self.lidar_subscription  # prevent unused variable warning
+
+
+
+    def find_avg(self, cones):
+        if len(cones) != 0:
+            average_y = 0
+            for cone in cones:
+                average_y += cone[1]
+            average_y = average_y / len(cones)
+
+            return average_y
+        
+        else:
+            return 0 
+
 
     def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
-        self.get_logger().info('data: "%s"' % len(pcl_msg.data))
 
-        self.points = find_points(pcl_msg.data) 
-        self.get_logger().info('points: "%s"' % self.points)
+        self.cones = find_points(pcl_msg) 
+        # self.get_logger().info('close cones: "%s"' % self.cones)
 
-        self.cones = find_cones(self.points)
-        self.get_logger().info('cones: "%s"' % self.cones)
-
-        self.avg = find_avg(self.cones) 
-        self.get_logger().info('avg: "%s"' % self.avg)
+        self.avg = self.find_avg(self.cones) 
+        self.get_logger().info('avg: "%lf"' % self.avg)
 
 
     def timer_callback(self):

@@ -40,11 +40,14 @@ Use the following settings.json:
   }
 }
 """
+from .read_pcl import read_points
 
 import numpy
 import math
 
-cones_range_cutoff = 7 # meters
+def distance(x1, y1, x2, y2):
+    distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
+    return distance
 
 def pointgroup_to_cone(group):
     average_x = 0
@@ -56,50 +59,36 @@ def pointgroup_to_cone(group):
     average_y = average_y / len(group)
     return [average_x, average_y]
 
-def distance(x1, y1, x2, y2):
-    return math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
-
-def find_points(pcl):
-    # no points
-    if len(pcl) < 3:
-        return []
-
-    # Convert the list of floats into a list of xyz coordinates
-    points = numpy.array(pcl, dtype=numpy.dtype('i4'))
-    points = numpy.reshape(points, (int(points.shape[0]/3), 3))
-
-    return points
-
 def find_cones(points):
+    cones_range_cutoff = 7 # m      can tweak
+    distance_cutoff = 0.1 # m       can tweak
+
     # Go through all the points and find nearby groups of points that are close together as those will probably be cones.
     current_group = []
     cones = []
     for i in range(1, len(points)):
-
         # Get the distance from current to previous point
         distance_to_last_point = distance(points[i][0], points[i][1], points[i-1][0], points[i-1][1])
 
-        if distance_to_last_point < 0.1:
+        if distance_to_last_point < distance_cutoff:
             # Points closer together then 10 cm are part of the same group
             current_group.append([points[i][0], points[i][1]])
+            # self.get_logger().info('found a point in group: "%s"' % [points[i][0], points[i][1]])
+
         else:
             # points further away indiate a split between groups
             if len(current_group) > 0:
                 cone = pointgroup_to_cone(current_group)
+                # self.get_logger().info('found a cone: "%s"' % cone)
                 # calculate distance between lidar and cone
                 if distance(0, 0, cone[0], cone[1]) < cones_range_cutoff:
                     cones.append(cone)
+                    # self.get_logger().info('found a close cone: "%s"' % cone)
                 current_group = []
     return cones
 
-def find_avg(cones):
-    if len(cones) != 0:
-        average_y = 0
-        for cone in cones:
-            average_y += cone[1]
-        average_y = average_y / len(cones)
-
-        return average_y
+def find_points(pcl):
+    # Convert the list of floats into a list of xyz coordinates
+    pcl_array = numpy.array(list(read_points(pcl)))
     
-    else:
-        return 0
+    return find_cones(pcl_array)
