@@ -1,11 +1,14 @@
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import PointCloud2, PointCloud
+from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import TwistStamped
+
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float32
 
 from .sub_module.simple_lidar import find_points
+import math
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -18,20 +21,20 @@ class LidarProcessing(Node):
         self.lidar_subscription  # prevent unused variable warning
 
         self.math_publisher = self.create_publisher(
-            Float32, # will change if we return all cones back
+            Float32MultiArray, # will change if we return all cones back
             'math_output', 
             10)
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.avg = 0.0
+        self.avg_y = 0.0
 
         self.geo_subscription = self.create_subscription(
-            PointCloud2,
-            '/fsds/lidar/Lidar2',
-            self.lidar_callback,
+            TwistStamped,
+            '/fsds/gss',
+            self.geo_callback,
             10)
-        self.lidar_subscription  # prevent unused variable warning
-
+        self.geo_subscription 
+        self.calc_throttle = 0.0
 
 
     def find_avg(self, cones):
@@ -50,47 +53,44 @@ class LidarProcessing(Node):
     def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
+        cones_range_cutoff = 7 # m      can tweak
+        distance_cutoff = 0.1 # m       can tweak
 
-        self.cones = find_points(pcl_msg) 
+        self.cones = find_points(pcl_msg, cones_range_cutoff, distance_cutoff) 
         # self.get_logger().info('close cones: "%s"' % self.cones)
 
-        self.avg = self.find_avg(self.cones) 
-        self.get_logger().info('avg: "%lf"' % self.avg)
+        self.avg_y = self.find_avg(self.cones) 
+        # self.get_logger().info('avg: "%lf"' % self.avg_y)
+
+
+    def geo_callback(self, geo_msg):
+
+        max_throttle = 0.2
+        target_vel = 4
+
+        vel_x = geo_msg.twist.linear.x
+        vel_y = geo_msg.twist.linear.y
+
+        vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
+        p_vel = (1 - (vel / target_vel))
+        if p_vel > 0:
+            self.calc_throttle = max_throttle * p_vel
+
+        elif p_vel <= 0:
+            self.calc_throttle = 0.0
 
 
     def timer_callback(self):
 
-        # msg = Float32MultiArray()
-        # msg.data = self.cones
+        msg = Float32MultiArray()
+        # msg = Float32()
 
-        msg = Float32()
-        msg.data = float(self.avg)
+        msg.data = [float(self.avg_y), float(self.calc_throttle)]
 
         self.math_publisher.publish(msg)
 
         # self.get_logger().info('found: "%s"' % self.avg)
 
-
-""" 
-        # example steering code right and left
-        if self.left == 0:
-            if self.i < 1:
-                self.i += 0.1
-            elif self.i >= 1:
-                self.left = 1
-
-        elif self.left == 1:
-            if self.i > -1:
-                self.i -= 0.1
-            elif self.i <= -1:
-                self.left = 0
-
-        msg = Float32()
-        msg.data = self.i
-        self.math_publisher.publish(msg)
-        self.get_logger().info('Publishing: "%s"' % msg.data)
-
- """
 
 def main(args=None):
     rclpy.init(args=args)

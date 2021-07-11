@@ -14,15 +14,15 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "fs_msgs/msg/control_command.hpp"
 // include messages needed for node communication
-#include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/string.hpp"
 
 using std::placeholders::_1;
 
 class MovementControl : public rclcpp::Node{ // create class with inheritance from ROS node
     
-    double vel_x = 0;
+    double vel_x = 0; // initialise velocity
     double vel_y = 0;
 
     public:
@@ -34,14 +34,12 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
 
             // subscribe to the "/fsds/gss" node as a 'TwistStamped' geometry message
             // bind subscribed messages to function 'geo_callback'
-            geo_subscription_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-                "/fsds/gss", 10, std::bind(&MovementControl::geo_callback, this, _1));
+            // geo_subscription_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+            //     "/fsds/gss", 10, std::bind(&MovementControl::geo_callback, this, _1));
 
-            // subscribe to the "math_output" custom node as a 'Float32MultiArray' standard message
+            // subscribe to the "math_output" custom node as a 'Float32' standard message
             // bind subscribed messages to function 'move_callback'
-            // math_subscriber_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            //     "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
-            math_subscription_ = this->create_subscription<std_msgs::msg::Float32>(
+            math_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
                 "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
 
             // publish to the "/fsds/control_command" node as a 'ControlCommand' FS message
@@ -66,39 +64,36 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
         }
 
         // geo_callback to receive subscribed geometry messages
-        void geo_callback(const geometry_msgs::msg::TwistStamped::SharedPtr geo_msg) const{
-            // retrieve x and y velocities
-            double temp_vel_x = geo_msg->twist.linear.x; 
-            double temp_vel_y = geo_msg->twist.linear.y;
+        // void geo_callback(const geometry_msgs::msg::TwistStamped::SharedPtr geo_msg) const{
+        //     // retrieve x and y velocities
+        //     double temp_vel_x = geo_msg->twist.linear.x; 
+        //     double temp_vel_y = geo_msg->twist.linear.y;
 
-            RCLCPP_INFO(this->get_logger(), "X Velocity: '%lf'", temp_vel_x);
-            RCLCPP_INFO(this->get_logger(), "Y Velocity: '%lf'", temp_vel_y);
+        //     RCLCPP_INFO(this->get_logger(), "X Velocity: '%lf'", temp_vel_x);
+        //     RCLCPP_INFO(this->get_logger(), "Y Velocity: '%lf'", temp_vel_y);
 
-            vel_x = temp_vel_x;
-        }
+        //     MovementControl::vel_x = temp_vel_x;
+        //     MovementControl::vel_y = temp_vel_y;
+        // }
 
         // move_callback to publish movement commands
-        // void move_callback(const std_msgs::msg::Float32MultiArray::SharedPtr math_msg) const{
-        void move_callback(const std_msgs::msg::Float32::SharedPtr math_msg) const{
+        void move_callback(const std_msgs::msg::Float32MultiArray::SharedPtr math_msg) const{
+        // void move_callback(const std_msgs::msg::Float32::SharedPtr math_msg) const{
 
-            // std::vector<float> cones = math_msg->data;
-            // int length = sizeof(cones)/sizeof(cones[0]);
+            std::vector<float> output = math_msg->data;
 
-            float average_y = math_msg->data;
-            
-            RCLCPP_INFO(this->get_logger(), "Heard avg: '%lf'", average_y);
+            double average_y = output[0];
+            double calc_throttle = output[1];
 
-            double steering_p = 5;
-            double calc_steering = 0.0;
+            // RCLCPP_INFO(this->get_logger(), "Heard avg: '%lf'", average_y);
+            // RCLCPP_INFO(this->get_logger(), "Heard throttle: '%lf'", calc_throttle);
 
-            double max_throttle = 0.2; // m/s^2
-            int target_vel = 4; // m/s
-            double calc_throttle = 0.0;
+            double steering_p = 5; // steering proportion
+            double calc_steering = 0.0; // initial steering
 
-            // double vel_x = *xp;
-            // double vel_y = *yp;
-
-            // RCLCPP_INFO(this->get_logger(), "X vel: %lf, Y vel: %lf", vel_x, vel_y);
+            // double max_throttle = 0.2; // m/s^2
+            // int target_vel = 4; // m/s
+            // double calc_throttle = 0.0; // initial throttle
 
             // // calculate throttle
             // // velocity in the vehicle's frame
@@ -123,7 +118,7 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
             }
 
             auto message = fs_msgs::msg::ControlCommand();
-            message.throttle = 0;
+            message.throttle = calc_throttle;
             message.steering = calc_steering;
             message.brake = 0;
             
@@ -131,9 +126,8 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
         }
 
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
-        // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr math_subscription_;
-        rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr math_subscription_;
-        rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr geo_subscription_;
+        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr math_subscription_;
+        // rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr geo_subscription_;
         rclcpp::Publisher<fs_msgs::msg::ControlCommand>::SharedPtr control_publisher_;
 };
 
