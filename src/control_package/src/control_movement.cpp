@@ -13,18 +13,15 @@
 #include "sensor_msgs/msg/image.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "fs_msgs/msg/control_command.hpp"
+#include "qutms_msgs/msg/cone_data.hpp"
+#include "qutms_msgs/msg/location.hpp"
 // include messages needed for node communication
-#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
-#include "std_msgs/msg/string.hpp"
 
 using std::placeholders::_1;
 
 class MovementControl : public rclcpp::Node{ // create class with inheritance from ROS node
     
-    double vel_x = 0; // initialise velocity
-    double vel_y = 0;
-
     public:
         MovementControl() : Node("control_node"){ // name of our node, constructed from ROS
             // subscribe to the "/fsds/camera/cam1" node as an 'Image' sensor message
@@ -37,9 +34,12 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
             // geo_subscription_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             //     "/fsds/gss", 10, std::bind(&MovementControl::geo_callback, this, _1));
 
-            // subscribe to the "math_output" custom node as a 'Float32' standard message
+            // subscribe to the "math_output" custom node as a 'Float32MultiArray' standard message
             // bind subscribed messages to function 'move_callback'
-            math_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+            // math_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+            //     "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
+
+            math_subscription_ = this->create_subscription<qutms_msgs::msg::ConeData>(
                 "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
 
             // publish to the "/fsds/control_command" node as a 'ControlCommand' FS message
@@ -63,52 +63,47 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
             cv::waitKey(1);
         }
 
-        // geo_callback to receive subscribed geometry messages
-        // void geo_callback(const geometry_msgs::msg::TwistStamped::SharedPtr geo_msg) const{
-        //     // retrieve x and y velocities
-        //     double temp_vel_x = geo_msg->twist.linear.x; 
-        //     double temp_vel_y = geo_msg->twist.linear.y;
-
-        //     RCLCPP_INFO(this->get_logger(), "X Velocity: '%lf'", temp_vel_x);
-        //     RCLCPP_INFO(this->get_logger(), "Y Velocity: '%lf'", temp_vel_y);
-
-        //     MovementControl::vel_x = temp_vel_x;
-        //     MovementControl::vel_y = temp_vel_y;
-        // }
-
         // move_callback to publish movement commands
-        void move_callback(const std_msgs::msg::Float32MultiArray::SharedPtr math_msg) const{
-        // void move_callback(const std_msgs::msg::Float32::SharedPtr math_msg) const{
+        void move_callback(const qutms_msgs::msg::ConeData::SharedPtr math_msg) const{
 
-            std::vector<float> output = math_msg->data;
+            float len = math_msg->array_len;
+            float vel = math_msg->car_vel;
+            // std::vector<float> cones = math_msg->cone_array;
 
-            double average_y = output[0];
-            double calc_throttle = output[1];
+            RCLCPP_INFO(this->get_logger(), "Heard len: '%lf'", len);
+            RCLCPP_INFO(this->get_logger(), "Heard vel: '%lf'", vel);
 
-            // RCLCPP_INFO(this->get_logger(), "Heard avg: '%lf'", average_y);
-            // RCLCPP_INFO(this->get_logger(), "Heard throttle: '%lf'", calc_throttle);
+            float steering_p = 5; // steering proportion
+            float calc_steering = 0.0; // initial steering
+            float average_y = 0.0; // initial cones
 
-            double steering_p = 5; // steering proportion
-            double calc_steering = 0.0; // initial steering
-
-            // double max_throttle = 0.2; // m/s^2
-            // int target_vel = 4; // m/s
-            // double calc_throttle = 0.0; // initial throttle
+            float max_throttle = 0.2; // m/s^2
+            int target_vel = 4; // m/s
+            float calc_throttle = 0.0; // initial throttle
 
             // // calculate throttle
             // // velocity in the vehicle's frame
-            // double vel = sqrt(vel_x*vel_x + vel_y*vel_y);
+            // float vel = sqrt(vel_x*vel_x + vel_y*vel_y);
             // // the lower the velocity, the more throttle, up to max_throttle
-            // double p_vel = (1 - (vel / target_vel));
-            // if ( p_vel > 0 ){
-            //     calc_throttle = max_throttle * p_vel;
-            // }
-            // else if ( p_vel <= 0 ){
-            //     calc_throttle = 0.0;
-            // }
-
+            float p_vel = (1 - (vel / target_vel));
+            if ( p_vel > 0 ){
+                calc_throttle = max_throttle * p_vel;
+            }
+            else if ( p_vel <= 0 ){
+                calc_throttle = 0.0;
+            }
 
             // determine steering
+            // if ( len != 0 ){
+            //     for ( int i=0; i<len; i++ ){
+            //         average_y += cones[i][1];
+            //     average_y = average_y / len;
+            //     }
+            // }
+            // else{
+            //     average_y = 0;
+            // }
+
             calc_steering = -steering_p * average_y;
             if ( calc_steering > 1.0 ){
                 calc_steering = 1.0;
@@ -126,7 +121,8 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
         }
 
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
-        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr math_subscription_;
+        rclcpp::Subscription<qutms_msgs::msg::ConeData>::SharedPtr math_subscription_;
+        // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr math_subscription_;
         // rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr geo_subscription_;
         rclcpp::Publisher<fs_msgs::msg::ControlCommand>::SharedPtr control_publisher_;
 };

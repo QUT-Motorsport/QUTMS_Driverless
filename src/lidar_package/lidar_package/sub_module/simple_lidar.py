@@ -57,7 +57,7 @@ def pointgroup_to_cone(group):
         average_y += point[1]
     average_x = average_x / len(group)
     average_y = average_y / len(group)
-    return [average_x, average_y]
+    return [float(average_x), float(average_y)]
 
 def find_cones(points, cones_range_cutoff, distance_cutoff):
     # Go through all the points and find nearby groups of points that are close together as those will probably be cones.

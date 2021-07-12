@@ -5,7 +5,8 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import TwistStamped
 
 from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import Float32
+
+from qutms_msgs.msg import ConeData, Location
 
 from .sub_module.simple_lidar import find_points
 import math
@@ -13,36 +14,37 @@ import math
 class LidarProcessing(Node):
     def __init__(self):
         super().__init__('lidar_processing')
-        self.lidar_subscription = self.create_subscription(
+        self.lidar_subscription_ = self.create_subscription(
             PointCloud2,
             '/fsds/lidar/Lidar2',
             self.lidar_callback,
             10)
-        self.lidar_subscription  # prevent unused variable warning
+        self.lidar_subscription_  # prevent unused variable warning
+        self.cone_points = []
+        self.length = 0.0
 
-        self.math_publisher = self.create_publisher(
-            Float32MultiArray, # will change if we return all cones back
+        self.math_publisher_ = self.create_publisher(
+            ConeData, # will change if we return all cones back
             'math_output', 
             10)
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.avg_y = 0.0
 
-        self.geo_subscription = self.create_subscription(
+        self.geo_subscription_ = self.create_subscription(
             TwistStamped,
             '/fsds/gss',
             self.geo_callback,
             10)
-        self.geo_subscription 
-        self.calc_throttle = 0.0
+        self.geo_subscription_ 
+        self.vel = 0.0
 
 
-    def find_avg(self, cones):
-        if len(cones) != 0:
+    def find_avg(self, cone_points):
+        if len(cone_points) != 0:
             average_y = 0
-            for cone in cones:
+            for cone in cone_points:
                 average_y += cone[1]
-            average_y = average_y / len(cones)
+            average_y = average_y / len(cone_points)
 
             return average_y
         
@@ -56,40 +58,47 @@ class LidarProcessing(Node):
         cones_range_cutoff = 7 # m      can tweak
         distance_cutoff = 0.1 # m       can tweak
 
-        self.cones = find_points(pcl_msg, cones_range_cutoff, distance_cutoff) 
+        self.cone_points = find_points(pcl_msg, cones_range_cutoff, distance_cutoff) 
         # self.get_logger().info('close cones: "%s"' % self.cones)
 
-        self.avg_y = self.find_avg(self.cones) 
+        self.length = len(self.cone_points)
+
+        # self.avg_y = self.find_avg(self.cones) 
         # self.get_logger().info('avg: "%lf"' % self.avg_y)
 
 
     def geo_callback(self, geo_msg):
 
-        max_throttle = 0.2
-        target_vel = 4
+        # max_throttle = 0.2
+        # target_vel = 4
 
         vel_x = geo_msg.twist.linear.x
         vel_y = geo_msg.twist.linear.y
 
-        vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
-        p_vel = (1 - (vel / target_vel))
-        if p_vel > 0:
-            self.calc_throttle = max_throttle * p_vel
+        self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
+        # p_vel = (1 - (vel / target_vel))
+        # if p_vel > 0:
+        #     self.calc_throttle = max_throttle * p_vel
 
-        elif p_vel <= 0:
-            self.calc_throttle = 0.0
+        # elif p_vel <= 0:
+        #     self.calc_throttle = 0.0
 
 
     def timer_callback(self):
 
-        msg = Float32MultiArray()
-        # msg = Float32()
+        cones = ConeData()
+        cones.array_len = float(self.length)
+        cones.car_vel = float(self.vel)
 
-        msg.data = [float(self.avg_y), float(self.calc_throttle)]
+        for i in range(len(self.cone_points)):
+            cone = Location()
+            cone.cone_point = self.cone_points[i]
+            cones.cone_array[i] = cone
 
-        self.math_publisher.publish(msg)
+        self.get_logger().info('velocity: "%s"' % self.vel)
 
-        # self.get_logger().info('found: "%s"' % self.avg)
+        self.math_publisher_.publish(cones)
+
 
 
 def main(args=None):
