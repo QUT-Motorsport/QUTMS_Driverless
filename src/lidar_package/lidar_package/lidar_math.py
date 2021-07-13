@@ -28,7 +28,7 @@ class LidarProcessing(Node):
             'math_output', 
             10)
         timer_period = 0.01  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer = self.create_timer(timer_period, self.pub_callback)
 
         self.geo_subscription_ = self.create_subscription(
             TwistStamped,
@@ -59,12 +59,9 @@ class LidarProcessing(Node):
         distance_cutoff = 0.1 # m       can tweak
 
         self.cone_points = find_points(pcl_msg, cones_range_cutoff, distance_cutoff) 
-        # self.get_logger().info('close cones: "%s"' % self.cones)
+        # self.get_logger().info('close cones: "%s"' % self.cone_points)
 
         self.length = len(self.cone_points)
-
-        # self.avg_y = self.find_avg(self.cones) 
-        # self.get_logger().info('avg: "%lf"' % self.avg_y)
 
 
     def geo_callback(self, geo_msg):
@@ -76,15 +73,8 @@ class LidarProcessing(Node):
         vel_y = geo_msg.twist.linear.y
 
         self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
-        # p_vel = (1 - (vel / target_vel))
-        # if p_vel > 0:
-        #     self.calc_throttle = max_throttle * p_vel
 
-        # elif p_vel <= 0:
-        #     self.calc_throttle = 0.0
-
-
-    def timer_callback(self):
+    def pub_callback(self):
 
         cones = ConeData()
         cones.array_len = float(self.length)

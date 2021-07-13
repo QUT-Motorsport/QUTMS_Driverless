@@ -34,11 +34,8 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
             // geo_subscription_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             //     "/fsds/gss", 10, std::bind(&MovementControl::geo_callback, this, _1));
 
-            // subscribe to the "math_output" custom node as a 'Float32MultiArray' standard message
+            // subscribe to the "math_output" custom node as a 'ConeData' qutms_msgs message
             // bind subscribed messages to function 'move_callback'
-            // math_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            //     "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
-
             math_subscription_ = this->create_subscription<qutms_msgs::msg::ConeData>(
                 "math_output", 10, std::bind(&MovementControl::move_callback, this, _1));
 
@@ -68,7 +65,7 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
 
             float len = math_msg->array_len;
             float vel = math_msg->car_vel;
-            // std::vector<float> cones = math_msg->cone_array;
+            // std::vector<float> cones = math_msg->cone_array; // BANE OF MY EXISTENCE THIS THING, CANT GET IT TO WORK!!!
 
             RCLCPP_INFO(this->get_logger(), "Heard len: '%lf'", len);
             RCLCPP_INFO(this->get_logger(), "Heard vel: '%lf'", vel);
@@ -81,10 +78,9 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
             int target_vel = 4; // m/s
             float calc_throttle = 0.0; // initial throttle
 
-            // // calculate throttle
-            // // velocity in the vehicle's frame
-            // float vel = sqrt(vel_x*vel_x + vel_y*vel_y);
-            // // the lower the velocity, the more throttle, up to max_throttle
+
+            // calculate throttle from velocity in the vehicle's frame
+            // the lower the velocity, the more throttle, up to max_throttle
             float p_vel = (1 - (vel / target_vel));
             if ( p_vel > 0 ){
                 calc_throttle = max_throttle * p_vel;
@@ -93,7 +89,7 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
                 calc_throttle = 0.0;
             }
 
-            // determine steering
+            // calculate steering from relative cone location
             // if ( len != 0 ){
             //     for ( int i=0; i<len; i++ ){
             //         average_y += cones[i][1];
@@ -112,17 +108,16 @@ class MovementControl : public rclcpp::Node{ // create class with inheritance fr
                 calc_steering = -1.0;
             }
 
-            auto message = fs_msgs::msg::ControlCommand();
-            message.throttle = calc_throttle;
-            message.steering = calc_steering;
-            message.brake = 0;
+            auto control = fs_msgs::msg::ControlCommand();
+            control.throttle = calc_throttle;
+            control.steering = calc_steering;
+            control.brake = 0;
             
-            control_publisher_->publish(message);
+            control_publisher_->publish(control);
         }
 
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_subscription_;
         rclcpp::Subscription<qutms_msgs::msg::ConeData>::SharedPtr math_subscription_;
-        // rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr math_subscription_;
         // rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr geo_subscription_;
         rclcpp::Publisher<fs_msgs::msg::ControlCommand>::SharedPtr control_publisher_;
 };
