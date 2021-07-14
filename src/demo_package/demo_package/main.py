@@ -63,7 +63,7 @@ class Controller(Node):
 
         # accel + vel targets
         self.max_throttle = 0.2 # m/s^2
-        self.max_vel = 5 # m/s
+        self.max_vel = 7 # m/s
         self.target_vel = self.max_vel  # initially target is max
 
         ## DEMO 2.2 CONSTANTS
