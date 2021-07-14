@@ -51,38 +51,56 @@ class Controller(Node):
 
         ## test demo variables to change
 
-        ## DEMO 2 CONSTANTS - FROM VIDEO
+        ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
         # cone point vars
         self.cones_range_cutoff = 7 # m
         self.distance_cutoff = 0.1 # m
 
         # PID coeffs
-        self.steering_p = 0.8 
+        self.steering_p = 0.5
         self.steering_i = 0
-        self.steering_d = 1.7
+        self.steering_d = 1.1
 
         # accel + vel targets
-        self.max_throttle = 0.2
-        self.target_vel = 4
+        self.max_throttle = 0.2 # m/s^2
+        self.max_vel = 5 # m/s
+        self.target_vel = self.max_vel  # initially target is max
 
-        ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
+        ## DEMO 2.2 CONSTANTS
+        # # cone point vars
+        # self.cones_range_cutoff = 7 # m
+        # self.distance_cutoff = 0.1 # m
+
+        # # PID coeffs
+        # self.steering_p = 0.5
+        # self.steering_i = 0
+        # self.steering_d = 1.1
+
+        # # accel + vel targets
+        # self.max_throttle = 0.2 # m/s^2
+        # self.max_vel = 5 # m/s
+        # self.target_vel = self.max_vel  # initially target is max
+        
+        ## DEMO 2.1 CONSTANTS - FROM VIDEO
         # # cone point vars
         # self.cones_range_cutoff = 6 # m
         # self.distance_cutoff = 0.1 # m
 
         # # PID coeffs
-        # self.steering_p = 0.7 
+        # self.steering_p = 0.8 
         # self.steering_i = 0
-        # self.steering_d = 1.5
+        # self.steering_d = 1.7
 
         # # accel + vel targets
-        # self.max_throttle = 0.2
-        # self.target_vel = 5
+        # self.max_throttle = 0.2 # m/s^2
+        # self.max_vel = 4 # m/s
+        # self.target_vel = self.max_vel # initially target is max
 
     # callback for lidar data to be sent to. used to call funtion to find cone coords
     def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
+        # 
         self.cone_points = find_points(pcl_msg, self.cones_range_cutoff, self.distance_cutoff) 
         
     # callback for geometry data to be sent to. used to find var's current velocity
@@ -106,14 +124,52 @@ class Controller(Node):
         else:
             return 0 
 
+    # helper function to adjust velocity based on how tight the turn is ahead
+    def predict_vel(self, avg_y):
+        length = len(self.cone_points)
+        if length != 0:
+            current_max_y = 0
+            element = 0
+            max_element = 0
+            for cone in self.cone_points:
+                cone_y = abs(cone[1])
+                if cone_y > current_max_y: # if this coord is greater than the current max
+                    current_max_y = cone_y # replace current maxs
+                    max_element = element # record array index
+                element += 1
+
+            targ_cone = self.cone_points[max_element]
+            cone_x = targ_cone[0]
+            cone_y = targ_cone[1]
+
+            if ( cone_y > 1.5*avg_y ) and ( abs(avg_y) > 0.5 ) and (cone_x > 1):
+                # self.get_logger().info('cone_y: "%s"' % cone_y)
+                # self.get_logger().info('cone_x: "%s"' % cone_x)
+
+                self.target_vel = (1 / cone_x) * (self.cones_range_cutoff / 2) * 2
+                self.get_logger().info('max_vel: "%s"' % self.target_vel)
+
+                if self.target_vel < self.max_vel / 2:
+                    self.target_vel = self.max_vel / 2 # stop it from slowing too much
+                
+                # self.get_logger().info('max_vel: "%s"' % self.target_vel)
+
+            else:
+                self.target_vel = self.max_vel
+
+
     # callback for publishing FSDS command messages at specific times
     def pub_callback(self):
         self.time += self.timer_period # increase time taken
 
         avg_y = -(self.find_avg_y()) # frame of reference is flipped along FOV (for some reason)
+        # self.get_logger().info('avg_y: "%s"' % avg_y)
 
         # Calculate throttle
-        calc_throttle = 0.0 # initial throttle
+        calc_throttle = 0.0 # initialise throttle
+
+        self.predict_vel(avg_y)
+        
         p_vel = (1 - (self.vel / self.target_vel)) # increase proportionally as it approaches target
         if p_vel > 0:
             calc_throttle = self.max_throttle * p_vel
