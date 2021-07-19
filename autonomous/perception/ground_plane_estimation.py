@@ -162,6 +162,15 @@ def init_plot_3D(title, xlabel, ylabel, zlabel, azim, elev):
     ax.set_zlabel(zlabel)
     return ax
 
+def plot_data_2D(x, y):
+    
+    init_plot_2D("LIDAR data", "x", "y")
+    plt.plot(x, y, '.', color='green')
+    plt.plot(0, 0, 'o', color='black')
+    angles = np.linspace(0, 2*math.pi, 100)
+    plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color='black')
+    plt.savefig("fig1")
+
 def plot_segments(segments, color_codes, angle_points):
     init_plot_2D("LIDAR data with points assigned to segments", "x", "y")
     for i in range(len(segments)):
@@ -302,6 +311,8 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
                     y_gp = extracted_lines[i][j][0] * x_gp + extracted_lines[i][j][1]
                     plt.plot(x_gp, y_gp, '--', color='black')
         plt.plot(x, y, 'o', color=color1)
+
+plot_data_2D(xdata, ydata)
 
 
 # %%
