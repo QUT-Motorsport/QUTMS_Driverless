@@ -83,6 +83,14 @@ def extract_segment_lines(segment, num_bins):
         raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
     return lines
 
+# Returns the ground lines for all segments
+def extract_lines(segments_bins_prototype, num_segments, num_bins):
+    ground_plane = []
+    for i in range(num_segments):
+        print("Extracting lines from Segment:", i+1)
+        ground_plane.append(extract_segment_lines(segments_bins_prototype[i], num_bins))
+    return ground_plane
+
 # Notes
 #   - Constant T_M_SMALL and T_B: For small slopes m < T_M_SMALL, 
 #     the line’s absolute y-intercept b must not exceed a certain 
