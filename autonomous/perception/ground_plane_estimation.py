@@ -131,6 +131,7 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
     plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
     plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
+    plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, extracted_lines)
 
     plt.show()
 
@@ -252,6 +253,34 @@ def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_
                 ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
             ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
     plt.savefig("fig6")
+
+def plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, extracted_lines):
+    ax = init_plot_3D("Ground plane estimation (3D visual)", "x", "y", "height", 45, 45)
+
+    for i in range(len(segments_bins_prototype)):
+        color1 = color_codes[i % len(color_codes)]
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        for j in range(len(segments_bins_prototype[i])):
+            print(segments_bins_prototype[i])
+            if len(segments_bins_prototype[i][j]) > 0:
+                norm = segments_bins_prototype[i][j][0]
+                z = segments_bins_prototype[i][j][1]
+                new_x = norm * math.cos((i + 0.5) * DELTA_ALPHA)
+                new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
+                ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
+            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
+
+    print("hey", extracted_lines)
+
+    for i in range(len(extracted_lines)):
+        for j in range(len(extracted_lines[i])):
+            r = np.linspace(0, LIDAR_RANGE, 50)
+            z = extracted_lines[i][j][0] * r + extracted_lines[i][j][1]
+            x = r * math.cos((i + 0.5) * DELTA_ALPHA)
+            y = r * math.sin((i + 0.5) * DELTA_ALPHA)
+            ax.plot3D(x, y, z, color='black')
+
+    plt.savefig("fig7")
 
 
 
