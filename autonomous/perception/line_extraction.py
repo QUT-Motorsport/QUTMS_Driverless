@@ -1,7 +1,6 @@
 import math
 import copy
 import total_least_squares
-from total_least_squares_2 import tls
 
 T_M = 2*math.pi / 4 # Max angle that will be considered as ground plane # 45 deg
 T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg

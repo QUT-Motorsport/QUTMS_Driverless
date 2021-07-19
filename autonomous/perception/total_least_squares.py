@@ -1,7 +1,5 @@
 import math
 
-from numpy import number
-
 # INCORRECT POINT WISE VARIANCE. HACKY FIX:
 # Point Wise Variance 
 def get_point_var(x, y, x_mean, y_mean):
