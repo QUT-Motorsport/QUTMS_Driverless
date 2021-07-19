@@ -117,7 +117,17 @@ def get_ground_plane(points):
     segments_bins_2D = approximate_2D(segments_bins)
     segments_bins_prototype = prototype_points(segments_bins_2D)
     extracted_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
+    visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, extracted_lines)
     return extracted_lines
+
+
+def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, extracted_lines):
+    color_codes = ['b', 'g', 'r', 'grey', 'm', 'orange']
+    cmaps = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
+    angle_points = 25
+
+    plot_segments(segments, color_codes, angle_points)
+    plt.show()
 
 # Plotting test_data.
 from mpl_toolkits import mplot3d
@@ -129,55 +139,25 @@ xdata = [coords[0] for coords in test_data]
 ydata = [coords[1] for coords in test_data]
 zdata = [coords[2] for coords in test_data]
 
-# Single plot
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.view_init(azim=45, elev=45)
+def init_plot_2D(title, xlabel, ylabel):
+    fig = plt.figure()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
-ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens');
-
-# Rotating plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens')
-
-for angle in range(0, 360):
-    ax.view_init(30, angle)
-    plt.draw()
-    plt.pause(0.0005)
-
-def abline(slope, intercept):
-    """Plot a line from slope and intercept"""
-    axes = plt.gca()
-    x_vals = np.array(axes.get_xlim())
-    y_vals = intercept + slope * x_vals
-    plt.plot(x_vals, y_vals, '--')  
-
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-#ax.view_init(azim=0, elev=90)
-ax.scatter(xdata, ydata, zdata, c='green')
-ax.plot3D(gp_x, gp_y, gp_z, c='pink')
-
-angles = np.linspace(0, 2*math.pi, 100)
-ax.plot3D(DELTA_ALPHA*np.cos(angles), DELTA_ALPHA*np.sin(angles), -DELTA_ALPHA*np.ones(angles.shape), color='red')
-ax.plot3D(DELTA_ALPHA*np.cos(angles), DELTA_ALPHA*np.sin(angles), np.zeros(angles.shape), color='red')
-ax.plot3D(DELTA_ALPHA*np.cos(angles), DELTA_ALPHA*np.sin(angles), DELTA_ALPHA*np.ones(angles.shape), color='red')
-
-for i in range(NUM_SEGMENTS):    
-    xpoints = [0, DELTA_ALPHA * math.cos(i*angle)]
-    ypoints = [0, DELTA_ALPHA * math.sin(i*angle)]
-    ax.plot3D(xpoints, ypoints, [-DELTA_ALPHA, -DELTA_ALPHA], color='black')
-    ax.plot3D(xpoints, ypoints, [0, 0], color='black')
-    ax.plot3D(xpoints, ypoints, [DELTA_ALPHA, DELTA_ALPHA], color='black')
-
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
-ax.set_xlim(-DELTA_ALPHA,DELTA_ALPHA)
-ax.set_ylim(-DELTA_ALPHA,DELTA_ALPHA)
-ax.set_zlim(-DELTA_ALPHA,DELTA_ALPHA)
+def plot_segments(segments, color_codes, angle_points):
+    init_plot_2D("LIDAR data with points assigned to segments", "x", "y")
+    for i in range(len(segments)):
+        color = color_codes[i % len(color_codes)]
+        x = [coords[0] for coords in segments[i]]
+        y = [coords[1] for coords in segments[i]]
+        plt.plot(x, y, '.', color=color)
+        xpoints = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
+        ypoints = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
+        plt.plot(xpoints, ypoints, color=color)
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color)
+    plt.savefig("fig2")
 
 
 # %%
