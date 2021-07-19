@@ -80,6 +80,13 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
     numerator = -2 * numerator
     tan_2_alpha = numerator / denominator
 
+    # Custom code # If difference in height between first and last point is negative, make tan_2_alpha negative, otherwise, positive
+    y_delta = points[0][1] - points[num_points - 1][1]
+    if y_delta >= 0:
+        tan_2_alpha = -abs(tan_2_alpha)
+    else:
+        tan_2_alpha = abs(tan_2_alpha)
+
     alpha = math.atan(tan_2_alpha) / 2
     print('NUM:', numerator)
     print('DENOM:', denominator, '\n\n')
