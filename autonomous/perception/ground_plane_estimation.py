@@ -311,8 +311,109 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
                     y_gp = extracted_lines[i][j][0] * x_gp + extracted_lines[i][j][1]
                     plt.plot(x_gp, y_gp, '--', color='black')
         plt.plot(x, y, 'o', color=color1)
+        
 
 plot_data_2D(xdata, ydata)
+
+ground_plane = get_ground_plane(test_data)
+print(ground_plane)
+
+p1 = [1, 1.5]
+p2 = [2, 2]
+p3 = [3, 2.5]
+p4 = [4, 3]
+p5 = [5, 3.5]
+test_line = [p1, p2, p3, p4, p5]
+#extracted_lines = line_extraction.extract_lines([test_line], 1, 5)
+#print("Line:", extracted_lines)
+
+def plot_segments_2D_withlines(x, y, z):
+    SEGMENT_RADIUS = 3.0
+    gp_x = []
+    gp_y = []
+    gp_z = []
+
+    for i in range(len(ground_plane)):
+        segment_angle = i * DELTA_ALPHA + DELTA_ALPHA / 2
+
+        if (len(ground_plane[i]) > 0):
+            r_value = SEGMENT_RADIUS
+            z_value = ground_plane[i][0][0] * r_value + ground_plane[i][0][1]
+            x_value = r_value * np.cos(segment_angle)
+            y_value = r_value * np.sin(segment_angle)
+
+            gp_x.append(0)
+            gp_y.append(0)
+            gp_z.append(0)
+
+            gp_x.append(x_value)
+            gp_y.append(y_value)
+            gp_z.append(z_value)
+
+    fig2 = plt.figure()
+    plt.plot(x, y, '*')
+    plt.plot(gp_x, gp_y)
+    plt.xlabel("y")
+    plt.ylabel("x")
+
+    for i in range(NUM_SEGMENTS):    
+        xpoints = [0, SEGMENT_RADIUS * math.cos(i*DELTA_ALPHA)]
+        ypoints = [0, SEGMENT_RADIUS * math.sin(i*DELTA_ALPHA)]
+        plt.plot(ypoints, xpoints)
+        angles = np.linspace(0, 2*math.pi, 100)
+        plt.plot(SEGMENT_RADIUS*np.sin(angles), SEGMENT_RADIUS*np.cos(angles), color='black')
+
+# plot_segments_2D_withlines(xdata, ydata, zdata)
+
+# # Single plot
+# fig = plt.figure()
+# ax = plt.axes(projection='3d')
+# ax.view_init(azim=45, elev=45)
+
+# ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens');
+
+# # Rotating plot
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+
+# ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens')
+
+# for angle in range(0, 360):
+#     ax.view_init(30, angle)
+#     plt.draw()
+#     plt.pause(0.0005)
+
+# def abline(slope, intercept):
+#     """Plot a line from slope and intercept"""
+#     axes = plt.gca()
+#     x_vals = np.array(axes.get_xlim())
+#     y_vals = intercept + slope * x_vals
+#     plt.plot(x_vals, y_vals, '--')  
+
+# fig = plt.figure()
+# ax = plt.axes(projection='3d')
+# #ax.view_init(azim=0, elev=90)
+# ax.scatter(xdata, ydata, zdata, c='green')
+# ax.plot3D(gp_x, gp_y, gp_z, c='pink')
+
+# angles = np.linspace(0, 2*math.pi, 100)
+# ax.plot3D(SEGMENT_RADIUS*np.cos(angles), SEGMENT_RADIUS*np.sin(angles), -SEGMENT_RADIUS*np.ones(angles.shape), color='red')
+# ax.plot3D(SEGMENT_RADIUS*np.cos(angles), SEGMENT_RADIUS*np.sin(angles), np.zeros(angles.shape), color='red')
+# ax.plot3D(SEGMENT_RADIUS*np.cos(angles), SEGMENT_RADIUS*np.sin(angles), SEGMENT_RADIUS*np.ones(angles.shape), color='red')
+
+# for i in range(NUM_SEGMENTS):    
+#     xpoints = [0, SEGMENT_RADIUS * math.cos(i*angle)]
+#     ypoints = [0, SEGMENT_RADIUS * math.sin(i*angle)]
+#     ax.plot3D(xpoints, ypoints, [-SEGMENT_RADIUS, -SEGMENT_RADIUS], color='black')
+#     ax.plot3D(xpoints, ypoints, [0, 0], color='black')
+#     ax.plot3D(xpoints, ypoints, [SEGMENT_RADIUS, SEGMENT_RADIUS], color='black')
+
+# ax.set_xlabel('x')
+# ax.set_ylabel('y')
+# ax.set_zlabel('z')
+# ax.set_xlim(-SEGMENT_RADIUS,SEGMENT_RADIUS)
+# ax.set_ylim(-SEGMENT_RADIUS,SEGMENT_RADIUS)
+# ax.set_zlim(-SEGMENT_RADIUS,SEGMENT_RADIUS)
 
 
 # %%
