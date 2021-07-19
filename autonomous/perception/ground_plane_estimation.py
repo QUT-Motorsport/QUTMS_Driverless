@@ -130,6 +130,7 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     plot_segments_bins(segments_bins, color_codes, angle_points)
     plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
     plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
+    plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
 
     plt.show()
 
@@ -234,6 +235,24 @@ def plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
             ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap1);
             ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
     plt.savefig("fig5")
+
+def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps):
+    ax = init_plot_3D("Prototype points (3D visual)", "x", "y", "height", 45, 45)
+
+    for i in range(len(segments_bins_prototype)):
+        color1 = color_codes[i % len(color_codes)]
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        for j in range(len(segments_bins_prototype[i])):
+            print(segments_bins_prototype[i])
+            if len(segments_bins_prototype[i][j]) > 0:
+                norm = segments_bins_prototype[i][j][0]
+                z = segments_bins_prototype[i][j][1]
+                new_x = norm * math.cos((i + 0.5) * DELTA_ALPHA)
+                new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
+                ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
+            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
+    plt.savefig("fig6")
+
 
 
 # %%
