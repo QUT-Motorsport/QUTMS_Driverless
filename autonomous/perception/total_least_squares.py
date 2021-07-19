@@ -1,11 +1,14 @@
 import math
 
+from numpy import number
+
 # INCORRECT POINT WISE VARIANCE. HACKY FIX:
 # Point Wise Variance 
 def get_point_var(x, y, x_mean, y_mean):
-    point_x_var = (x - x_mean)**2
-    point_y_var = (y - y_mean)**2
-    return (point_x_var + point_y_var) / 2
+    #point_x_var = (x - x_mean)**2
+    #point_y_var = (y - y_mean)**2
+    #return (point_x_var + point_y_var) / 2
+    return 1
 
 # Sample Variances
 def get_sample_vars(points, x_mean, y_mean, num_points):
@@ -20,7 +23,8 @@ def get_sample_vars(points, x_mean, y_mean, num_points):
 
 # Theta
 def get_theta(x, y):
-    return math.atan(y/x)
+    theta = math.atan(y/x)
+    return theta
 
 # Theta Vector
 def get_theta_vector(points, num_points):
@@ -31,7 +35,8 @@ def get_theta_vector(points, num_points):
 
 # Rho
 def get_rho(x, y):
-    return math.sqrt(x**2 + y**2)
+    rho = math.sqrt(x**2 + y**2)
+    return rho
 
 # Rho Vector
 def get_rho_vector(points, num_points):
@@ -48,18 +53,20 @@ def get_weights(points, num_points, x_mean, y_mean):
     return w_mat
 
 # x_w
-def get_x_weight(w_mat, rho_mat, theta_mat, w_mean, num_points):
+def get_x_weight(w_mat, rho_mat, theta_mat, w_sum, num_points):
     x_weight = 0
     for i in range(num_points):
         x_weight += w_mat[i] * rho_mat[i] * math.cos(theta_mat[i])
-    return (1/w_mean) * x_weight
+    x_weight = (1/w_sum) * x_weight
+    return x_weight
 
 # y_w
-def get_y_weight(w_mat, rho_mat, theta_mat, w_mean, num_points):
+def get_y_weight(w_mat, rho_mat, theta_mat, w_sum, num_points):
     y_weight = 0
     for i in range(num_points):
         y_weight += w_mat[i] * rho_mat[i] * math.sin(theta_mat[i])
-    return (1/w_mean) * y_weight
+    y_weight = (1/w_sum) * y_weight
+    return y_weight
 
 # alpha, rearrange (4) to get alpha
 def get_alpha(points, num_points, w_mat, x_weight, y_weight):
@@ -67,23 +74,42 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
     denominator = 0
     for i in range(num_points):
         numerator += w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0])
+        print(w_mat[i], (y_weight - points[i][1]), (x_weight - points[i][0]))
+        print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
         denominator += w_mat[i] * ((y_weight - points[i][1])**2 - (x_weight - points[i][0])**2)
-    return math.tan((-2 * numerator) / denominator)
+    numerator = -2 * numerator
+    tan_2_alpha = numerator / denominator
+
+    alpha = math.atan(tan_2_alpha) / 2
+    print('NUM:', numerator)
+    print('DENOM:', denominator, '\n\n')
+    return alpha
 
 # r
 def get_r(x_weight, y_weight, alpha):
-    return x_weight * math.cos(alpha) + y_weight * math.sin(alpha)
+    r = x_weight * math.cos(alpha) + y_weight * math.sin(alpha)
+    return r
 
 # Gradient, m
-def get_m(alpha):
-    return math.tan(alpha)
+def get_m(alpha, y_weight):
+    #m = math.tan(alpha - math.pi / 2)
+    m = math.tan(alpha)
+    return m
 
 # Intercept, b
-def get_b(r, alpha):
-    return r / math.cos((math.pi / 2) - alpha)
+def get_b(points, num_points, r, alpha, m):
+    # b = r / math.cos(math.pi / 2 - alpha)
+
+    b = 0
+    for i in range(num_points):
+        b += points[i][1] - m * points[i][0]
+    b = b / num_points
+
+    return b
 
 # Total Least Squares Fitting Method
 def fit_line(points):
+    print("Fitting line!")
     num_points = len(points)
     x_mean = sum([point[0] for point in points]) / num_points
     y_mean = sum([point[1] for point in points]) / num_points
@@ -91,13 +117,25 @@ def fit_line(points):
     rho_mat = get_rho_vector(points, num_points)
     theta_mat = get_theta_vector(points, num_points)
     w_mat = get_weights(points, num_points, x_mean, y_mean)
-    w_mean = sum(w_mat) / num_points
-    x_weight = get_x_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
-    y_weight = get_y_weight(w_mat, rho_mat, theta_mat, w_mean, num_points)
+    #print(w_mat)
+    w_sum = sum(w_mat)
+    x_weight = get_x_weight(w_mat, rho_mat, theta_mat, w_sum, num_points)
+    y_weight = get_y_weight(w_mat, rho_mat, theta_mat, w_sum, num_points)
     alpha = get_alpha(points, num_points, w_mat, x_weight, y_weight)
     r = get_r(x_weight, y_weight, alpha)
-    
-    return ([get_m(alpha), get_b(r, alpha)])
+    if r < 0:
+        r = -r
+        alpha += math.pi/2
+
+    # if r < 0:
+    #     r = abs(r)
+    #     alpha += math.pi
+    #     print('Alpha:', alpha)
+    #     print('r:', r)
+    m = get_m(alpha, y_weight)
+    b = get_b(points, num_points, r, alpha, m)
+
+    return ([m, b])
 
 # Notes
 #   - The get_point_var() is incorrectly implemented for the time being as I was unable to 
@@ -108,6 +146,9 @@ def fit_line(points):
 #     the variance of the y value. It returns the average of these two variances. 
 #   - Currently get_sample_vars() is unused since only the variance of each point is neeeded
 #     and I'm unsure if the variance of a point is related to the sample variances.
+#   - Investigate faster way to calculate b (intercept), perhaps using the gradient, rho and other
+#     values calcualted and relating to polar coordinates. 
+#   - EXTENSIVE changes must be made to places that involve division. 
 
 # Sources
 #   - Paper: Feature Extraction and Scene Interpretation for Map-Based Navigation and Map Building
