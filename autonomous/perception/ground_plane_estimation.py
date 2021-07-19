@@ -129,6 +129,7 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     plot_segments(segments, color_codes, angle_points)
     plot_segments_bins(segments_bins, color_codes, angle_points)
     plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
+    plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
 
     plt.show()
 
@@ -147,6 +148,16 @@ def init_plot_2D(title, xlabel, ylabel):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+
+def init_plot_3D(title, xlabel, ylabel, zlabel, azim, elev):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.view_init(azim=azim, elev=elev)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    return ax
 
 def plot_segments(segments, color_codes, angle_points):
     init_plot_2D("LIDAR data with points assigned to segments", "x", "y")
@@ -204,6 +215,25 @@ def plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points):
         plt.plot(xpoints2, ypoints2, color='black', alpha=0.5, linestyle='--')
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
     plt.savefig("fig4")
+
+def plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps):
+    ax = init_plot_3D("LIDAR data approximated to 2D data (3D visual)", "x", "y", "height", 45, 45)
+
+    for i in range(len(segments_bins_2D)):
+        color1 = color_codes[i % len(color_codes)]
+        cmap1 = cmaps[i % len(cmaps)]
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        for j in range(len(segments_bins_2D[i])):
+            norm = [coords[0] for coords in segments_bins_2D[i][j]]
+            z = [coords[1] for coords in segments_bins_2D[i][j]]
+            new_x = []
+            new_y = []
+            for k in range(len(norm)):
+                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
+                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
+            ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap1);
+            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
+    plt.savefig("fig5")
 
 
 # %%
