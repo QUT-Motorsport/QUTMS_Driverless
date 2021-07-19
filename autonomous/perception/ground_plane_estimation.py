@@ -127,6 +127,8 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     angle_points = 25
 
     plot_segments(segments, color_codes, angle_points)
+    plot_segments_bins(segments_bins, color_codes, angle_points)
+
     plt.show()
 
 # Plotting test_data.
@@ -159,6 +161,23 @@ def plot_segments(segments, color_codes, angle_points):
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color)
     plt.savefig("fig2")
 
+def plot_segments_bins(segments_bins, color_codes, angle_points):
+    init_plot_2D("LIDAR data with points assigned to bins", "x", "y")
+
+    for i in range(len(segments_bins)):
+        color1 = color_codes[i % len(color_codes)]
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        for j in range(len(segments_bins[i])):
+            color2 = color_codes[j % len(color_codes)]
+            x = [coords[0] for coords in segments_bins[i][j]]
+            y = [coords[1] for coords in segments_bins[i][j]]
+            plt.plot(x, y, '.', color=color2)
+            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
+        xpoints = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
+        ypoints = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
+        plt.plot(xpoints, ypoints, color=color1)
+        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
+    plt.savefig("fig3")
 
 # %%
 
