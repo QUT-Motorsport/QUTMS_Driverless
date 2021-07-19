@@ -132,6 +132,7 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
     plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
     plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, extracted_lines)
+    plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes)
 
     plt.show()
 
@@ -282,6 +283,25 @@ def plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, 
 
     plt.savefig("fig7")
 
+def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
+    print("SP", segments_bins_prototype)
+    print("--- Prototype Points ---")
+    for i in range(len(segments_bins_prototype)):
+        color1 = color_codes[i % len(color_codes)]
+        print("Segment:", i)
+        init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)), "x", "y")
+        x = []
+        y = []
+        for j in range(len(segments_bins_prototype[i])):
+            if len(segments_bins_prototype[i][j]) > 0:
+                x.append(segments_bins_prototype[i][j][0])
+                y.append(segments_bins_prototype[i][j][1])
+                print("     Bin:", j, "Point:", segments_bins_prototype[i][j][0], segments_bins_prototype[i][j][1])
+                for j in range(len(extracted_lines[i])):
+                    x_gp = np.linspace(0, LIDAR_RANGE, 50)
+                    y_gp = extracted_lines[i][j][0] * x_gp + extracted_lines[i][j][1]
+                    plt.plot(x_gp, y_gp, '--', color='black')
+        plt.plot(x, y, 'o', color=color1)
 
 
 # %%
