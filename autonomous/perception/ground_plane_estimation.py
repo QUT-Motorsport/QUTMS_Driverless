@@ -128,6 +128,7 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
 
     plot_segments(segments, color_codes, angle_points)
     plot_segments_bins(segments_bins, color_codes, angle_points)
+    plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
 
     plt.show()
 
@@ -178,6 +179,32 @@ def plot_segments_bins(segments_bins, color_codes, angle_points):
         plt.plot(xpoints, ypoints, color=color1)
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
     plt.savefig("fig3")
+
+def plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points):
+    init_plot_2D("LIDAR data approximated to 2D data", "x", "y")
+
+    for i in range(len(segments_bins_2D)):
+        color1 = color_codes[i % len(color_codes)]
+        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        for j in range(len(segments_bins_2D[i])):
+            color2 = color_codes[j % len(color_codes)]
+            norm = [coords[0] for coords in segments_bins_2D[i][j]]
+            new_x = []
+            new_y = []
+            for k in range(len(norm)):
+                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
+                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
+            plt.plot(new_x, new_y, '.', color=color2)
+            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
+        xpoints1 = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
+        ypoints1 = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
+        plt.plot(xpoints1, ypoints1, color=color1)
+        xpoints2 = [0, LIDAR_RANGE * math.cos((i + 0.5) * DELTA_ALPHA)]
+        ypoints2 = [0, LIDAR_RANGE * math.sin((i + 0.5) * DELTA_ALPHA)]
+        plt.plot(xpoints2, ypoints2, color='black', alpha=0.5, linestyle='--')
+        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
+    plt.savefig("fig4")
+
 
 # %%
 
