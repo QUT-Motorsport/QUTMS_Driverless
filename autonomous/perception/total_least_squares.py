@@ -132,11 +132,6 @@ def fit_line(points):
         r = -r
         alpha += math.pi/2
 
-    # if r < 0:
-    #     r = abs(r)
-    #     alpha += math.pi
-    #     print('Alpha:', alpha)
-    #     print('r:', r)
     m = get_m(alpha, y_weight)
     b = get_b(points, num_points, r, alpha, m)
 
@@ -154,6 +149,12 @@ def fit_line(points):
 #   - Investigate faster way to calculate b (intercept), perhaps using the gradient, rho and other
 #     values calcualted and relating to polar coordinates. 
 #   - EXTENSIVE changes must be made to places that involve division. 
+#   - Review method for identifying sign of gradient. If first or last point is an outlier, the
+#     current method will be unreliable. Perhaps use the average change in height between the points.
+#     If the average change is negative, then the gradient should be made negative and vice versa. 
+#     Additionally, the average change could also exclude one point at a time and observer how much
+#     the average changes (to identify and remove outliers). However, this is likely unecessary and 
+#     too computationally expensive (especially when our goal is near real-time performance).
 
 # Sources
 #   - Paper: Feature Extraction and Scene Interpretation for Map-Based Navigation and Map Building
