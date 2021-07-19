@@ -1,11 +1,13 @@
 import math
+import copy
 import total_least_squares
+from total_least_squares_2 import tls
 
-T_M = math.pi / 4 # Max angle that will be considered as ground plane # 45 deg
-T_M_SMALL = math.pi / 32 # Angle considered to be a small slope # 5.625 deg
-T_B = 0.05 # Max y-intercept for a ground plane line # 5 cm 
-T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
-T_D_PREV = 1 # Max distance of the first point of a line to the line previously fitted # 1 m
+T_M = 2*math.pi / 4 # Max angle that will be considered as ground plane # 45 deg
+T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg
+T_B = 1 # Max y-intercept for a ground plane line # 5 cm 
+T_RMSE = 0.2 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
+T_D_PREV = 3 # Max distance of the first point of a line to the line previously fitted # 1 m
 
 # Returns the distance from a point to a line
 def dist_point_line(point, m_c, b_c):
@@ -15,6 +17,7 @@ def dist_point_line(point, m_c, b_c):
     b_p = -(y_p - m_p) * x_p # intercept of perpendicular line
     x_shared = (b_p - b_c) / (m_c - m_p)
     y_shared = m_p*x_p + b_p # or m_c*x + b_c # at x_shared, y_p = y_c
+    print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
     return math.sqrt((x_shared + x_p)**2 + y_shared**2)
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line
@@ -41,27 +44,44 @@ def extract_segment_lines(segment, num_bins):
     lines = []
     new_line_points = []
     lines_created = 0
+    m_new = None
+    b_new = None
 
     i = 0
+
     while i < num_bins:
-        if len(segment[i]) == 1:
-            new_point = segment[0]
+        if len(segment[i]) == 2:
+            m_new = None
+            b_new = None
+            new_point = segment[i]
             if len(new_line_points) >= 2:
-                [m_new, b_new] = total_least_squares.fit_line(new_line_points.append(new_point))
-                if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points.append(new_point)) <= T_RMSE):
-                    new_line_points = new_line_points.append(new_point)
+                temp_line_points = copy.deepcopy(new_line_points)
+                temp_line_points.append(new_point)
+                [m_new, b_new] = total_least_squares.fit_line(temp_line_points)
+                if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                    new_line_points.append(new_point)
+                    temp_line_points = []
                 else:
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
-                    lines = lines.append([m_new, b_new])
+                    print("Adding line to segment")
+                    lines.append([m_new, b_new])
                     new_line_points = []
                     lines_created += 1
                     i = i - 1
             else:
-                if dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV or lines_created == 0 or len(new_line_points) != 0:
-                    new_line_points = new_line_points.append(new_point) 
-        elif len(segment[i]) > 1:
+                if lines_created == 0 or len(new_line_points) != 0 or dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV:
+                    new_line_points.append(new_point)
+                else:
+                    print("no", new_point)
+        elif len(segment[i]) > 2 or len(segment[i]) == 1:
             raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
+        #print("i go up", i)
         i += 1
+    if len(new_line_points) > 1 and m_new != None and b_new != None:
+        lines.append([m_new, b_new])
+    if (m_new == None and b_new != None) or (m_new != None and b_new == None):
+        raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
+    return lines
 
 # Notes
 #   - Constant T_M_SMALL and T_B: For small slopes m < T_M_SMALL, 
