@@ -5,3 +5,4 @@
 !.vscode/cpp_properties.json
 
 autonomous/venv/*
+autonomous/perception/figures/*
