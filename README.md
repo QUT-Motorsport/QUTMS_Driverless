@@ -8,7 +8,7 @@ There are multiple components within the Driverless team. Depending on what you'
 
 1. **Formula Student Driverless Simulator** [Jump To](#1-run-fs-simulator---for-docker-with-wsl)
 
-    Running the FSDS on your machine and connecting the simulated vehicle with an autonmous system / tuning the simulated environement parameters / observing the simulated data (LIDAR data, cameras, car velocty, cones hit)
+    Running the FSDS on your machine and connecting the simulated vehicle with an autonmous system / tuning the simulated environement parameters / observing the simulated data (LIDAR Data, Cameras, Car's Velocity, Cones Hit)
 
 2. **Autonomous Software Development - Python** [Jump To](#2-autonomous-software-development---python)
 
