@@ -6,19 +6,19 @@ There are multiple components within the Driverless team. Depending on what you'
 
 ### Components
 
-1. Formula Student Driverless Simulator [Jump To](#1-run-fs-simulator---for-docker-with-wsl)
+1. **Formula Student Driverless Simulator** [Jump To](#1-run-fs-simulator---for-docker-with-wsl)
 
     Running the FSDS on your machine and connecting the simulated vehicle with an autonmous system / tuning the simulated environement parameters / observing the simulated data (LIDAR data, cameras, car velocty, cones hit)
 
-2. Autonomous Software Development - Python [Jump To](#2-autonomous-software-development---python)
+2. **Autonomous Software Development - Python** [Jump To](#2-autonomous-software-development---python)
 
-    Develpoing the autonmous system that will run on the FSDS (and eventually in real life)
+    Develpoing the autonomous system that will run on the FSDS (and eventually *for the real world™*)
 
-3. Working with GitHub (Required)
+3. **Working with GitHub (Required)**
 
     ... { description here } ...
 
-4. ... { component here } ...
+4. **... { component here } ...**
 
 ## 1. Run FS Simulator - For Docker with WSL
 
@@ -184,3 +184,22 @@ Finally, to run the included script that has been developed, type:
 This would change depending on the name of the program, where simple_control is the folder within src, and main.cpp is the script.
 
 ## 2. Autonomous Software Development - Python
+
+The following guide assumes you are working in a windows environment. It's likely other operating systems will also work, however, this has not been tested.
+
+## Downloads and Installations
+
+### Install Python 3.9.5
+
+Scroll to the bottom and look for **Windows installer (64-bit)**. If you have a 32-bit computer, get a new computer.
+
+> <https://www.python.org/downloads/release/python-395/>
+
+### Install Visual Studio Code
+
+> <https://code.visualstudio.com/download>
+
+### Install Git
+
+> <https://git-scm.com/downloads>
+
