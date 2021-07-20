@@ -52,12 +52,13 @@ class Controller(Node):
         ## test demo variables to change
 
         ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
+        ## DEMO 2.3 CONSTANTS
         # cone point vars
-        self.cones_range_cutoff = 7 # m
+        self.cones_range_cutoff = 6.5 # m
         self.distance_cutoff = 0.1 # m
 
         # PID coeffs
-        self.steering_p = 0.4
+        self.steering_p = 0.25
         self.steering_i = 0
         self.steering_d = 0.95
 
@@ -65,51 +66,6 @@ class Controller(Node):
         self.max_throttle = 0.2 # m/s^2
         self.max_vel = 5.5 # m/s
         self.target_vel = self.max_vel # initially target is max
-
-        ## DEMO 2.2.1 CONSTANTS
-        # # cone point vars
-        # self.cones_range_cutoff = 7 # m
-        # self.distance_cutoff = 0.1 # m
-
-        # # PID coeffs
-        # self.steering_p = 0.4
-        # self.steering_i = 0
-        # self.steering_d = 0.95
-
-        # # accel + vel targets
-        # self.max_throttle = 0.2 # m/s^2
-        # self.max_vel = 5.5 # m/s
-        # self.target_vel = self.max_vel # initially target is max
-
-        ## DEMO 2.2 CONSTANTS - ADAPTIVE VELOCITY
-        # # cone point vars
-        # self.cones_range_cutoff = 7 # m
-        # self.distance_cutoff = 0.1 # m
-
-        # # PID coeffs
-        # self.steering_p = 0.5
-        # self.steering_i = 0
-        # self.steering_d = 1.1
-
-        # # accel + vel targets
-        # self.max_throttle = 0.2 # m/s^2
-        # self.max_vel = 5 # m/s
-        # self.target_vel = self.max_vel # initially target is max
-        
-        ## DEMO 2.1 CONSTANTS - NO ADAPTIVE VELOCITY
-        # # cone point vars
-        # self.cones_range_cutoff = 6 # m
-        # self.distance_cutoff = 0.1 # m
-
-        # # PID coeffs
-        # self.steering_p = 0.8 
-        # self.steering_i = 0
-        # self.steering_d = 1.7
-
-        # # accel + vel targets
-        # self.max_throttle = 0.2 # m/s^2
-        # self.max_vel = 4 # m/s
-        # self.target_vel = self.max_vel # initially target is max
 
 
     # callback for lidar data to be sent to. used to call funtion to find cone coords
@@ -198,7 +154,7 @@ class Controller(Node):
         if (self.time >= 3): # wait for initial publishing delay
             
             # PID steering 
-            calc_steering = (self.steering_p)*(avg_y) + (self.steering_i)*(self.sum_avg_y + avg_y) + (self.steering_d)*(avg_y - self.prev_avg_y)
+            calc_steering = (self.steering_p)*(avg_y)*abs(avg_y) + (self.steering_i)*(self.sum_avg_y + avg_y) + (self.steering_d)*(avg_y - self.prev_avg_y)
             # self.get_logger().info('steering: "%s"' % calc_steering)
 
             # ensure limit isnt reached
