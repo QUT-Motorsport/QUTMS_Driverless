@@ -57,16 +57,31 @@ class Controller(Node):
         self.distance_cutoff = 0.1 # m
 
         # PID coeffs
-        self.steering_p = 0.5
+        self.steering_p = 0.4
         self.steering_i = 0
-        self.steering_d = 1.1
+        self.steering_d = 0.95
 
         # accel + vel targets
         self.max_throttle = 0.2 # m/s^2
-        self.max_vel = 7 # m/s
-        self.target_vel = self.max_vel  # initially target is max
+        self.max_vel = 5.5 # m/s
+        self.target_vel = self.max_vel # initially target is max
 
-        ## DEMO 2.2 CONSTANTS
+        ## DEMO 2.2.1 CONSTANTS
+        # # cone point vars
+        # self.cones_range_cutoff = 7 # m
+        # self.distance_cutoff = 0.1 # m
+
+        # # PID coeffs
+        # self.steering_p = 0.4
+        # self.steering_i = 0
+        # self.steering_d = 0.95
+
+        # # accel + vel targets
+        # self.max_throttle = 0.2 # m/s^2
+        # self.max_vel = 5.5 # m/s
+        # self.target_vel = self.max_vel # initially target is max
+
+        ## DEMO 2.2 CONSTANTS - ADAPTIVE VELOCITY
         # # cone point vars
         # self.cones_range_cutoff = 7 # m
         # self.distance_cutoff = 0.1 # m
@@ -79,9 +94,9 @@ class Controller(Node):
         # # accel + vel targets
         # self.max_throttle = 0.2 # m/s^2
         # self.max_vel = 5 # m/s
-        # self.target_vel = self.max_vel  # initially target is max
+        # self.target_vel = self.max_vel # initially target is max
         
-        ## DEMO 2.1 CONSTANTS - FROM VIDEO
+        ## DEMO 2.1 CONSTANTS - NO ADAPTIVE VELOCITY
         # # cone point vars
         # self.cones_range_cutoff = 6 # m
         # self.distance_cutoff = 0.1 # m
@@ -95,6 +110,7 @@ class Controller(Node):
         # self.max_throttle = 0.2 # m/s^2
         # self.max_vel = 4 # m/s
         # self.target_vel = self.max_vel # initially target is max
+
 
     # callback for lidar data to be sent to. used to call funtion to find cone coords
     def lidar_callback(self, pcl_msg):
@@ -142,17 +158,18 @@ class Controller(Node):
             cone_x = targ_cone[0]
             cone_y = targ_cone[1]
 
-            if ( cone_y > 1.5*avg_y ) and ( abs(avg_y) > 0.5 ) and (cone_x > 1):
-                # self.get_logger().info('cone_y: "%s"' % cone_y)
-                # self.get_logger().info('cone_x: "%s"' % cone_x)
-
-                self.target_vel = (1 / cone_x) * (self.cones_range_cutoff / 2) * 2
-                self.get_logger().info('max_vel: "%s"' % self.target_vel)
-
+            if ( cone_y > 1.5*avg_y ) and ( abs(avg_y) > 0.5 ) and (cone_x > 1): # arbitrary cutoffs
+                self.target_vel = self.max_vel - ( ( 1 / cone_x) * (self.cones_range_cutoff / 1) ) # arbitrary calculation
                 if self.target_vel < self.max_vel / 2:
                     self.target_vel = self.max_vel / 2 # stop it from slowing too much
                 
-                # self.get_logger().info('max_vel: "%s"' % self.target_vel)
+
+                # self.target_brake = (1 / cone_x) # increase proportionally as it approaches target
+                # if p_vel > 0:
+                #     calc_throttle = self.max_throttle * p_vel
+                
+                # elif p_vel <= 0: # if its over maximum, cut throttle
+                #     calc_throttle = 0
 
             else:
                 self.target_vel = self.max_vel
