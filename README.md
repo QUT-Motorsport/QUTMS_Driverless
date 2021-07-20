@@ -1,16 +1,36 @@
 # QUTMS_Driverless
 
-# Run FS Simulator - For Docker with WSL
+## Project Components
+
+There are multiple components within the Driverless team. Depending on what you're working on, you may not need to follow all the steps below.
+
+### Components
+
+1. Formula Student Driverless Simulator [Jump To](#1-run-fs-simulator---for-docker-with-wsl)
+
+    Running the FSDS on your machine and connecting the simulated vehicle with an autonmous system / tuning the simulated environement parameters / observing the simulated data (LIDAR data, cameras, car velocty, cones hit)
+
+2. Autonomous Software Development - Python [Jump To](#2-autonomous-software-development---python)
+
+    Develpoing the autonmous system that will run on the FSDS (and eventually in real life)
+
+3. Working with GitHub (Required)
+
+    ... { description here } ...
+
+4. ... { component here } ...
+
+## 1. Run FS Simulator - For Docker with WSL
 
 ## Set Up Repository
 
 Clone/download this repository into a folder in Windows using any method of choice.
 
+## Set Up WSL
 
-## Set Up WSL 
 ### Enable WSL
- 
-To enable WSL, open command prompt and type: 
+
+To enable WSL, open command prompt and type:
 > `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart`
 
 and:
@@ -21,16 +41,15 @@ Restart your machine following this.
 
 To ensure WSL2 is being used, download the MSI from the link here:
 
-> https://docs.microsoft.com/en-us/windows/wsl/install-win10#step-4---download-the-linux-kernel-update-package
+> <https://docs.microsoft.com/en-us/windows/wsl/install-win10#step-4---download-the-linux-kernel-update-package>
 
-Run the MSI installer. 
+Run the MSI installer.
 Once installed, open command prompt and type:
 
 > `wsl --set-default-version 2`
- 
- 
+
 ### Install Ubuntu
- 
+
 Install Ubuntu (or Ubuntu 20.04 LTS) from the Microsoft store and run it.
 When prompted, complete account setup.
 Additionally, run:
@@ -40,17 +59,15 @@ and:
 
 > `sudo apt upgrade`
 
- 
 ### Install Terminal
- 
+
 Install Windows terminal from the Microsoft store.
 This allows access to the command line interface for WSL distributions.
 
- 
 ### Install Windows XServer
 
 Install VcXsrv (Windows XServer) from:
-> https://sourceforge.net/projects/vcxsrv/
+> <https://sourceforge.net/projects/vcxsrv/>
 
 Run Xlaunch.
 Leave all setting as default except for the following:
@@ -59,29 +76,26 @@ Leave all setting as default except for the following:
 
 Ensure "Native opengl" is unchecked and "Disable access control" is checked.
 The XServer icon should appear on the taskbar tray with 0 clients so far.
- 
- 
+
 ## Set Up FS Simulator
- 
+
 Download FS Driverless Simulator from the Formula Student GitHub:
 
-> https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator/releases/download/v2.0.0/fsds-v2.0.0-win.zip
+> <https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator/releases/download/v2.0.0/fsds-v2.0.0-win.zip>
 
 Extract the files to a folder of your choosing.
 
 In the QUTMS Driverless repo folder `fs_sim_settings`, there is a folder titled: `Formula-Student-Driverless-Simulator`.
-Copy the entire folder into your user directory. 
+Copy the entire folder into your user directory.
 Eg. `C:\Users\Username\`.
 
-To test this was successful, run `FSDS.exe`. 
+To test this was successful, run `FSDS.exe`.
 You should be able to run the simulation and control the car with 'WASD' keys.
- 
- 
-## Set Up Docker environment
- 
-Install Docker Desktop from:
-> https://www.docker.com/products/docker-desktop
 
+## Set Up Docker environment
+
+Install Docker Desktop from:
+> <https://www.docker.com/products/docker-desktop>
 
 ### Docker settings configuration
 
@@ -89,18 +103,15 @@ Install Docker Desktop from:
 
 Ensure "Expose daemon on tcp://localhost:2375 without TLS" is unchecked.
 
-
 ![Docker WSL Settings](/images/docker_settings2.png)
 
 To avoid conflicts with multiple distros, uncheck any "Enable integration with additional distros:".
 (our environment is being built in windows anyway).
 
-
 ![Docker Experimental Settings](/images/docker_settings3.png)
 
 Ensure Docker Compose v2 is unchecked, or the container will be unable to make with out lowercase letters in the repo.
 This means the repo name QUTMS_Driverless would not be valid.
-
 
 ### Building Images
 
@@ -133,12 +144,10 @@ If this returns an error saying make is not installed, install it with:
 
 > `sudo apt install make`
 
-
 Building the FS simulator, ros, and ros1-ros2 bridge images will take upwards of 10 minutes - possibly nearly an hour.
 Your CPU will max out at 100% in parts and the most RAM usage experienced will be approximately 21GB - Don't panic if you don't have 21GB of ram, your machine will just get fairly slow once it hits this stage.
 
 After the build has been completed once, most processes are cached for future builds if necessary (don't corrupt things and you wont have to rebuild).
-
 
 ### Building Ros2 in Container
 
@@ -160,7 +169,6 @@ Now, to initialise scripts with the ros2 environment, type:
 
 > `source install/setup.bash`
 
-
 ### Running Scripts
 
 Open a new terminal tab and navigate to the same QUTMS Driverless directory where we have been working, or open the folder in terminal. Ensure XServer and the FSDS simulator is running. Type:
@@ -169,9 +177,10 @@ Open a new terminal tab and navigate to the same QUTMS Driverless directory wher
 
 This will make a 'bridge' between the FS simulator and the ros2 node where scripts are running so data can be output and read.
 
-
 Finally, to run the included script that has been developed, type:
 
 > `ros2 run simple_control main`
 
 This would change depending on the name of the program, where simple_control is the folder within src, and main.cpp is the script.
+
+## 2. Autonomous Software Development - Python
