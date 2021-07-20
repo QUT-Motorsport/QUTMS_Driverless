@@ -20,6 +20,8 @@ values = []
 for i in range(len(test_data)):
     values.append(math.sqrt(test_data[i][0] ** 2 + test_data[i][1] ** 2))
 
+FIGURES_DIR = "./autonomous/perception/figures/"
+
 # Constants
 LIDAR_RANGE = 400 # Max range of the LIDAR # 400
 LIDAR_RANGE = math.ceil(max(values))
@@ -166,15 +168,27 @@ def plot_data_2D(points):
     x = [coords[0] for coords in points]
     y = [coords[1] for coords in points]
     
-    init_plot_2D("LIDAR data", "x", "y")
+    init_plot_2D("Point Cloud (2D)", "x", "y")
     plt.plot(x, y, '.', color='green')
     plt.plot(0, 0, 'o', color='black')
     angles = np.linspace(0, 2*math.pi, 100)
     plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color='black')
-    plt.savefig("fig1")
+    plt.savefig(FIGURES_DIR + "Point_Cloud_2D-1")
+
+def plot_data_3D(points):
+    x = [coords[0] for coords in points]
+    y = [coords[1] for coords in points]
+    z = [coords[2] for coords in points]
+
+    ax = init_plot_3D("Point Cloud", "x", "y", "Height", 45, 45)
+    ax.scatter3D(x, y, z, c=z, cmap='Greens');
+    
+    angles = np.linspace(0, 2*math.pi, 100)
+    ax.plot3D(LIDAR_RANGE * np.cos(angles), LIDAR_RANGE * np.sin(angles), color='black')
+    plt.savefig(FIGURES_DIR + "Point_Cloud_3D-2")
 
 def plot_segments(segments, color_codes, angle_points):
-    init_plot_2D("LIDAR data with points assigned to segments", "x", "y")
+    init_plot_2D("Points Assigned to Segments", "x", "y")
     for i in range(len(segments)):
         color = color_codes[i % len(color_codes)]
         x = [coords[0] for coords in segments[i]]
@@ -185,10 +199,10 @@ def plot_segments(segments, color_codes, angle_points):
         plt.plot(xpoints, ypoints, color=color)
         angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color)
-    plt.savefig("fig2")
+    plt.savefig(FIGURES_DIR + "Segments-3")
 
 def plot_segments_bins(segments_bins, color_codes, angle_points):
-    init_plot_2D("LIDAR data with points assigned to bins", "x", "y")
+    init_plot_2D("Points Assigned to Bins within Segments", "x", "y")
 
     for i in range(len(segments_bins)):
         color1 = color_codes[i % len(color_codes)]
@@ -203,10 +217,10 @@ def plot_segments_bins(segments_bins, color_codes, angle_points):
         ypoints = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
         plt.plot(xpoints, ypoints, color=color1)
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
-    plt.savefig("fig3")
+    plt.savefig(FIGURES_DIR + "Bins_Segments-4")
 
 def plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points):
-    init_plot_2D("LIDAR data approximated to 2D data", "x", "y")
+    init_plot_2D("2D Approximation of Point Cloud", "x", "y")
 
     for i in range(len(segments_bins_2D)):
         color1 = color_codes[i % len(color_codes)]
@@ -228,10 +242,10 @@ def plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points):
         ypoints2 = [0, LIDAR_RANGE * math.sin((i + 0.5) * DELTA_ALPHA)]
         plt.plot(xpoints2, ypoints2, color='black', alpha=0.5, linestyle='--')
         plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
-    plt.savefig("fig4")
+    plt.savefig(FIGURES_DIR + "2D_Approx_Point_Cloud_2D-5")
 
 def plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps):
-    ax = init_plot_3D("LIDAR data approximated to 2D data (3D visual)", "x", "y", "height", 45, 45)
+    ax = init_plot_3D("2D Approximation of Point Cloud", "x", "y", "Height", 45, 45)
 
     for i in range(len(segments_bins_2D)):
         color1 = color_codes[i % len(color_codes)]
@@ -247,10 +261,10 @@ def plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
                 new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
             ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap1);
             ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-    plt.savefig("fig5")
+    plt.savefig(FIGURES_DIR + "2D_Approx_Point_Cloud_3D-6")
 
 def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps):
-    ax = init_plot_3D("Prototype points (3D visual)", "x", "y", "height", 45, 45)
+    ax = init_plot_3D("Prototype points", "x", "y", "Height", 45, 45)
 
     for i in range(len(segments_bins_prototype)):
         color1 = color_codes[i % len(color_codes)]
@@ -264,10 +278,10 @@ def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_
                 new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
                 ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
             ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-    plt.savefig("fig6")
+    plt.savefig(FIGURES_DIR + "Prototype_Points-7")
 
 def plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, extracted_lines):
-    ax = init_plot_3D("Ground plane estimation (3D visual)", "x", "y", "height", 45, 45)
+    ax = init_plot_3D("Ground Plane Estimation (Prototype Points)", "x", "y", "Height", 45, 45)
 
     for i in range(len(segments_bins_prototype)):
         color1 = color_codes[i % len(color_codes)]
@@ -292,7 +306,7 @@ def plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, 
             y = r * math.sin((i + 0.5) * DELTA_ALPHA)
             ax.plot3D(x, y, z, color='black')
 
-    plt.savefig("fig7")
+    plt.savefig(FIGURES_DIR + "Ground_Plane_Estimation-8")
 
 def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
     print("SP", segments_bins_prototype)
@@ -300,7 +314,7 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
     for i in range(len(segments_bins_prototype)):
         color1 = color_codes[i % len(color_codes)]
         print("Segment:", i)
-        init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)), "x", "y")
+        init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)), "Distance from origin", "Height")
         x = []
         y = []
         for j in range(len(segments_bins_prototype[i])):
@@ -311,11 +325,13 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
                 for j in range(len(extracted_lines[i])):
                     x_gp = np.linspace(0, LIDAR_RANGE, 50)
                     y_gp = extracted_lines[i][j][0] * x_gp + extracted_lines[i][j][1]
-                    plt.plot(x_gp, y_gp, '--', color='black')
-        plt.plot(x, y, 'o', color=color1)
+                    plt.plot(x_gp, y_gp, '--', color=color1)
+        plt.plot(x, y, 'o', color='black')
+        plt.savefig(FIGURES_DIR + "Segment_" + str(i+1) + "_Fitted_Line")
         
 # Main
 plot_data_2D(test_data)
+plot_data_3D(test_data)
 ground_plane = get_ground_plane(test_data)
 print(ground_plane)
 
