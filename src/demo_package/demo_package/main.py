@@ -52,13 +52,13 @@ class Controller(Node):
         ## test demo variables to change
 
         ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
-        ## DEMO 2.3 CONSTANTS
+        ## DEMO 2.3.1 CONSTANTS
         # cone point vars
         self.cones_range_cutoff = 6.5 # m
         self.distance_cutoff = 0.1 # m
 
         # PID coeffs
-        self.steering_p = 0.25
+        self.steering_p = 0.2
         self.steering_i = 0
         self.steering_d = 0.95
 
