@@ -42,7 +42,8 @@ class Controller(Node):
 
         ## initial class variables
         self.time = 0
-        self.cone_points = []
+        self.close_cones = []
+        self.far_cones = []
         self.sum_avg_x = 0 # integral components
         self.sum_avg_y = 0 
         self.prev_avg_x = 0 # derivative components
@@ -52,28 +53,49 @@ class Controller(Node):
         ## test demo variables to change
 
         ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
-        ## DEMO 2.3.1 CONSTANTS
+        ## DEMO 2.4 CONSTANTS
         # cone point vars
-        self.cones_range_cutoff = 6.5 # m
+        self.close_range_cutoff = 6.5 # m
+        self.far_range_cutoff = 11 # m
         self.distance_cutoff = 0.1 # m
 
         # PID coeffs
-        self.steering_p = 0.2
+        self.steering_p = 0.08
         self.steering_i = 0
-        self.steering_d = 0.95
+        self.steering_d = 0.8
+        self.diff_p = 0.04
 
         # accel + vel targets
+        self.vel_p = 0.7
         self.max_throttle = 0.2 # m/s^2
-        self.max_vel = 5.5 # m/s
+        self.max_vel = 6 # m/s
         self.target_vel = self.max_vel # initially target is max
+
+        ## DEMO 2.3.1 CONSTANTS
+        # # cone point vars
+        # self.close_range_cutoff = 11 # m
+        # self.far_range_cutoff = 6.5 # m
+        # self.distance_cutoff = 0.1 # m
+
+        # # PID coeffs
+        # self.steering_p = 0.2
+        # self.steering_i = 0
+        # self.steering_d = 0.95
+
+        # # accel + vel targets
+        # self.max_throttle = 0.2 # m/s^2
+        # self.max_vel = 5.5 # m/s
+        # self.target_vel = self.max_vel # initially target is max
 
 
     # callback for lidar data to be sent to. used to call funtion to find cone coords
     def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
-        # 
-        self.cone_points = find_points(pcl_msg, self.cones_range_cutoff, self.distance_cutoff) 
+        
+        cone_sets = find_points(pcl_msg, self.close_range_cutoff, self.far_range_cutoff, self.distance_cutoff)
+        self.close_cones = cone_sets[0]
+        self.far_cones = cone_sets[1]
         
     # callback for geometry data to be sent to. used to find var's current velocity
     def geo_callback(self, geo_msg):
@@ -83,65 +105,44 @@ class Controller(Node):
         self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
 
     # helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
-    def find_avg_y(self):
-        length = len(self.cone_points)
+    def find_avg_y(self, cone_set):
+        length = len(cone_set)
         if length != 0:
             average_y = 0
-            for cone in self.cone_points:
+            for cone in cone_set:
                 average_y += cone[1]
             average_y = average_y / length
 
-            return average_y
+            return -average_y
         
         else:
             return 0 
 
     # helper function to adjust velocity based on how tight the turn is ahead
-    def predict_vel(self, avg_y):
-        length = len(self.cone_points)
-        if length != 0:
-            current_max_y = 0
-            element = 0
-            max_element = 0
-            for cone in self.cone_points:
-                cone_y = abs(cone[1])
-                if cone_y > current_max_y: # if this coord is greater than the current max
-                    current_max_y = cone_y # replace current maxs
-                    max_element = element # record array index
-                element += 1
+    def predict_vel(self, close_avg_y, far_avg_y):
+        cone_diff = abs(far_avg_y - close_avg_y)
+        self.target_vel = self.max_vel - cone_diff*abs(cone_diff) * self.vel_p
 
-            targ_cone = self.cone_points[max_element]
-            cone_x = targ_cone[0]
-            cone_y = targ_cone[1]
+        # self.get_logger().info('difference: "%s"' % self.cone_diff)
 
-            if ( cone_y > 1.5*avg_y ) and ( abs(avg_y) > 0.5 ) and (cone_x > 1): # arbitrary cutoffs
-                self.target_vel = self.max_vel - ( ( 1 / cone_x) * (self.cones_range_cutoff / 1) ) # arbitrary calculation
-                if self.target_vel < self.max_vel / 2:
-                    self.target_vel = self.max_vel / 2 # stop it from slowing too much
-                
-
-                # self.target_brake = (1 / cone_x) # increase proportionally as it approaches target
-                # if p_vel > 0:
-                #     calc_throttle = self.max_throttle * p_vel
-                
-                # elif p_vel <= 0: # if its over maximum, cut throttle
-                #     calc_throttle = 0
-
-            else:
-                self.target_vel = self.max_vel
+        if self.target_vel < self.max_vel / 1.5:
+            self.target_vel = self.max_vel / 1.5 # stop it from slowing too much
 
 
     # callback for publishing FSDS command messages at specific times
     def pub_callback(self):
         self.time += self.timer_period # increase time taken
 
-        avg_y = -(self.find_avg_y()) # frame of reference is flipped along FOV (for some reason)
-        # self.get_logger().info('avg_y: "%s"' % avg_y)
+        close_avg_y = self.find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
+        far_avg_y = self.find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
+        
+        # self.get_logger().info('close_avg_y: "%s"' % close_avg_y)
+        # self.get_logger().info('far_avg_y: "%s"' % far_avg_y)
 
         # Calculate throttle
         calc_throttle = 0.0 # initialise throttle
 
-        self.predict_vel(avg_y)
+        self.predict_vel(close_avg_y, far_avg_y)
         
         p_vel = (1 - (self.vel / self.target_vel)) # increase proportionally as it approaches target
         if p_vel > 0:
@@ -152,9 +153,12 @@ class Controller(Node):
         
         # Calculate steering    
         if (self.time >= 3): # wait for initial publishing delay
-            
+            cone_diff = far_avg_y - close_avg_y
             # PID steering 
-            calc_steering = (self.steering_p)*(avg_y)*abs(avg_y) + (self.steering_i)*(self.sum_avg_y + avg_y) + (self.steering_d)*(avg_y - self.prev_avg_y)
+            calc_steering = (self.steering_p)*(close_avg_y)*abs(close_avg_y) \
+                + (self.steering_i)*(self.sum_avg_y + close_avg_y) \
+                + (self.steering_d)*(close_avg_y - self.prev_avg_y) \
+                + (self.diff_p)*far_avg_y*abs(far_avg_y)
             # self.get_logger().info('steering: "%s"' % calc_steering)
 
             # ensure limit isnt reached
@@ -164,8 +168,8 @@ class Controller(Node):
             elif calc_steering < -1:
                 calc_steering = -1
 
-            self.prev_avg_y = avg_y
-            self.sum_avg_y += avg_y
+            self.prev_avg_y = close_avg_y
+            self.sum_avg_y += close_avg_y
 
             # define publishing data
             control_msg = ControlCommand()
@@ -175,8 +179,8 @@ class Controller(Node):
             self.movement_publisher_.publish(control_msg)
 
 
-        # self.get_logger().info('close cones: "%s"' % self.cone_points)
-        # self.get_logger().info('avg: "%s"' % avg_y)
+        # self.get_logger().info('close cones: "%s"' % self.close_cones)
+        # self.get_logger().info('avg: "%s"' % close_avg_y)
         # self.get_logger().info('vel: "%s"' % self.vel)
 
 
