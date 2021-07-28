@@ -301,7 +301,9 @@ def plot_extracted_lines_3D(segments_bins_prototype, color_codes, angle_points, 
 
     for i in range(len(extracted_lines)):
         for j in range(len(extracted_lines[i])):
-            r = np.linspace(0, LIDAR_RANGE, 50)
+            start = extracted_lines[i][j][2]
+            end = extracted_lines[i][j][3]
+            r = np.linspace(start[0], end[0], 50)
             z = extracted_lines[i][j][0] * r + extracted_lines[i][j][1]
             x = r * math.cos((i + 0.5) * DELTA_ALPHA)
             y = r * math.sin((i + 0.5) * DELTA_ALPHA)
@@ -315,7 +317,7 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
     for i in range(len(segments_bins_prototype)):
         color1 = color_codes[i % len(color_codes)]
         print("Segment:", i)
-        init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)), "Distance from origin", "Height")
+        init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(extracted_lines[i][0][4]), "Distance from origin", "Height")
         x = []
         y = []
         for j in range(len(segments_bins_prototype[i])):
@@ -324,13 +326,17 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
                 y.append(segments_bins_prototype[i][j][1])
                 print("     Bin:", j, "Point:", segments_bins_prototype[i][j][0], segments_bins_prototype[i][j][1])
                 for k in range(len(extracted_lines[i])):
-                    #x_gp = np.linspace(0, extracted_lines[i][k][1], 50)
-                    x_gp = np.linspace(0, LIDAR_RANGE, 50)
+                    origin = extracted_lines[i][k][2][0]
+                    end = extracted_lines[i][k][3]
+                    x_gp = np.linspace(origin, end[0], 50)
                     y_gp = extracted_lines[i][k][0] * x_gp + extracted_lines[i][k][1]
                     plt.plot(x_gp, y_gp, '--', color=color1)
         plt.plot(x, y, 'o', color='black')
         plt.savefig(FIGURES_DIR + "Segment_" + str(i+1) + "_Fitted_Line")
-        
+
+# new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
+# new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
+
 # Main
 plot_data_2D(test_data)
 plot_data_3D(test_data)
