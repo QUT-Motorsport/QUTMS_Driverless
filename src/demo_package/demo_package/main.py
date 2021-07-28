@@ -14,21 +14,21 @@ import math
 class Controller(Node):
     def __init__(self):
         super().__init__('control')
-        # ## creates subscriber to 'imu' with type Imu that sends data to imu_callback
-        # self.imu_subscription_ = self.create_subscription(
-        #     Imu,
-        #     '/fsds/imu',
-        #     self.imu_callback,
-        #     10)
-        # self.imu_subscription_ 
+        ## creates subscriber to 'imu' with type Imu that sends data to imu_callback
+        self.imu_subscription_ = self.create_subscription(
+            Imu,
+            '/fsds/imu',
+            self.imu_callback,
+            10)
+        self.imu_subscription_ 
 
-        # ## creates subscriber to 'gps' with type NavSatFix that sends data to gps_callback
-        # self.gps_subscription_ = self.create_subscription(
-        #     NavSatFix,
-        #     '/fsds/gps',
-        #     self.gps_callback,
-        #     10)
-        # self.gps_subscription_ 
+        ## creates subscriber to 'gps' with type NavSatFix that sends data to gps_callback
+        self.gps_subscription_ = self.create_subscription(
+            NavSatFix,
+            '/fsds/gps',
+            self.gps_callback,
+            10)
+        self.gps_subscription_ 
 
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.lidar_subscription_ = self.create_subscription(
@@ -113,17 +113,42 @@ class Controller(Node):
     def lidar_callback(self, pcl_msg):
         """ In here, we will call calculations to ideally get the 
         distance, angle, and reflectivity of the cones"""
+
+        frame_id = pcl_msg.header.frame_id
         
         cone_sets = find_points(pcl_msg, self.close_range_cutoff, self.far_range_cutoff, self.distance_cutoff)
         self.close_cones = cone_sets[0]
         self.far_cones = cone_sets[1]
+
+        self.get_logger().info('frame_id: "%s"' % frame_id)
+
         
-    ## callback for geometry data to be sent to. used to find var's current velocity
+    ## callback for geometry data to be sent to. used to find car's velocity
     def geo_callback(self, geo_msg):
         vel_x = geo_msg.twist.linear.x
         vel_y = geo_msg.twist.linear.y
 
         self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
+
+    ## callback for imu data to be sent to. used to find car's accel and orientation
+    def imu_callback(self, imu_msg):
+        orient_x = imu_msg.quaternion.x
+        orient_y = imu_msg.quaternion.y
+        orient_z = imu_msg.quaternion.z
+        orient_w = imu_msg.quaternion.w
+
+        ang_vel_x = imu_msg.angular_velocity.x
+        ang_vel_y = imu_msg.angular_velocity.y
+        ang_vel_z = imu_msg.angular_velocity.z
+
+        accel_x = imu_msg.linear_acceleration.x
+        accel_y = imu_msg.linear_acceleration.y
+        accel_z = imu_msg.linear_acceleration.z
+
+    ## callback for gps data to be sent to. used to find car's position
+    def gps_callback(self, gps_msg):
+        lat = gps_msg.latitude
+        long = gps_msg.longitude
 
     ## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
     def find_avg_y(self, cone_set):
@@ -171,7 +196,6 @@ class Controller(Node):
         if (self.time >= 3): 
             # calculate throttle + brake
             calc_brake = self.predict_vel(close_avg_y, far_avg_y)
-            self.get_logger().info('calc_brake: "%s"' % calc_brake)
 
             p_vel = (1 - (self.vel / self.target_vel)) # increase proportionally as it approaches target
             if p_vel > 0:
@@ -188,7 +212,6 @@ class Controller(Node):
                 + (self.steering_pf)*far_avg_y*abs(2*far_avg_y) \
                 + (self.steering_if)*(self.sum_far_avg_y + far_avg_y) \
                 + (self.steering_df)*(far_avg_y - self.prev_far_avg_y) \
-            # self.get_logger().info('steering: "%s"' % calc_steering)
 
             self.prev_close_avg_y = close_avg_y
             self.prev_far_avg_y = far_avg_y
