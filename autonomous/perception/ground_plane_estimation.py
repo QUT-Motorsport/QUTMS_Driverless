@@ -319,13 +319,14 @@ def plot_segments_fitted(segments_bins_prototype, extracted_lines, color_codes):
         x = []
         y = []
         for j in range(len(segments_bins_prototype[i])):
-            if len(segments_bins_prototype[i][j]) > 0:
+            if len(segments_bins_prototype[i][j]) != 0:
                 x.append(segments_bins_prototype[i][j][0])
                 y.append(segments_bins_prototype[i][j][1])
                 print("     Bin:", j, "Point:", segments_bins_prototype[i][j][0], segments_bins_prototype[i][j][1])
-                for j in range(len(extracted_lines[i])):
+                for k in range(len(extracted_lines[i])):
+                    #x_gp = np.linspace(0, extracted_lines[i][k][1], 50)
                     x_gp = np.linspace(0, LIDAR_RANGE, 50)
-                    y_gp = extracted_lines[i][j][0] * x_gp + extracted_lines[i][j][1]
+                    y_gp = extracted_lines[i][k][0] * x_gp + extracted_lines[i][k][1]
                     plt.plot(x_gp, y_gp, '--', color=color1)
         plt.plot(x, y, 'o', color='black')
         plt.savefig(FIGURES_DIR + "Segment_" + str(i+1) + "_Fitted_Line")

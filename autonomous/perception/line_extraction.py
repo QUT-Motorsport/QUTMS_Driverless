@@ -103,4 +103,17 @@ def extract_lines(segments_bins_prototype, num_segments, num_bins):
 #     enforcing smooth transitions between pairs of successive 
 #     lines. 
 #   - extract_segment_lines(): Only one prototype point is expected 
-#     since each bin is reduced to one point with the lowest z value. 
+#     since each bin is reduced to one point with the lowest z value.
+#   - IMPORTANT: Isn't it possible for one segment to have multiple lines?
+#     If so, this algorithm does not return the rho (norm) of the line,
+#     nor does it indicate which bin the line starts and stops in.
+#     Currently the line norm is set to the max lidar range and one line
+#     is assumed per segment, starting from the origin. 
+#   - Alright so I haven't techincally finsihed this. In the visualisation's
+#     you can see how the length of each line is simply set as LIDAR_RANGE
+#     and I'm not actually returning the real line length of rho from TLS.
+#     Additionally, there can be multiple lines in each segment but I'm
+#     drawing all simply from the origin rather than starting and ending in
+#     the correct bins. Why am I ignoring this for now? Well, I think I can 
+#     proceed for cone estimation anyways since all I need to know is what 
+#     points are NOT on the ground, which I've achieved.    IMPORTANT
