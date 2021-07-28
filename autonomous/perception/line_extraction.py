@@ -52,6 +52,7 @@ def extract_segment_lines(segment, num_bins):
         if len(segment[i]) == 2:
             m_new = None
             b_new = None
+
             new_point = segment[i]
             if len(new_line_points) >= 2:
                 temp_line_points = copy.deepcopy(new_line_points)
@@ -63,7 +64,7 @@ def extract_segment_lines(segment, num_bins):
                 else:
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
                     print("Adding line to segment")
-                    lines.append([m_new, b_new])
+                    lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     new_line_points = []
                     lines_created += 1
                     i = i - 1
@@ -77,7 +78,7 @@ def extract_segment_lines(segment, num_bins):
         #print("i go up", i)
         i += 1
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        lines.append([m_new, b_new])
+        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
     if (m_new == None and b_new != None) or (m_new != None and b_new == None):
         raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
     return lines
