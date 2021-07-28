@@ -41,9 +41,12 @@ def pointgroup_to_cone(group):
     return [float(average_x), float(average_y)]
 
 # evaluate all points and find points that are grouped together as those will probably be cones.
-def find_cones(points, cones_range_cutoff, distance_cutoff):
+def find_cones(points, close_range_cutoff, far_range_cutoff, distance_cutoff):
     current_group = []
-    cones = []
+    # cones = []
+    close_cones = []
+    far_cones = []
+
     for i in range(1, len(points)):
         # Get the distance from current to previous point
         distance_to_last_point = distance(points[i][0], points[i][1], points[i-1][0], points[i-1][1])
@@ -57,14 +60,19 @@ def find_cones(points, cones_range_cutoff, distance_cutoff):
             if len(current_group) > 0:
                 cone = pointgroup_to_cone(current_group)
                 # calculate distance between lidar and cone
-                if distance(0, 0, cone[0], cone[1]) < cones_range_cutoff:
-                    cones.append(cone)
+                if distance(0, 0, cone[0], cone[1]) < close_range_cutoff:
+                    close_cones.append(cone)
+                if distance(0, 0, cone[0], cone[1]) < far_range_cutoff:
+                    far_cones.append(cone)
+
                 current_group = []
-    return cones
+
+                
+    return [close_cones, far_cones]
 
 # parent function of submodule
-def find_points(pcl, cones_range_cutoff, distance_cutoff):
+def find_points(pcl, close_range_cutoff, far_range_cutoff, distance_cutoff):
     # Convert the list of floats into a list of xyz coordinates
     pcl_array = numpy.array(list(read_points(pcl)))
     
-    return find_cones(pcl_array, cones_range_cutoff, distance_cutoff)
+    return find_cones(pcl_array, close_range_cutoff, far_range_cutoff, distance_cutoff)
