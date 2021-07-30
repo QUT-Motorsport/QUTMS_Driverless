@@ -34,8 +34,9 @@ endif()
 
 # Messages and Services
 rosidl_generate_interfaces(${PROJECT_NAME}
-    "msg/Location.msg"
+    "msg/ConeScan.msg"
     "msg/ConeData.msg"
+    # DEPENDENCIES std_msgs
 )
 
 ament_package()
