@@ -15,19 +15,19 @@ class Lidar_Pipe(Node):
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
-            '/fsds/lidar/Lidar2',
+            '/fsds/lidar/Lidar1',
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
         self.cones = []
 
         ## creates publisher to 'control_command' with type ControlCommand
-        self.lidar_publisher_ = self.create_publisher(
+        self.scan_publisher_ = self.create_publisher(
             ConeScan,
             'lidar_output', 
             10)
         # creates timer for publishing commands
-        self.timer_period = 0.01  # seconds
+        self.timer_period = 0.001  # seconds
         self.timer = self.create_timer(self.timer_period, self.publisher)
 
         # cone point vars
@@ -56,15 +56,16 @@ class Lidar_Pipe(Node):
             cone.i = self.cones[i][3]
             cone_data.append(cone)
 
-            # self.get_logger().info('cones: "%s"' % [self.cones[i][0], self.cones[i][1], self.cones[i][2], self.cones[i][3]])
-
+        #     self.get_logger().info('cones: "%s"' % [self.cones[i][0], self.cones[i][1], self.cones[i][2], self.cones[i][3]])
+        # self.get_logger().info('cones:\n')
+        
         # head.stamp = rospy.Time.now()
         # head.frame_id = "lidar2"
-
         # cone_scan.header = head
+
         cone_scan.data = cone_data
 
-        self.lidar_publisher_.publish(cone_scan)
+        self.scan_publisher_.publish(cone_scan)
         
 
 ## main call

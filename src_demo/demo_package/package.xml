@@ -10,10 +10,13 @@
     <depend>libopencv-dev</depend>
     <depend>rclpy</depend>
     <depend>sensor_msgs</depend>
-    <depend>cv_bridge</depend>
+    <depend>std_msgs</depend>
     <depend>fs_msgs</depend>
     <depend>qutms_msgs</depend>
-
+    <depend>opencv2</depend>
+    <depend>cv_bridge</depend>
+    <depend>image_transport</depend>
+ 
     <export>
         <build_type>ament_python</build_type>
     </export>

@@ -2,40 +2,23 @@
 import rclpy
 from rclpy.node import Node
 # ROS2 message libraries
-from sensor_msgs.msg import PointCloud2, Imu, NavSatFix
 from geometry_msgs.msg import TwistStamped
 # custom sim data message libraries
 from fs_msgs.msg import ControlCommand
+from qutms_msgs.msg import ConeScan, ConeData
 # helper math function
-from .sub_module.simple_lidar import find_points
 import math
 
 class Controller(Node):
     def __init__(self):
         super().__init__('control')
-        # ## creates subscriber to 'imu' with type Imu that sends data to imu_callback
-        # self.imu_subscription_ = self.create_subscription(
-        #     Imu,
-        #     '/fsds/imu',
-        #     self.imu_callback,
-        #     10)
-        # self.imu_subscription_ 
-
-        # ## creates subscriber to 'gps' with type NavSatFix that sends data to gps_callback
-        # self.gps_subscription_ = self.create_subscription(
-        #     NavSatFix,
-        #     '/fsds/gps',
-        #     self.gps_callback,
-        #     10)
-        # self.gps_subscription_ 
-
-        ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
+        ## creates subscriber to 'gss' with type TwistStamped that sends data to geo_callback
         self.lidar_subscription_ = self.create_subscription(
-            PointCloud2,
-            '/fsds/lidar/Lidar2',
+            ConeScan,
+            'lidar_output',
             self.lidar_callback,
             10)
-        self.lidar_subscription_  # prevent unused variable warning
+        self.lidar_subscription_ 
 
         ## creates subscriber to 'gss' with type TwistStamped that sends data to geo_callback
         self.geo_subscription_ = self.create_subscription(
@@ -44,7 +27,7 @@ class Controller(Node):
             self.geo_callback,
             10)
         self.geo_subscription_ 
-
+    
         ## creates publisher to 'control_command' with type ControlCommand
         self.movement_publisher_ = self.create_publisher(
             ControlCommand,
@@ -71,7 +54,6 @@ class Controller(Node):
         # cone point vars
         self.close_range_cutoff = 6.5 # m
         self.far_range_cutoff = 11 # m
-        self.distance_cutoff = 0.1 # m
 
         # PID coeffs
         self.steering_pc = 0.057
@@ -89,35 +71,35 @@ class Controller(Node):
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
 
-        ## DEMO 2.4 CONSTANTS
-        # cone point vars
-        # self.close_range_cutoff = 6.5 # m
-        # self.far_range_cutoff = 11 # m
-        # self.distance_cutoff = 0.1 # m
 
-        # # PID coeffs
-        # self.steering_pc = 0.08
-        # self.steering_ic = 0
-        # self.steering_dc = 0.8
-        # self.diff_p = 0.04
+    # helper function to find distances (magnitude) between two top-down points
+    def distance(self, x1, y1, x2, y2): 
+        distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
+        return distance
 
-        # # accel + vel targets
-        # self.vel_p = 0.7
-        # self.max_throttle = 0.2 # m/s^2
-        # self.max_vel = 6 # m/s
-        # self.target_vel = self.max_vel # initially target is max
+    ## callback for lidar scan data to be sent to
+    def lidar_callback(self, cone_scan):
+        """ In here, we will call calculations to ideally get the xyz location 
+        and reflectivity of the cones"""
+        self.close_cones = []
+        self.far_cones = []
+
+        cones = cone_scan.data
+
+        # calculate distance between lidar and cone
+        for j in range(len(cones)):
+            cone = []
+            cone.append(cones[j].x)
+            cone.append(cones[j].y)
+            cone.append(cones[j].z)
+            cone.append(cones[j].i)
+
+            if self.distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
+                self.close_cones.append(cone)
+            if self.distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
+                self.far_cones.append(cone)
 
 
-    ## callback for lidar data to be sent to. used to call funtion to find cone coords
-    def lidar_callback(self, pcl_msg):
-        """ In here, we will call calculations to ideally get the 
-        distance, angle, and reflectivity of the cones"""
-       
-        cone_sets = find_points(pcl_msg, self.close_range_cutoff, self.far_range_cutoff, self.distance_cutoff)
-        self.close_cones = cone_sets[0]
-        self.far_cones = cone_sets[1]
-
-        
     ## callback for geometry data to be sent to. used to find car's velocity
     def geo_callback(self, geo_msg):
         vel_x = geo_msg.twist.linear.x
@@ -125,25 +107,6 @@ class Controller(Node):
 
         self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
 
-    # ## callback for imu data to be sent to. used to find car's accel and orientation
-    # def imu_callback(self, imu_msg):
-    #     orient_x = imu_msg.quaternion.x
-    #     orient_y = imu_msg.quaternion.y
-    #     orient_z = imu_msg.quaternion.z
-    #     orient_w = imu_msg.quaternion.w
-
-    #     ang_vel_x = imu_msg.angular_velocity.x
-    #     ang_vel_y = imu_msg.angular_velocity.y
-    #     ang_vel_z = imu_msg.angular_velocity.z
-
-    #     accel_x = imu_msg.linear_acceleration.x
-    #     accel_y = imu_msg.linear_acceleration.y
-    #     accel_z = imu_msg.linear_acceleration.z
-
-    # ## callback for gps data to be sent to. used to find car's position
-    # def gps_callback(self, gps_msg):
-    #     lat = gps_msg.latitude
-    #     long = gps_msg.longitude
 
     ## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
     def find_avg_y(self, cone_set):
@@ -168,9 +131,9 @@ class Controller(Node):
 
         if self.target_vel < self.min_vel:
             vel_diff = self.min_vel - self.target_vel
-
             calc_brake = vel_diff * self.brake_p
-            self.target_vel = self.min_vel # stop it from slowing too much
+
+            self.target_vel = self.min_vel # stop car from slowing too much
 
         return calc_brake
 
@@ -187,7 +150,7 @@ class Controller(Node):
         # call cone detection
         close_avg_y = self.find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
         far_avg_y = self.find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
-        
+
         # wait for initial publishing delay
         if (self.time >= 3): 
             # calculate throttle + brake
@@ -208,7 +171,7 @@ class Controller(Node):
                 + (self.steering_pf)*far_avg_y*abs(2*far_avg_y) \
                 + (self.steering_if)*(self.sum_far_avg_y + far_avg_y) \
                 + (self.steering_df)*(far_avg_y - self.prev_far_avg_y) \
-
+            
             self.prev_close_avg_y = close_avg_y
             self.prev_far_avg_y = far_avg_y
             self.sum_close_avg_y += close_avg_y
