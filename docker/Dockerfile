@@ -117,6 +117,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
+    nano \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
 

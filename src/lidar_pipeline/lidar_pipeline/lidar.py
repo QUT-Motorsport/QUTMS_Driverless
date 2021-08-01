@@ -55,10 +55,7 @@ class Lidar_Pipe(Node):
             cone.z = self.cones[i][2]
             cone.i = self.cones[i][3]
             cone_data.append(cone)
-
-        #     self.get_logger().info('cones: "%s"' % [self.cones[i][0], self.cones[i][1], self.cones[i][2], self.cones[i][3]])
-        # self.get_logger().info('cones:\n')
-        
+       
         # head.stamp = rospy.Time.now()
         # head.frame_id = "lidar2"
         # cone_scan.header = head
@@ -72,10 +69,10 @@ class Lidar_Pipe(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    control = Lidar_Pipe()
-    rclpy.spin(control)
+    node = Lidar_Pipe()
+    rclpy.spin(node)
     
-    control.destroy_node()
+    node.destroy_node()
 
     rclpy.shutdown()
 

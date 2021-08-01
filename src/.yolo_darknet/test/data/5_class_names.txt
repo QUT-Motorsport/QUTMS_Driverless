@@ -1,0 +1,5 @@
+car
+boat
+bus
+airplane
+space ship

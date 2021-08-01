@@ -193,10 +193,10 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    control = Controller()
-    rclpy.spin(control)
+    node = Controller()
+    rclpy.spin(node)
     
-    control.destroy_node()
+    node.destroy_node()
 
     rclpy.shutdown()
 

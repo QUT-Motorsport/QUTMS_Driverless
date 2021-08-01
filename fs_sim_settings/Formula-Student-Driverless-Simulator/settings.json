@@ -60,18 +60,18 @@
             },
             "Cameras": {
                 "cam1": {
-                "CaptureSettings": [{
-                    "ImageType": 0,
-                    "Width": 785,
-                    "Height": 785,
-                    "FOV_Degrees": 90
-                }],
-                "X": -0.3,
-                "Y": -0.16,
-                "Z": 0.8,
-                "Pitch": 0.0,
-                "Roll": 0.0,
-                "Yaw": 0
+                    "CaptureSettings": [{
+                        "ImageType": 0,
+                        "Width": 785,
+                        "Height": 785,
+                        "FOV_Degrees": 90
+                    }],
+                    "X": -0.3,
+                    "Y": 0,
+                    "Z": 1,
+                    "Pitch": 0.0,
+                    "Roll": 0.0,
+                    "Yaw": 0
                 },
                 "cam2": {
                     "CaptureSettings": [{
@@ -81,15 +81,15 @@
                         "FOV_Degrees": 90
                     }],
                     "X": -0.3,
-                    "Y": 0.16,
-                    "Z": 0.8,
+                    "Y": 0,
+                    "Z": 1,
                     "Pitch": 0.0,
                     "Roll": 0.0,
                     "Yaw": 0.0
                 }
             },
-        "X": 2, "Y": 0, "Z": 0,
-        "Pitch": 0, "Roll": 0, "Yaw": 0
+            "X": 2, "Y": 0, "Z": 0,
+            "Pitch": 0, "Roll": 0, "Yaw": 0
         }
     },
     "SubWindows": [
