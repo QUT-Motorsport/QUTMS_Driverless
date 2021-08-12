@@ -17,7 +17,6 @@
 """
 
 # import python libraries
-import numpy
 import math
 
 # import ROS function that has been ported to ROS2 by
@@ -74,9 +73,3 @@ def find_cones(points, max_range_cutoff, distance_cutoff):
 
     return cones
 
-# parent function of submodule
-def find_points(pcl, max_range_cutoff, distance_cutoff):
-    # Convert the list of floats into a list of xyz coordinates
-    pcl_array = numpy.array(list(read_points(pcl)))
-    
-    return find_cones(pcl_array, max_range_cutoff, distance_cutoff)
