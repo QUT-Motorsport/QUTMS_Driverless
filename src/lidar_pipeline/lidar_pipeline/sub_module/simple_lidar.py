@@ -17,12 +17,7 @@
 """
 
 # import python libraries
-import numpy
 import math
-
-# import ROS function that has been ported to ROS2 by
-# SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .read_pcl import read_points
 
 # finds distances (magnitude) between two top-down points
 def distance(x1, y1, x2, y2): 
@@ -73,10 +68,3 @@ def find_cones(points, max_range_cutoff, distance_cutoff):
                 current_group = []
 
     return cones
-
-# parent function of submodule
-def find_points(pcl, max_range_cutoff, distance_cutoff):
-    # Convert the list of floats into a list of xyz coordinates
-    pcl_array = numpy.array(list(read_points(pcl)))
-    
-    return find_cones(pcl_array, max_range_cutoff, distance_cutoff)

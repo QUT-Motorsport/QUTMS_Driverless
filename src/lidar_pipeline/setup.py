@@ -16,7 +16,7 @@ setup(
     zip_safe=True,
     maintainer='QUT Motorsport',
     maintainer_email='qutmotorsport.team@gmail.com',
-    description='Simulator control in python',
+    description='LiDAR analysis in python',
     license='MIT',
     tests_require=['pytest'],
     entry_points={

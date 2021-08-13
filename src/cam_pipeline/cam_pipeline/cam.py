@@ -14,7 +14,7 @@ class Cam_Pipe(Node):
     def __init__(self):
         super().__init__('control')
 
-         # creates subscriber to 'cam1' with type PointCloud2 that sends data to lidar_callback
+         # creates subscriber to 'cam1' with type Image that sends data to cam_callback
         self.cam_subscription_ = self.create_subscription(
             Image,
             '/fsds/camera/cam1',
@@ -24,7 +24,7 @@ class Cam_Pipe(Node):
 
         self.br = CvBridge()
 
-    
+    # callback function for camera image processing
     def cam_callback(self, cam_msg):
         # get image and convert to hsv
         current_frame =  self.br.imgmsg_to_cv2(cam_msg)
@@ -70,6 +70,7 @@ class Cam_Pipe(Node):
         cv2.imshow("camera-b", cv2.bitwise_and(current_frame, current_frame, mask=blue_mask))
         
         cv2.waitKey(1)
+
 
 ## main call
 def main(args=None):

@@ -7,7 +7,12 @@ from sensor_msgs.msg import PointCloud2
 # custom sim data message libraries
 from qutms_msgs.msg import ConeScan, ConeData
 # helper math function
-from .sub_module.simple_lidar import find_points
+from .sub_module.simple_lidar import find_cones
+# import ROS function that has been ported to ROS2 by
+# SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
+from .sub_module.read_pcl import read_points
+
+import numpy
 
 class Lidar_Pipe(Node):
     def __init__(self):
@@ -40,8 +45,13 @@ class Lidar_Pipe(Node):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
         
-        self.cones = find_points(pcl_msg, self.max_range_cutoff, self.distance_cutoff)
+        # Convert the list of floats into a list of xyz coordinates
+        pcl_array = numpy.array(list(read_points(pcl_msg)))
+
+        self.get_logger().info('cones: "%s"' % pcl_array)
         
+        self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+
 
     def publisher(self):
         cone_scan = ConeScan()
