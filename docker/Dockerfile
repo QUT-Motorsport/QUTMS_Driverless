@@ -112,7 +112,7 @@ RUN git clone https://github.com/ros2/ros1_bridge.git && \
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # ==============================================================================
-#                      Install src Dependencies
+#                      Install app Dependencies
 # ==============================================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -120,10 +120,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
-
-RUN pip3 install numpy
-RUN pip3 install matplotlib
-RUN pip3 install torch torchvision torchaudio
 
 # ==============================================================================
 #                      Install src Dependencies
@@ -141,8 +137,14 @@ RUN rosdep update && \
     rosdep install -i --from-path src -y --rosdistro foxy -y \
     && rm -rf /var/lib/apt/lists/
 
+
+# install Python Dependencies
+RUN pip install -r /home/${USERNAME}/driverless_ws/src/requirements.txt
+
+
 # remove files
 RUN rm -r /home/${USERNAME}/driverless_ws/src/*
+
 
 
 # ==============================================================================
@@ -152,3 +154,4 @@ RUN rm -r /home/${USERNAME}/driverless_ws/src/*
 # https://github.com/mabelzhang/ros1_bridge_sandbox/blob/master/docker/ros_melodic_dashing_deb_vrx/Dockerfile
 # https://hub.docker.com/r/osrf/ros/tags?page=1&ordering=last_updated
 # https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator
+# https://github.com/ultralytics/yolov5

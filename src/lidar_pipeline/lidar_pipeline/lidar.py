@@ -6,15 +6,15 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
 # custom sim data message libraries
 from qutms_msgs.msg import ConeScan, ConeData
+# other python libraries
+import numpy
 # helper math function
 from .sub_module.simple_lidar import find_cones
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import read_points
 
-import numpy
-
-class Lidar_Pipe(Node):
+class LidarDetection(Node):
     def __init__(self):
         super().__init__('lidar_pipe')
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
@@ -48,7 +48,7 @@ class Lidar_Pipe(Node):
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = numpy.array(list(read_points(pcl_msg)))
 
-        self.get_logger().info('cones: "%s"' % pcl_array)
+        # self.get_logger().info('cones: "%s"' % pcl_array)
         
         self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
 
@@ -79,7 +79,7 @@ class Lidar_Pipe(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = Lidar_Pipe()
+    node = LidarDetection()
     rclpy.spin(node)
     
     node.destroy_node()

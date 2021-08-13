@@ -20,8 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'firstNode = yoloController.firstNode:main',
-            'detectCones = yoloController.detectCones:main',
-            'testConesTopic = yoloController.yoloTester:main'
+            'yolo = yolo_pipeline.yolo:main',
+            'test = yolo_pipeline.yolo_tester:main'
         ],
     },)

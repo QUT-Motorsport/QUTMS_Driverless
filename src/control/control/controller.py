@@ -6,8 +6,9 @@ from geometry_msgs.msg import TwistStamped
 # custom sim data message libraries
 from fs_msgs.msg import ControlCommand
 from qutms_msgs.msg import ConeScan, ConeData
-# helper math function
+# other python libraries
 import math
+
 
 class Controller(Node):
     def __init__(self):
@@ -35,7 +36,7 @@ class Controller(Node):
             10)
         # creates timer for publishing commands
         self.timer_period = 0.01  # seconds
-        self.timer = self.create_timer(self.timer_period, self.pub_callback)
+        self.timer = self.create_timer(self.timer_period, self.publisher)
 
         ## initial class variables
         self.time = 0
@@ -71,11 +72,44 @@ class Controller(Node):
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
 
+    #############################
+    ##### utility functions #####
+    #############################
 
-    # helper function to find distances (magnitude) between two top-down points
+    ## helper function to find distances (magnitude) between two top-down points
     def distance(self, x1, y1, x2, y2): 
         distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
         return distance
+
+    ## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
+    def find_avg_y(self, cone_set):
+        length = len(cone_set)
+        if length != 0:
+            average_y = 0
+            for cone in cone_set:
+                average_y += cone[1]
+            average_y = average_y / length
+
+            return -average_y
+        
+        else:
+            return 0 
+
+    ## helper function to adjust velocity based on how tight the turn is ahead
+    def predict_vel(self, close_avg_y, far_avg_y):
+        cone_diff = abs(far_avg_y - close_avg_y)
+        self.target_vel = self.max_vel - cone_diff*abs(cone_diff) * self.vel_p
+
+        calc_brake = 0
+
+        if self.target_vel < self.min_vel:
+            vel_diff = self.min_vel - self.target_vel
+            calc_brake = vel_diff * self.brake_p
+
+            self.target_vel = self.min_vel # stop car from slowing too much
+
+        return calc_brake
+
 
     ## callback for lidar scan data to be sent to
     def lidar_callback(self, cone_scan):
@@ -108,38 +142,8 @@ class Controller(Node):
         self.vel = math.sqrt(vel_x*vel_x + vel_y*vel_y)
 
 
-    ## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
-    def find_avg_y(self, cone_set):
-        length = len(cone_set)
-        if length != 0:
-            average_y = 0
-            for cone in cone_set:
-                average_y += cone[1]
-            average_y = average_y / length
-
-            return -average_y
-        
-        else:
-            return 0 
-
-    ## helper function to adjust velocity based on how tight the turn is ahead
-    def predict_vel(self, close_avg_y, far_avg_y):
-        cone_diff = abs(far_avg_y - close_avg_y)
-        self.target_vel = self.max_vel - cone_diff*abs(cone_diff) * self.vel_p
-
-        calc_brake = 0
-
-        if self.target_vel < self.min_vel:
-            vel_diff = self.min_vel - self.target_vel
-            calc_brake = vel_diff * self.brake_p
-
-            self.target_vel = self.min_vel # stop car from slowing too much
-
-        return calc_brake
-
-
     ## callback for publishing FSDS command messages at specific times
-    def pub_callback(self):
+    def publisher(self):
         self.time += self.timer_period # increase time taken
 
         # initialise variables
