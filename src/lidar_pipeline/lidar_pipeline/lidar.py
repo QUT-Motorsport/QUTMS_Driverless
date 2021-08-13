@@ -10,6 +10,7 @@ from qutms_msgs.msg import ConeScan, ConeData
 from .sub_module.simple_lidar import find_cones
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
+from .sub_module.read_pcl import read_points
 
 import numpy
 
