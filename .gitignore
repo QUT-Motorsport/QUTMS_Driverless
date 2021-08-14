@@ -3,3 +3,6 @@
 # VSCode
 .vscode
 !.vscode/cpp_properties.json
+
+# python venv
+venv
