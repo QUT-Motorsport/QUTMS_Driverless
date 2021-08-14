@@ -20,7 +20,7 @@ import cv2
 ##### utility functions #####
 #############################
 
-## initialising function for the yolov5 model ####
+## initialising function for the yolov5 model
 def yolov5_init(threshold):
     #loading the model
     model = torch.hub.load(
@@ -30,7 +30,7 @@ def yolov5_init(threshold):
     model.conf = threshold
     return model
 
-## a function which gets the centre of a bounding box (rectangle in this instance) ####
+## a function which gets the centre of a bounding box (rectangle in this instance)
 def get_centroid(x1, y1, x2, y2):
     xC = (x1 + x2) / 2 
     yC = (y1 + y2) / 2
@@ -41,7 +41,7 @@ def get_centroid(x1, y1, x2, y2):
 
     return xCyC
 
-## a function for the main yolov5 detector ####
+## a function for the main yolov5 detector
 def yolov5_detector(model, image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
@@ -59,7 +59,7 @@ def yolov5_detector(model, image):
 
     # number of cones detected: 
     numConesDetected = len(results.xyxy[0])
-    print('the number of cones is: ', numConesDetected)
+    # print('the number of cones is: ', numConesDetected)
 
 
     # an array that stores all of the blue traffic cones detected: 
@@ -67,27 +67,27 @@ def yolov5_detector(model, image):
     for i in range(0, numConesDetected):
         if(results.xyxy[0][i][5] == 0):
             blueCones.append(results.xyxy[0][i])
-    print('the number of blue cones is: ',len(blueCones))
+    # print('the number of blue cones is: ',len(blueCones))
 
     # an array that stores all of the yellow traffic cones detected: 
     yellowCones = []
     for i in range(0, numConesDetected):
         if(results.xyxy[0][i][5] == 1):
             yellowCones.append(results.xyxy[0][i])
-    print('the number of yellow cones is: ', len(yellowCones))
+    # print('the number of yellow cones is: ', len(yellowCones))
 
 
     # calculating the centroids of the blue cones:
     blueConeCentroids = []
     for i in range(0, len(blueCones)):
         blueConeCentroids.append(get_centroid(blueCones[i][0], blueCones[i][1], blueCones[i][2], blueCones[i][3]))
-    print('Blue cone centroids', blueConeCentroids)
+    # print('Blue cone centroids', blueConeCentroids)
 
     # calculating the centroids of the yellow cones: 
     yellowConeCentroids = []
     for i in range(0, len(yellowCones)):
         yellowConeCentroids.append(get_centroid(yellowCones[i][0], yellowCones[i][1], yellowCones[i][2], yellowCones[i][3]))
-    print('Yellow cone centroids: ', yellowConeCentroids)
+    # print('Yellow cone centroids: ', yellowConeCentroids)
 
 
     # getting the closet yellow cone (based on y position): 
@@ -99,8 +99,7 @@ def yolov5_detector(model, image):
         for i in range(0, len(blueConeCentroids) ):
             if(blueConeCentroids[i][1] > minBlue):
                 closetBlue = blueConeCentroids[i]
-
-    print('The closet blue cone is located at: ', closetBlue)
+    # print('The closet blue cone is located at: ', closetBlue)
 
     # getting the closet blue cone (based on y position)
     closetYellow = []
@@ -111,27 +110,26 @@ def yolov5_detector(model, image):
         for i in range(0, len(yellowConeCentroids) ):
             if(yellowConeCentroids[i][1] > minYellow):
                 closetYellow = yellowConeCentroids[i]
+    # print('The closet yellow cone is located at: ', closetYellow)
 
-    print('The closet yellow cone is located at: ', closetYellow)
 
     # calculating the midpoint of the closet blue and yellow cones:
     targetXY= []
     targetXY = get_centroid(closetBlue[0], closetBlue[1], closetYellow[0], closetYellow[1])
-
-    print('The target coordinates are: ', targetXY)
+    # print('The target coordinates are: ', targetXY)
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    targetImage = cv2.circle(image, (236, 322), 10, (0,0,255), -1)
-    blueConeImage = cv2.circle(image, (59, 326), 10, (255,0,0), -1)
-    yellowConeImage = cv2.circle(image, (413, 318), 10, (0,255,255), -1)
+    # targetImage = cv2.circle(image, (236, 322), 10, (0,0,255), -1)
+    # blueConeImage = cv2.circle(image, (59, 326), 10, (255,0,0), -1)
+    # yellowConeImage = cv2.circle(image, (413, 318), 10, (0,255,255), -1)
 
 
-    cv2.imshow('target', targetImage)
-    #cv2.imshow('blue', blueConeImage)
-    #cv2.imshow('yellow', yellowConeImage)
+    # cv2.imshow('target', targetImage)
+    # cv2.imshow('blue', blueConeImage)
+    # cv2.imshow('yellow', yellowConeImage)
 
-    #showing the image 
-    #cv2.imshow('image',im_list[0])
+    # showing the image 
+    cv2.imshow('image', image)
 
 
 # initiating yolov5 model with a threshold of 0.4
@@ -155,15 +153,18 @@ class YOLODetection(Node):
     def cam_callback(self, msg):
         try:
             #original = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            detected = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
         except CvBridgeError as e:
             print(e)
 
-        cv2.imshow("camera", detected)
+        # cv2.imshow("camera", frame)
+
+        h, w, _ = frame.shape
+        cropped = frame[int(h/2):int(h*3/4), 0:w]
 
         # print('Image detected!, performing yolov5 object detection...\n')
-        yolov5_detector(model, detected)
+        yolov5_detector(model, cropped)
 
         cv2.waitKey(1)
 
