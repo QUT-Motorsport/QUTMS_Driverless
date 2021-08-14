@@ -160,6 +160,8 @@ class YOLODetection(Node):
         except CvBridgeError as e:
             print(e)
 
+        cv2.imshow("camera", detected)
+
         # print('Image detected!, performing yolov5 object detection...\n')
         yolov5_detector(model, detected)
 

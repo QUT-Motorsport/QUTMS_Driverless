@@ -1,4 +1,4 @@
-# 1. Docker with WSL
+# 1. Docker with WSL (Windows)
 
 ## Enable WSL2
 
