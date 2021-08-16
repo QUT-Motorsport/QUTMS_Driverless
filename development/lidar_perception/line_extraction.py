@@ -82,10 +82,6 @@ def extract_segment_lines(segment, num_bins):
                     print("Adding line to segment")
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     # FIXXXXXXXXXXXXX
-                    # FIXXXXXXXXXXXXX
-                    # FIXXXXXXXXXXXXX
-                    # FIXXXXXXXXXXXXX
-                    # FIXXXXXXXXXXXXX
                     #dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
                     new_line_points = []
                     lines_created += 1
