@@ -7,4 +7,5 @@
 # - Lidar Perception -
 # Python Virtual Environment
 development/lidar_perception/venv/*
+# Figures
 development/lidar_perception/figures/*
