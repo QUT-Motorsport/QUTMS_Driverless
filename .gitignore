@@ -1,8 +1,10 @@
 .env
 
-# VSCode
+# - VSCode -
 .vscode
 !.vscode/cpp_properties.json
 
-# python venv
-venv
+# - Lidar Perception -
+# Python Virtual Environment
+development/lidar_perception/venv/*
+development/lidar_perception/figures/*
