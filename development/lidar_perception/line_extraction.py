@@ -2,11 +2,11 @@ import math
 import copy
 import total_least_squares
 
-T_M = 2*math.pi / 4 # Max angle that will be considered as ground plane # 45 deg
+T_M = 2*math.pi / 16 # Max angle that will be considered as ground plane # 45 deg
 T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg
 T_B = 1 # Max y-intercept for a ground plane line # 5 cm 
-T_RMSE = 0.2 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
-T_D_PREV = 3 # Max distance of the first point of a line to the line previously fitted # 1 m
+T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
+T_D_PREV = 10 # Max distance of the first point of a line to the line previously fitted # 1 m
 
 # Returns the distance from a point to a line
 def dist_point_line(point, m_c, b_c):
@@ -20,7 +20,7 @@ def dist_point_line(point, m_c, b_c):
     return math.sqrt((x_shared + x_p)**2 + y_shared**2)
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line
-def fit_error(m, b, points):
+def fit_error_old(m, b, points):
     num_points = len(points)
     x_mean = sum([point[0] for point in points]) / num_points
     y_mean = sum([point[1] for point in points]) / num_points
@@ -37,6 +37,21 @@ def fit_error(m, b, points):
     sd_y = math.sqrt(sd_y / (num_points - 1))
 
     return math.sqrt(1 - r2) * sd_y
+
+def fit_error(m, b, points):
+    num_points = len(points)
+    sse = 0
+    
+    for i in range(num_points):
+        x = points[i][0]
+        best_fit = m*x + b
+        observed = points[i][1]
+        sse += (best_fit - observed)**2
+        
+    sse_mean = sse / num_points
+    RMSE = math.sqrt(sse_mean)
+
+    return RMSE
 
 # The Incremental Algorithm
 def extract_segment_lines(segment, num_bins):
@@ -58,6 +73,7 @@ def extract_segment_lines(segment, num_bins):
                 temp_line_points = copy.deepcopy(new_line_points)
                 temp_line_points.append(new_point)
                 [m_new, b_new] = total_least_squares.fit_line(temp_line_points)
+                print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
                 if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
                     new_line_points.append(new_point)
                     temp_line_points = []
@@ -65,6 +81,7 @@ def extract_segment_lines(segment, num_bins):
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
                     print("Adding line to segment")
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+                    dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
                     new_line_points = []
                     lines_created += 1
                     i = i - 1
@@ -79,6 +96,7 @@ def extract_segment_lines(segment, num_bins):
         i += 1
     if len(new_line_points) > 1 and m_new != None and b_new != None:
         lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+        dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
     if (m_new == None and b_new != None) or (m_new != None and b_new == None):
         raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
     return lines
