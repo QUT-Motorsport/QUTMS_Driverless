@@ -8,6 +8,7 @@ from sensor_msgs.msg import PointCloud2
 from qutms_msgs.msg import ConeScan, ConeData
 # other python libraries
 import numpy
+import time
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
@@ -55,6 +56,8 @@ class LidarDetection(Node):
         init_points(pcl_array)
         
         self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+
+        time.sleep(15)
 
 
     def publisher(self):
