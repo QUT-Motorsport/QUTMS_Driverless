@@ -4,8 +4,8 @@ from .total_least_squares import *
 
 T_M = 2*math.pi / 16 # Max angle that will be considered as ground plane # 45 deg
 T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg
-T_B = 1 # Max y-intercept for a ground plane line # 5 cm 
-T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
+T_B = 0.2 # Max y-intercept for a ground plane line # 1 m
+T_RMSE = 0.4 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
 T_D_PREV = 10 # Max distance of the first point of a line to the line previously fitted # 1 m
 
 # Returns the distance from a point to a line
@@ -16,7 +16,7 @@ def dist_point_line(point, m_c, b_c):
     b_p = -(y_p - m_p) * x_p # intercept of perpendicular line
     x_shared = (b_p - b_c) / (m_c - m_p)
     y_shared = m_p*x_p + b_p # or m_c*x + b_c # at x_shared, y_p = y_c
-    print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
+    # print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
     return math.sqrt((x_shared + x_p)**2 + y_shared**2)
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line
@@ -73,13 +73,13 @@ def extract_segment_lines(segment, num_bins):
                 temp_line_points = copy.deepcopy(new_line_points)
                 temp_line_points.append(new_point)
                 [m_new, b_new] = fit_line(temp_line_points)
-                print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
+                # print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
                 if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
                     new_line_points.append(new_point)
                     temp_line_points = []
                 else:
                     [m_new, b_new] = fit_line(new_line_points)
-                    print("Adding line to segment")
+                    # print("Adding line to segment")
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     # FIXXXXXXXXXXXXX
                     #dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
@@ -106,7 +106,7 @@ def extract_segment_lines(segment, num_bins):
 def extract_lines(segments_bins_prototype, num_segments, num_bins):
     ground_plane = []
     for i in range(num_segments):
-        print("Extracting lines from Segment:", i+1)
+        # print("Extracting lines from Segment:", i+1)
         ground_plane.append(extract_segment_lines(segments_bins_prototype[i], num_bins))
     return ground_plane
 
