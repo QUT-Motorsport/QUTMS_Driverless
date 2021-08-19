@@ -17,7 +17,7 @@ FIGURES_DIR = "./driverless_ws/src/lidar_pipeline/lidar_pipeline/sub_module/figu
 LIDAR_RANGE = 150 # Max range of the LIDAR # 100 # in metres
 DELTA_ALPHA = 2*math.pi / 32 # Angle of each segment # 45 deg
 NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-BIN_SIZE = 2 # The length of a bin (in metres) # 1
+BIN_SIZE = 1 # The length of a bin (in metres) # 1
 NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 T_D_GROUND = 2 # Maximum distance between point and line to be considered part of ground plane. # 2
 T_D_MAX = 100 # Maximum distance a point can be from origin to even be considered for ground plane labelling. Otherwise it's automatically labelled as non-ground. 
@@ -153,17 +153,18 @@ def label_points(segments, ground_lines):
     
     return labelled_points
 
-def get_ground_plane(points):
+def get_ground_plane(points):   
     segments = points_to_segment(points)
     segments_bins = points_to_bins(segments)
     segments_bins_2D = approximate_2D(segments_bins)
     segments_bins_prototype = prototype_points(segments_bins_2D)
     ground_lines = extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     # print("\n\n\n")
-    visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines)
+    labelled_points = label_points(segments, ground_lines)
+    visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points)
     return ground_lines
 
-def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines):
+def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points):
     color_codes = ['b', 'g', 'r', 'grey', 'm', 'orange']
     cmaps = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
     angle_points = 25
@@ -174,7 +175,9 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
     plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
     plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
-    plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
+    # plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
+    print(len(labelled_points))
+    plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines)
 
     plt.show()
 
@@ -374,6 +377,42 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
             # plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
     print("im done because liam can code")
 
+def plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines):
+    ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
+
+    for i in range(len(ground_lines)):
+        for j in range(len(ground_lines[i])):
+            start = ground_lines[i][j][2]
+            end = ground_lines[i][j][3]
+            r = np.linspace(start[0], end[0], 50)
+            z = ground_lines[i][j][0] * r + ground_lines[i][j][1]
+            x = r * math.cos((i + 0.5) * DELTA_ALPHA)
+            y = r * math.sin((i + 0.5) * DELTA_ALPHA)
+            ax.plot3D(x, y, z, color='yellow')
+
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
+
+    ground_points = []
+    non_ground_points = []
+    for i in range(len(labelled_points)):
+        point = labelled_points[i]
+        if point[3] == True:
+            ground_points.append(point)
+        else:
+            non_ground_points.append(point)
+    
+    x_ground = [coords[0] for coords in ground_points]
+    y_ground = [coords[1] for coords in ground_points]
+    z_ground = [coords[2] for coords in ground_points]
+    ax.scatter3D(x_ground, y_ground, z_ground, color='green');
+
+    x_non_ground = [coords[0] for coords in non_ground_points]
+    y_non_ground = [coords[1] for coords in non_ground_points]
+    z_non_ground = [coords[2] for coords in non_ground_points]
+    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red');
+
+    plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 # Max value of the norm of x and y (excluding z)
 def init_points(points):
