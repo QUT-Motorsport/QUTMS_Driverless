@@ -37,7 +37,7 @@
                     "HorizontalFOVStart": -90,
                     "HorizontalFOVEnd": 90,
                     "RotationsPerSecond": 10,
-                    "DrawDebugPoints": true
+                    "DrawDebugPoints": false
                 },
                 "Lidar2": {
                     "SensorType": 6,
