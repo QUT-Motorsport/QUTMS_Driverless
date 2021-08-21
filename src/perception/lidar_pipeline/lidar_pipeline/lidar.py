@@ -30,7 +30,7 @@ class LidarDetection(Node):
         self.pcl_subscription_  # prevent unused variable warning
         self.cones = []
 
-        ## creates publisher to 'control_command' with type ControlCommand
+        ## creates publisher to 'lidar_output' with type ConeScan
         self.scan_publisher_ = self.create_publisher(
             ConeScan,
             'lidar_output', 
@@ -54,32 +54,33 @@ class LidarDetection(Node):
 
         # self.get_logger().info('cones: "%s"' % pcl_array)
 
-        init_points(pcl_array)
+        init_points(pcl_array) # calls first module from ground estimation algorithm
         
+        # finds cone locations for single layer lidar
         self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
 
-        time.sleep(15)
+        # time.sleep(15)
 
 
     def publisher(self):
-        cone_scan = ConeScan()
+        cone_scan = ConeScan() # define msg class
         # head = Header()
 
         cone_data = []
-        for i in range(len(self.cones)):
-            cone = ConeData()
-            cone.x = self.cones[i][0]
+        for i in range(len(self.cones)): # define msg component elements 
+            cone = ConeData() 
+            cone.x = self.cones[i][0] # x, y, z coords + intensity
             cone.y = self.cones[i][1]
             cone.z = self.cones[i][2]
             cone.i = self.cones[i][3]
-            cone_data.append(cone)
+            cone_data.append(cone) # add cone to msg list
        
         # head.stamp = rospy.Time.now()
         # cone_scan.header = head
 
-        cone_scan.data = cone_data
+        cone_scan.data = cone_data # add list of cones to msg data element
 
-        self.scan_publisher_.publish(cone_scan)
+        self.scan_publisher_.publish(cone_scan) # publish cone data
         
 
 ## main call
