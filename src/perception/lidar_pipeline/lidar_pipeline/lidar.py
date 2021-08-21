@@ -52,7 +52,7 @@ class LidarDetection(Node):
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = numpy.array(list(read_points(pcl_msg)))
 
-        # self.get_logger().info('cones: "%s"' % pcl_array)
+        # print('cones:', pcl_array)
 
         init_points(pcl_array) # calls first module from ground estimation algorithm
         
