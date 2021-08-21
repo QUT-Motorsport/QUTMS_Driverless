@@ -1,7 +1,5 @@
 # QUT Motorsport - Driverless
-
 # A node that utilises yolov5 to detect cones and provide guidance solutions
-
 # Author: Lachlan Masson
 
 # ROS2 libraries
@@ -11,7 +9,7 @@ from cv_bridge import CvBridge, CvBridgeError
 # ROS2 message libraries
 from sensor_msgs.msg import Image
 # custom sim data message libraries
-# from qutms_msgs.msg import 
+from qutms_msgs.msg import ConeScan, ConeData
 # other python libraries
 import torch
 import cv2
@@ -19,16 +17,6 @@ import cv2
 #############################
 ##### utility functions #####
 #############################
-
-## initialising function for the yolov5 model
-def yolov5_init(threshold):
-    #loading the model
-    model = torch.hub.load(
-        'ultralytics/yolov5', 
-        'custom', 
-        path='/home/developer/driverless_ws/src/yolo_pipeline/bestOne.pt') # location of model in docker env
-    model.conf = threshold
-    return model
 
 ## a function which gets the centre of a bounding box (rectangle in this instance)
 def get_centroid(x1, y1, x2, y2):
@@ -54,8 +42,8 @@ def yolov5_detector(model, image):
 
 
     # getting the bounding boxes of all the detected cones: 
-    #boundingBoxes = results.xyxy[0]
-    #print('\n', boundingBoxes)
+    # boundingBoxes = results.xyxy[0]
+    # print('\n', boundingBoxes)
 
     # number of cones detected: 
     numConesDetected = len(results.xyxy[0])
@@ -129,26 +117,45 @@ def yolov5_detector(model, image):
     # cv2.imshow('yellow', yellowConeImage)
 
     # showing the image 
-    cv2.imshow('image', image)
+    return image 
 
 
-# initiating yolov5 model with a threshold of 0.4
-model = yolov5_init(0.45)
+## initialising function for the YOLOv5 model
+def yolov5_init(threshold):
+    #loading the model
+    model = torch.hub.load(
+        'ultralytics/yolov5', 
+        'custom', 
+        path='/home/developer/driverless_ws/src/yolo_pipeline/bestOne.pt') # location of model in docker env
+    model.conf = threshold
+    return model
+
 
 class YOLODetection(Node):
     def __init__(self):
         super().__init__('YOLO_detection')
-
-        # Actual topic  - 'fsds/camera/cam1' 
-        # Testing topic - 'Image'
+        ## creates subscriber to 'cam1' with type Image that sends data to cam_callback     
         self.cam_subscription_ = self.create_subscription(
             Image, 
-            # 'Image',
-            'fsds/camera/cam1', 
+            # 'Image', # Testing topic - 'Image'
+            'fsds/camera/cam1', # Actual topic  - 'fsds/camera/cam1' 
             self.cam_callback, 
             10)
         self.cam_subscription_  # prevent unused variable warning
-        self.bridge = CvBridge()
+        self.bridge = CvBridge() # define OpenCV bridge to AirSim environment
+        # initiating yolov5 model with a threshold of 0.45
+        self.model = yolov5_init(0.45)
+        self.display = False
+
+        ## creates publisher to 'lidar_output' with type ConeScan
+        self.frame_publisher_ = self.create_publisher(
+            ConeScan,
+            'cam_output', 
+            10)
+        # creates timer for publishing commands
+        self.timer_period = 0.001  # seconds
+        self.timer = self.create_timer(self.timer_period, self.publisher)
+
 
     def cam_callback(self, msg):
         try:
@@ -158,15 +165,39 @@ class YOLODetection(Node):
         except CvBridgeError as e:
             print(e)
 
-        # cv2.imshow("camera", frame)
-
         h, w, _ = frame.shape
         cropped = frame[int(h/2):int(h*3/4), 0:w]
 
         # print('Image detected!, performing yolov5 object detection...\n')
-        yolov5_detector(model, cropped)
+        image = yolov5_detector(self.model, cropped)
+        
+        if self.display == True:
+            # cv2.imshow("camera", frame)
+            cv2.imshow('image', image)
 
         cv2.waitKey(1)
+
+    
+    def publisher(self):
+        cone_scan = ConeScan()
+        # head = Header()
+
+        cone_data = []
+        for i in range(len(self.cones)):
+            cone = ConeData()
+            cone.x = self.cones[i][0]
+            cone.y = self.cones[i][1]
+            cone.z = self.cones[i][2]
+            cone.i = self.cones[i][3]
+            cone_data.append(cone)
+       
+        # head.stamp = rospy.Time.now()
+        # head.frame_id = "lidar2"
+        # cone_scan.header = head
+
+        cone_scan.data = cone_data
+
+        self.scan_publisher_.publish(cone_scan)
 
 
 def main(args=None):
