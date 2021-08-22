@@ -20,7 +20,7 @@ class LidarDetection(Node):
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
-            '/fsds/lidar/Lidar1',
+            '/fsds/lidar/Lidar2',
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning

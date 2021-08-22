@@ -29,88 +29,69 @@ def get_centroid(x1, y1, x2, y2):
 
     return xCyC
 
+def get_close(num_cones, results, colour):
+    # an array that stores all of the blue traffic cones detected: 
+    cones = []
+    for i in range(0, num_cones):
+        if(results.xyxy[0][i][5] == colour):
+            cones.append(results.xyxy[0][i])
+    # print('the number of cones is: ',len(cones))
+
+    # calculating the centroids of the cones:
+    cone_centroids = []
+    for i in range(0, len(cones)):
+        cone_centroids.append(get_centroid(cones[i][0], cones[i][1], cones[i][2], cones[i][3]))
+    # print('cone centroids', cone_centroids)
+
+    # getting the closet cone (based on y position): 
+    closest = []
+    if(len(cone_centroids) > 0):
+        min_cone = cone_centroids[0][1]
+        closest = cone_centroids[0] # set initial closest to the first in array
+
+        for i in range(0, len(cone_centroids) ):
+            if(cone_centroids[i][1] > min_cone):
+                closest = cone_centroids[i] # define now closest cone
+    # print('The closet cone is located at: ', closet)
+
+    return closest
+
 ## a function for the main yolov5 detector
 def yolov5_detector(model, image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
-    #inference 
+    # inference 
     results = model(image)
 
-    #rendering and getting image list
+    # rendering and getting image list
     im_list = results.render()
-    im_list = [x[..., ::-1] for x in im_list]  #RGB to BGR
+    im_list = [x[..., ::-1] for x in im_list]  # RGB to BGR
 
 
     # getting the bounding boxes of all the detected cones: 
-    # boundingBoxes = results.xyxy[0]
-    # print('\n', boundingBoxes)
+    # bounding_boxes = results.xyxy[0]
+    # print('\n', bounding_boxes)
 
     # number of cones detected: 
-    numConesDetected = len(results.xyxy[0])
-    # print('the number of cones is: ', numConesDetected)
+    num_cones = len(results.xyxy[0])
+    # print('the number of cones is: ', num_cones)
 
+    blue_res = 0
+    yellow_res = 1
 
-    # an array that stores all of the blue traffic cones detected: 
-    blueCones = []
-    for i in range(0, numConesDetected):
-        if(results.xyxy[0][i][5] == 0):
-            blueCones.append(results.xyxy[0][i])
-    # print('the number of blue cones is: ',len(blueCones))
-
-    # an array that stores all of the yellow traffic cones detected: 
-    yellowCones = []
-    for i in range(0, numConesDetected):
-        if(results.xyxy[0][i][5] == 1):
-            yellowCones.append(results.xyxy[0][i])
-    # print('the number of yellow cones is: ', len(yellowCones))
-
-
-    # calculating the centroids of the blue cones:
-    blueConeCentroids = []
-    for i in range(0, len(blueCones)):
-        blueConeCentroids.append(get_centroid(blueCones[i][0], blueCones[i][1], blueCones[i][2], blueCones[i][3]))
-    # print('Blue cone centroids', blueConeCentroids)
-
-    # calculating the centroids of the yellow cones: 
-    yellowConeCentroids = []
-    for i in range(0, len(yellowCones)):
-        yellowConeCentroids.append(get_centroid(yellowCones[i][0], yellowCones[i][1], yellowCones[i][2], yellowCones[i][3]))
-    # print('Yellow cone centroids: ', yellowConeCentroids)
-
-
-    # getting the closet yellow cone (based on y position): 
-    closetBlue = []
-    if(len(blueConeCentroids) > 0):
-        minBlue = blueConeCentroids[0][1]
-        closetBlue = blueConeCentroids[0]
-
-        for i in range(0, len(blueConeCentroids) ):
-            if(blueConeCentroids[i][1] > minBlue):
-                closetBlue = blueConeCentroids[i]
-    # print('The closet blue cone is located at: ', closetBlue)
-
-    # getting the closet blue cone (based on y position)
-    closetYellow = []
-    if(len(yellowConeCentroids) > 0):
-        minYellow = yellowConeCentroids[0][1]
-        closetYellow = yellowConeCentroids[0]
-
-        for i in range(0, len(yellowConeCentroids) ):
-            if(yellowConeCentroids[i][1] > minYellow):
-                closetYellow = yellowConeCentroids[i]
-    # print('The closet yellow cone is located at: ', closetYellow)
-
+    closest_blue = get_close(num_cones, results, blue_res)
+    closest_yellow = get_close(num_cones, results, yellow_res)
 
     # calculating the midpoint of the closet blue and yellow cones:
-    targetXY= []
-    targetXY = get_centroid(closetBlue[0], closetBlue[1], closetYellow[0], closetYellow[1])
-    # print('The target coordinates are: ', targetXY)
+    if closest_blue != [] and closest_yellow != []:
+        targetXY = []
+        targetXY = get_centroid(closest_blue[0], closest_blue[1], closest_yellow[0], closest_yellow[1])
+        # print('The target coordinates are: ', targetXY)
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # targetImage = cv2.circle(image, (236, 322), 10, (0,0,255), -1)
     # blueConeImage = cv2.circle(image, (59, 326), 10, (255,0,0), -1)
     # yellowConeImage = cv2.circle(image, (413, 318), 10, (0,255,255), -1)
-
 
     # cv2.imshow('target', targetImage)
     # cv2.imshow('blue', blueConeImage)
@@ -138,23 +119,23 @@ class YOLODetection(Node):
         self.cam_subscription_ = self.create_subscription(
             Image, 
             # 'Image', # Testing topic - 'Image'
-            'fsds/camera/cam1', # Actual topic  - 'fsds/camera/cam1' 
+            'fsds/camera/cam2', # Actual topic  - 'fsds/camera/cam1' 
             self.cam_callback, 
             10)
         self.cam_subscription_  # prevent unused variable warning
         self.bridge = CvBridge() # define OpenCV bridge to AirSim environment
         # initiating yolov5 model with a threshold of 0.45
         self.model = yolov5_init(0.45)
-        self.display = False
+        self.display = True
 
         ## creates publisher to 'lidar_output' with type ConeScan
-        self.frame_publisher_ = self.create_publisher(
-            ConeScan,
-            'cam_output', 
-            10)
-        # creates timer for publishing commands
-        self.timer_period = 0.001  # seconds
-        self.timer = self.create_timer(self.timer_period, self.publisher)
+        # self.frame_publisher_ = self.create_publisher(
+        #     ConeScan,
+        #     'cam_output', 
+        #     10)
+        # # creates timer for publishing commands
+        # self.timer_period = 0.001  # seconds
+        # self.timer = self.create_timer(self.timer_period, self.publisher)
 
 
     def cam_callback(self, msg):
@@ -178,26 +159,26 @@ class YOLODetection(Node):
         cv2.waitKey(1)
 
     
-    def publisher(self):
-        cone_scan = ConeScan()
-        # head = Header()
+    # def publisher(self):
+    #     cone_scan = ConeScan()
+    #     # head = Header()
 
-        cone_data = []
-        for i in range(len(self.cones)):
-            cone = ConeData()
-            cone.x = self.cones[i][0]
-            cone.y = self.cones[i][1]
-            cone.z = self.cones[i][2]
-            cone.i = self.cones[i][3]
-            cone_data.append(cone)
+    #     cone_data = []
+    #     for i in range(len(self.cones)):
+    #         cone = ConeData()
+    #         cone.x = self.cones[i][0]
+    #         cone.y = self.cones[i][1]
+    #         cone.z = self.cones[i][2]
+    #         cone.i = self.cones[i][3]
+    #         cone_data.append(cone)
        
-        # head.stamp = rospy.Time.now()
-        # head.frame_id = "lidar2"
-        # cone_scan.header = head
+    #     # head.stamp = rospy.Time.now()
+    #     # head.frame_id = "lidar2"
+    #     # cone_scan.header = head
 
-        cone_scan.data = cone_data
+    #     cone_scan.data = cone_data
 
-        self.scan_publisher_.publish(cone_scan)
+    #     self.scan_publisher_.publish(cone_scan)
 
 
 def main(args=None):
