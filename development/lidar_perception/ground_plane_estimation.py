@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 # Line Fitting
 import line_extraction
 
+# Point Cloud Clustering
+import DBSCAN
+
 #test_data = [[-1, -0.25, 0.6], [-1.5, -0.4, 0.6], [-0.25, 0.35, 0.3], [-0.25, 0.5, 0.4], [0.1, 0.25, 0.4], [0.1, 0.75, 0.41], [0.1, 1.25, 0.42], [0.1, 1.75, 0.43], [0.1, 2.25, 0.44], [0.1, 2.75, 0.45], [-0.5, 1, 0.5], [-0.5, -0.25, 0.5], [-0.5, -1, 0.5,], [1, -0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 1, 1], [1, 0.5, 0.5], [1, 0.5, 1], [1, 1, 0.5], [1, 1, 1], [0.5, 0.5, -1], [0.5, -1, 0.5], [0.5, -1, -1], [-1, 0.5, 0.5], [-1, 0.5, -1], [-1, -1, 0.5], [-1, -1, -1], [0.5, -1, 1], [-1, 0.5, 1], [-1, 1, 0.5], [-1, 1, 1], [0.5, 1, -1], [1, 0.5, -1], [1, -1, 0.5], [1, -1, 1], [1, 1, -1], [-1, -1, 1], [1, -1, -1], [-1, 1, -1], [0.5, 0.5, 1.1], [0.5, 1.1, 0.5], [0.5, 1.1, 1.1], [1.1, 0.5, 0.5], [1.1, 0.5, 1.1], [1.1, 1.1, 0.5], [1.1, 1.1, 1.1], [0.5, 0.5, -1.1], [0.5, -1.1, 0.5], [0.5, -1.1, -1.1], [-1.1, 0.5, 0.5], [-1.1, 0.5, -1.1], [-1.1, -1.1, 0.5], [-1.1, -1.1, -1.1], [0.5, -1.1, 1.1], [-1.1, 0.5, 1.1], [-1.1, 1.1, 0.5], [-1.1, 1.1, 1.1], [0.5, 1.1, -1.1], [1.1, 0.5, -1.1], [1.1, -1.1, 0.5], [1.1, -1.1, 1.1], [1.1, 1.1, -1.1], [-1.1, -1.1, 1.1], [1.1, -1.1, -1.1], [-1.1, 1.1, -1.1], [0.5, 0.5, 1.5], [0.5, 1.5, 0.5], [0.5, 1.5, 1.5], [1.5, 0.5, 0.5], [1.5, 0.5, 1.5], [1.5, 1.5, 0.5], [1.5, 1.5, 1.5], [0.5, 0.5, -1.5], [0.5, -1.5, 0.5], [0.5, -1.5, -1.5], [-1.5, 0.5, 0.5], [-1.5, 0.5, -1.5], [-1.5, -1.5, 0.5], [-1.5, -1.5, -1.5], [0.5, -1.5, 1.5], [-1.5, 0.5, 1.5], [-1.5, 1.5, 0.5], [-1.5, 1.5, 1.5], [0.5, 1.5, -1.5], [1.5, 0.5, -1.5], [1.5, -1.5, 0.5], [1.5, -1.5, 1.5], [1.5, 1.5, -1.5], [-1.5, -1.5, 1.5], [1.5, -1.5, -1.5], [-1.5, 1.5, -1.5], [0.5, 0.5, 2], [0.5, 2, 0.5], [0.5, 2, 2], [2, 0.5, 0.5], [2, 0.5, 2], [2, 2, 0.5], [2, 2, 2], [0.5, 0.5, -2], [0.5, -2, 0.5], [0.5, -2, -2], [-2, 0.5, 0.5], [-2, 0.5, -2], [-2, -2, 0.5], [-2, -2, -2], [0.5, -2, 2], [-2, 0.5, 2], [-2, 2, 0.5], [-2, 2, 2], [0.5, 2, -2], [2, 0.5, -2], [2, -2, 0.5], [2, -2, 2], [2, 2, -2], [-2, -2, 2], [2, -2, -2], [-2, 2, -2]]
 #test_data = [[1, 0, 0.7], [1.25, 0, 0.6], [1.5, 0, 0.5], [2, 0, 0.4], [-1, -0.25, 0.6], [-1.5, -0.4, 0.6], [-0.25, 0.35, 0.3], [-0.25, 0.5, 0.4], [0.1, 0.25, 0.4], [0.1, 0.75, 0.41], [0.1, 1.25, 0.42], [0.1, 1.75, 0.43], [0.1, 2.25, 0.44], [0.1, 2.75, 0.45], [-0.5, 1, 0.5], [-0.5, -0.25, 0.5], [-0.5, -1, 0.5,], [1, -0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 1, 1], [1, 1, 0.5], [1, 1, 1], [0.5, 0.5, -1], [0.5, -1, 0.5], [0.5, -1, -1], [-1, 0.5, 0.5], [-1, 0.5, -1], [-1, -1, 0.5], [-1, -1, -1], [0.5, -1, 1], [-1, 0.5, 1], [-1, 1, 0.5], [-1, 1, 1], [0.5, 1, -1], [1, -1, 0.5], [1, -1, 1], [1, 1, -1], [-1, -1, 1], [1, -1, -1], [-1, 1, -1], [0.5, 0.5, 1.1], [0.5, 1.1, 0.5], [0.5, 1.1, 1.1], [1.1, 1.1, 0.5], [1.1, 1.1, 1.1], [0.5, 0.5, -1.1], [0.5, -1.1, 0.5], [0.5, -1.1, -1.1], [-1.1, 0.5, 0.5], [-1.1, 0.5, -1.1], [-1.1, -1.1, 0.5], [-1.1, -1.1, -1.1], [0.5, -1.1, 1.1], [-1.1, 0.5, 1.1], [-1.1, 1.1, 0.5], [-1.1, 1.1, 1.1], [0.5, 1.1, -1.1], [1.1, -1.1, 0.5], [1.1, -1.1, 1.1], [1.1, 1.1, -1.1], [-1.1, -1.1, 1.1], [1.1, -1.1, -1.1], [-1.1, 1.1, -1.1], [0.5, 0.5, 1.5], [0.5, 1.5, 0.5], [0.5, 1.5, 1.5], [1.5, 1.5, 0.5], [1.5, 1.5, 1.5], [0.5, 0.5, -1.5], [0.5, -1.5, 0.5], [0.5, -1.5, -1.5], [-1.5, 0.5, 0.5], [-1.5, 0.5, -1.5], [-1.5, -1.5, 0.5], [-1.5, -1.5, -1.5], [0.5, -1.5, 1.5], [-1.5, 0.5, 1.5], [-1.5, 1.5, 0.5], [-1.5, 1.5, 1.5], [0.5, 1.5, -1.5], [1.5, -1.5, 0.5], [1.5, -1.5, 1.5], [1.5, 1.5, -1.5], [-1.5, -1.5, 1.5], [1.5, -1.5, -1.5], [-1.5, 1.5, -1.5], [0.5, 0.5, 2], [0.5, 2, 0.5], [0.5, 2, 2], [2, 2, 0.5], [2, 2, 2], [0.5, 0.5, -2], [0.5, -2, 0.5], [0.5, -2, -2], [-2, 0.5, 0.5], [-2, 0.5, -2], [-2, -2, 0.5], [-2, -2, -2], [0.5, -2, 2], [-2, 0.5, 2], [-2, 2, 0.5], [-2, 2, 2], [0.5, 2, -2], [2, -2, 0.5], [2, -2, 2], [2, 2, -2], [-2, -2, 2], [2, -2, -2], [-2, 2, -2]]
 #test_data = [[1, 0, 0.7], [1.25, 0, 0.6], [1.5, 0, 0.5], [2, 0, 0.4], [0, 0.5, 0.7], [0, 1, 0.6], [0, 1.5, 0.5], [0, 2, 0.4]]
@@ -37,11 +40,11 @@ FIGURES_DIR = "./development/lidar_perception/figures/"
 LIDAR_RANGE = 150 # Max range of the LIDAR # 100 # in metres
 LIDAR_RANGE = math.ceil(max(values))
 print("Max x-y norm:", LIDAR_RANGE)
-DELTA_ALPHA = 2*math.pi / 32 # Angle of each segment # 45 deg
+DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 45 deg
 NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
 BIN_SIZE = 1 # The length of a bin (in metres) # 1
 NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
-T_D_GROUND = 2 # Maximum distance between point and line to be considered part of ground plane. # 2
+T_D_GROUND = 1 # Maximum distance between point and line to be considered part of ground plane. # 2
 T_D_MAX = 100 # Maximum distance a point can be from origin to even be considered for ground plane labelling. Otherwise it's automatically labelled as non-ground. 
 
 if (math.pi % DELTA_ALPHA != 0):
@@ -153,6 +156,8 @@ def point_line_dist_3D():
 # Can there be multiple lines PER segment?? I still don't know and this will
 # directly affect how this function is written. 
 # But assuming that there is multiple lines ...
+
+# Conservative approach implemented using T_D_MAX parameter
 def label_points(segments, ground_lines):
     labelled_points = copy.deepcopy(segments)
 
@@ -180,8 +185,20 @@ def label_points(segments, ground_lines):
                 if (closest_dist < T_D_MAX and point_to_line_dist < T_D_GROUND):
                     is_ground = True
             labelled_points[i][j].append(is_ground)
-    
     return labelled_points
+
+def non_ground_points(labelled_points):
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
+
+    object_points = []
+    for i in range(len(labelled_points)):
+        point = labelled_points[i]
+        if point[3] == False:
+            object_points.append([point[0], point[1], point[2]])
+    return object_points
+
+
 
 def get_ground_plane(points):
     segments = points_to_segment(points)
@@ -190,9 +207,11 @@ def get_ground_plane(points):
     segments_bins_prototype = prototype_points(segments_bins_2D)
     ground_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     labelled_points = label_points(segments, ground_lines)
-    print(labelled_points)
-    print("\n\n\n")
-    #print(labelled_points)
+    object_points = non_ground_points(labelled_points)
+
+
+
+    print("\n\n\n", object_points)
     visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points)
     return ground_lines
 
@@ -201,14 +220,13 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     cmaps = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
     angle_points = 25
 
-    plot_segments(segments, color_codes, angle_points)
-    plot_segments_bins(segments_bins, color_codes, angle_points)
-    plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
-    plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
-    plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
-    plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
+    #plot_segments(segments, color_codes, angle_points)
+    #plot_segments_bins(segments_bins, color_codes, angle_points)
+    #plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
+    #plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
+    #plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
+    #plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
     #plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
-    print(len(labelled_points))
     plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines)
 
     plt.show()
@@ -427,22 +445,22 @@ def plot_labelled_points(labelled_points, color_codes, angle_points, ground_line
     labelled_points = [points for sublist in labelled_points for points in sublist]
 
     ground_points = []
-    non_ground_points = []
+    object_points = []
     for i in range(len(labelled_points)):
         point = labelled_points[i]
         if point[3] == True:
             ground_points.append(point)
         else:
-            non_ground_points.append(point)
+            object_points.append(point)
     
     x_ground = [coords[0] for coords in ground_points]
     y_ground = [coords[1] for coords in ground_points]
     z_ground = [coords[2] for coords in ground_points]
     ax.scatter3D(x_ground, y_ground, z_ground, color='green');
 
-    x_non_ground = [coords[0] for coords in non_ground_points]
-    y_non_ground = [coords[1] for coords in non_ground_points]
-    z_non_ground = [coords[2] for coords in non_ground_points]
+    x_non_ground = [coords[0] for coords in object_points]
+    y_non_ground = [coords[1] for coords in object_points]
+    z_non_ground = [coords[2] for coords in object_points]
     ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red');
 
     plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
@@ -470,6 +488,7 @@ ground_plane = get_ground_plane(test_data)
 # %%
 
 # Notes
+#   - Explore Python threading for this entire process
 #   - Constant M: M must be an int, the value error below it
 #     checks for this (I think).
 #   - get_segment(): Returns negatives but Python lists handle 
