@@ -1,4 +1,4 @@
-.PHONY: build run_ros run_sim_bridge
+.PHONY: build run
 
 include .env
 export  # export all variables from .env
@@ -7,23 +7,33 @@ export USERNAME=developer
 export HOST_UID=$(shell id -u)
 export CURR_DIR=$(notdir $(shell pwd))
 
+# UNLESS YOU ARE UPDATING THE MAKEFILE FUNCTIONALITY
+# This file should rarely need to be touched.
+
+# ADDING A NEW TARGET
+# Targets are defined in docker/docker-compose.yml (at the bottom, called "Services")
+# To add a new target:
+#     1. add the target to the docker compose file
+#     2. add the target option to the `all` rule in this file below
+
 all:
-	@echo Hi!
-	@echo Check the Makefile for commands you can run
+	@echo "usage: make [COMMAND] target=[TARGET]"
+	@echo "COMMAND options:"
+	@echo "    build"
+	@echo "    run"
+	@echo "TARGET options:"
+	@echo "    navigation"
+	@echo "    perception"
+	@echo "    unreal_sim"
 
-build:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build ros
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build sim_bridge
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build ros_1_bridge
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build reset_sim
+build_docker_base:
+	docker build -f docker/Dockerfile -t qutms_driverless_base \
+	--build-arg USERNAME=$(USERNAME) --build-arg HOST_UID=$(HOST_UID) .
 
-run_ros:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run ros
+# use make build target=<value>
+build: build_docker_base
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build $(target)
 
-run_sim_bridge:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d core
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up -d ros_1_bridge
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless up sim_bridge
-
-reset_sim:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run reset_sim
+# use make build target=<value>
+run:
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless --rm run $(target)
