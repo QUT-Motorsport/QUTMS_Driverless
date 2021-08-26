@@ -2,11 +2,12 @@ import math
 import copy
 import total_least_squares
 
-T_M = 2*math.pi / 16 # Max angle that will be considered as ground plane # 45 deg
-T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg
-T_B = 1 # Max y-intercept for a ground plane line # 5 cm 
+T_M = 2*math.pi / 32 # Max angle that will be considered as ground plane # 45 deg
+T_M_SMALL = math.pi / 128 # Angle considered to be a small slope # 5.625 deg
+T_B = 0.1 # Max y-intercept for a ground plane line # 5 cm 
 T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
 T_D_PREV = 10 # Max distance of the first point of a line to the line previously fitted # 1 m
+# Unsure of how T_D_PREV impacts line_extraction
 
 # Returns the distance from a point to a line
 def dist_point_line_old(point, m_c, b_c):

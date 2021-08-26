@@ -209,7 +209,7 @@ def get_ground_plane(points):
     labelled_points = label_points(segments, ground_lines)
     object_points = non_ground_points(labelled_points)
 
-
+    DBSCAN.object_clustering(object_points)
 
     print("\n\n\n", object_points)
     visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points)
