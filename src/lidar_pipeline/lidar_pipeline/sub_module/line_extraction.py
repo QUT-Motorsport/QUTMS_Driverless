@@ -29,7 +29,7 @@ def dist_point_line(point, m_c, b_c):
     numer = abs(a_x + b_y + b_c)
     denom = math.sqrt(a_x**2) # + b**2 cancels out since b is 1
     distance = numer / denom
-    print(distance)
+    # print(distance)
     return distance
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line

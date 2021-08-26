@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 
 # Line Fitting
 from .line_extraction import *
-
+# Point Cloud Clustering
+from .DBSCAN import *
 
 FIGURES_DIR = "./driverless_ws/src/lidar_pipeline/lidar_pipeline/sub_module/figures/"
 
@@ -21,6 +22,22 @@ BIN_SIZE = 1 # The length of a bin (in metres) # 1
 NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 T_D_GROUND = 2 # Maximum distance between point and line to be considered part of ground plane. # 2
 T_D_MAX = 100 # Maximum distance a point can be from origin to even be considered for ground plane labelling. Otherwise it's automatically labelled as non-ground. 
+
+def globals(points):
+    global LIDAR_RANGE, NUM_BINS
+
+    points = points.tolist()
+    values = []
+    for i in range(len(points)):
+        values.append(math.sqrt(points[i][0] ** 2 + points[i][1] ** 2))
+    
+    if (math.pi % DELTA_ALPHA != 0):
+        raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
+
+    LIDAR_RANGE = math.ceil(max(values))
+    # print("Max x-y norm:", LIDAR_RANGE)
+
+    NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 
 
 # Returns the index to a segment that a point maps to
@@ -123,6 +140,8 @@ def point_line_dist_3D():
 # Can there be multiple lines PER segment?? I still don't know and this will
 # directly affect how this function is written. 
 # But assuming that there is multiple lines ...
+
+# Conservative approach implemented using T_D_MAX parameter
 def label_points(segments, ground_lines):
     labelled_points = copy.deepcopy(segments)
 
@@ -153,6 +172,19 @@ def label_points(segments, ground_lines):
     
     return labelled_points
 
+
+def non_ground_points(labelled_points):
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
+
+    object_points = []
+    for i in range(len(labelled_points)):
+        point = labelled_points[i]
+        if point[3] == False:
+            object_points.append([point[0], point[1], point[2]])
+    return object_points
+
+
 def get_ground_plane(points):   
     segments = points_to_segment(points)
     segments_bins = points_to_bins(segments)
@@ -161,6 +193,8 @@ def get_ground_plane(points):
     ground_lines = extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     # print("\n\n\n")
     labelled_points = label_points(segments, ground_lines)
+    object_points = non_ground_points(labelled_points)
+    
     visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points)
     return ground_lines
 
@@ -169,14 +203,14 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     cmaps = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
     angle_points = 25
 
-    plot_segments(segments, color_codes, angle_points)
-    plot_segments_bins(segments_bins, color_codes, angle_points)
-    plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
-    plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
-    plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
-    plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
+    # plot_segments(segments, color_codes, angle_points)
+    # plot_segments_bins(segments_bins, color_codes, angle_points)
+    # plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
+    # plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
+    # plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
+    # plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
     # plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
-    print(len(labelled_points))
+    # print(len(labelled_points))
     plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines)
 
     plt.show()
@@ -347,10 +381,9 @@ def plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, gro
 
 def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
     # print("SP", segments_bins_prototype)
-    # print("--- Prototype Points ---")
+    print("--- Prototype Points ---")
     # print("len:", len(segments_bins_prototype))
     for i in range(len(segments_bins_prototype)):
-        # print("im here first loop")
         # This if statement is hacky. Without it, this visualisation function crashes
         if len(ground_lines[i]) > 0:
             color1 = color_codes[i % len(color_codes)]
@@ -361,13 +394,11 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
             x = []
             y = []
             for j in range(len(segments_bins_prototype[i])):
-                # print("im here second loop")
                 if len(segments_bins_prototype[i][j]) != 0:
                     x.append(segments_bins_prototype[i][j][0])
                     y.append(segments_bins_prototype[i][j][1])
                     # print("     Bin:", j, "Point:", segments_bins_prototype[i][j][0], segments_bins_prototype[i][j][1])
                     for k in range(len(ground_lines[i])):
-                        # print("im here third loop")
                         origin = ground_lines[i][k][2][0]
                         end = ground_lines[i][k][3]
                         x_gp = np.linspace(origin, end[0], 50)
@@ -375,7 +406,6 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
                         plt.plot(x_gp, y_gp, '--', color=color1)
             plt.plot(x, y, 'o', color='black')
             # plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
-    print("im done because liam can code")
 
 def plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines):
     ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
@@ -394,47 +424,70 @@ def plot_labelled_points(labelled_points, color_codes, angle_points, ground_line
     labelled_points = [points for sublist in labelled_points for points in sublist]
 
     ground_points = []
-    non_ground_points = []
+    object_points = []
     for i in range(len(labelled_points)):
         point = labelled_points[i]
         if point[3] == True:
             ground_points.append(point)
         else:
-            non_ground_points.append(point)
+            object_points.append(point)
     
     x_ground = [coords[0] for coords in ground_points]
     y_ground = [coords[1] for coords in ground_points]
     z_ground = [coords[2] for coords in ground_points]
-    ax.scatter3D(x_ground, y_ground, z_ground, color='green');
+    #ax.scatter3D(x_ground, y_ground, z_ground, color='green');
 
-    x_non_ground = [coords[0] for coords in non_ground_points]
-    y_non_ground = [coords[1] for coords in non_ground_points]
-    z_non_ground = [coords[2] for coords in non_ground_points]
-    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red');
+    x_non_ground = [coords[0] for coords in object_points]
+    y_non_ground = [coords[1] for coords in object_points]
+    z_non_ground = [coords[2] for coords in object_points]
+    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red', marker='.')
 
-    plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
+    # plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 # Max value of the norm of x and y (excluding z)
 def init_points(points):
-    global LIDAR_RANGE, NUM_BINS
-
-    values = []
-    for i in range(len(points)):
-        values.append(math.sqrt(points[i][0] ** 2 + points[i][1] ** 2))
     
-    
-    if (math.pi % DELTA_ALPHA != 0):
-        raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
-
-    LIDAR_RANGE = math.ceil(max(values))
-    # print("Max x-y norm:", LIDAR_RANGE)
-
-    NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
-
+    globals(points)
     plot_data_2D(points)
     plot_data_3D(points)
     ground_plane = get_ground_plane(points)
     # print(ground_plane)
 
-    print("im done")
-    print("repeating")
+
+# Notes
+#   - Explore Python threading for this entire process
+#   - Constant M: M must be an int, the value error below it
+#     checks for this (I think).
+#   - get_segment(): Returns negatives but Python lists handle 
+#     this and wraps around.
+#   - Var segments: segments[0] is the set of all points in the 
+#     first segment.
+#   - get_segment(): I assume, but should check that this always 
+#     returns an int
+#   - Constant BIN_SIZE: Might not be a value in metres, depends 
+#     on the encoding of LIDAR data. 
+#   - in_bin(): Note: bins don't need to be defined by the segment 
+#     they're in. They're defined by the distance from the origin.
+#     Each segment will have the same number of bins spaced at the 
+#     same distances away from origin. 
+#     This function is currently not needed. 
+#   - Constant NUM_BINS: # This NEEDS to  be an int. Perhaps I could 
+#     round down or have the last bin be smaller?
+#   - approximate_2D(): This 3D to 2D conversion is a propety of 
+#     the bins. The greater number of bins, the more accurate the 
+#     approximation. This conversion is done by getting the distance 
+#     x and y are from the origin and a prime point is simply a 2 
+#     dimensional vector of this norm and the z height. This function 
+#     also orders the points in each bin in ascending range 
+#     (distance from origin)
+#   - prototype_points(): point-to-bin mapping is not one-to-one, 
+#     and P_(b_j^s)^' may contain more than one point, or no points 
+#     at all. A prototype point will be the point within a bin with
+#     the lowest z value (height) as this point is most likely to lie
+#     on the plane.
+#   - T_D_GROUND: Perhaps this should be dynamic and scale with the 
+#     size of bins / size of segments, rather than being static. Same
+#     goes for T_D_MAX. Maybe it should be a lil dynamic too
+#   - Points that constructed the ground plane lines should already be
+#     labelled as ground, rather than being relablled. 
+#   - num_points = len(points) # make this contanst above if its used #     a lot throughout code

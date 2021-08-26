@@ -72,8 +72,8 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
     denominator = 0
     for i in range(num_points):
         numerator += w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0])
-        print(w_mat[i], (y_weight - points[i][1]), (x_weight - points[i][0]))
-        print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
+        # print(w_mat[i], (y_weight - points[i][1]), (x_weight - points[i][0]))
+        # print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
         denominator += w_mat[i] * ((y_weight - points[i][1])**2 - (x_weight - points[i][0])**2)
     numerator = -2 * numerator
     tan_2_alpha = numerator / denominator
