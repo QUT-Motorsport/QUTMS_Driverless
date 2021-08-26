@@ -11,3 +11,4 @@ development/lidar_perception/venv/*
 development/lidar_perception/__pycache__/*
 # Figures
 development/lidar_perception/figures/*
+development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt

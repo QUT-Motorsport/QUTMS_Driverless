@@ -2,14 +2,15 @@ import math
 import copy
 import total_least_squares
 
-T_M = 2*math.pi / 16 # Max angle that will be considered as ground plane # 45 deg
-T_M_SMALL = math.pi / 64 # Angle considered to be a small slope # 5.625 deg
-T_B = 1 # Max y-intercept for a ground plane line # 5 cm 
+T_M = 2*math.pi / 32 # Max angle that will be considered as ground plane # 45 deg
+T_M_SMALL = math.pi / 128 # Angle considered to be a small slope # 5.625 deg
+T_B = 0.1 # Max y-intercept for a ground plane line # 5 cm 
 T_RMSE = 0.5 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
 T_D_PREV = 10 # Max distance of the first point of a line to the line previously fitted # 1 m
+# Unsure of how T_D_PREV impacts line_extraction
 
 # Returns the distance from a point to a line
-def dist_point_line(point, m_c, b_c):
+def dist_point_line_old(point, m_c, b_c):
     x_p = point[0]
     y_p = point[1]
     m_p = (-1) / m_c # gradient perpendicular line
@@ -18,6 +19,19 @@ def dist_point_line(point, m_c, b_c):
     y_shared = m_p*x_p + b_p # or m_c*x + b_c # at x_shared, y_p = y_c
     print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
     return math.sqrt((x_shared + x_p)**2 + y_shared**2)
+
+# https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+def dist_point_line(point, m_c, b_c):
+    x_0 = point[0]
+    y_0 = point[1]
+    a_x = m_c * x_0
+    b_y = -1 * y_0
+
+    numer = abs(a_x + b_y + b_c)
+    denom = math.sqrt(a_x**2) # + b**2 cancels out since b is 1
+    distance = numer / denom
+    print(distance)
+    return distance
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line
 def fit_error_old(m, b, points):
@@ -81,8 +95,6 @@ def extract_segment_lines(segment, num_bins):
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
                     print("Adding line to segment")
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
-                    # FIXXXXXXXXXXXXX
-                    #dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
                     new_line_points = []
                     lines_created += 1
                     i = i - 1
@@ -97,7 +109,6 @@ def extract_segment_lines(segment, num_bins):
         i += 1
     if len(new_line_points) > 1 and m_new != None and b_new != None:
         lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
-        #dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1])
     if (m_new == None and b_new != None) or (m_new != None and b_new == None):
         raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
     return lines
