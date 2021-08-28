@@ -36,4 +36,4 @@ build: build_docker_base
 
 # use make build target=<value>
 run:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless --rm run $(target)
+	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run --rm $(target)
