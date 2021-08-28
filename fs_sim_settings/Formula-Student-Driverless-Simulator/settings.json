@@ -28,6 +28,20 @@
                 "Lidar1": {
                     "SensorType": 6,
                     "Enabled": true,
+                    "X": 1.20, "Y": 0, "Z": 0.2,
+                    "Roll": 0, "Pitch": 0, "Yaw" : 0,
+                    "NumberOfLasers": 16,
+                    "PointsPerScan": 16000,
+                    "VerticalFOVUpper": 15,
+                    "VerticalFOVLower": -15,
+                    "HorizontalFOVStart": -90,
+                    "HorizontalFOVEnd": 90,
+                    "RotationsPerSecond": 5,
+                    "DrawDebugPoints": false
+                },
+                "Lidar2": {
+                    "SensorType": 6,
+                    "Enabled": true,
                     "X": 1.3, "Y": 0, "Z": 0.1,
                     "Roll": 0, "Pitch": 0, "Yaw" : 0,
                     "NumberOfLasers": 1,
@@ -39,20 +53,6 @@
                     "RotationsPerSecond": 10,
                     "DrawDebugPoints": false
                 },
-                "Lidar2": {
-                    "SensorType": 6,
-                    "Enabled": true,
-                    "X": 1.20, "Y": 0, "Z": 0.2,
-                    "Roll": 0, "Pitch": 0, "Yaw" : 0,
-                    "NumberOfLasers": 4,
-                    "PointsPerScan": 4096,
-                    "VerticalFOVUpper": 5,
-                    "VerticalFOVLower": -5,
-                    "HorizontalFOVStart": -90,
-                    "HorizontalFOVEnd": 90,
-                    "RotationsPerSecond": 5,
-                    "DrawDebugPoints": false
-                },
                 "GSS" : {
                     "SensorType": 7,
                     "Enabled": true
@@ -62,11 +62,11 @@
                 "cam1": {
                     "CaptureSettings": [{
                         "ImageType": 0,
-                        "Width": 785,
-                        "Height": 785,
+                        "Width": 1920,
+                        "Height": 1080,
                         "FOV_Degrees": 90
                     }],
-                    "X": -0.3,
+                    "X": -0.5,
                     "Y": 0,
                     "Z": 1,
                     "Pitch": 0.0,
@@ -76,11 +76,11 @@
                 "cam2": {
                     "CaptureSettings": [{
                         "ImageType": 0,
-                        "Width": 785,
-                        "Height": 785,
+                        "Width": 1920,
+                        "Height": 1080,
                         "FOV_Degrees": 90
                     }],
-                    "X": -0.3,
+                    "X": -0.5,
                     "Y": 0,
                     "Z": 1,
                     "Pitch": 0.0,

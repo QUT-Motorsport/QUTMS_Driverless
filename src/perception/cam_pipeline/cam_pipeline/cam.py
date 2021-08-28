@@ -39,7 +39,9 @@ class Cam_Pipe(Node):
        
         # used to crop frame to only required area
         h, w, _ = current_frame.shape
-        current_frame = current_frame[int(26*h/50):int(h-h/10), 0:w]
+        current_frame = current_frame[int(h/2):int(h*9/10), 0:w] # made variable to cam resolution
+        # vertical res: halfway down to 9/10ths down
+        # horizontal res: full
 
         bounding_box_frame = current_frame
 
@@ -86,17 +88,17 @@ class Cam_Pipe(Node):
         # show images
         cv2.imshow("camera-base", bounding_box_frame) # image with bounding boxes
 
-        cv2.imshow("camera-om", orange_mask) # masks for each cone type
-        cv2.imshow("camera-ym", yellow_mask)
-        cv2.imshow("camera-bm", blue_mask)
+        # cv2.imshow("camera-om", orange_mask) # masks for each cone type
+        # cv2.imshow("camera-ym", yellow_mask)
+        # cv2.imshow("camera-bm", blue_mask)
 
-        cv2.imshow("camera-oe", orange_edges) # edges for each cone type (used for bounding boxes)
-        cv2.imshow("camera-ye", yellow_edges)
-        cv2.imshow("camera-be", blue_edges)
+        # cv2.imshow("camera-oe", orange_edges) # edges for each cone type (used for bounding boxes)
+        # cv2.imshow("camera-ye", yellow_edges)
+        # cv2.imshow("camera-be", blue_edges)
 
-        cv2.imshow("camera-o", cv2.bitwise_and(current_frame, current_frame, mask=orange_mask)) # masked frames for each cone type
-        cv2.imshow("camera-y", cv2.bitwise_and(current_frame, current_frame, mask=yellow_mask))
-        cv2.imshow("camera-b", cv2.bitwise_and(current_frame, current_frame, mask=blue_mask))
+        # cv2.imshow("camera-o", cv2.bitwise_and(current_frame, current_frame, mask=orange_mask)) # masked frames for each cone type
+        # cv2.imshow("camera-y", cv2.bitwise_and(current_frame, current_frame, mask=yellow_mask))
+        # cv2.imshow("camera-b", cv2.bitwise_and(current_frame, current_frame, mask=blue_mask))
         
         cv2.waitKey(1)
 
