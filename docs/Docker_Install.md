@@ -101,11 +101,17 @@ Once in the QUTMS Driverless directory, type:
 
 > `make build`
 
+This will build all development environments.
+
+If you know you only need a certain environment, you can use the `target` option. For example, building only the perception environment:
+
+> `make build target=perception`
+
 If this returns an error saying make is not installed, install it with:
 
 > `sudo apt install make`
 
-Building the FS simulator, ros, and ros1-ros2 bridge images will take upwards of 10 minutes - possibly nearly an hour.
+Building the FS simulator connector, ros, and ros1-ros2 bridge images will take upwards of 10 minutes - possibly nearly an hour.
 Your CPU will max out at 100% in parts and the most RAM usage experienced will be approximately 21GB - Don't panic if you don't have 21GB of ram, your machine will just get fairly slow once it hits this stage.
 
 After the build has been completed once, most processes are cached for future builds if necessary (don't corrupt things and you wont have to rebuild).
