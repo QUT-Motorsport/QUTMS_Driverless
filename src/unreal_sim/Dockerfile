@@ -34,15 +34,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install git lfs
 RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
 
-WORKDIR /
+WORKDIR /root
 RUN git clone https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator.git --recurse-submodules
 
 # run airsim setup
-WORKDIR /Formula-Student-Driverless-Simulator
+WORKDIR /root/Formula-Student-Driverless-Simulator
 RUN AirSim/setup.sh
 
 # change to ros
-WORKDIR /Formula-Student-Driverless-Simulator/ros
+WORKDIR /root/Formula-Student-Driverless-Simulator/ros
 
 # install ros deps
 RUN /bin/bash -c \
@@ -68,7 +68,7 @@ RUN /bin/bash -c \
 #                    Build fs_msgs - ROS 2 Messages
 # ==============================================================================
 
-WORKDIR /ros_2_messages_ws
+WORKDIR /root/ros_2_messages_ws
 COPY src/unreal_sim/fs_msgs /ros_2_messages_ws/src/fs_msgs
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
@@ -77,16 +77,24 @@ RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-selec
 #                        Build ROS1 -> ROS2 bridge
 # ==============================================================================
 
-WORKDIR /bridge_ws/src
+WORKDIR /root/bridge_ws/src
 RUN git clone https://github.com/ros2/ros1_bridge.git && \
     cd .. && \
     /bin/bash -c "source /opt/ros/noetic/setup.bash; \
     source /opt/ros/foxy/setup.bash; \
-    source /Formula-Student-Driverless-Simulator/ros/devel/setup.bash; \
-    source /ros_2_messages_ws/install/local_setup.bash; \
+    source /root/Formula-Student-Driverless-Simulator/ros/devel/setup.bash; \
+    source /root/ros_2_messages_ws/install/local_setup.bash; \
     colcon build --packages-select ros1_bridge --cmake-force-configure; \
-    source /bridge_ws/install/local_setup.bash; \
+    source /root/bridge_ws/install/local_setup.bash; \
     ros2 run ros1_bridge dynamic_bridge --print-pairs"
+
+
+# ==============================================================================
+#                              Dev Tools
+# ==============================================================================
+
+# set python3 as python command
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 
 # ==============================================================================
