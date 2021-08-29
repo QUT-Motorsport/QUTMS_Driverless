@@ -83,4 +83,4 @@ services:
         <<: *devices
         <<: *network
         <<: *visible
-        command: bash
+        command: /start.sh

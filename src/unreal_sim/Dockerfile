@@ -102,3 +102,4 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # ==============================================================================
 
 COPY src/unreal_sim/start.sh /start.sh
+RUN chmod +x /start.sh
