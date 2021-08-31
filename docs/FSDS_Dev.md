@@ -19,7 +19,7 @@ You should be able to run the simulation and control the car with 'WASD' keys.
 
 To run scripts, we must first build a development container with the Docker image, navigate to the same QUTMS Driverless directory where you built the image and type:
 
-> `make run_ros`
+> `make run target=perception`
 
 This will bring you into the virtual container made by the image. The command line will now look like this:
 
@@ -37,7 +37,7 @@ Now, to initialise scripts with the ros2 environment, type:
 
 Open a new terminal tab and navigate to the same QUTMS Driverless directory where we have been working, or open the folder in terminal. Ensure XServer and the FSDS simulator is running. Type:
 
-> `make run_sim_bridge`
+> `make run target=unreal_sim`
 
 This will make a 'bridge' between the FS simulator and the ros2 node where scripts are running so data can be output and read.
 
@@ -45,4 +45,4 @@ Finally, to run the included script that has been developed, type:
 
 > `ros2 run <PACKAGE> <SCRIPT>`
 
-This would change based on your program
+This would change based on your program.
