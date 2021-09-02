@@ -107,7 +107,7 @@ def yolov5_init(threshold):
     model = torch.hub.load(
         'ultralytics/yolov5', 
         'custom', 
-        path='/home/developer/driverless_ws/src/yolo_pipeline/bestOne.pt') # location of model in docker env
+        path='/home/developer/driverless_ws/src/perception/yolo_pipeline/bestOne.pt') # location of model in docker env
     model.conf = threshold
     return model
 
