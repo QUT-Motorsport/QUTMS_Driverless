@@ -32,10 +32,9 @@ def feature_extract(current_hsv, colour):
     return [mask, edges]
 
 
-def bounds(bounding_box_frame, mask, colour):
+def bounds(bounding_box_frame, mask, colour): # rects are returned as (x1, y1, x2, y2) not (x, y, w, h)
     # find contours from edges
     contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
-
     box_min_size = 2
 
     # find bounding boxes from contours
@@ -45,9 +44,30 @@ def bounds(bounding_box_frame, mask, colour):
         [x,y,w,h] = cv2.boundingRect(contours[i])
         hull = cv2.convexHull(contours[i])
         hulls.append(hull)
-        if w>box_min_size and h>box_min_size:
-            # cv2.rectangle(bounding_box_frame, (x, y), (x+w,y+h),(255,0,0),2)
-            rects.append([x,y,w,h])
-        cv2.drawContours(bounding_box_frame, hulls, i, col_values[colour], 2)
+        # if w>box_min_size and h>box_min_size:
+        cv2.rectangle(bounding_box_frame, (x, y), (x+w,y+h),(255,0,0),2)
+        rects.append([x,y,w,h])
+        # cv2.drawContours(bounding_box_frame, hulls, i, col_values[colour], 2)
+        # cv2.circle(bounding_box_frame, (x+w//2, y+h//2), 1, (255, 0, 255), 2)
 
-    return [bounding_box_frame, rects, hulls]
+    rects.sort(reverse=True, key=lambda rect: rect[2]*rect[3])
+    new_rects = list()
+    while len(rects) > 0:
+        rect = rects.pop(0)
+        centroid = [rect[0]+rect[2]/2, rect[1]+rect[3]/2]
+        rect = [rect[0], rect[1], rect[0]+rect[2], rect[1]+rect[3]]
+        i = 0
+        while i < len(rects):
+            other_rect = rects[i]
+            if other_rect[0] > rect[0] and other_rect[0]+other_rect[2] < rect[2]:
+                rect[0] = min(rect[0], other_rect[0])
+                rect[1] = min(rect[1], other_rect[1])
+                rect[2] = max(rect[2], other_rect[0]+other_rect[2])
+                rect[3] = max(rect[3], other_rect[1]+other_rect[3])
+                rects.remove(other_rect)
+            else:
+                i += 1
+        new_rects.append(rect)
+        cv2.rectangle(bounding_box_frame, tuple(rect[0:2]), tuple(rect[2:]),(0,0,255),2)
+
+    return [bounding_box_frame, new_rects, hulls]    
