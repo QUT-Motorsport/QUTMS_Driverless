@@ -87,4 +87,4 @@ services:
         <<: *devices
         <<: *network
         <<: *interactive
-        command: bash
+        command: /home/${USERNAME}/start.sh
