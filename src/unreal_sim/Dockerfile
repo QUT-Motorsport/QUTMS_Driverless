@@ -1,5 +1,14 @@
 FROM osrf/ros:foxy-desktop
 
+
+# ==============================================================================
+#          Set up a user that has the same UID as the rest of the containers 
+# ==============================================================================
+ARG USERNAME
+ARG HOST_UID
+RUN useradd --uid ${HOST_UID} -m ${USERNAME}
+
+
 # ==============================================================================
 #                      Install ROS 1 Noetic
 # ==============================================================================
@@ -34,15 +43,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install git lfs
 RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
 
-WORKDIR /root
+WORKDIR /home/${USERNAME}
 RUN git clone https://github.com/FS-Driverless/Formula-Student-Driverless-Simulator.git --recurse-submodules
 
 # run airsim setup
-WORKDIR /root/Formula-Student-Driverless-Simulator
+WORKDIR /home/${USERNAME}/Formula-Student-Driverless-Simulator
 RUN AirSim/setup.sh
 
 # change to ros
-WORKDIR /root/Formula-Student-Driverless-Simulator/ros
+WORKDIR /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros
 
 # install ros deps
 RUN /bin/bash -c \
@@ -68,8 +77,8 @@ RUN /bin/bash -c \
 #                    Build fs_msgs - ROS 2 Messages
 # ==============================================================================
 
-WORKDIR /root/ros_2_messages_ws
-COPY src/unreal_sim/fs_msgs /ros_2_messages_ws/src/fs_msgs
+WORKDIR /home/${USERNAME}/ros_2_messages_ws
+COPY src/unreal_sim/fs_msgs src/fs_msgs
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
 
@@ -77,15 +86,15 @@ RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-selec
 #                        Build ROS1 -> ROS2 bridge
 # ==============================================================================
 
-WORKDIR /root/bridge_ws/src
+WORKDIR /home/${USERNAME}/bridge_ws/src
 RUN git clone https://github.com/ros2/ros1_bridge.git && \
     cd .. && \
     /bin/bash -c "source /opt/ros/noetic/setup.bash; \
     source /opt/ros/foxy/setup.bash; \
-    source /root/Formula-Student-Driverless-Simulator/ros/devel/setup.bash; \
-    source /root/ros_2_messages_ws/install/local_setup.bash; \
+    source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/devel/setup.bash; \
+    source /home/${USERNAME}/ros_2_messages_ws/install/local_setup.bash; \
     colcon build --packages-select ros1_bridge --cmake-force-configure; \
-    source /root/bridge_ws/install/local_setup.bash; \
+    source /home/${USERNAME}/bridge_ws/install/local_setup.bash; \
     ros2 run ros1_bridge dynamic_bridge --print-pairs"
 
 
@@ -101,5 +110,5 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 #                             Copy run file
 # ==============================================================================
 
-COPY src/unreal_sim/start.sh /start.sh
-RUN chmod +x /start.sh
+COPY --chown=${HOST_UID} src/unreal_sim/start.sh /home/${USERNAME}/start.sh
+RUN chmod +x /home/${USERNAME}/start.sh
