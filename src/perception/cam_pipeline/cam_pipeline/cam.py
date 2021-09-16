@@ -11,8 +11,6 @@ import numpy as np
 import cv2 # OpenCV library
 # helper processing module
 from .sub_module.processing import *
-import sys
-from pprint import pprint
 
 #############################
 ##### utility functions #####
@@ -35,33 +33,34 @@ class Cam_Pipe(Node):
     # callback function for camera image processing
     def cam_callback(self, cam_msg):
         # get image
-        current_frame = self.br.imgmsg_to_cv2(cam_msg)
-
+        raw_frame = self.br.imgmsg_to_cv2(cam_msg)
 
         # mask off sky and car
-        roi_mask = np.ones(current_frame.shape[:2], dtype="uint8")
-        cv2.rectangle(roi_mask, (0, 0), (current_frame.shape[1], 400), 0, -1) ,[current_frame.shape[2]-60,500] # mask off sky
+        roi_mask = np.ones(raw_frame.shape[:2], dtype="uint8")
+        cv2.rectangle(roi_mask, (0, 0), (raw_frame.shape[1], 400), 0, -1) ,[raw_frame.shape[2]-60,500] # mask off sky
         a = 30 # variables for the position of car mask
         b = 100
         c = 235
         h1 = 80
         h2 = 155
-        cv2.fillPoly(roi_mask, [np.array([ # mask off car
-            [a,current_frame.shape[1]],
-            [b, current_frame.shape[1]-h1],
-            [c, current_frame.shape[1]-h2],
-            [current_frame.shape[0]/2,585],
-            [current_frame.shape[0]-c,current_frame.shape[1]-h2],
-            [current_frame.shape[0]-b,current_frame.shape[1]-h1],
-            [current_frame.shape[0]-a,current_frame.shape[1]]
+        # mask off car
+        cv2.fillPoly(roi_mask, [np.array([
+            [a,raw_frame.shape[1]],
+            [b, raw_frame.shape[1]-h1],
+            [c, raw_frame.shape[1]-h2],
+            [raw_frame.shape[0]/2,585],
+            [raw_frame.shape[0]-c,raw_frame.shape[1]-h2],
+            [raw_frame.shape[0]-b,raw_frame.shape[1]-h1],
+            [raw_frame.shape[0]-a,raw_frame.shape[1]]
             ], np.int32)], 0)
-        current_frame = cv2.bitwise_and(current_frame, current_frame, mask=roi_mask)
+        
+        current_frame = cv2.bitwise_and(raw_frame, raw_frame, mask=roi_mask)
 
         # used to crop frame to only required area
         h, w, _ = current_frame.shape
-        current_frame =  current_frame[int(h/2):int(h*9/10), 0:w]# made variable to cam resolution
-        # vertical res: halfway down to 9/10ths down
+        # vertical res: halfway down bottom
         # horizontal res: full
+        current_frame =  current_frame[int(h/2):h, 0:w]# made variable to cam resolution
 
         bounding_box_frame = np.copy(current_frame)
 
@@ -82,11 +81,9 @@ class Cam_Pipe(Node):
         # retrieves the rectangular bounding boxes and convex hulls for each colour
         # as well as drawing to the displayed frame
         # from sub module function
-        [bounding_box_frame, orange_rects, orange_hulls] = bounds(bounding_box_frame, orange_mask, orange)
-        [bounding_box_frame, yellow_rects, yellow_hulls] = bounds(bounding_box_frame, yellow_mask, yellow)
-        [bounding_box_frame, orange_rects, orange_hulls] = bounds(bounding_box_frame, blue_mask, blue)
-
-
+        [bounding_box_frame, orange_rects] = bounds(bounding_box_frame, orange_mask, orange)
+        [bounding_box_frame, yellow_rects] = bounds(bounding_box_frame, yellow_mask, yellow)
+        [bounding_box_frame, orange_rects] = bounds(bounding_box_frame, blue_mask, blue)
         
 
         # roi_mask = np.ones(current_frame.shape[:2], dtype="uint8")
