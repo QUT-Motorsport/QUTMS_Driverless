@@ -223,3 +223,25 @@ def init_DBSCAN_old(object_points):
     empty_cluster = []
     init_cluster(cluster_origin_index, x_ordered_labelled, empty_cluster)
     
+from sklearn.cluster import DBSCAN
+import numpy as np
+
+def plot_clusters(clusters, noise):
+    init_plot_2D("Object Segmentation", "x", "y")
+
+    x_noise = [coords[0] for coords in noise]
+    y_noise = [coords[1] for coords in noise]
+
+    plt.plot(x_noise, y_noise, '.', color='red')
+
+    colours = ['g', 'grey', 'm', 'orange']
+    print(clusters[0]==clusters[1])
+    for i in range(len(clusters)):
+        x_cluster = [coords[0] for coords in clusters[i]]
+        y_cluster = [coords[1] for coords in clusters[i]]
+        plt.plot(x_cluster, y_cluster, '.', color=colours[i % len(colours)])
+        x_mean  = sum(x_cluster) / len(x_cluster)
+        y_mean  = sum(y_cluster) / len(y_cluster)
+        plt.plot(x_mean, y_mean, 'x', color='blue')
+
+
