@@ -110,3 +110,16 @@ def object_clustering(x_ordered_labelled):
 
     return clusters
 
+def init_plot_2D(title, xlabel, ylabel):
+    fig = plt.figure()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+def plot_grid_2D(object_points):
+    init_plot_2D("Clustering Grid", "x", "y")
+
+    x = [coords[0] for coords in object_points]
+    y = [coords[1] for coords in object_points]
+
+    plt.plot(x, y, '.', color='red')
