@@ -123,3 +123,18 @@ def plot_grid_2D(object_points):
     y = [coords[1] for coords in object_points]
 
     plt.plot(x, y, '.', color='red')
+
+def get_distance(point_a, point_b):
+    distance = math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2 + (point_b[2]-point_a[2])**2)
+    return distance
+
+def compute_cluster(current_point_index, x_ordered_labelled, clusters):
+    latest_cluster = clusters
+    cluster_origin_point = x_ordered_labelled[current_point_index]
+
+    for i in range(0, len(clusters[len()])):
+        pass
+
+
+
+    # need to remove all points in cluster from x_ordered_labelled
