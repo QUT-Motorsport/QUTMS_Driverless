@@ -48,3 +48,13 @@ def get_neighbourhood(point_index, x_ordered_labelled):
         #x_ordered_labelled.pop(point_index)
         # we might reach end on list of poinst so will need to take care of that
 
+def recursive_cluster(cluster, neighbourhood, x_ordered_labelled):
+    print(neighbourhood)
+    for i in range(len(neighbourhood)):
+        # If not already visited
+        if neighbourhood[i][0][3] == 0 and neighbourhood[i][1] < len(x_ordered_labelled) - 1:
+            print(neighbourhood[i][1])
+            new_neighbourhood = get_neighbourhood(neighbourhood[i][1], x_ordered_labelled)
+            cluster.append(new_neighbourhood)
+            recursive_cluster(cluster, new_neighbourhood, x_ordered_labelled)
+    return cluster
