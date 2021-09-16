@@ -173,3 +173,53 @@ def init_cluster_old(x_ordered_labelled, clusters):
         x_ordered_labelled.pop(0) # if len(x_ordered_labelled) > 0
         init_cluster_old(x_ordered_labelled, clusters)
 
+
+
+
+
+
+def get_neighbourhood(origin_index, x_ordered_labelled):
+    global epsilon
+    origin_point = x_ordered_labelled[origin_index]
+    neighbourhood = []
+    for i in range(0, len(x_ordered_labelled)):
+        if i != origin_index:
+            potential_neighbour = x_ordered_labelled[i]
+            if potential_neighbour[0] <= epsilon:
+                delta_distance = get_distance(origin_point, potential_neighbour)
+                if delta_distance < epsilon:
+                    neighbourhood.append([potential_neighbour, i])
+            else:
+                break
+    return neighbourhood
+
+def compute_cluster(cluster_origin_index, x_ordered_labelled, cluster):
+    global min_points
+    origin_neighbourhood = get_neighbourhood(cluster_origin_index, x_ordered_labelled)
+    if len(origin_neighbourhood) >= min_points:
+        x_ordered_labelled[cluster_origin_index][3] = 1
+        cluster.append(origin_neighbourhood)
+        for i in range(len(origin_neighbourhood)):
+            new_cluster_origin_index = origin_neighbourhood[i][1]
+            compute_cluster(new_cluster_origin_index, x_ordered_labelled, cluster)
+    else:
+        x_ordered_labelled[cluster_origin_index][3] = 2
+
+def init_cluster():    
+    clustering = True
+    while clustering:
+        compute_cluster()
+    pass
+
+def init_DBSCAN_old(object_points):
+    print("\n\n----------------------------------------------------------------")
+    global epsilon
+    global min_points
+    
+    x_ordered_points = sorted(object_points, key = lambda coords: coords[0])
+    x_ordered_labelled = label_points(x_ordered_points)
+
+    cluster_origin_index = 0
+    empty_cluster = []
+    init_cluster(cluster_origin_index, x_ordered_labelled, empty_cluster)
+    
