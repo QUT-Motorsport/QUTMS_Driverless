@@ -59,7 +59,7 @@ def recursive_cluster(cluster, neighbourhood, x_ordered_labelled):
             recursive_cluster(cluster, new_neighbourhood, x_ordered_labelled)
     return cluster
 
-def plot_clusters_old(clusters, object_points):
+def plot_clusters(clusters, object_points):
     init_plot_2D("Clustering Grid", "x", "y")
 
     x = [coords[0] for coords in object_points]
@@ -83,3 +83,30 @@ def plot_clusters_old(clusters, object_points):
         print(x_mean, y_mean)
 
     plt.plot(x_means, y_means, '.', color='blue')
+
+    # sort by x
+# then check for all points within epsilon x range
+# check their norm against current point
+# if all good then add to neighbourhood and continue
+def object_clustering(x_ordered_labelled):
+    print("Starting object clustering")
+    clusters = []
+    point_index = 0
+
+    for i in range(len(x_ordered_labelled)):
+        print("Running for loop", i)
+        if x_ordered_labelled[i][3] == 0:
+            point_index = i
+            current_point = x_ordered_labelled[point_index]
+            init_neighbourhood = [[current_point, point_index]]
+            print(init_neighbourhood)
+            cluster = recursive_cluster([], init_neighbourhood, x_ordered_labelled)
+            if cluster != []:
+                clusters.append(cluster)
+
+    print("\n\n\n")
+    print(clusters)
+    print(len(clusters))
+
+    return clusters
+
