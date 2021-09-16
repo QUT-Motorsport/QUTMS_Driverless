@@ -138,3 +138,25 @@ def compute_cluster(current_point_index, x_ordered_labelled, clusters):
 
 
     # need to remove all points in cluster from x_ordered_labelled
+
+
+def init_cluster_old(x_ordered_labelled, noise, clusters):
+    # Step 1
+    global epsilon
+    global min_points
+
+    current_point_index = 0
+    current_point = x_ordered_labelled[current_point_index]
+    current_neighbourhood = get_neighbourhood(current_point_index, x_ordered_labelled)
+
+    # Step 2
+    if len(current_neighbourhood >= min_points):
+        clusters.append([[current_point] + current_neighbourhood])
+        for i in range(len(clusters[len(clusters)-1])):
+            x_ordered_labelled.pop(0)
+        compute_cluster(current_point_index, x_ordered_labelled, clusters)
+    else:
+        noise.append(x_ordered_labelled[current_point_index])
+        x_ordered_labelled.pop(current_point_index)
+        init_cluster_old(x_ordered_labelled, noise)
+
