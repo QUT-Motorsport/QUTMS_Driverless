@@ -160,3 +160,16 @@ def init_cluster_old(x_ordered_labelled, noise, clusters):
         x_ordered_labelled.pop(current_point_index)
         init_cluster_old(x_ordered_labelled, noise)
 
+def init_cluster_old(x_ordered_labelled, clusters):
+    global min_points
+    current_point = x_ordered_labelled[0]
+    current_neighbourhood = get_neighbourhood(0, x_ordered_labelled)
+    if len(current_neighbourhood) >= min_points:
+        # Work here
+        new_cluster = compute_cluster([[current_point, 0] + current_neighbourhood], x_ordered_labelled)
+        clusters.append(new_cluster)
+        pass
+    else:
+        x_ordered_labelled.pop(0) # if len(x_ordered_labelled) > 0
+        init_cluster_old(x_ordered_labelled, clusters)
+
