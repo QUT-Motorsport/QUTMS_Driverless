@@ -1,132 +1,95 @@
-# ROS2 libraries
+# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
-from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
-# ROS2 message libraries
+from cv_bridge import CvBridge # package to convert between ROS and OpenCV Images
+# import ROS2 message libraries
 from sensor_msgs.msg import Image
-# custom sim data message libraries
-from qutms_msgs.msg import ConeScan
-# other python libraries
+# importcustom sim data message libraries
+from qutms_msgs.msg import ConeScan, ConeData
+
+# import other python libraries
 import numpy as np
-import cv2 # OpenCV library
-# helper processing module
-from .sub_module.processing import *
+import cv2
+import time
 
-#############################
-##### utility functions #####
-#############################
+# import helper image processing module
+from .sub_module.img_processing import *
+# import helper cone location processing module
+from .sub_module.loc_processing import *
 
-class Cam_Pipe(Node):
+
+class CamDetection(Node):
     def __init__(self):
         super().__init__('control')
 
          # creates subscriber to 'cam1' with type Image that sends data to cam_callback
         self.cam_subscription_ = self.create_subscription(
             Image,
-            '/fsds/camera/cam2',
+            '/fsds/camera/cam1',
             self.cam_callback,
             10)
         self.cam_subscription_  # prevent unused variable warning
-
         self.br = CvBridge()
+        self.cone_coords = list()
+        self.n = 0
+        self.start = time.time()
+
+        ## creates publisher to 'control_command' with type ControlCommand
+        # self.scan_publisher_ = self.create_publisher(
+        #     ConeScan,
+        #     'lidar_output', 
+        #     10)
+        # # creates timer for publishing commands
+        # self.timer_period = 0.001  # seconds
+        # self.timer = self.create_timer(self.timer_period, self.publisher)
+
 
     # callback function for camera image processing
     def cam_callback(self, cam_msg):
         # get image
         raw_frame = self.br.imgmsg_to_cv2(cam_msg)
+        h, w, _ = raw_frame.shape
 
-        # mask off sky and car
-        roi_mask = np.ones(raw_frame.shape[:2], dtype="uint8")
-        cv2.rectangle(roi_mask, (0, 0), (raw_frame.shape[1], 400), 0, -1) ,[raw_frame.shape[2]-60,500] # mask off sky
-        a = 30 # variables for the position of car mask
-        b = 100
-        c = 235
-        h1 = 80
-        h2 = 155
-        # mask off car
-        cv2.fillPoly(roi_mask, [np.array([
-            [a,raw_frame.shape[1]],
-            [b, raw_frame.shape[1]-h1],
-            [c, raw_frame.shape[1]-h2],
-            [raw_frame.shape[0]/2,585],
-            [raw_frame.shape[0]-c,raw_frame.shape[1]-h2],
-            [raw_frame.shape[0]-b,raw_frame.shape[1]-h1],
-            [raw_frame.shape[0]-a,raw_frame.shape[1]]
-            ], np.int32)], 0)
-        
-        current_frame = cv2.bitwise_and(raw_frame, raw_frame, mask=roi_mask)
+        display = True
+        cones = cam_main(raw_frame, display)
 
-        # used to crop frame to only required area
-        h, w, _ = current_frame.shape
-        # vertical res: halfway down bottom
-        # horizontal res: full
-        current_frame =  current_frame[int(h/2):h, 0:w]# made variable to cam resolution
+        # call display_locations to return xyzc for every cone
+        self.cone_coords = display_locations(w/2, cones) # send cones for distance calculation
 
-        bounding_box_frame = np.copy(current_frame)
+        print("\n cone_coords: ", self.cone_coords)
 
-        # convert to hsv
-        current_hsv = cv2.cvtColor(bounding_box_frame, cv2.COLOR_BGR2HSV)
+        # self.n += 1
+        # if self.n == 100:
+        #     print(time.time() - self.start)
 
-        # passable variables for colours
-        orange = 0
-        yellow = 1
-        blue = 2
+    # def publisher(self):
+    #     cone_scan = ConeScan()
+    #     # head = Header()
 
-        # retrieves the mask and edges for each colour
-        # from sub module function
-        [orange_mask, orange_edges] = feature_extract(current_hsv, orange)
-        [yellow_mask, yellow_edges] = feature_extract(current_hsv, yellow)
-        [blue_mask, blue_edges] = feature_extract(current_hsv, blue)
+    #     cone_data = list()
+    #     for i in range(len(self.cones)):
+    #         cone = ConeData()
+    #         cone.x = self.cones[i][0]
+    #         cone.y = self.cones[i][1]
+    #         cone.z = self.cones[i][2]
+    #         cone.c = self.cones[i][3]
+    #         cone_data.append(cone)
+       
+    #     # cant work out how headers work lmao, this breaks stuff
+    #     # head.stamp = rospy.Time.now()
+    #     # head.frame_id = "lidar2"
+    #     # cone_scan.header = head
 
-        # retrieves the rectangular bounding boxes and convex hulls for each colour
-        # as well as drawing to the displayed frame
-        # from sub module function
-        [bounding_box_frame, orange_rects] = bounds(bounding_box_frame, orange_mask, orange)
-        [bounding_box_frame, yellow_rects] = bounds(bounding_box_frame, yellow_mask, yellow)
-        [bounding_box_frame, orange_rects] = bounds(bounding_box_frame, blue_mask, blue)
-        
+    #     cone_scan.data = cone_data
 
-        # roi_mask = np.ones(current_frame.shape[:2], dtype="uint8")
-        # cv2.rectangle(roi_mask, (yellow_rects[0][0], yellow_rects[0][2]), (yellow_rects[0][1], yellow_rects[0][3]), 0, -1) ,[current_frame.shape[2]-60,500] # mask off sky
-        # current_frame = cv2.bitwise_and(current_frame, current_frame, mask=roi_mask)
-
-        # show images
-        cv2.imshow("camera-base", current_frame) # image with bounding boxes
-
-        # cv2.imshow("camera-om", orange_mask) # masks for each cone type
-        # cv2.imshow("camera-ym", yellow_mask)
-        # cv2.imshow("camera-bm", blue_mask)
-
-        # cv2.imshow("camera-oe", orange_edges) # edges for each cone type (used for bounding boxes)
-        # cv2.imshow("camera-ye", yellow_edges)
-        # cv2.imshow("camera-be", blue_edges)
-
-        # cv2.imshow("camera-o", cv2.bitwise_and(current_frame, current_frame, mask=orange_mask)) # masked frames for each cone type
-        # cv2.imshow("camera-y", cv2.bitwise_and(current_frame, current_frame, mask=yellow_mask))
-        # cv2.imshow("camera-b", cv2.bitwise_and(current_frame, current_frame, mask=blue_mask))
-
-        # img = np.copy(current_frame)
-        # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-
-        # gray = np.float32(gray)
-        # dst = cv2.cornerHarris(gray,2,3,0.04)
-
-        # #result is dilated for marking the corners, not important
-        # dst = cv2.dilate(dst,None)
-
-        # # Threshold for an optimal value, it may vary depending on the image.
-        # img[dst>0.01*dst.max()]=[0,0,255]
-
-        # cv2.imshow('dst',img)
-        
-        cv2.waitKey(1)
+    #     self.scan_publisher_.publish(cone_scan)
 
 
 ## main call
 def main(args=None):
     rclpy.init(args=args)
 
-    node = Cam_Pipe()
+    node = CamDetection()
     rclpy.spin(node)
     
     node.destroy_node()

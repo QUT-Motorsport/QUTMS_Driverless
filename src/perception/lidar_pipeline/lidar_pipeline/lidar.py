@@ -27,7 +27,7 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
-        self.cones = []
+        self.cones = list()
 
         ## creates publisher to 'control_command' with type ControlCommand
         self.scan_publisher_ = self.create_publisher(
@@ -51,22 +51,21 @@ class LidarDetection(Node):
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = np.array(list(read_points(pcl_msg)))
 
-        # self.get_logger().info('cones: "%s"' % pcl_array)
-        
+        # call find_cones to retrieve cone x,y,z + intensity
         self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
-
+        print("\ncones: ", self.cones)
 
     def publisher(self):
         cone_scan = ConeScan()
         # head = Header()
 
-        cone_data = []
+        cone_data = list()
         for i in range(len(self.cones)):
             cone = ConeData()
             cone.x = self.cones[i][0]
             cone.y = self.cones[i][1]
             cone.z = self.cones[i][2]
-            cone.i = self.cones[i][3]
+            cone.c = self.cones[i][3]
             cone_data.append(cone)
        
         # cant work out how headers work lmao, this breaks stuff

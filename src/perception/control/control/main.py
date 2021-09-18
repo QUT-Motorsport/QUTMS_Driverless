@@ -75,6 +75,7 @@ class SimpleController(Node):
 
     ## helper function to adjust velocity based on how tight the turn is ahead
     def predict_vel(self, close_avg_y, far_avg_y):
+        # how different are
         cone_diff = abs(far_avg_y - close_avg_y)
         self.target_vel = self.max_vel - cone_diff*abs(cone_diff) * self.vel_p
 
@@ -93,19 +94,21 @@ class SimpleController(Node):
     def lidar_callback(self, cone_scan):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
-        self.close_cones = list()
+        self.close_cones = list() # init empty lists
         self.far_cones = list()
 
+        # retrieve message data
         cones = cone_scan.data
-
         # calculate distance between lidar and cone
-        for j in range(len(cones)):
-            cone = []
+        for j in range(0, len(cones)):
+            cone = list()
             cone.append(cones[j].x)
             cone.append(cones[j].y)
             cone.append(cones[j].z)
-            cone.append(cones[j].i)
+            cone.append(cones[j].c)
 
+            # check which bin cone falls in
+            # further cones will have less impact on immediate decisions
             if distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
                 self.close_cones.append(cone)
             if distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:

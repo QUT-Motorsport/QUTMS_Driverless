@@ -40,7 +40,6 @@ def get_close(num_cones, results, colour):
 
     return closest
 
-
 ## a function for the main yolov5 detector
 def yolov5_detector(model, image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

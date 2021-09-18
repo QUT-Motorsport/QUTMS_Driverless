@@ -26,27 +26,34 @@ def distance(x1, y1, x2, y2):
 
 # averages all x,y,z and intensity points that hit 1 cone to find centroid
 def pointgroup_to_cone(group):
-    average_x = 0
+    average_x = 0 # init avgs
     average_y = 0
     average_z = 0
 
-    for point in group:
-        average_x += point[0]
+    g_len = len(group) # length of point group
+    # iterate through each point in group
+    for i in range(0, g_len):
+        point = group[i]
+        average_x += point[0] # increase sum
         average_y += point[1]
         average_z += point[2]
         # average_i += point[3] # intensity value
-    average_x = average_x / len(group)
-    average_y = average_y / len(group)
-    average_z = average_z / len(group)
-    average_i = 0 # will change
-    # average_i = average_i / len(group)
-    return [float(average_x), float(average_y), float(average_z), float(average_i)]
+    average_x = average_x / g_len # calculate avgs
+    average_y = average_y / g_len
+    average_z = average_z / g_len
+    # average_i = average_i / g_len
+
+    c = 0 # no colour data from sim atm
+    # colours would be 0 = blue, 1 = yellow, 2 = orange 
+
+    return [float(average_x), float(average_y), float(average_z), int(c)]
 
 # evaluate all points and find points that are grouped together as those will probably be cones.
 def find_cones(points, max_range_cutoff, distance_cutoff):
-    current_group = []
-    cones = []
+    current_group = list() # init groups and cones
+    cones = list()
 
+    # iterate through each point
     for i in range(1, len(points)):
         # distance_to_point = distance(0, 0, points[i][0], points[i][1])
 
@@ -65,6 +72,6 @@ def find_cones(points, max_range_cutoff, distance_cutoff):
                 cone = pointgroup_to_cone(current_group)
                 cones.append(cone)
 
-                current_group = []
+                current_group = list() # clear group
 
     return cones
