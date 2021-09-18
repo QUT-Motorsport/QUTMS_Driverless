@@ -24,7 +24,7 @@ def distance(x1, y1, x2, y2):
     distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
     return distance
 
-# averages all x,y points that hit 1 cone to find the cone's centre coord
+# averages all x,y,z and intensity points that hit 1 cone to find centroid
 def pointgroup_to_cone(group):
     average_x = 0
     average_y = 0

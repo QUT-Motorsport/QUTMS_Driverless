@@ -1,6 +1,7 @@
 from setuptools import setup
 
 package_name = 'control'
+submodule_name = 'control/sub_module'
 
 setup(
     name=package_name,
@@ -20,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller = control.controller:main'
+            'main = control.main:main'
         ],
     },
 )

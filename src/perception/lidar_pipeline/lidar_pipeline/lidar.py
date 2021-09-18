@@ -1,18 +1,21 @@
-# ROS2 libraries
+# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
-# ROS2 message libraries
+# import ROS2 message libraries
 from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
-# custom sim data message libraries
+# import custom sim data message libraries
 from qutms_msgs.msg import ConeScan, ConeData
-# other python libraries
-import numpy
-# helper math function
-from .sub_module.simple_lidar import find_cones
-# import ROS function that has been ported to ROS2 by
-# SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
+
+# import other python libraries
+import numpy as np
+
+# import helper point and cone processing module
+from .sub_module.point_processing import find_cones
+# import ROS function that has been ported to ROS2 by SebastianGrans
+# https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import read_points
+
 
 class LidarDetection(Node):
     def __init__(self):
@@ -46,7 +49,7 @@ class LidarDetection(Node):
         and reflectivity of the cones"""
         
         # Convert the list of floats into a list of xyz coordinates
-        pcl_array = numpy.array(list(read_points(pcl_msg)))
+        pcl_array = np.array(list(read_points(pcl_msg)))
 
         # self.get_logger().info('cones: "%s"' % pcl_array)
         
@@ -66,6 +69,7 @@ class LidarDetection(Node):
             cone.i = self.cones[i][3]
             cone_data.append(cone)
        
+        # cant work out how headers work lmao, this breaks stuff
         # head.stamp = rospy.Time.now()
         # head.frame_id = "lidar2"
         # cone_scan.header = head

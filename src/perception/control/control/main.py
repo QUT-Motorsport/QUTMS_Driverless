@@ -1,18 +1,18 @@
-# ROS2 libraries
+# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
-# ROS2 message libraries
+# import ROS2 message libraries
 from geometry_msgs.msg import TwistStamped
-# custom sim data message libraries
+# import custom sim data message libraries
 from fs_msgs.msg import ControlCommand
 from qutms_msgs.msg import ConeScan, ConeData
-# other python libraries
-import math
 
+# import helper drive processing module
+from .sub_module.move_processing import *
 
-class Controller(Node):
+class SimpleController(Node):
     def __init__(self):
-        super().__init__('control')
+        super().__init__('simple_control')
         ## creates subscriber to 'gss' with type TwistStamped that sends data to geo_callback
         self.lidar_subscription_ = self.create_subscription(
             ConeScan,
@@ -40,8 +40,8 @@ class Controller(Node):
 
         ## initial class variables
         self.time = 0
-        self.close_cones = []
-        self.far_cones = []
+        self.close_cones = list()
+        self.far_cones = list()
         self.sum_far_avg_y = 0 # integral components
         self.sum_close_avg_y = 0 
         self.prev_close_avg_y = 0 # derivative components
@@ -72,28 +72,6 @@ class Controller(Node):
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
 
-    #############################
-    ##### utility functions #####
-    #############################
-
-    ## helper function to find distances (magnitude) between two top-down points
-    def distance(self, x1, y1, x2, y2): 
-        distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
-        return distance
-
-    ## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
-    def find_avg_y(self, cone_set):
-        length = len(cone_set)
-        if length != 0:
-            average_y = 0
-            for cone in cone_set:
-                average_y += cone[1]
-            average_y = average_y / length
-
-            return -average_y
-        
-        else:
-            return 0 
 
     ## helper function to adjust velocity based on how tight the turn is ahead
     def predict_vel(self, close_avg_y, far_avg_y):
@@ -115,8 +93,8 @@ class Controller(Node):
     def lidar_callback(self, cone_scan):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
-        self.close_cones = []
-        self.far_cones = []
+        self.close_cones = list()
+        self.far_cones = list()
 
         cones = cone_scan.data
 
@@ -128,9 +106,9 @@ class Controller(Node):
             cone.append(cones[j].z)
             cone.append(cones[j].i)
 
-            if self.distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
+            if distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
                 self.close_cones.append(cone)
-            if self.distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
+            if distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
                 self.far_cones.append(cone)
 
 
@@ -152,8 +130,8 @@ class Controller(Node):
         calc_steering = 0.0
 
         # call cone detection
-        close_avg_y = self.find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
-        far_avg_y = self.find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
+        close_avg_y = find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
+        far_avg_y = find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
 
         # wait for initial publishing delay
         if (self.time >= 3): 
@@ -197,7 +175,7 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = Controller()
+    node = SimpleController()
     rclpy.spin(node)
     
     node.destroy_node()
