@@ -12,12 +12,12 @@ yellow_low = np.array([0.1, 0, 0])*255
 blue_high = np.array([0.6, 1, 1])*255
 blue_low = np.array([0.3, 0.2, 0.5])*255
 
-upper_thresh = [orange_high, yellow_high, blue_high]
-lower_thresh = [orange_low, yellow_low, blue_low]
+upper_thresh = [blue_high, yellow_high, orange_high]
+lower_thresh = [blue_low, yellow_low, orange_low]
 
 colours = [0, 1, 2]
 col_words = ["blue", "yellow", "orange"]
-box_cols = [(0, 102, 255), (0, 255, 255), (255, 102, 0)]
+box_cols = [(255, 102, 0), (0, 255, 255), (0, 102, 255)]
 
 # used for removing noise via erode/dilate
 kernel = np.ones((2, 2), np.uint8)
@@ -43,18 +43,20 @@ def bounds(bounding_box_frame, cones, mask, colour): # rects are returned as (x1
         [x,y,w,h] = cv2.boundingRect(contours[i])
 
         # box size cutoff
-        min_pix_size = 3 # can change based on sim image
+        min_pix_size = 2 # can change based on sim image
         if w > min_pix_size and h > min_pix_size:
-            rects.append([x,y,w,h]) # add rectangle geometry to list
+            # append rectangle geometry twice to ensure rectangle groupings will 
+            # show initially non-overlapping rectangles
+            rects.append([x,y,w,h])
 
         # draw rectangles for segments (green rectangle to distinguish)
         # cv2.rectangle(bounding_box_frame, (x, y), (x+w, y+h), (0, 204, 0), 2)
-
+    
     # find whole cones' bounding rectangles
     rects.sort(reverse=True, key=lambda rect: rect[2]*rect[3])
 
     while len(rects) > 0: # loop until empty
-        rect = rects.pop(0) # remove element 0 from rects and return it
+        rect = rects.pop(0) # remove element 0 from results and return it
         rect = [rect[0], rect[1], rect[0]+rect[2], rect[1]+rect[3]] # x1, y1, x2, y2
         
         left_edge = rect[0]
@@ -94,7 +96,7 @@ def bounds(bounding_box_frame, cones, mask, colour): # rects are returned as (x1
     return [bounding_box_frame, cones]
 
 
-def cam_main(frame, display):
+def cam_main(frame, display=False):
     # used to crop frame to only required area
     h, w, _ = frame.shape
 
@@ -125,7 +127,7 @@ def cam_main(frame, display):
     else:
         # vertical res: halfway down bottom
         # horizontal res: full
-        current_frame = frame[int(16*h/30):h, 0:w]# made variable to cam resolution
+        current_frame = frame[int(5*h/30):h, 0:w]# made variable to cam resolution
 
     bounding_box_frame = current_frame # frame to display on
 
@@ -162,10 +164,10 @@ def cam_main(frame, display):
         # gray = np.float32(gray)
         # dst = cv2.cornerHarris(gray,2,3,0.04)
 
-        # #result is dilated for marking the corners, not important
+        # # result is dilated for marking the corners, not important
         # dst = cv2.dilate(dst,None)
 
-        # # Threshold for an optimal value, it may vary depending on the image.
+        # # threshold for an optimal value, it may vary depending on the image.
         # img[dst>0.01*dst.max()]=[0,0,255]
 
         # cv2.imshow('dst',img)

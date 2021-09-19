@@ -12,14 +12,22 @@ from .sub_module.move_processing import *
 
 class SimpleController(Node):
     def __init__(self):
-        super().__init__('simple_control')
-        ## creates subscriber to 'gss' with type TwistStamped that sends data to geo_callback
+        super().__init__('simple_controller')
+        ## creates subscriber to 'lidar_processed' with type ConeScan that sends data to lidar_callback
         self.lidar_subscription_ = self.create_subscription(
             ConeScan,
-            'lidar_output',
+            'lidar_processed',
             self.lidar_callback,
             10)
         self.lidar_subscription_ 
+
+        ## creates subscriber to 'cam_processed' with type ConeScan that sends data to cam_callback
+        self.cam_subscription_ = self.create_subscription(
+            ConeScan,
+            'cam_processed',
+            self.cam_callback,
+            10)
+        self.cam_subscription_ 
 
         ## creates subscriber to 'gss' with type TwistStamped that sends data to geo_callback
         self.geo_subscription_ = self.create_subscription(
@@ -49,7 +57,6 @@ class SimpleController(Node):
         self.vel = 0.0
 
         ## test demo variables to change
-
         ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
         ## DEMO 2.5 CONSTANTS
         # cone point vars
@@ -72,25 +79,30 @@ class SimpleController(Node):
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
 
+        ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
+        ## img segmenting
+        # cone point vars
+        self.close_range_cutoff = 6.5 # m
+        self.far_range_cutoff = 11 # m
 
-    ## helper function to adjust velocity based on how tight the turn is ahead
-    def predict_vel(self, close_avg_y, far_avg_y):
-        # how different are
-        cone_diff = abs(far_avg_y - close_avg_y)
-        self.target_vel = self.max_vel - cone_diff*abs(cone_diff) * self.vel_p
+        # PID coeffs
+        self.steering_pc = 0.08
+        self.steering_ic = 0
+        self.steering_dc = 1
+        self.steering_pf = 0.02
+        self.steering_if = 0
+        self.steering_df = 0.6
 
-        calc_brake = 0
-
-        if self.target_vel < self.min_vel:
-            vel_diff = self.min_vel - self.target_vel
-            calc_brake = vel_diff * self.brake_p
-
-            self.target_vel = self.min_vel # stop car from slowing too much
-
-        return calc_brake
+        # accel + vel targets
+        self.vel_p = 0.7
+        self.max_throttle = 0.20 # m/s^2
+        self.max_vel = 5 # m/s
+        self.target_vel = self.max_vel # initially target is max
+        self.min_vel = self.max_vel / 2
+        self.brake_p = 0
 
 
-    ## callback for lidar scan data to be sent to
+    ## callback for lidar processed data to be sent to
     def lidar_callback(self, cone_scan):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
@@ -104,6 +116,31 @@ class SimpleController(Node):
             cone = list()
             cone.append(cones[j].x)
             cone.append(cones[j].y)
+            cone.append(cones[j].z)
+            cone.append(cones[j].c)
+
+            # check which bin cone falls in
+            # further cones will have less impact on immediate decisions
+            if distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
+                self.close_cones.append(cone)
+            if distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
+                self.far_cones.append(cone)
+
+
+    ## callback for camera processed data to be sent to
+    def cam_callback(self, cone_scan):
+        """ In here, we will call calculations to ideally get the xyz location 
+        and reflectivity of the cones"""
+        self.close_cones = list() # init empty lists
+        self.far_cones = list()
+
+        # retrieve message data
+        cones = cone_scan.data
+        # calculate distance between lidar and cone
+        for j in range(0, len(cones)):
+            cone = list()
+            cone.append(cones[j].x)
+            cone.append(-(cones[j].y))
             cone.append(cones[j].z)
             cone.append(cones[j].c)
 
@@ -133,13 +170,15 @@ class SimpleController(Node):
         calc_steering = 0.0
 
         # call cone detection
-        close_avg_y = find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
-        far_avg_y = find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
+        # frame of reference is flipped along FOV (for some reason)
+        close_avg_y = find_avg_y(self.close_cones) 
+        far_avg_y = find_avg_y(self.far_cones)
 
         # wait for initial publishing delay
         if (self.time >= 3): 
             # calculate throttle + brake
-            calc_brake = self.predict_vel(close_avg_y, far_avg_y)
+            [calc_brake, self.target_vel] = predict_vel(close_avg_y, far_avg_y, \
+                self.brake_p, self.min_vel, self.max_vel, self.vel_p)
 
             p_vel = (1 - (self.vel / self.target_vel)) # increase proportionally as it approaches target
             if p_vel > 0:

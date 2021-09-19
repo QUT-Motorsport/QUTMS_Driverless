@@ -43,7 +43,7 @@ def pointgroup_to_cone(group):
     average_z = average_z / g_len
     # average_i = average_i / g_len
 
-    c = 0 # no colour data from sim atm
+    c = 3 # no colour data from sim atm
     # colours would be 0 = blue, 1 = yellow, 2 = orange 
 
     return [float(average_x), float(average_y), float(average_z), int(c)]

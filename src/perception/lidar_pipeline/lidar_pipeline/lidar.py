@@ -17,9 +17,9 @@ from .sub_module.point_processing import find_cones
 from .sub_module.read_pcl import read_points
 
 
-class LidarDetection(Node):
+class LidarProcessing(Node):
     def __init__(self):
-        super().__init__('lidar_pipe')
+        super().__init__('lidar_processing')
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
@@ -32,7 +32,7 @@ class LidarDetection(Node):
         ## creates publisher to 'control_command' with type ControlCommand
         self.scan_publisher_ = self.create_publisher(
             ConeScan,
-            'lidar_output', 
+            'lidar_processed', 
             10)
         # creates timer for publishing commands
         self.timer_period = 0.001  # seconds
@@ -53,8 +53,9 @@ class LidarDetection(Node):
 
         # call find_cones to retrieve cone x,y,z + intensity
         self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
-        print("\ncones: ", self.cones)
-
+        
+        
+    ## publisher for processed cone data
     def publisher(self):
         cone_scan = ConeScan()
         # head = Header()
@@ -67,7 +68,7 @@ class LidarDetection(Node):
             cone.z = self.cones[i][2]
             cone.c = self.cones[i][3]
             cone_data.append(cone)
-       
+              
         # cant work out how headers work lmao, this breaks stuff
         # head.stamp = rospy.Time.now()
         # head.frame_id = "lidar2"
@@ -82,7 +83,7 @@ class LidarDetection(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = LidarDetection()
+    node = LidarProcessing()
     rclpy.spin(node)
     
     node.destroy_node()

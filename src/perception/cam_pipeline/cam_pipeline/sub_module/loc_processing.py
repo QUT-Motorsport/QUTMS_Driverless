@@ -2,11 +2,11 @@
 import math
 import cv2
 
-FOCAL_LEN = 650
-SMALL_CONE_W = 0.228
-SMALL_CONE_H = 0.505
-LARGE_CONE_W = 0.228
-LARGE_CONE_H = 0.325
+FOCAL_LEN = 580
+SMALL_CONE_W = 0.228 #m
+SMALL_CONE_H = 0.325 #m
+LARGE_CONE_W = 0.228 #m
+LARGE_CONE_H = 0.505 #m
 
 
 def find_pos(centre, dimension, cone):
@@ -42,7 +42,7 @@ def find_pos(centre, dimension, cone):
 # coord system: x: out from camera / robot
 #               y: across along camera horizontal axis
 #               z: up along camera vertical axis
-def display_locations(centre, cones):
+def return_locations(centre, cones):
     cone_coords = list() # init coord list
 
     # iterate through each cone
@@ -65,6 +65,9 @@ def display_locations(centre, cones):
             colour = 2
 
         # append cone properties to coords list
-        cone_coords.append([x, y, z, colour])
+        coord = [x, y, z, colour]
+        # print(coord)
+        cone_coords.append(coord)
 
+    # print("\n\n")
     return cone_coords
