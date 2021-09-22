@@ -225,6 +225,20 @@ def object_reconstruction(cluster_centers, points):
 
     return reconstructed_clusters
 
+def plot_reconstruction(reconstructed_clusters):
+    init_plot_2D("Reconstructed Clusters", "x", "y")
+    colours = ['g', 'grey', 'm', 'orange']
+    for i in range(len(reconstructed_clusters)):
+        # I put this if statement in to avoid program crashing when cone_width was 0.1
+        # this should be investigated!!!
+        if len(reconstructed_clusters[i]) > 0:
+            x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
+            y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            plt.plot(x_cluster, y_cluster, '.', color=colours[i % len(colours)])
+            x_mean  = sum(x_cluster) / len(x_cluster)
+            y_mean  = sum(y_cluster) / len(y_cluster)
+            plt.plot(x_mean, y_mean, 'x', color='blue')
+
 
 
 def get_ground_plane(points):
