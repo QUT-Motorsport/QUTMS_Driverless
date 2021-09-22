@@ -249,6 +249,27 @@ def cone_filter(distance):
     exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
     return exp_point_count
 
+def get_cones(reconstructed_clusters):
+    cones = []
+    error_margin = 0.1
+    for i in range(len(reconstructed_clusters)):
+        point_count = len(reconstructed_clusters[i])
+
+        x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
+        y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+        # Univserity of melbourne used z as well
+        #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+        x_mean  = sum(x_cluster) / len(x_cluster)
+        y_mean  = sum(y_cluster) / len(y_cluster)
+        #z_mean  = sum(y_cluster) / len(y_cluster)
+        distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
+
+        # Rule based filter
+        exp_point_count = cone_filter(distance)
+        print(exp_point_count, point_count)
+        if (exp_point_count*(1 - error_margin) <= point_count <= exp_point_count*(1 + error_margin)):
+            cones.append([x_mean, y_mean])
+    return cones
 
 
 def get_ground_plane(points):
