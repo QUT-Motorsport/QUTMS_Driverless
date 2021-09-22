@@ -188,7 +188,16 @@ def label_points(segments, ground_lines):
             labelled_points[i][j].append(is_ground)
     return labelled_points
 
+def non_ground_points(labelled_points):
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
 
+    object_points = []
+    for i in range(len(labelled_points)):
+        point = labelled_points[i]
+        if point[3] == False:
+            object_points.append([point[0], point[1], point[2]])
+    return object_points
 
 
 
