@@ -5,16 +5,8 @@ version: "2.3"
 #                                 Components
 # ==============================================================================
 
-x-build: &build
-    build:
-        context: ../
-        dockerfile: ./docker/Dockerfile
-        args:
-            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-
 x-user: &user
-    user: ${USERNAME}
+    user: ${USERNAME?USERNAME env var not set! Use the Makefile}
 
 x-volumes_local: &volumes_local
     volumes:
@@ -29,9 +21,9 @@ x-devices: &devices
     devices:
        - /dev/dri:/dev/dri
 
-x-environment: &environment
-    environment:
-        DISPLAY: $DISPLAY
+x-env-file: &env-file
+    env_file:
+        - ../.env
 
 x-network: &network
     network_mode: "host"
@@ -46,54 +38,53 @@ x-visible: &visible
 
 
 # ==============================================================================
-#                                 Services
+#                       Services (Targets in the Makefile)
 # ==============================================================================
+
 services:
-    core:
-        image: ros:noetic-ros-base
+    perception:
+        build:
+            context: ../
+            dockerfile: ./src/perception/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: bash
+    
+    navigation:
+        build:
+            context: ../
+            dockerfile: ./src/navigation/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: bash
+
+    unreal_sim:
+        build:
+            context: ../
+            dockerfile: ./src/unreal_sim/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+        <<: *env-file
+        <<: *user
+        <<: *devices
         <<: *network
         <<: *visible
-        command: roscore
-
-    ros:
-        <<: *build
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *environment
-        <<: *network
-        <<: *interactive
-        command: /bin/bash
-
-    sim_bridge:
-        <<: *build
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *environment
-        <<: *network
-        <<: *interactive
-        command: /bin/bash -c "source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/devel/setup.bash;
-                               roslaunch fsds_ros_bridge fsds_ros_bridge.launch host:=${SIM_HOST?SIM_HOST not set in .env file} manual_mode:=${MANUAL_MODE?MANUAL_MODE not set in .env file}"
-
-    reset_sim:
-        <<: *build
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *environment
-        <<: *network
-        <<: *interactive
-        command: /bin/bash -c "source /home/${USERNAME}/Formula-Student-Driverless-Simulator/ros/devel/setup.bash;
-                               rosservice call /fsds/reset false"
-    
-    ros_1_bridge:
-        <<: *build
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *environment
-        <<: *network
-        <<: *interactive
-        command: /bin/bash -c "source /home/${USERNAME}/bridge_ws/install/setup.bash;
-                               ros2 run ros1_bridge dynamic_bridge --bridge-all-topics"
+        command: /home/${USERNAME}/start.sh
