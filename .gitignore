@@ -3,6 +3,7 @@
 # - VSCode -
 .vscode
 !.vscode/cpp_properties.json
+.devcontainer/devcontainer.json
 
 # - Lidar Perception -
 # Python Virtual Environment
