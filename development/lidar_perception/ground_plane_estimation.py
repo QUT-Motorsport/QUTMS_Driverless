@@ -544,6 +544,13 @@ def plot_labelled_points(labelled_points, color_codes, angle_points, ground_line
 
     plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
+def plot_grid_2D(object_points):
+    init_plot_2D("Clustering Grid", "x", "y")
+
+    x = [coords[0] for coords in object_points]
+    y = [coords[1] for coords in object_points]
+
+    plt.plot(x, y, '.', color='red')
 
 
 # new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
