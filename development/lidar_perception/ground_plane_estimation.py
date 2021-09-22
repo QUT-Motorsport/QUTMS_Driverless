@@ -305,8 +305,8 @@ def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prot
     #plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
     #plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
     #plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines)
-
-
+    plot_grid_2D(object_points)
+    plot_clusters(clusters, noise)
 
     plt.show()
 
@@ -506,6 +506,43 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
                         plt.plot(x_gp, y_gp, '--', color=color1)
             plt.plot(x, y, 'o', color='black')
             plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
+
+def plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines):
+    ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
+
+    for i in range(len(ground_lines)):
+        for j in range(len(ground_lines[i])):
+            start = ground_lines[i][j][2]
+            end = ground_lines[i][j][3]
+            r = np.linspace(start[0], end[0], 50)
+            z = ground_lines[i][j][0] * r + ground_lines[i][j][1]
+            x = r * math.cos((i + 0.5) * DELTA_ALPHA)
+            y = r * math.sin((i + 0.5) * DELTA_ALPHA)
+            ax.plot3D(x, y, z, color='yellow')
+
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
+
+    ground_points = []
+    object_points = []
+    for i in range(len(labelled_points)):
+        point = labelled_points[i]
+        if point[3] == True:
+            ground_points.append(point)
+        else:
+            object_points.append(point)
+    
+    x_ground = [coords[0] for coords in ground_points]
+    y_ground = [coords[1] for coords in ground_points]
+    z_ground = [coords[2] for coords in ground_points]
+    ax.scatter3D(x_ground, y_ground, z_ground, color='green');
+
+    x_non_ground = [coords[0] for coords in object_points]
+    y_non_ground = [coords[1] for coords in object_points]
+    z_non_ground = [coords[2] for coords in object_points]
+    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red');
+
+    plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 
 
