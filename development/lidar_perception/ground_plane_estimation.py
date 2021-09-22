@@ -199,7 +199,10 @@ def non_ground_points(labelled_points):
             object_points.append([point[0], point[1], point[2]])
     return object_points
 
-
+# Ignoring height
+def get_distance(point_a, point_b):
+    distance = math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
+    return distance
 
 
 
