@@ -239,6 +239,16 @@ def plot_reconstruction(reconstructed_clusters):
             y_mean  = sum(y_cluster) / len(y_cluster)
             plt.plot(x_mean, y_mean, 'x', color='blue')
 
+# I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
+# AND KEEP THIS VALUE. Instead of calculating it multiple times.
+def cone_filter(distance):
+    cone_height = 0.325
+    cone_width = 0.228
+    horizontal_res = 0.2 * (math.pi / 180) # 0.2 degrees in between each point
+    vertical_res = 2 * (math.pi / 180) # 2 degrees in between each point
+    exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
+    return exp_point_count
+
 
 
 def get_ground_plane(points):
