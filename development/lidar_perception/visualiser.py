@@ -1,3 +1,9 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+
+from numpy.lib.function_base import angle
+
 def init_plot_2D(title, xlabel, ylabel):
     fig = plt.figure()
     plt.title(title)
@@ -15,115 +21,30 @@ def init_plot_3D(title, xlabel, ylabel, zlabel, azim, elev):
     ax.set_zlim3d(-1, 1)
     return ax
 
-def plot_data_2D(points):
-    x = [coords[0] for coords in points]
-    y = [coords[1] for coords in points]
-    
-    init_plot_2D("Point Cloud (2D)", "x", "y")
-    plt.plot(x, y, '.', color='green')
-    plt.plot(0, 0, 'o', color='black')
-    angles = np.linspace(0, 2*math.pi, 100)
-    plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color='black')
-    plt.savefig(FIGURES_DIR + "1_Point-Cloud-2D")
+def get_colour(idx):
+    return COLOR_CODES[idx % len(COLOR_CODES)]
 
-def plot_data_3D(points):
-    x = [coords[0] for coords in points]
-    y = [coords[1] for coords in points]
-    z = [coords[2] for coords in points]
+def get_cmap(idx):
+    return CMAPS[idx % len(CMAPS)]
 
-    ax = init_plot_3D("Point Cloud", "x", "y", "Height", 45, 45)
-    ax.scatter3D(x, y, z, c=z, cmap='Greens');
-    
-    angles = np.linspace(0, 2*math.pi, 100)
-    ax.plot3D(LIDAR_RANGE * np.cos(angles), LIDAR_RANGE * np.sin(angles), color='black')
+def get_angles(idx):
+    return np.linspace(idx * DELTA_ALPHA, (idx + 1) * DELTA_ALPHA, ANGLE_POINTS)
 
-    plt.savefig(FIGURES_DIR + "2_Point-Cloud-3D")
+def plot_lidar_radius(line_colour):
+    plt.plot(LIDAR_RANGE * np.cos(ANGLE_RESOLUTION), LIDAR_RANGE * np.sin(ANGLE_RESOLUTION), color=line_colour)
 
-plot_data_2D(test_data)
-plot_data_3D(test_data)
+def plot_partial_angle(angles, line_colour):
+    plt.plot(LIDAR_RANGE * np.cos(angles), LIDAR_RANGE * np.sin(angles), color=line_colour)
 
-def plot_segments(segments, color_codes, angle_points):
-    init_plot_2D("Points assigned to Segments", "x", "y")
-    for i in range(len(segments)):
-        color = color_codes[i % len(color_codes)]
-        x = [coords[0] for coords in segments[i]]
-        y = [coords[1] for coords in segments[i]]
-        plt.plot(x, y, '.', color=color)
-        xpoints = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
-        ypoints = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
-        plt.plot(xpoints, ypoints, color=color)
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
-        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color)
-    plt.savefig(FIGURES_DIR + "3_Segments")
+def plot_segment_line(idx, colour, _alpha, _linestyle):
+    x = [0, LIDAR_RANGE * math.cos(idx * DELTA_ALPHA)]
+    y = [0, LIDAR_RANGE * math.sin(idx * DELTA_ALPHA)]
+    plt.plot(x, y, color=colour, alpha=_alpha, linestyle=_linestyle)
 
-def plot_segments_bins(segments_bins, color_codes, angle_points):
-    init_plot_2D("Points assigned to Bins within Segments", "x", "y")
-
-    for i in range(len(segments_bins)):
-        color1 = color_codes[i % len(color_codes)]
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
-        for j in range(len(segments_bins[i])):
-            color2 = color_codes[j % len(color_codes)]
-            x = [coords[0] for coords in segments_bins[i][j]]
-            y = [coords[1] for coords in segments_bins[i][j]]
-            plt.plot(x, y, '.', color=color2)
-            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-        xpoints = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
-        ypoints = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
-        plt.plot(xpoints, ypoints, color=color1)
-        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
-    plt.savefig(FIGURES_DIR + "4_Bins-Segments")
-
-def plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points):
-    init_plot_2D("2D Approximation of Point Cloud", "x", "y")
-
-    for i in range(len(segments_bins_2D)):
-        color1 = color_codes[i % len(color_codes)]
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
-        for j in range(len(segments_bins_2D[i])):
-            color2 = color_codes[j % len(color_codes)]
-            norm = [coords[0] for coords in segments_bins_2D[i][j]]
-            new_x = []
-            new_y = []
-            for k in range(len(norm)):
-                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
-                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
-            plt.plot(new_x, new_y, '.', color=color2)
-            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-        xpoints1 = [0, LIDAR_RANGE * math.cos(i * DELTA_ALPHA)]
-        ypoints1 = [0, LIDAR_RANGE * math.sin(i * DELTA_ALPHA)]
-        plt.plot(xpoints1, ypoints1, color=color1)
-        xpoints2 = [0, LIDAR_RANGE * math.cos((i + 0.5) * DELTA_ALPHA)]
-        ypoints2 = [0, LIDAR_RANGE * math.sin((i + 0.5) * DELTA_ALPHA)]
-        plt.plot(xpoints2, ypoints2, color='black', alpha=0.5, linestyle='--')
-        plt.plot(LIDAR_RANGE*np.cos(angles), LIDAR_RANGE*np.sin(angles), color=color1)
-    plt.savefig(FIGURES_DIR + "5_2D-Approx-Point-Cloud-2D")
-
-def plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps):
-    ax = init_plot_3D("2D Approximation of Point Cloud", "x", "y", "Height", 45, 45)
-
-    for i in range(len(segments_bins_2D)):
-        color1 = color_codes[i % len(color_codes)]
-        cmap1 = cmaps[i % len(cmaps)]
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
-        for j in range(len(segments_bins_2D[i])):
-            norm = [coords[0] for coords in segments_bins_2D[i][j]]
-            z = [coords[1] for coords in segments_bins_2D[i][j]]
-            new_x = []
-            new_y = []
-            for k in range(len(norm)):
-                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
-                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
-            ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap1);
-            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-    plt.savefig(FIGURES_DIR + "6_2D-Approx-Point-Cloud-3D")
-
-def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps):
-    ax = init_plot_3D("Prototype Points", "x", "y", "Height", 45, 45)
-
+def plot_seg_bin_prototype(ax, segments_bins_prototype):
     for i in range(len(segments_bins_prototype)):
-        color1 = color_codes[i % len(color_codes)]
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
+        color_1 = get_colour(i)
+        angles = get_angles(i)
         for j in range(len(segments_bins_prototype[i])):
             print(segments_bins_prototype[i])
             if len(segments_bins_prototype[i][j]) > 0:
@@ -131,28 +52,10 @@ def plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_
                 z = segments_bins_prototype[i][j][1]
                 new_x = norm * math.cos((i + 0.5) * DELTA_ALPHA)
                 new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
-                ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
-            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-    plt.savefig(FIGURES_DIR + "7_Prototype-Points")
+                ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis')
+            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
 
-def plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines):
-    ax = init_plot_3D("Ground Plane Estimation", "x", "y", "Height", 45, 45)
-
-    for i in range(len(segments_bins_prototype)):
-        color1 = color_codes[i % len(color_codes)]
-        angles = np.linspace(i * DELTA_ALPHA, (i + 1) * DELTA_ALPHA, angle_points)
-        for j in range(len(segments_bins_prototype[i])):
-            print(segments_bins_prototype[i])
-            if len(segments_bins_prototype[i][j]) > 0:
-                norm = segments_bins_prototype[i][j][0]
-                z = segments_bins_prototype[i][j][1]
-                new_x = norm * math.cos((i + 0.5) * DELTA_ALPHA)
-                new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
-                ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis');
-            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color1)
-
-    print("hey", ground_lines)
-
+def plot_ground_lines(ax, ground_lines, colour):
     for i in range(len(ground_lines)):
         for j in range(len(ground_lines[i])):
             start = ground_lines[i][j][2]
@@ -161,17 +64,105 @@ def plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, gro
             z = ground_lines[i][j][0] * r + ground_lines[i][j][1]
             x = r * math.cos((i + 0.5) * DELTA_ALPHA)
             y = r * math.sin((i + 0.5) * DELTA_ALPHA)
-            ax.plot3D(x, y, z, color='black')
+            ax.plot3D(x, y, z, color=colour)
 
-    plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
+def plot_data_2D():
+    init_plot_2D("Point Cloud (2D)", "x", "y")
+    plt.plot(X_RAW, Y_RAW, '.', color='green')
+    plt.plot(0, 0, 'o', color='black')
+    plot_lidar_radius('black')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "1_Point-Cloud-2D")
 
-def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
+def plot_data_3D():
+    ax = init_plot_3D("Point Cloud", "x", "y", "Height", 45, 45)
+    ax.scatter3D(X_RAW, Y_RAW, Z_RAW, c=Z_RAW, cmap='Greens')
+    ax.plot3D(LIDAR_RANGE * np.cos(ANGLE_RESOLUTION), LIDAR_RANGE * np.sin(ANGLE_RESOLUTION), color='black')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "2_Point-Cloud-3D")
+
+def plot_segments(segments):
+    init_plot_2D("Points assigned to Segments", "x", "y")
+    for i in range(len(segments)):
+        color = get_colour(i)
+        x = [coords[0] for coords in segments[i]]
+        y = [coords[1] for coords in segments[i]]
+        plt.plot(x, y, '.', color=color)
+        plot_segment_line(i, color, 1, '-')
+        angles = get_angles(i)
+        plot_partial_angle(angles, color)
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "3_Segments")
+
+def plot_segments_bins(segments_bins):
+    init_plot_2D("Points assigned to Bins within Segments", "x", "y")
+    for i in range(len(segments_bins)):
+        color_1 = get_colour(i)
+        angles = get_angles(i)
+        for j in range(len(segments_bins[i])):
+            color_2 = get_colour(j) 
+            x = [coords[0] for coords in segments_bins[i][j]]
+            y = [coords[1] for coords in segments_bins[i][j]]
+            plt.plot(x, y, '.', color=color_2)
+            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+        plot_segment_line(i, color_1, 1, '-')
+        plot_partial_angle(angles, color_1)
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "4_Bins-Segments")
+
+def plot_segments_bins_2D(segments_bins_2D):
+    init_plot_2D("2D Approximation of Point Cloud", "x", "y")
+    for i in range(len(segments_bins_2D)):
+        color_1 = get_colour(i)
+        angles = get_angles(i)
+        for j in range(len(segments_bins_2D[i])):
+            color_2 = get_colour(j)
+            norm = [coords[0] for coords in segments_bins_2D[i][j]]
+            new_x = []
+            new_y = []
+            for k in range(len(norm)):
+                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
+                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
+            plt.plot(new_x, new_y, '.', color=color_2)
+            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+        plot_segment_line(i, color_1, 1, '-')
+        plot_segment_line(i+0.5, 'black', 0.5, '--')
+        plot_partial_angle(angles, color_1)
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "5_2D-Approx-Point-Cloud-2D")
+
+def plot_segments_bins_2D_3D(segments_bins_2D):
+    ax = init_plot_3D("2D Approximation of Point Cloud", "x", "y", "Height", 45, 45)
+    for i in range(len(segments_bins_2D)):
+        color_1 = get_colour(i)
+        cmap_1 = get_cmap(i)
+        angles = get_angles(i)
+        for j in range(len(segments_bins_2D[i])):
+            norm = [coords[0] for coords in segments_bins_2D[i][j]]
+            z = [coords[1] for coords in segments_bins_2D[i][j]]
+            new_x = []
+            new_y = []
+            for k in range(len(norm)):
+                new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
+                new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
+            ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap_1)
+            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "6_2D-Approx-Point-Cloud-3D")
+
+def plot_segments_bins_prototype_3D(segments_bins_prototype):
+    ax = init_plot_3D("Prototype Points", "x", "y", "Height", 45, 45)
+    plot_seg_bin_prototype(ax, segments_bins_prototype)
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "7_Prototype-Points")
+
+def plot_ground_lines_3D(segments_bins_prototype, ground_lines):
+    ax = init_plot_3D("Ground Plane Estimation", "x", "y", "Height", 45, 45)
+    plot_seg_bin_prototype(ax, segments_bins_prototype)
+    print("hey", ground_lines)
+    plot_ground_lines(ax, ground_lines, 'black')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
+
+def plot_segments_fitted(segments_bins_prototype, ground_lines):
     print("SP", segments_bins_prototype)
     print("--- Prototype Points ---")
     for i in range(len(segments_bins_prototype)):
         # This if statement is hacky. Without it, this visualisation function crashes
         if len(ground_lines[i]) > 0:
-            color1 = color_codes[i % len(color_codes)]
+            color_1 = get_colour(i)
             print("Segment:", i + 1)
             print(str(ground_lines[i][0][4]))
             init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
@@ -188,26 +179,15 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes):
                         end = ground_lines[i][k][3]
                         x_gp = np.linspace(origin, end[0], 50)
                         y_gp = ground_lines[i][k][0] * x_gp + ground_lines[i][k][1]
-                        plt.plot(x_gp, y_gp, '--', color=color1)
+                        plt.plot(x_gp, y_gp, '--', color=color_1)
             plt.plot(x, y, 'o', color='black')
-            plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
+            if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
 
-def plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines):
+def plot_labelled_points(labelled_points, ground_lines):
     ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
-
-    for i in range(len(ground_lines)):
-        for j in range(len(ground_lines[i])):
-            start = ground_lines[i][j][2]
-            end = ground_lines[i][j][3]
-            r = np.linspace(start[0], end[0], 50)
-            z = ground_lines[i][j][0] * r + ground_lines[i][j][1]
-            x = r * math.cos((i + 0.5) * DELTA_ALPHA)
-            y = r * math.sin((i + 0.5) * DELTA_ALPHA)
-            ax.plot3D(x, y, z, color='yellow')
-
+    plot_ground_lines(ax, ground_lines, 'yellow')
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
-
     ground_points = []
     object_points = []
     for i in range(len(labelled_points)):
@@ -216,25 +196,20 @@ def plot_labelled_points(labelled_points, color_codes, angle_points, ground_line
             ground_points.append(point)
         else:
             object_points.append(point)
-    
     x_ground = [coords[0] for coords in ground_points]
     y_ground = [coords[1] for coords in ground_points]
     z_ground = [coords[2] for coords in ground_points]
-    ax.scatter3D(x_ground, y_ground, z_ground, color='green');
-
+    ax.scatter3D(x_ground, y_ground, z_ground, color='green')
     x_non_ground = [coords[0] for coords in object_points]
     y_non_ground = [coords[1] for coords in object_points]
     z_non_ground = [coords[2] for coords in object_points]
-    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red');
-
-    plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
+    ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 def plot_grid_2D(object_points):
     init_plot_2D("Clustering Grid", "x", "y")
-
     x = [coords[0] for coords in object_points]
     y = [coords[1] for coords in object_points]
-
     plt.plot(x, y, '.', color='red')
 
 def plot_reconstruction(reconstructed_clusters):
@@ -253,12 +228,9 @@ def plot_reconstruction(reconstructed_clusters):
 
 def plot_clusters(clusters, noise):
     init_plot_2D("Object Segmentation", "x", "y")
-
     x_noise = [coords[0] for coords in noise]
     y_noise = [coords[1] for coords in noise]
-
     plt.plot(x_noise, y_noise, '.', color='red')
-
     colours = ['g', 'grey', 'm', 'orange']
     print(clusters[0]==clusters[1])
     for i in range(len(clusters)):
@@ -268,3 +240,33 @@ def plot_clusters(clusters, noise):
         x_mean  = sum(x_cluster) / len(x_cluster)
         y_mean  = sum(y_cluster) / len(y_cluster)
         plt.plot(x_mean, y_mean, 'x', color='blue')
+
+def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _angle_resolution, _angle_points, _color_codes, _cmaps, _save_figures, _figures_dir):
+    global X_RAW
+    global Y_RAW
+    global Z_RAW
+
+    global DELTA_ALPHA
+    global LIDAR_RANGE
+    global BIN_SIZE
+    global ANGLE_RESOLUTION # np.linspace(0, 2*math.pi, 100)
+    global ANGLE_POINTS     # 25
+    global COLOR_CODES
+    global CMAPS
+    global SAVE_FIGURES
+    global FIGURES_DIR
+
+    X_RAW = [coords[0] for coords in point_cloud]
+    Y_RAW = [coords[1] for coords in point_cloud]
+    Z_RAW = [coords[2] for coords in point_cloud]
+
+    DELTA_ALPHA = _delta_alpha
+    LIDAR_RANGE = _lidar_range
+    BIN_SIZE = _bin_size
+    ANGLE_RESOLUTION = _angle_resolution
+    ANGLE_POINTS = _angle_points
+    COLOR_CODES = _color_codes
+    CMAPS = _cmaps
+    SAVE_FIGURES = _save_figures
+    FIGURES_DIR = _figures_dir
+    
