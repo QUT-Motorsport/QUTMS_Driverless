@@ -14,12 +14,18 @@ import line_extraction
 # Point Cloud Clustering
 import DBSCAN
 
+# Visualising
+import visualiser as vis
+
 # Max value of the norm of x and y (excluding z)
 values = []
 for i in range(len(test_data)):
     values.append(math.sqrt(test_data[i][0] ** 2 + test_data[i][1] ** 2))
 
 FIGURES_DIR = "./development/lidar_perception/figures/"
+
+plot_data_2D(test_data)
+plot_data_3D(test_data)
 
 # Constants
 LIDAR_RANGE = 150 # Max range of the LIDAR # 100 # in metres
