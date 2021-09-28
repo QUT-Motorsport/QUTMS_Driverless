@@ -72,8 +72,8 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
     denominator = 0
     for i in range(num_points):
         numerator += w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0])
-        print(w_mat[i], (y_weight - points[i][1]), (x_weight - points[i][0]))
-        print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
+        #print(w_mat[i], (y_weight - points[i][1]), (x_weight - points[i][0]))
+        #print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
         denominator += w_mat[i] * ((y_weight - points[i][1])**2 - (x_weight - points[i][0])**2)
     numerator = -2 * numerator
     tan_2_alpha = numerator / denominator
@@ -86,8 +86,8 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
         tan_2_alpha = abs(tan_2_alpha)
 
     alpha = math.atan(tan_2_alpha) / 2
-    print('NUM:', numerator)
-    print('DENOM:', denominator, '\n\n')
+    #print('NUM:', numerator)
+    #print('DENOM:', denominator, '\n\n')
     return alpha
 
 # r
@@ -114,7 +114,7 @@ def get_b(points, num_points, r, alpha, m):
 
 # Total Least Squares Fitting Method
 def fit_line(points):
-    print("Fitting line!")
+    #print("Fitting line!")
     num_points = len(points)
     x_mean = sum([point[0] for point in points]) / num_points
     y_mean = sum([point[1] for point in points]) / num_points

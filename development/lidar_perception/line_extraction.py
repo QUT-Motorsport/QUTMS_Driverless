@@ -17,7 +17,7 @@ def dist_point_line_old(point, m_c, b_c):
     b_p = -(y_p - m_p) * x_p # intercept of perpendicular line
     x_shared = (b_p - b_c) / (m_c - m_p)
     y_shared = m_p*x_p + b_p # or m_c*x + b_c # at x_shared, y_p = y_c
-    print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
+    #print(math.sqrt((x_shared + x_p)**2 + y_shared**2))
     return math.sqrt((x_shared + x_p)**2 + y_shared**2)
 
 # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
@@ -30,7 +30,7 @@ def dist_point_line(point, m_c, b_c):
     numer = abs(a_x + b_y + b_c)
     denom = math.sqrt(a_x**2) # + b**2 cancels out since b is 1
     distance = numer / denom
-    print(distance)
+    #print(distance)
     return distance
 
 # Returns the Root Mean Square Error (RMSE) of points about a regression line
@@ -87,13 +87,13 @@ def extract_segment_lines(segment, num_bins):
                 temp_line_points = copy.deepcopy(new_line_points)
                 temp_line_points.append(new_point)
                 [m_new, b_new] = total_least_squares.fit_line(temp_line_points)
-                print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
+                #print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
                 if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
                     new_line_points.append(new_point)
                     temp_line_points = []
                 else:
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
-                    print("Adding line to segment")
+                    #print("Adding line to segment")
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     new_line_points = []
                     lines_created += 1
@@ -102,7 +102,8 @@ def extract_segment_lines(segment, num_bins):
                 if lines_created == 0 or len(new_line_points) != 0 or dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV:
                     new_line_points.append(new_point)
                 else:
-                    print("no", new_point)
+                    pass
+                    #print("no", new_point)
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
         #print("i go up", i)
@@ -117,7 +118,7 @@ def extract_segment_lines(segment, num_bins):
 def extract_lines(segments_bins_prototype, num_segments, num_bins):
     ground_plane = []
     for i in range(num_segments):
-        print("Extracting lines from Segment:", i+1)
+        #print("Extracting lines from Segment:", i+1)
         ground_plane.append(extract_segment_lines(segments_bins_prototype[i], num_bins))
     return ground_plane
 
