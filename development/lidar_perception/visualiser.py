@@ -39,19 +39,19 @@ def plot_segment_line(idx, colour, _alpha, _linestyle):
     y = [0, LIDAR_RANGE * math.sin(idx * DELTA_ALPHA)]
     plt.plot(x, y, color=colour, alpha=_alpha, linestyle=_linestyle)
 
-def plot_seg_bin_prototype(ax, segments_bins_prototype):
+def plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins):
     for i in range(len(segments_bins_prototype)):
         color_1 = get_colour(i)
         angles = get_angles(i)
         for j in range(len(segments_bins_prototype[i])):
-            print(segments_bins_prototype[i])
+            #print(segments_bins_prototype[i])
             if len(segments_bins_prototype[i][j]) > 0:
                 norm = segments_bins_prototype[i][j][0]
                 z = segments_bins_prototype[i][j][1]
                 new_x = norm * math.cos((i + 0.5) * DELTA_ALPHA)
                 new_y = norm * math.sin((i + 0.5) * DELTA_ALPHA)
                 ax.scatter3D(new_x, new_y, z, c=z, cmap='viridis')
-            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+            if plot_bins : ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
 
 def plot_ground_lines(ax, ground_lines, colour):
     for i in range(len(ground_lines)):
@@ -89,7 +89,7 @@ def plot_segments(segments):
         plot_partial_angle(angles, color)
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "3_Segments")
 
-def plot_segments_bins(segments_bins):
+def plot_segments_bins(segments_bins, plot_bins):
     init_plot_2D("Points assigned to Bins within Segments", "x", "y")
     for i in range(len(segments_bins)):
         color_1 = get_colour(i)
@@ -99,12 +99,12 @@ def plot_segments_bins(segments_bins):
             x = [coords[0] for coords in segments_bins[i][j]]
             y = [coords[1] for coords in segments_bins[i][j]]
             plt.plot(x, y, '.', color=color_2)
-            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+            if plot_bins : plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
         plot_segment_line(i, color_1, 1, '-')
         plot_partial_angle(angles, color_1)
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "4_Bins-Segments")
 
-def plot_segments_bins_2D(segments_bins_2D):
+def plot_segments_bins_2D(segments_bins_2D, plot_bins):
     init_plot_2D("2D Approximation of Point Cloud", "x", "y")
     for i in range(len(segments_bins_2D)):
         color_1 = get_colour(i)
@@ -118,13 +118,13 @@ def plot_segments_bins_2D(segments_bins_2D):
                 new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
                 new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
             plt.plot(new_x, new_y, '.', color=color_2)
-            plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+            if plot_bins : plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
         plot_segment_line(i, color_1, 1, '-')
         plot_segment_line(i+0.5, 'black', 0.5, '--')
         plot_partial_angle(angles, color_1)
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "5_2D-Approx-Point-Cloud-2D")
 
-def plot_segments_bins_2D_3D(segments_bins_2D):
+def plot_segments_bins_2D_3D(segments_bins_2D, plot_bins):
     ax = init_plot_3D("2D Approximation of Point Cloud", "x", "y", "Height", 45, 45)
     for i in range(len(segments_bins_2D)):
         color_1 = get_colour(i)
@@ -139,18 +139,18 @@ def plot_segments_bins_2D_3D(segments_bins_2D):
                 new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
                 new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
             ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap_1)
-            ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
+            if plot_bins : ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "6_2D-Approx-Point-Cloud-3D")
 
-def plot_segments_bins_prototype_3D(segments_bins_prototype):
+def plot_segments_bins_prototype_3D(segments_bins_prototype, plot_bins):
     ax = init_plot_3D("Prototype Points", "x", "y", "Height", 45, 45)
-    plot_seg_bin_prototype(ax, segments_bins_prototype)
+    plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins)
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "7_Prototype-Points")
 
-def plot_ground_lines_3D(segments_bins_prototype, ground_lines):
+def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
     ax = init_plot_3D("Ground Plane Estimation", "x", "y", "Height", 45, 45)
-    plot_seg_bin_prototype(ax, segments_bins_prototype)
-    print("hey", ground_lines)
+    plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins)
+    #print("hey", ground_lines)
     plot_ground_lines(ax, ground_lines, 'black')
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
@@ -161,8 +161,7 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines):
         # This if statement is hacky. Without it, this visualisation function crashes
         if len(ground_lines[i]) > 0:
             color_1 = get_colour(i)
-            print("Segment:", i + 1)
-            print(str(ground_lines[i][0][4]))
+            print("Segment:", i + 1, "Count:", ground_lines[i][0][4])
             init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
             plt.ylim(-2, 2)
             x = []
@@ -230,7 +229,7 @@ def plot_clusters(clusters, noise):
     y_noise = [coords[1] for coords in noise]
     plt.plot(x_noise, y_noise, '.', color='red')
     colours = ['g', 'grey', 'm', 'orange']
-    print(clusters[0]==clusters[1])
+    #print(clusters[0]==clusters[1])
     for i in range(len(clusters)):
         x_cluster = [coords[0] for coords in clusters[i]]
         y_cluster = [coords[1] for coords in clusters[i]]
