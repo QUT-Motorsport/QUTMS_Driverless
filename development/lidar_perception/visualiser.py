@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-from numpy.lib.function_base import angle
-
 def init_plot_2D(title, xlabel, ylabel):
     fig = plt.figure()
     plt.title(title)
@@ -241,7 +239,7 @@ def plot_clusters(clusters, noise):
         y_mean  = sum(y_cluster) / len(y_cluster)
         plt.plot(x_mean, y_mean, 'x', color='blue')
 
-def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _angle_resolution, _angle_points, _color_codes, _cmaps, _save_figures, _figures_dir):
+def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW
     global Y_RAW
     global Z_RAW
@@ -249,8 +247,8 @@ def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _angle_resolution, 
     global DELTA_ALPHA
     global LIDAR_RANGE
     global BIN_SIZE
-    global ANGLE_RESOLUTION # np.linspace(0, 2*math.pi, 100)
-    global ANGLE_POINTS     # 25
+    global ANGLE_RESOLUTION
+    global ANGLE_POINTS     
     global COLOR_CODES
     global CMAPS
     global SAVE_FIGURES
@@ -263,10 +261,10 @@ def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _angle_resolution, 
     DELTA_ALPHA = _delta_alpha
     LIDAR_RANGE = _lidar_range
     BIN_SIZE = _bin_size
-    ANGLE_RESOLUTION = _angle_resolution
-    ANGLE_POINTS = _angle_points
-    COLOR_CODES = _color_codes
-    CMAPS = _cmaps
+    ANGLE_RESOLUTION = np.linspace(0, 2*math.pi, 100)
+    ANGLE_POINTS = 25
+    COLOR_CODES = ['b', 'g', 'r', 'grey', 'm', 'orange']
+    CMAPS = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
     SAVE_FIGURES = _save_figures
     FIGURES_DIR = _figures_dir
     
