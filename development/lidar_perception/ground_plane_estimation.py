@@ -1,4 +1,5 @@
 # - Modules -
+from development.lidar_perception.visualiser import ANGLE_RESOLUTION
 import math
 import copy
 
@@ -14,29 +15,8 @@ import line_extraction
 # Point Cloud Clustering
 import DBSCAN
 
-# Visualising
+# Visualiser
 import visualiser as vis
-
-# Max value of the norm of x and y (excluding z)
-values = []
-for i in range(len(test_data)):
-    values.append(math.sqrt(test_data[i][0] ** 2 + test_data[i][1] ** 2))
-
-FIGURES_DIR = "./development/lidar_perception/figures/"
-
-plot_data_2D(test_data)
-plot_data_3D(test_data)
-
-# Constants
-LIDAR_RANGE = 150 # Max range of the LIDAR # 100 # in metres
-LIDAR_RANGE = math.ceil(max(values))
-print("Max x-y norm:", LIDAR_RANGE)
-DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 45 deg
-NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-BIN_SIZE = 1 # The length of a bin (in metres) # 1
-NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
-T_D_GROUND = 1 # Maximum distance between point and line to be considered part of ground plane. # 2
-T_D_MAX = 100 # Maximum distance a point can be from origin to even be considered for ground plane labelling. Otherwise it's automatically labelled as non-ground. 
 
 if (math.pi % DELTA_ALPHA != 0):
     raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
@@ -258,39 +238,75 @@ def get_ground_plane(points):
     object_points = non_ground_points(labelled_points)
     clusters, noise, cluster_centers = DBSCAN.init_DBSCAN(object_points)
     reconstructed_clusters = object_reconstruction(cluster_centers, points)
-    plot_reconstruction(reconstructed_clusters)
     # f*ck that felt nice to finally type: (cones = )
     cones = get_cones(reconstructed_clusters)
     print("\n\n\nAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n")
     print(cones)
 
     #print("\n\n\n", object_points)
-    visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise)
-    return ground_lines
+    if VISUALISE : visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters)
+    return cones
 
-def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise):
-    color_codes = ['b', 'g', 'r', 'grey', 'm', 'orange']
-    cmaps = ["Blues", "Greens", "Reds", "Greys", "Purples", "Oranges"]
-    angle_points = 25
-
-    plot_segments(segments, color_codes, angle_points)
-    plot_segments_bins(segments_bins, color_codes, angle_points)
-    plot_segments_bins_2D(segments_bins_2D, color_codes, angle_points)
-    plot_segments_bins_2D_3D(segments_bins_2D, color_codes, angle_points, cmaps)
-    plot_segments_bins_prototype_3D(segments_bins_prototype, color_codes, angle_points, cmaps)
-    plot_ground_lines_3D(segments_bins_prototype, color_codes, angle_points, ground_lines)
-    plot_segments_fitted(segments_bins_prototype, ground_lines, color_codes)
-    plot_labelled_points(labelled_points, color_codes, angle_points, ground_lines)
-    plot_grid_2D(object_points)
-    plot_clusters(clusters, noise)
-
+def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters):
+    vis.plot_segments(segments)
+    vis.plot_segments_bins(segments_bins)
+    vis.plot_segments_bins_2D(segments_bins_2D)
+    vis.plot_segments_bins_2D_3D(segments_bins_2D)
+    vis.plot_segments_bins_prototype_3D(segments_bins_prototype)
+    vis.plot_ground_lines_3D(segments_bins_prototype, ground_lines)
+    vis.plot_segments_fitted(segments_bins_prototype, ground_lines)
+    vis.plot_labelled_points(labelled_points, ground_lines)
+    vis.plot_grid_2D(object_points)
+    vis.plot_clusters(clusters, noise)
+    vis.plot_reconstruction(reconstructed_clusters)
     plt.show()
 
 # new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
 # new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
 
-# Main
-ground_plane = get_ground_plane(test_data)
+def init_constants():
+    global LIDAR_RANGE
+    global DELTA_ALPHA
+    global NUM_SEGMENTS
+    global BIN_SIZE
+    global NUM_BINS
+    global T_D_GROUND
+    global T_D_MAX
+    
+    # Constants
+    LIDAR_RANGE = 150 # Max range of the LIDAR # 100 # in metres
+    DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 45 deg
+    NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
+    BIN_SIZE = 1 # The length of a bin (in metres) # 1
+    NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
+    T_D_GROUND = 1 # Maximum distance between point and line to be considered part of ground plane. # 2
+    T_D_MAX = 100 # Maximum distance a point can be from origin to even be considered for ground plane labelling. Otherwise it's automatically labelled as non-ground.
+    
+def main(point_cloud, _visualise):
+    global VISUALISE
+    VISUALISE = _visualise
+
+    init_constants()
+
+    # Remove this when a max range for the Lidar has been decided on
+    global LIDAR_RANGE
+    values = []
+    for i in range(len(point_cloud)):
+        values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
+    LIDAR_RANGE = math.ceil(max(values)) 
+    print("Max x-y norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
+    # --------------------------------------------------------------
+
+    cones = get_ground_plane(point_cloud)
+
+    if VISUALISE:
+        FIGURES_DIR = "./development/lidar_perception/figures/"
+        vis.init(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, True, FIGURES_DIR)
+        vis.plot_data_2D(point_cloud)
+        vis.plot_data_3D(point_cloud)
+
+    return cones
+
 #print(ground_plane)
 
 # p1 = [1, 1.5]
