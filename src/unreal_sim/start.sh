@@ -3,7 +3,7 @@
     roscore
 ) &
 
-sleep 10
+sleep 15
 
 (
     source $HOME/Formula-Student-Driverless-Simulator/ros/devel/setup.bash
