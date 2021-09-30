@@ -238,6 +238,13 @@ def plot_clusters(clusters, noise):
         y_mean  = sum(y_cluster) / len(y_cluster)
         plt.plot(x_mean, y_mean, 'x', color='blue')
 
+def plot_cones(cones):
+    init_plot_2D("Cone Locations", "x", "y")
+    plt.plot(X_RAW, Y_RAW, '.', color='black')
+    x_centers = [coords[0] for coords in cones]
+    y_centers = [coords[1] for coords in cones]
+    plt.plot(x_centers, y_centers, 'x', color='blue')
+
 def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW
     global Y_RAW
