@@ -25,7 +25,8 @@ class CamProcessing(Node):
         ## creates subscriber to 'cam1' with type Image that sends data to cam_callback
         self.cam_subscription_ = self.create_subscription(
             Image,
-            '/fsds/camera/cam1',
+            # '/fsds/camera/cam1', # 785x785 (square defaults)
+            '/fsds/camera/cam2', # 1080p (like a usual camera)
             self.cam_callback,
             10)
         self.cam_subscription_  # prevent unused variable warning

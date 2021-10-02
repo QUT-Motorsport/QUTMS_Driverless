@@ -33,11 +33,11 @@ def yolov5_init(threshold):
 class YOLODetection(Node):
     def __init__(self):
         super().__init__('YOLO_detection')
-        ## creates subscriber to 'cam1' with type Image that sends data to cam_callback     
+        ## creates subscriber to 'cam2' with type Image that sends data to cam_callback     
         self.cam_subscription_ = self.create_subscription(
             Image, 
-            # 'Image', # Testing topic - 'Image'
-            'fsds/camera/cam2', # Actual topic  - 'fsds/camera/cam1' 
+            # '/fsds/camera/cam1', # 785x785 (square defaults)
+            '/fsds/camera/cam2', # 1080p (like a usual camera)
             self.cam_callback, 
             10)
         self.cam_subscription_  # prevent unused variable warning

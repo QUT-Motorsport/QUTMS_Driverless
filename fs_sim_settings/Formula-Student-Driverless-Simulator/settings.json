@@ -62,8 +62,8 @@
                 "cam1": {
                     "CaptureSettings": [{
                         "ImageType": 0,
-                        "Width": 1920,
-                        "Height": 1080,
+                        "Width": 785,
+                        "Height": 785,
                         "FOV_Degrees": 90
                     }],
                     "X": -0.5,
@@ -76,8 +76,8 @@
                 "cam2": {
                     "CaptureSettings": [{
                         "ImageType": 0,
-                        "Width": 785,
-                        "Height": 785,
+                        "Width": 1920,
+                        "Height": 1080,
                         "FOV_Degrees": 90
                     }],
                     "X": -0.5,

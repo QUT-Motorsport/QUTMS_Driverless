@@ -1,28 +1,30 @@
 # import ROS2 libraries
 import rclpy
 from rclpy.node import Node
+
 # import ROS2 message libraries
 from nav_msgs.msg import Odometry
+from tf2_msgs.msg import TFMessage
+# import custom sim data message libraries
 from fs_msgs.msg import Track
-# importcustom sim data message libraries
 from qutms_msgs.msg import ConeScan, ConeData
 
 # import other python libraries
 import transforms3d as t3d
 import numpy as np
 import time
+import math
 
 
 # define camera coords relative to car frame
-CAM_LOCAL_X = -0.5 #m
-CAM_LOCAL_Y = 0 #m
-CAM_LOCAL_Z = 1 #m
+CAM_LOCAL_POSE = [-0.5, 0, 1] #m
+CAM_LOCAL_ROT = [0, 0, math.pi] #rads
 
 class LocationProcessing(Node):
     def __init__(self):
-        super().__init__('locationz_processing')
+        super().__init__('location_processing')
 
-        ## creates subscriber to 'odom' with type Image that sends data to odom_callback
+        ## creates subscriber to 'odom' topic with type Odometry that sends data to odom_callback
         self.odom_subscription_ = self.create_subscription(
             Odometry,
             '/fsds/testing_only/odom',
@@ -30,7 +32,7 @@ class LocationProcessing(Node):
             10)
         self.odom_subscription_  # prevent unused variable warning
 
-        ## creates subscriber to 'odom' with type Image that sends data to odom_callback
+        ## creates subscriber to 'track' topic with type Track that sends data to track_callback
         self.track_subscription_ = self.create_subscription(
             Track,
             '/fsds/testing_only/track',
@@ -51,51 +53,58 @@ class LocationProcessing(Node):
 
 
     # callback function for odom processing
+    # msg format:   Odometry/PoseWithCovariance/Pose/Point/
+    #               - [x,y,z]
+    #               Odometry/PoseWithCovariance/Pose/Quaternion/ 
+    #               - [x,y,z,w]
+
+    # axis x,y,z angles = up-down, left-right, forward-backward
+    # rotation is according along these axis
     def odom_callback(self, odom_msg):
-        # msg format:   Odometry/PoseWithCovariance/Pose/Point/
-        #               - [x,y,z]
-        #               Odometry/PoseWithCovariance/Pose/Quaternion/ 
-        #               - [x,y,z,w]
         
         pose_x = odom_msg.pose.pose.position.x
-        pose_y = odom_msg.pose.pose.position.x
-        pose_z = odom_msg.pose.pose.position.x
-        pose = [pose_x, pose_y, pose_z]
-        print("\npose:", pose)
+        pose_y = odom_msg.pose.pose.position.y
+        pose_z = odom_msg.pose.pose.position.z
+        car_pose = [pose_x, pose_y, pose_z] #m WRT map
+        # print("\ncar_pose: ", car_pose)
 
         rot_x = odom_msg.pose.pose.orientation.x
         rot_y = odom_msg.pose.pose.orientation.y
         rot_z = odom_msg.pose.pose.orientation.z
         rot_w = odom_msg.pose.pose.orientation.w
-        rot = [rot_x, rot_y, rot_z, rot_w]
-        print("\nrot:", rot)
+        car_rot = [rot_x, rot_y, rot_z, rot_w] #quaternion WRT map
 
-        time.sleep(1)
-    
+        angles = t3d.euler.quat2euler(car_rot) #rad [x, y, z] WRT map
+        # print("\ncar_rot: ", angles)
+
+        # time.sleep(1)
+
+
     # callback function for track data
+    # msg format:   Track/Cone/Point/
+    #               - [x,y,z]
+    #               Track/Cone/
+    #               - colour
+    #                   uint8 BLUE=0
+    #                   uint8 YELLOW=1
+    #                   uint8 ORANGE_BIG=2
+    #                   uint8 ORANGE_SMALL=3
+    #                   uint8 UNKNOWN=4
     def track_callback(self, track_msg):
-        # msg format:   Track/Cone/Point/
-        #               - [x,y,z]
-        #               Track/Cone/
-        #               - colour
-        #                   uint8 BLUE=0
-        #                   uint8 YELLOW=1
-        #                   uint8 ORANGE_BIG=2
-        #                   uint8 ORANGE_SMALL=3
-        #                   uint8 UNKNOWN=4
-        
-        self.cones = list() # clear previous list
-        if self.got_track == False:
-            for i in range(len(track_msg)):
-                curr_cone = track_msg[i] # define current cone in track list
-                x = curr_cone.location.x
-                y = curr_cone.location.y 
-                z = curr_cone.location.z
-                c = curr_cone.color
+        print("here")
+        # if self.got_track == False:
+        # cones_data = track_msg.track
+        # for i in range(len(cones_data)):
+        #     curr_cone = track_msg[i] # define current cone in track list
+        #     print(curr_cone)
+        #     x = curr_cone.location.x
+        #     y = curr_cone.location.y 
+        #     z = curr_cone.location.z
+        #     c = curr_cone.color
 
-                self.cones.append([x,y,z,c])
-            
-            self.got_track = True
+        #     self.cones.append([x,y,z,c])
+        
+        # self.got_track = True
 
 
     ## publisher for processed cone data
