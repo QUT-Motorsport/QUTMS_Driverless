@@ -1,6 +1,7 @@
 # import python libraries
 import cv2
 import numpy as np
+import random
 
 # HSV limits
 orange_high = np.array([0.100, 1, 1])*255
@@ -19,6 +20,9 @@ colours = [0, 1, 2]
 col_words = ["blue", "yellow", "orange"]
 box_cols = [(255, 102, 0), (0, 255, 255), (0, 102, 255)]
 
+max_cone_aspect = [1.5, 1.5, 1.7] # blue, yellow orange - blue and yellow should probably be the same
+min_cone_aspect = [1.1, 1.1, 1.5]
+
 # used for removing noise via erode/dilate
 kernel = np.ones((2, 2), np.uint8)
 
@@ -33,7 +37,7 @@ def feature_extract(current_hsv, colour):
     return [mask, edges]
 
 
-def bounds(bounding_box_frame, cones, mask, colour): # rects are returned as (x1, y1, x2, y2) not (x, y, w, h)
+def bounds(bounding_box_frame, cones, mask, colour):
     # find contours from edges
     contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
 
@@ -43,7 +47,7 @@ def bounds(bounding_box_frame, cones, mask, colour): # rects are returned as (x1
         [x,y,w,h] = cv2.boundingRect(contours[i])
 
         # box size cutoff
-        min_pix_size = 2 # can change based on sim image
+        min_pix_size = 0 # can change based on sim image
         if w > min_pix_size and h > min_pix_size:
             # append rectangle geometry twice to ensure rectangle groupings will 
             # show initially non-overlapping rectangles
@@ -55,29 +59,61 @@ def bounds(bounding_box_frame, cones, mask, colour): # rects are returned as (x1
     # find whole cones' bounding rectangles
     rects.sort(reverse=True, key=lambda rect: rect[2]*rect[3])
 
+    # loop removes all boundng boxes tounching the edge of the frame
+    i = 0
+    h, w, _ = bounding_box_frame.shape
+    while i < len(rects):
+        rect = rects[i]
+        rect = [rect[0], rect[1], rect[0]+rect[2], rect[1]+rect[3]] # left, top, right, bottom
+
+        if min(rect[0:2]) <= 0 or rect[2] >= w or rect[3] >= h:
+            rects.pop(i)
+        else:
+            i += 1
+
+    # loop merges multiple bounding boxes, idealy over one cone
     while len(rects) > 0: # loop until empty
-        rect = rects.pop(0) # remove element 0 from results and return it
-        rect = [rect[0], rect[1], rect[0]+rect[2], rect[1]+rect[3]] # x1, y1, x2, y2
+        rect = rects.pop(0) # remove element 0 (next biggest bounding box) from results and return it
+        rect = [rect[0], rect[1], rect[0]+rect[2], rect[1]+rect[3]] # left, top, right, bottom
         
         left_edge = rect[0]
         top_edge = rect[1]
         right_edge = rect[2]
         bottom_edge = rect[3]
 
+        # loop checks each smaller bounding box, merging matching boxes into rect
         i = 0
         while i < len(rects):
-            other_rect = rects[i]
-            if other_rect[0] > rect[0] and other_rect[0]+other_rect[2] < rect[2]:
-                left_edge = min(rect[0], other_rect[0])
-                top_edge = min(rect[1], other_rect[1])
-                right_edge = max(rect[2], other_rect[0]+other_rect[2])
-                bottom_edge = max(rect[3], other_rect[1]+other_rect[3])
-                rects.remove(other_rect)
+            other_rect = rects[i] # get next smallest box
+            if other_rect[0] > rect[0] and other_rect[0]+other_rect[2] < rect[2]: # check if smaller box is within larger box horizontaly
+                # get new edges
+                left_edge1 = min(rect[0], other_rect[0])
+                top_edge1 = min(rect[1], other_rect[1])
+                right_edge1 = max(rect[2], other_rect[0]+other_rect[2])
+                bottom_edge1 = max(rect[3], other_rect[1]+other_rect[3])
+
+                width = right_edge1 - left_edge1 # width and hight in pixels
+                height = bottom_edge1 - top_edge1
+                if height/width <= max_cone_aspect[colour]:
+                    left_edge = left_edge1
+                    top_edge = top_edge1
+                    right_edge = right_edge1
+                    bottom_edge = bottom_edge1
+                    # remove smaller box from list
+                    rects.remove(other_rect)
+                else:
+                    i += 1
             else:
+                # only increment index if a box wasn't removed from the list
                 i += 1
 
         width = right_edge - left_edge # width and hight in pixels
         height = bottom_edge - top_edge
+
+        if height/width < min_cone_aspect[colour]:
+            height = int(width*min_cone_aspect[colour])
+            top_edge = bottom_edge - height
+
         x_centroid = (left_edge + width / 2) # centre of rectangle
         y_centroid = (top_edge + height / 2)
         
@@ -129,7 +165,7 @@ def cam_main(frame, display=False):
         # horizontal res: full
         current_frame = frame[int(5*h/30):h, 0:w]# made variable to cam resolution
 
-    bounding_box_frame = current_frame # frame to display on
+    bounding_box_frame = np.copy(current_frame) # frame to display on
 
     # convert to hsv
     current_hsv = cv2.cvtColor(current_frame, cv2.COLOR_BGR2HSV)
@@ -154,23 +190,44 @@ def cam_main(frame, display=False):
     # cv2.rectangle(roi_mask, (yellow_rects[0][0], yellow_rects[0][2]), (yellow_rects[0][1], yellow_rects[0][3]), 0, -1) ,[current_frame.shape[2]-60,500] # mask off sky
     # current_frame = cv2.bitwise_and(current_frame, current_frame, mask=roi_mask)
 
+
+    ############################################################
+    ####### Start of a bunch of keypoint regression shit #######
+    ############################################################
+
+    blue_cones = [cone for cone in cones if cone[0] == "orange"]
+    big_blue_cone = blue_cones[0][1:]
+    # big_blue_cone = random.choice(blue_cones)[1:]
+    big_blue_mask = np.zeros(frame.shape[:2], dtype="uint8")
+    # big_blue_mask = cv2.rectangle(big_blue_mask, (big_blue_cone[-2], big_blue_cone[-1]), (big_blue_cone[-2]+big_blue_cone[0], big_blue_cone[-1]+big_blue_cone[1]), 1, -1)
+    cv2.rectangle(big_blue_mask,  (big_blue_cone[-2], big_blue_cone[-1]), (big_blue_cone[-2]+big_blue_cone[0], big_blue_cone[-1]+big_blue_cone[1]), 1, -1)
+    bounding_kernal = np.ones((15, 25), dtype="uint8")
+    big_blue_mask = cv2.dilate(big_blue_mask , bounding_kernal) 
+
+
+    img = np.copy(current_frame)#cv2.bitwise_and(frame, frame, mask=big_blue_mask))
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+
+    gray = np.float32(gray)
+    dst = cv2.cornerHarris(gray,2,3,0.04)
+
+    # result is dilated for marking the corners, not important
+    dst = cv2.dilate(dst,None)
+
+    # threshold for an optimal value, it may vary depending on the image.
+    img[dst>0.02*dst.max()]=[0,0,255]
+   
+    snip = img[big_blue_cone[-1]:big_blue_cone[-1]+big_blue_cone[1], big_blue_cone[-2]:big_blue_cone[-2]+big_blue_cone[0], :]
+
+    # cv2.imshow('dst',dst/dst.max()*255)
+    # cv2.imshow('dst',cv2.bitwise_and(img, img, mask=big_blue_mask))
+
+    # cv2.waitKey(1)
+
     if display == True:
         # show bounding boxes
         cv2.imshow("camera-base", bounding_box_frame) # image with bounding boxes
-
-        # img = np.copy(current_frame)
-        # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-
-        # gray = np.float32(gray)
-        # dst = cv2.cornerHarris(gray,2,3,0.04)
-
-        # # result is dilated for marking the corners, not important
-        # dst = cv2.dilate(dst,None)
-
-        # # threshold for an optimal value, it may vary depending on the image.
-        # img[dst>0.01*dst.max()]=[0,0,255]
-
-        # cv2.imshow('dst',img)
 
         cv2.waitKey(1)
 

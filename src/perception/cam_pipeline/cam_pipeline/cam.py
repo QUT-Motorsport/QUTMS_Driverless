@@ -31,8 +31,6 @@ class CamProcessing(Node):
         self.cam_subscription_  # prevent unused variable warning
         self.br = CvBridge()
         self.cone_coords = list()
-        self.n = 0
-        self.start = time.time()
 
         ## creates publisher to 'control_command' with type ControlCommand
         self.scan_publisher_ = self.create_publisher(
@@ -50,16 +48,16 @@ class CamProcessing(Node):
         raw_frame = self.br.imgmsg_to_cv2(cam_msg)
         h, w, _ = raw_frame.shape
 
-        # display = True
-        cones = cam_main(raw_frame)
+        cones = cam_main(raw_frame, False)
 
         # call return_locations to return xyzc for every cone
         self.cone_coords = return_locations(w/2, cones) # send cones for distance calculation
-
-        # self.n += 1
-        # if self.n == 100:
-        #     print(time.time() - self.start)
-
+        
+        # print("*"*20)
+        # print(cones)
+        # cv2.imshow("1", raw_frame)
+        # cv2.waitKey(1)
+        
 
     ## publisher for processed cone data
     def publisher(self):
