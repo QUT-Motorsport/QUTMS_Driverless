@@ -88,3 +88,4 @@ services:
         <<: *network
         <<: *visible
         command: /home/${USERNAME}/start.sh
+        # command: bash

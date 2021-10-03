@@ -33,14 +33,14 @@ class LocationProcessing(Node):
         self.odom_subscription_  # prevent unused variable warning
 
         ## creates subscriber to 'track' topic with type Track that sends data to track_callback
-        self.track_subscription_ = self.create_subscription(
-            Track,
-            '/fsds/testing_only/track',
-            self.track_callback,
-            10)
-        self.track_subscription_  # prevent unused variable warning
-        self.got_track = False
-        self.cones = list()
+        # self.track_subscription_ = self.create_subscription(
+        #     Track,
+        #     '/fsds/testing_only/track',
+        #     self.track_callback,
+        #     10)
+        # self.track_subscription_  # prevent unused variable warning
+        # self.got_track = False
+        # self.cones = list()
 
         ## creates publisher to 'control_command' with type ControlCommand
         # self.scan_publisher_ = self.create_publisher(
@@ -90,8 +90,8 @@ class LocationProcessing(Node):
     #                   uint8 ORANGE_BIG=2
     #                   uint8 ORANGE_SMALL=3
     #                   uint8 UNKNOWN=4
-    def track_callback(self, track_msg):
-        print("here")
+    # def track_callback(self, track_msg):
+    #     print("here")
         # if self.got_track == False:
         # cones_data = track_msg.track
         # for i in range(len(cones_data)):
