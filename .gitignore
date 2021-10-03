@@ -1,5 +1,7 @@
 .env
 
+.devcontainer
+
 # - VSCode -
 .vscode
 !.vscode/cpp_properties.json
