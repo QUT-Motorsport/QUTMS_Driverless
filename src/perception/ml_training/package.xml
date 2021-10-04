@@ -4,7 +4,7 @@
     <name>ml_training</name>
     <version>0.0.0</version>
     <description>ML training for YOLOv5</description>
-    <maintainer email="qutmotorsport.team@gmail.com">QUT Motorsport</maintainer>
+    <maintainer email="qutmotorsport.team@gmail.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
     <depend>rclpy</depend>

@@ -1,17 +1,20 @@
 import yaml
-yaml_file = open("src/perception/ml_training/ml_training/test.txt")
+import matplotlib.pyplot as plt
 
-parsed = dict(yaml.load(yaml_file, Loader=yaml.FullLoader))
+def return_track():
+    '''
+    
+    '''
+    yaml_file = open("src/perception/ml_training/ml_training/sub_module/yaml_track.txt")
 
-cones_locs = parsed["cones"]
+    parsed = dict(yaml.load(yaml_file, Loader=yaml.FullLoader))
 
-cones = list()
-for cone_loc in parsed["cones"]:
-    print("\n", cone_loc)
+    cones_locs = parsed["cones"]
 
-    cone = list(cone_loc.values())
-    print(cone)
-    cones.append(cone)
+    cones = list()
+    for cone_loc in parsed["cones"]:
+        cone = list(cone_loc.values())
+        cones.append(cone)
 
-with open("src/perception/ml_training/ml_training/track.txt", 'w') as output:
-    output.write(str(cones) + '\n')
+    return cones
+

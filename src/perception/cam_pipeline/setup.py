@@ -14,7 +14,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='QUT Motorsport',
+    maintainer='Alastair Bradford, Harl Towne',
     maintainer_email='qutmotorsport.team@gmail.com',
     description='Image analysis in python',
     license='MIT',
