@@ -204,26 +204,94 @@ def cam_main(frame, display=False):
     bounding_kernal = np.ones((15, 25), dtype="uint8")
     big_blue_mask = cv2.dilate(big_blue_mask , bounding_kernal) 
 
+    img = np.copy(current_frame)
+    h_off = 5
+    v_off = 5
+    snip = img[big_blue_cone[-1]-v_off:big_blue_cone[-1]+big_blue_cone[1]+v_off, big_blue_cone[-2]-h_off:big_blue_cone[-2]+big_blue_cone[0]+h_off, :]
 
-    img = np.copy(current_frame)#cv2.bitwise_and(frame, frame, mask=big_blue_mask))
+    ########### Harris ###########
+    # img = np.copy(current_frame)#cv2.bitwise_and(frame, frame, mask=big_blue_mask))
+    # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    # gray = np.float32(gray)
+    # dst = cv2.cornerHarris(gray,2,3,0.04)
+    # # result is dilated for marking the corners, not important
+    # dst = cv2.dilate(dst,None)
+    # # threshold for an optimal value, it may vary depending on the image.
+    # img[dst>0.02*dst.max()]=[0,0,255]
+    # 
+    # # cv2.imshow('dst',dst/dst.max()*255)
+    # # cv2.imshow('dst',cv2.bitwise_and(img, img, mask=big_blue_mask))
+    # cv2.imshow("Harris", img)
+
+    ########## Shi-Tomasi ###########
+    img = np.copy(current_frame)
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    corners = cv2.goodFeaturesToTrack(gray,100,0.01,5)
+    corners = np.int0(corners)
+    for i in corners:
+        x,y = i.ravel()
+        cv2.circle(img,(x,y),3,(0, 0, 255),-1)
+    cv2.imshow("Shi-Tomasi", img)
+
+    ########### SIFT ########### needs opencv-contrib-python (pip install opencv-contrib-python)
+    # img = np.copy(current_frame)
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # sift = cv2.xfeatures2d.SIFT_create()
+    # detector = sift.detect(gray, None)
+    # kpts, des = sift.compute(gray, detector)
+    # # kpts,des=descriptor.compute(gray,kpts)
+    # im_with_keypoints = cv2.drawKeypoints(gray, kpts, np.array([]), color=255, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # cv2.imshow("SIFT", im_with_keypoints)
+
+    ########### SURF ########### needs opencv-contrib-python (pip install opencv-contrib-python)
+    # img = np.copy(current_frame)
+    # surf = cv2.xfeatures2d.SURF_create(50000)
+    # kp, des = surf.detectAndCompute(img,None)
+    # img = cv2.drawKeypoints(img,kp,None,(255,0,0),4)
+    # cv2.imshow("SURF", img)
+
+    ########### FAST ########### needs opencv-contrib-python (pip install opencv-contrib-python)
+    # img = np.copy(current_frame)
+    # # Initiate FAST object with default values
+    # fast = cv2.FastFeatureDetector()
+    # # find and draw the keypoints
+    # kp = fast.detect(img,None)
+    # img2 = cv2.drawKeypoints(img, kp, color=(255,0,0))
+    # cv2.imshow("FAST", img2)
+
+    ########### BRIEF ########### needs opencv-contrib-python (pip install opencv-contrib-python)
+    # img = np.copy(current_frame)
+    # # Initiate STAR detector
+    # star = cv2.FeatureDetector_create("STAR")
+    # # Initiate BRIEF extractor
+    # brief = cv2.DescriptorExtractor_create("BRIEF")
+    # # find the keypoints with STAR
+    # kp = star.detect(img,None)
+    # # compute the descriptors with BRIEF
+    # kp, des = brief.compute(img, kp)
+    # img2 = cv2.drawKeypoints(img, kp, color=(255,0,0))
+    # cv2.imshow("FAST", img2)
+
+    ########### ORB ########### needs opencv-contrib-python (pip install opencv-contrib-python)
+    # img = np.copy(current_frame)
+    # # Initiate STAR detector
+    # orb = cv2.ORB()
+    # # find the keypoints with ORB
+    # kp = orb.detect(img,None)
+    # # compute the descriptors with ORB
+    # kp, des = orb.compute(img, kp)
+    # img2 = cv2.drawKeypoints(img, kp, color=(255,0,0))
+    # cv2.imshow("FAST", img2)
+
+    # TODO: try Feature Matching here - https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
 
 
-    gray = np.float32(gray)
-    dst = cv2.cornerHarris(gray,2,3,0.04)
 
-    # result is dilated for marking the corners, not important
-    dst = cv2.dilate(dst,None)
 
-    # threshold for an optimal value, it may vary depending on the image.
-    img[dst>0.02*dst.max()]=[0,0,255]
-   
-    snip = img[big_blue_cone[-1]:big_blue_cone[-1]+big_blue_cone[1], big_blue_cone[-2]:big_blue_cone[-2]+big_blue_cone[0], :]
 
-    # cv2.imshow('dst',dst/dst.max()*255)
-    # cv2.imshow('dst',cv2.bitwise_and(img, img, mask=big_blue_mask))
 
-    # cv2.waitKey(1)
+
+    cv2.waitKey(1)
 
     if display == True:
         # show bounding boxes
