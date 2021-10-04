@@ -5,6 +5,7 @@ from rclpy.node import Node
 # import ROS2 message libraries
 from nav_msgs.msg import Odometry
 from tf2_msgs.msg import TFMessage
+
 # import custom sim data message libraries
 from fs_msgs.msg import Track
 from qutms_msgs.msg import ConeScan, ConeData
@@ -15,10 +16,14 @@ import numpy as np
 import time
 import math
 
+# import helper point and cone processing module
+from .sub_module.get_yaml import return_track
+
 
 # define camera coords relative to car frame
-CAM_LOCAL_POSE = [-0.5, 0, 1] #m
-CAM_LOCAL_ROT = [0, 0, math.pi] #rads
+CAM_LOCAL_POSE = [-0.5, 0, 1, 1] #m
+
+TRACK_PATH = '/home/developer/driverless_ws/src/perception/ml_training/ml_training/track.txt'
 
 class LocationProcessing(Node):
     def __init__(self):
@@ -32,15 +37,7 @@ class LocationProcessing(Node):
             10)
         self.odom_subscription_  # prevent unused variable warning
 
-        ## creates subscriber to 'track' topic with type Track that sends data to track_callback
-        # self.track_subscription_ = self.create_subscription(
-        #     Track,
-        #     '/fsds/testing_only/track',
-        #     self.track_callback,
-        #     10)
-        # self.track_subscription_  # prevent unused variable warning
-        # self.got_track = False
-        # self.cones = list()
+        self.cones = return_track()
 
         ## creates publisher to 'control_command' with type ControlCommand
         # self.scan_publisher_ = self.create_publisher(
@@ -57,54 +54,51 @@ class LocationProcessing(Node):
     #               - [x,y,z]
     #               Odometry/PoseWithCovariance/Pose/Quaternion/ 
     #               - [x,y,z,w]
-
-    # axis x,y,z angles = up-down, left-right, forward-backward
+    # axis x,y,z angles = forward-backward, left-right, up-down
     # rotation is according along these axis
     def odom_callback(self, odom_msg):
-        
-        pose_x = odom_msg.pose.pose.position.x
-        pose_y = odom_msg.pose.pose.position.y
-        pose_z = odom_msg.pose.pose.position.z
-        car_pose = [pose_x, pose_y, pose_z] #m WRT map
-        # print("\ncar_pose: ", car_pose)
 
         rot_x = odom_msg.pose.pose.orientation.x
         rot_y = odom_msg.pose.pose.orientation.y
         rot_z = odom_msg.pose.pose.orientation.z
         rot_w = odom_msg.pose.pose.orientation.w
-        car_rot = [rot_x, rot_y, rot_z, rot_w] #quaternion WRT map
+        rot_quat = [rot_w, rot_x, rot_y, rot_z] #quaternion WRT map
+        print(rot_quat)
 
-        angles = t3d.euler.quat2euler(car_rot) #rad [x, y, z] WRT map
-        # print("\ncar_rot: ", angles)
+        # z points up, x points forward
+        x = odom_msg.pose.pose.position.x
+        y = odom_msg.pose.pose.position.y
+        z = odom_msg.pose.pose.position.z
+        car_coords = [x, y, z] #m WRT map
+        print(car_coords)
 
-        # time.sleep(1)
+        rot_mat = t3d.euler.quat2mat(rot_quat) #rad [x, y, z] WRT map
 
+        car_mat = np.zeros((4,4))
+        car_mat[0:3, 0:3] = rot_mat
+        car_mat[3, 0:3] = car_coords
+        car_mat[3, 3] = 1
+        print("\ncar_mat: \n", car_mat)
 
-    # callback function for track data
-    # msg format:   Track/Cone/Point/
-    #               - [x,y,z]
-    #               Track/Cone/
-    #               - colour
-    #                   uint8 BLUE=0
-    #                   uint8 YELLOW=1
-    #                   uint8 ORANGE_BIG=2
-    #                   uint8 ORANGE_SMALL=3
-    #                   uint8 UNKNOWN=4
-    # def track_callback(self, track_msg):
-    #     print("here")
-        # if self.got_track == False:
-        # cones_data = track_msg.track
-        # for i in range(len(cones_data)):
-        #     curr_cone = track_msg[i] # define current cone in track list
-        #     print(curr_cone)
-        #     x = curr_cone.location.x
-        #     y = curr_cone.location.y 
-        #     z = curr_cone.location.z
-        #     c = curr_cone.color
+        cam_coords = np.matmul(CAM_LOCAL_POSE, car_mat)
 
-        #     self.cones.append([x,y,z,c])
-        
-        # self.got_track = True
+        cam_mat = np.zeros((4,4))
+        cam_mat[0:3, 0:3] = rot_mat
+        cam_mat[3, 0:4] = cam_coords
+        cam_mat[3, 3] = 1
+        print("\ncam_mat: \n", cam_mat)
+        cam_mat = np.asmatrix(cam_mat)
+        cam_mat_i = cam_mat.getI()
+
+        print("\n")
+        time.sleep(1)
+
+        # for cone in self.cones:
+        cone = self.cones[0]
+        cone_on_cam = np.matmul(cone, cam_mat_i)
+        cone_on_cam = cone_on_cam.tolist()
+        x = cone_on_cam[0][0] / -cone_on_cam[0][2]
+        y = cone_on_cam[0][1] / -cone_on_cam[0][2]
 
 
     ## publisher for processed cone data
