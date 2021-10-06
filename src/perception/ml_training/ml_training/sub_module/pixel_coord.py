@@ -58,17 +58,28 @@ print("\ncam_mat: \n", cam_mat)
 cam_mat_i = cam_mat.getI()
 
 cone = cones[0]
-print(cone)
+print("\ncone: \n",cone)
 
 plt.plot(cone[0], cone[1], 'bo')
-plt.show()
 
 cone_on_cam = np.matmul(cone, cam_mat_i)
 cone_on_cam = cone_on_cam.tolist()
-print(cone_on_cam[0])
+print("\ncone_on_cam: \n", cone_on_cam[0])
+
+plt.plot(a[0]+cone_on_cam[0][0], a[1]+cone_on_cam[0][1], 'go')
+
+
+plt.show()
+
+
+plt.figure(2)
+plt.axis('equal')
+plt.plot(0, 0, 'bo')
+plt.plot(cone_on_cam[0][0], cone_on_cam[0][1], 'go')
+plt.show()
 
 x = cone_on_cam[0][2] / -cone_on_cam[0][0]
 y = cone_on_cam[0][1] / -cone_on_cam[0][0]
-print(x,y)
+# print(x,y)
 
 
