@@ -239,6 +239,17 @@ def dist_points_3D(x_0, x_1, x_2):
     distance = numer/denom
     return distance
 
+def line_to_end_points(line, segment_idx):
+    start = line[2] # First point in line
+    end = line[3] # Last point in line
+    r = np.linspace(start[0], end[0], 2)
+    z = line[0] * r + line[1]
+    x = r * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    y = r * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    x_1 = [x[0], y[0], z[0]]
+    x_2 = [x[1], y[1], z[1]]
+    return [x_1, x_2]
+
 def non_ground_points(labelled_points):
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
