@@ -411,6 +411,23 @@ def object_reconstruction(cluster_centers, points):
 
     return reconstructed_clusters
 
+def object_reconstruction_2(cluster_centers, points):
+    cone_width = 0.15
+    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
+    # You might want to sort points by x coords here
+    # since that is how the clusters are sorted
+    # This may reduce overall time
+    for i in range(len(points)):
+        point = points[i]
+        for j in range(len(cluster_centers)):
+            # I'm gonna be hoping a point wont be in two clusters at the same time
+            # therefore ill break after the first match for each point
+            # Increases speed of algorithm
+            if get_distance(cluster_centers[j], point) <= cone_width:
+                reconstructed_clusters[j].append(point)
+                break;
+    return reconstructed_clusters
+
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 def cone_filter(distance):
