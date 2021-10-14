@@ -107,7 +107,7 @@ def approximate_2D(segments_bins):
             segments_bins_2D[i][j].reverse()
     return segments_bins_2D
 
-def new_approximate_2D(segments_bins):
+def approximate_2D_2(segments_bins):
     segments_bins_2D = []
     for i in range(NUM_SEGMENTS):
         segments_bins_2D.append([])
