@@ -38,6 +38,14 @@ def points_to_segment(points):
         segments[s_index].append(points[i])
     return segments
 
+def points_to_segment_2(points):
+    segments = [[] for i in range(NUM_SEGMENTS)]
+    for i in range(len(points)):
+        point = points[i] # [x, y, z]
+        seg_idx = get_segment(point[0], point[1])
+        segments[seg_idx].append(point)
+    return segments
+
 # Creates a set of segments with bins
 def init_bins():
     segments_bins = []
