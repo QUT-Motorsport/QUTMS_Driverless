@@ -181,14 +181,14 @@ def prototype_points_2(segments_bins_2D):
 
 # Not sure if this is working correctly
 # Should compare 3D distance between points and start of line point
-def dist_points_3D(x1, x2, m, b):
+def dist_points_3D_old(x1, x2, m, b):
     x2_z = m*x2[0] + b
     distance = math.sqrt((x2[0] - x1[0])**2 + (x2[1] - x1[1])**2 + (x2_z - x1[2])**2)
     return distance
 
 # distance from point to line in 3D space
-def point_line_dist_3D():
-    pass
+# def point_line_dist_3D():
+#    pass
 
 # might need to investigate line extraction distance from point to line, making large values.
 
