@@ -398,17 +398,16 @@ def object_reconstruction(cluster_centers, points):
     # This may reduce overall time
     for i in range (len(cluster_centers)):
         reconstructed_clusters.append([])
-
     for i in range(len(points)):
-        point  = points[i]
+        point = points[i]
         for j in range(len(cluster_centers)):
             cluster_center = cluster_centers[j]
             # I'm gonna be hoping a point wont be in two clusters at the same time
             # therefore ill break after the first match for each point
+            # Increases speed of algorithm
             if get_distance(cluster_center, point) <= cone_width:
                 reconstructed_clusters[j].append(point)
                 break;
-
     return reconstructed_clusters
 
 def object_reconstruction_2(cluster_centers, points):
@@ -440,26 +439,86 @@ def cone_filter(distance):
 
 def get_cones(reconstructed_clusters):
     cones = []
-    error_margin = 0.1
+    ERROR_MARGIN = 0.1 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
-
-        x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
-        y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
-        # Univserity of melbourne used z as well
-        #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
-        x_mean  = sum(x_cluster) / len(x_cluster)
-        y_mean  = sum(y_cluster) / len(y_cluster)
-        #z_mean  = sum(y_cluster) / len(y_cluster)
-        distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
-
-        # Rule based filter
-        exp_point_count = cone_filter(distance)
-        #print(exp_point_count, point_count)
-        if (exp_point_count*(1 - error_margin) <= point_count <= exp_point_count*(1 + error_margin)):
-            cones.append([x_mean, y_mean])
+        if point_count >= 1:
+            x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
+            y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            # Univserity of melbourne used z as well
+            #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            x_mean  = sum(x_cluster) / len(x_cluster)
+            y_mean  = sum(y_cluster) / len(y_cluster)
+            #z_mean  = sum(y_cluster) / len(y_cluster)
+            distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
+            # Rule based filter
+            exp_point_count = cone_filter(distance)
+            #print(exp_point_count, point_count)
+            if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
+                cones.append([x_mean, y_mean])
     return cones
 
+def benchmarking(points):
+    # Optimised
+    start_time = time.time()
+    segments = points_to_segment_2(points)
+    time_1 = time.time() - start_time
+
+    # Optimised 
+    start_time = time.time()
+    segments_bins = points_to_bins_2(segments)
+    time_2 = time.time() - start_time
+
+    # Optimised
+    #start_time = time.time()
+    #segments_bins_2D = approximate_2D_4(segments_bins)
+    #time_3 = time.time() - start_time
+
+    # Optimised
+    #start_time = time.time()
+    #segments_bins_prototype = prototype_points_2(segments_bins_2D)
+    #time_4 = time.time() - start_time
+
+    # - Merging 2 Components -
+
+    # Optimised: Modifies input array
+    start_time = time.time()
+    segments_bins_prototype = approximate_2D_5(segments_bins)
+    time_3 = time.time() - start_time
+    time_4 = 0 # Component Merged.
+
+    start_time = time.time()
+    ground_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
+    time_5 = time.time() - start_time
+
+    # Improved: Modifies input 
+    # You need to re-optimise the new label points function
+    start_time = time.time()
+    labelled_points = label_points_2(segments, ground_lines)
+    time_6 = time.time() - start_time
+
+    # Optimised
+    start_time = time.time()
+    object_points = non_ground_points_2(labelled_points)
+    time_7 = time.time() - start_time
+
+    # Optimised? (should be quicker for larger array)
+    start_time = time.time()
+    #clusters, noise, cluster_centers = DBSCAN.init_DBSCAN(object_points)
+    cluster_centers = DBSCAN.init_DBSCAN_2(object_points)
+    time_8 = time.time() - start_time
+
+    # Optimised (A tiny bit faster)
+    start_time = time.time()
+    reconstructed_clusters = object_reconstruction_2(cluster_centers, points)
+    time_9 = time.time() - start_time
+
+    # Already Optimised
+    start_time = time.time()
+    cones = get_cones(reconstructed_clusters)
+    time_10 = time.time() - start_time
+
+    return [time_1, time_2, time_3, time_4, time_5, time_6, time_7, time_8, time_9, time_10]
 
 def get_ground_plane(points):
     start_time = time.time()
