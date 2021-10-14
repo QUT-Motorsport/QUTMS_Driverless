@@ -203,14 +203,14 @@ def dist_points_3D_old(x1, x2, m, b):
 # But assuming that there is multiple lines ...
 
 # Conservative approach implemented using T_D_MAX parameter
-def label_points(segments, ground_lines):
+def label_points_old(segments, ground_lines):
     labelled_points = copy.deepcopy(segments)
 
     # Assuming multiple lines in one segment
     # Identifying closest line for each point
     for i in range(NUM_SEGMENTS):
         num_points = len(segments[i])
-        for j in range(num_points):
+        for j in range(num_points): 
             point = segments[i][j]
             is_ground = False
             closest_line = None
@@ -218,10 +218,10 @@ def label_points(segments, ground_lines):
             if num_lines > 0:
                 line = ground_lines[i][0]
                 closest_line = line
-                closest_dist = dist_points_3D(point, line[2], line[0], line[1])
+                closest_dist = dist_points_3D_old(point, line[2], line[0], line[1])
                 for k in range(1, num_lines):
                     line = ground_lines[i][k]
-                    dist_to_line = dist_points_3D(point, line[2], line[0], line[1])
+                    dist_to_line = dist_points_3D_old(point, line[2], line[0], line[1])
                     if (dist_to_line < closest_dist):
                         closest_line = line
                         closest_dist = dist_to_line
