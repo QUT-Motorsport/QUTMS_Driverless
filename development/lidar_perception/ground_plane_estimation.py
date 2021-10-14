@@ -53,7 +53,7 @@ def init_bins():
         segments_bins.append([])
         for j in range(NUM_BINS):
             segments_bins[i].append([])
-    print("Number of bins:", len(segments_bins[0]))
+    #print("Number of bins:", len(segments_bins[0]))
     return segments_bins
 
 # Returns true if the point (x, y) is in bin j
@@ -387,8 +387,8 @@ def non_ground_points_2(labelled_points):
 
 # Ignoring height
 def get_distance(point_a, point_b):
-    distance = math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
-    return distance
+    # Distance
+    return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
 
 def object_reconstruction(cluster_centers, points):
     cone_width = 0.15
@@ -638,7 +638,7 @@ def bench(count):
 #bench(1)
 
 
-print("--- %s seconds ---" % (time.time() - start_time))
+print("\n Total Time: %s seconds " % (time.time() - start_time))
 
 
 
