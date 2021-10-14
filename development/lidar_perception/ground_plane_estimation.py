@@ -543,12 +543,43 @@ def get_ground_plane(points):
     print(cones)
     return cones
 
+def get_ground_plane_new(point_cloud):
+    segments = points_to_segment_2(point_cloud)
+    if VISUALISE: vis.plot_segments(segments)
+
+    segments_bins = points_to_bins_2(segments)
+    if VISUALISE: vis.plot_segments_bins(segments_bins, False)
+
+    segments_bins_prototype = approximate_2D_5(segments_bins)
+
+    ground_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
+    if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_lines, False)
+    if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_lines)
+
+    labelled_points = label_points_2(segments, ground_lines)
+    if VISUALISE: vis.plot_labelled_points(labelled_points, ground_lines)
+
+    object_points = non_ground_points_2(labelled_points)
+    if VISUALISE: vis.plot_grid_2D(object_points)
+
+    cluster_centers = DBSCAN.init_DBSCAN_2(object_points)
+
+    reconstructed_clusters = object_reconstruction_2(cluster_centers, point_cloud)
+    if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
+
+    cones = get_cones(reconstructed_clusters)
+    if VISUALISE: vis.plot_cones(cones)
+
+    if VISUALISE and DISPLAY: plt.show()
+    return cones
+
+
 def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters, cones):
     # Could add a try except here so I can always see the plots even if error occurs
     #vis.plot_data_2D()
     vis.plot_data_3D()
-    #vis.plot_segments(segments)
-    #vis.plot_segments_bins(segments_bins, False) # Laggy due to bin count (Set False to decrease lag)
+        #vis.plot_segments(segments)
+        #vis.plot_segments_bins(segments_bins, False) # Laggy due to bin count (Set False to decrease lag)
     #vis.plot_segments_bins_2D(segments_bins_2D, False) # Laggy due to bin count (Set False to decrease lag)
     #vis.plot_segments_bins_2D_3D(segments_bins_2D, False) # Laggy due to bin count (Set False to decrease lag)
     #vis.plot_segments_bins_prototype_3D(segments_bins_prototype, False) # Laggy due to bin count (Set False to decrease lag)
@@ -587,9 +618,11 @@ def init_constants():
     if (math.pi % DELTA_ALPHA != 0):
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
 
-def main(point_cloud, _visualise, benchmark):
+def main(point_cloud, _visualise, _display, benchmark):
     global VISUALISE
+    global DISPLAY
     VISUALISE = _visualise
+    DISPLAY = _display
 
     init_constants()
 
@@ -609,7 +642,7 @@ def main(point_cloud, _visualise, benchmark):
     if benchmark:
         return benchmarking(point_cloud)
 
-    cones = get_ground_plane(point_cloud)
+    cones = get_ground_plane_new(point_cloud)
 
     return cones
 
@@ -621,7 +654,7 @@ import time
 
 start_time = time.time()
 
-main(test_data, True, False)
+main(test_data, True, True, False)
 
 def bench(count):
     average_times = main(test_data, False, True)
