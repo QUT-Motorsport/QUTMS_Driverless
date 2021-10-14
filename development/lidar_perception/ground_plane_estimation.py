@@ -82,6 +82,15 @@ def points_to_bins(segments):
             segments_bins[i][bin_index].append(segments[i][j])
     return segments_bins
 
+def points_to_bins_2(segments):
+    segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    for i in range(NUM_SEGMENTS):
+        for j in range(len(segments[i])):
+            point = segments[i][j] # [x, y, z]
+            bin_index = get_bin(point[0], point[1])
+            segments_bins[i][bin_index].append(point)
+    return segments_bins
+
 # Creates a 2D approximation of the 3D points
 def approximate_2D(segments_bins):
     segments_bins_2D = copy.deepcopy(segments_bins) 
