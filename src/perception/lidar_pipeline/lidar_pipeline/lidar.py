@@ -15,7 +15,7 @@ import time
 from .sub_module.read_pcl import read_points
 # helper math function
 from .sub_module.simple_lidar import find_cones
-from .sub_module.ground_plane_estimation import init_points
+from .sub_module.ground_plane_estimation import lidar_main
 
 class LidarDetection(Node):
     def __init__(self):
@@ -49,17 +49,22 @@ class LidarDetection(Node):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
         
+        start = time.time()
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = numpy.array(list(read_points(pcl_msg)))
+        # print('points:', pcl_array)
 
-        # print('cones:', pcl_array)
-
-        init_points(pcl_array) # calls first module from ground estimation algorithm
+        # calls first module from ground estimation algorithm
         
-        # finds cone locations for single layer lidar
-        self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+        self.cones = lidar_main(pcl_array.tolist(), False) 
+        print('cones:', self.cones)
 
-        # time.sleep(15)
+        print("total time: ", time.time()-start)
+
+        # finds cone locations for single layer lidar
+        # self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+
+        time.sleep(15)
 
 
     def publisher(self):
@@ -71,8 +76,8 @@ class LidarDetection(Node):
             cone = ConeData() 
             cone.x = self.cones[i][0] # x, y, z coords + intensity
             cone.y = self.cones[i][1]
-            cone.z = self.cones[i][2]
-            cone.i = self.cones[i][3]
+            cone.z = 0.2 #self.cones[i][2]
+            cone.i = 3 #self.cones[i][3]
             cone_data.append(cone) # add cone to msg list
        
         # head.stamp = rospy.Time.now()
