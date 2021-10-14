@@ -232,6 +232,13 @@ def label_points_old(segments, ground_lines):
             labelled_points[i][j].append(is_ground)
     return labelled_points
 
+# https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+def dist_points_3D(x_0, x_1, x_2):
+    numer = np.linalg.norm(np.cross(np.subtract(x_0, x_1), np.subtract(x_0, x_2)))
+    denom = np.linalg.norm(np.subtract(x_2, x_1))
+    distance = numer/denom
+    return distance
+
 def non_ground_points(labelled_points):
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
