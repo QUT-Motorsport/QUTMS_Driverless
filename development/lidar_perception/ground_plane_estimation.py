@@ -122,6 +122,18 @@ def approximate_2D_2(segments_bins):
             segments_bins_2D[i][j].sort(reverse=True)
     return segments_bins_2D
 
+# Modifies input array
+def approximate_2D_3(segments_bins):
+    for i in range(NUM_SEGMENTS):
+        for j in range(NUM_BINS):
+            for k in range(len(segments_bins[i][j])):
+                x = segments_bins[i][j][k][0]
+                y = segments_bins[i][j][k][1]
+                z = segments_bins[i][j][k][2]
+                point_prime = [math.sqrt(x**2 + y**2), z]
+                segments_bins[i][j][k] = point_prime
+            segments_bins[i][j].sort(reverse=True)
+    return segments_bins
 
 # Reduces all points in a bin to a single prototype point
 def prototype_points(segments_bins_2D):
