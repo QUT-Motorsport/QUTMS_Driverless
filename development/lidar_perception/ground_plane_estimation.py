@@ -623,7 +623,23 @@ start_time = time.time()
 
 main(test_data, True, False)
 
+def bench(count):
+    average_times = main(test_data, False, True)
+    for i in range(count-1):
+        times = main(test_data, False, True)
+        for j in range(len(times)):
+            average_times[j] += times[j]
+    for i in range(len(average_times)):
+        average_times[i] = average_times[i] / count
+    print(" ---- Average Times ---- ")
+    for i in range(len(average_times)):
+        print(i+1, average_times[i])
+
+#bench(1)
+
+
 print("--- %s seconds ---" % (time.time() - start_time))
+
 
 
 #print(ground_plane)
@@ -674,3 +690,7 @@ print("--- %s seconds ---" % (time.time() - start_time))
 #   - Points that constructed the ground plane lines should already be
 #     labelled as ground, rather than being relablled. 
 #   - num_points = len(points) # make this contanst above if its used #     a lot throughout code
+#   - bruh I was about to write this exact comment ^ create a constant for 
+#     the number of points and reference it instead. 
+#   - I should consider sorting the points early on, I think multiple
+#     parts of the program would benefit by this / already need to do this
