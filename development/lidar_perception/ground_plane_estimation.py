@@ -372,13 +372,18 @@ def label_points_2_old(segments, ground_lines):
 def non_ground_points(labelled_points):
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
-
     object_points = []
     for i in range(len(labelled_points)):
         point = labelled_points[i]
         if point[3] == False:
             object_points.append([point[0], point[1], point[2]])
     return object_points
+
+def non_ground_points_2(labelled_points):
+    # Flatten parent array (remove segements)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
+    # Return all objects that are NOT flagged as ground
+    return [point for point in labelled_points if point[3] == False]
 
 # Ignoring height
 def get_distance(point_a, point_b):
