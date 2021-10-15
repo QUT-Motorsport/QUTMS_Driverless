@@ -211,6 +211,7 @@ def plot_grid_2D(object_points):
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
     plt.plot(0, 0, '>', color="blue")
     plt.plot(x, y, 'x', color='red')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
 def plot_reconstruction(reconstructed_clusters):
     init_plot_2D("Reconstructed Clusters", "x", "y")
@@ -228,6 +229,7 @@ def plot_reconstruction(reconstructed_clusters):
     plt.plot(0, 0, '>', color="blue")
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
 
 def plot_clusters(clusters, noise):
     init_plot_2D("Clustered Objects", "x", "y")
@@ -245,6 +247,7 @@ def plot_clusters(clusters, noise):
         plt.plot(x_mean, y_mean, 'x', color='blue')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
 
 def plot_cones(cones):
     init_plot_2D("Identified Cones", "x", "y")
@@ -254,6 +257,7 @@ def plot_cones(cones):
     plt.plot(x_centers, y_centers, 'x', color='blue')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
 def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW
