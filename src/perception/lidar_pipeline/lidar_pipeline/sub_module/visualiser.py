@@ -73,7 +73,7 @@ def plot_data_2D():
 
 def plot_data_3D():
     ax = init_plot_3D("Point Cloud", "x", "y", "Height", 45, 45)
-    ax.scatter3D(X_RAW, Y_RAW, Z_RAW, c=Z_RAW, cmap='Greens')
+    ax.scatter3D(X_RAW, Y_RAW, Z_RAW, c=Z_RAW, cmap='viridis')
     ax.plot3D(LIDAR_RANGE * np.cos(ANGLE_RESOLUTION), LIDAR_RANGE * np.sin(ANGLE_RESOLUTION), color='black')
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "2_Point-Cloud-3D")
 
@@ -155,14 +155,14 @@ def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
 def plot_segments_fitted(segments_bins_prototype, ground_lines):
-    print("SP", segments_bins_prototype)
+    # print("SP", segments_bins_prototype)
     print("--- Prototype Points ---")
     for i in range(len(segments_bins_prototype)):
         # This if statement is hacky. Without it, this visualisation function crashes
         if len(ground_lines[i]) > 0:
             color_1 = get_colour(i)
             print("Segment:", i + 1, "Count:", ground_lines[i][0][4])
-            init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
+            # init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
             plt.ylim(-2, 2)
             x = []
             y = []
@@ -204,10 +204,14 @@ def plot_labelled_points(labelled_points, ground_lines):
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 def plot_grid_2D(object_points):
-    init_plot_2D("Clustering Grid", "x", "y")
+    init_plot_2D("Non-ground Points", "x", "y")
     x = [coords[0] for coords in object_points]
     y = [coords[1] for coords in object_points]
-    plt.plot(x, y, '.', color='red')
+    plt.xlim([-1, LIDAR_RANGE])
+    plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    plt.plot(0, 0, '>', color="blue")
+    plt.plot(x, y, 'x', color='red')
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
 def plot_reconstruction(reconstructed_clusters):
     init_plot_2D("Reconstructed Clusters", "x", "y")
@@ -222,9 +226,13 @@ def plot_reconstruction(reconstructed_clusters):
             x_mean  = sum(x_cluster) / len(x_cluster)
             y_mean  = sum(y_cluster) / len(y_cluster)
             plt.plot(x_mean, y_mean, 'x', color='blue')
+    plt.plot(0, 0, '>', color="blue")
+    plt.xlim([-1, LIDAR_RANGE])
+    plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
 
 def plot_clusters(clusters, noise):
-    init_plot_2D("Object Segmentation", "x", "y")
+    init_plot_2D("Clustered Objects", "x", "y")
     x_noise = [coords[0] for coords in noise]
     y_noise = [coords[1] for coords in noise]
     plt.plot(x_noise, y_noise, '.', color='red')
@@ -237,6 +245,19 @@ def plot_clusters(clusters, noise):
         x_mean  = sum(x_cluster) / len(x_cluster)
         y_mean  = sum(y_cluster) / len(y_cluster)
         plt.plot(x_mean, y_mean, 'x', color='blue')
+    plt.xlim([-1, LIDAR_RANGE])
+    plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
+
+def plot_cones(cones):
+    init_plot_2D("Identified Cones", "x", "y")
+    plt.plot(X_RAW, Y_RAW, '.', color='green')
+    x_centers = [coords[0] for coords in cones]
+    y_centers = [coords[1] for coords in cones]
+    plt.plot(x_centers, y_centers, 'x', color='blue')
+    plt.xlim([-1, LIDAR_RANGE])
+    plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
 def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW
