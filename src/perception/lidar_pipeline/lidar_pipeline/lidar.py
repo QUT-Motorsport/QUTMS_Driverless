@@ -8,11 +8,14 @@ from sensor_msgs.msg import PointCloud2
 from qutms_msgs.msg import ConeScan, ConeData
 # other python libraries
 import numpy
-# helper math function
-from .sub_module.simple_lidar import find_cones
+import time
+
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import read_points
+# helper math function
+from .sub_module.simple_lidar import find_cones
+from .sub_module.ground_plane_estimation import main as lidar_main
 
 class LidarDetection(Node):
     def __init__(self):
@@ -20,13 +23,14 @@ class LidarDetection(Node):
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
-            '/fsds/lidar/Lidar1',
+            '/fsds/lidar/Lidar1', # used for complex ground removal
+            # '/fsds/lidar/Lidar2', # used for simple single layer lidar
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
         self.cones = []
 
-        ## creates publisher to 'control_command' with type ControlCommand
+        ## creates publisher to 'lidar_output' with type ConeScan
         self.scan_publisher_ = self.create_publisher(
             ConeScan,
             'lidar_output', 
@@ -45,34 +49,43 @@ class LidarDetection(Node):
         """ In here, we will call calculations to ideally get the xyz location 
         and reflectivity of the cones"""
         
+        start = time.time()
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = numpy.array(list(read_points(pcl_msg)))
+        # print('points:', pcl_array)
 
-        # self.get_logger().info('cones: "%s"' % pcl_array)
+        # calls first module from ground estimation algorithm
         
-        self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+        self.cones = lidar_main(pcl_array.tolist(), True, True, False, False) 
+        print('cones:', self.cones)
+
+        print("total time: ", time.time()-start)
+
+        # finds cone locations for single layer lidar
+        # self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
+
+        time.sleep(15)
 
 
     def publisher(self):
-        cone_scan = ConeScan()
+        cone_scan = ConeScan() # define msg class
         # head = Header()
 
         cone_data = []
-        for i in range(len(self.cones)):
-            cone = ConeData()
-            cone.x = self.cones[i][0]
+        for i in range(len(self.cones)): # define msg component elements 
+            cone = ConeData() 
+            cone.x = self.cones[i][0] # x, y, z coords + intensity
             cone.y = self.cones[i][1]
-            cone.z = self.cones[i][2]
-            cone.i = self.cones[i][3]
-            cone_data.append(cone)
+            cone.z = 0.2 #self.cones[i][2]
+            cone.i = 3 #self.cones[i][3]
+            cone_data.append(cone) # add cone to msg list
        
         # head.stamp = rospy.Time.now()
-        # head.frame_id = "lidar2"
         # cone_scan.header = head
 
-        cone_scan.data = cone_data
+        cone_scan.data = cone_data # add list of cones to msg data element
 
-        self.scan_publisher_.publish(cone_scan)
+        self.scan_publisher_.publish(cone_scan) # publish cone data
         
 
 ## main call
