@@ -1,0 +1,8 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+ROS 2 nodes for converting raw Velodyne 3D LIDAR data to point
+clouds.
+
+*/
