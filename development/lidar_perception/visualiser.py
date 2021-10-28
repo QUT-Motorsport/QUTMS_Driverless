@@ -87,7 +87,7 @@ def plot_segments(segments):
         plot_segment_line(i, color, 1, '-')
         angles = get_angles(i)
         plot_partial_angle(angles, color)
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "3_Segments")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "3_Segments")
 
 def plot_segments_bins(segments_bins, plot_bins):
     init_plot_2D("Points assigned to Bins within Segments", "x", "y")
@@ -102,7 +102,7 @@ def plot_segments_bins(segments_bins, plot_bins):
             if plot_bins : plt.plot((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
         plot_segment_line(i, color_1, 1, '-')
         plot_partial_angle(angles, color_1)
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "4_Bins-Segments")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "4_Bins-Segments")
 
 def plot_segments_bins_2D(segments_bins_2D, plot_bins):
     init_plot_2D("2D Approximation of Point Cloud", "x", "y")
@@ -122,7 +122,7 @@ def plot_segments_bins_2D(segments_bins_2D, plot_bins):
         plot_segment_line(i, color_1, 1, '-')
         plot_segment_line(i+0.5, 'black', 0.5, '--')
         plot_partial_angle(angles, color_1)
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "5_2D-Approx-Point-Cloud-2D")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "5_2D-Approx-Point-Cloud-2D")
 
 def plot_segments_bins_2D_3D(segments_bins_2D, plot_bins):
     ax = init_plot_3D("2D Approximation of Point Cloud", "x", "y", "Height", 45, 45)
@@ -140,19 +140,19 @@ def plot_segments_bins_2D_3D(segments_bins_2D, plot_bins):
                 new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
             ax.scatter3D(new_x, new_y, z, c=z, cmap=cmap_1)
             if plot_bins : ax.plot3D((j * BIN_SIZE) * np.cos(angles), (j * BIN_SIZE) * np.sin(angles), color=color_1)
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "6_2D-Approx-Point-Cloud-3D")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "6_2D-Approx-Point-Cloud-3D")
 
 def plot_segments_bins_prototype_3D(segments_bins_prototype, plot_bins):
     ax = init_plot_3D("Prototype Points", "x", "y", "Height", 45, 45)
     plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins)
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "7_Prototype-Points")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "7_Prototype-Points")
 
 def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
     ax = init_plot_3D("Ground Plane Estimation", "x", "y", "Height", 45, 45)
     plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins)
     #print("hey", ground_lines)
     plot_ground_lines(ax, ground_lines, 'black')
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
 def plot_segments_fitted(segments_bins_prototype, ground_lines):
     print("SP", segments_bins_prototype)
@@ -178,7 +178,7 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines):
                         y_gp = ground_lines[i][k][0] * x_gp + ground_lines[i][k][1]
                         plt.plot(x_gp, y_gp, '--', color=color_1)
             plt.plot(x, y, 'o', color='black')
-            if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
+            #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
 
 def plot_labelled_points(labelled_points, ground_lines):
     ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
@@ -201,7 +201,7 @@ def plot_labelled_points(labelled_points, ground_lines):
     y_non_ground = [coords[1] for coords in object_points]
     z_non_ground = [coords[2] for coords in object_points]
     ax.scatter3D(x_non_ground, y_non_ground, z_non_ground, color='red')
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
 def plot_grid_2D(object_points):
     init_plot_2D("Non-ground Points", "x", "y")
@@ -211,7 +211,7 @@ def plot_grid_2D(object_points):
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
     plt.plot(0, 0, '>', color="blue")
     plt.plot(x, y, 'x', color='red')
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
 def plot_reconstruction(reconstructed_clusters):
     init_plot_2D("Reconstructed Clusters", "x", "y")
@@ -229,7 +229,7 @@ def plot_reconstruction(reconstructed_clusters):
     plt.plot(0, 0, '>', color="blue")
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
 
 def plot_clusters(clusters, noise):
     init_plot_2D("Clustered Objects", "x", "y")
@@ -247,7 +247,7 @@ def plot_clusters(clusters, noise):
         plt.plot(x_mean, y_mean, 'x', color='blue')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
 
 def plot_cones(cones):
     init_plot_2D("Identified Cones", "x", "y")
@@ -257,7 +257,7 @@ def plot_cones(cones):
     plt.plot(x_centers, y_centers, 'x', color='blue')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
-    if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "13_Identified_Cones")
+    #if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
 def init(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW

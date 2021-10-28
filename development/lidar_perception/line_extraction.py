@@ -88,7 +88,7 @@ def fit_error(m, b, points):
     return rmse
 
 # The Incremental Algorithm
-def extract_segment_lines(segment, num_bins):
+def get_ground_lines(segment, num_bins):
     lines = []
     new_line_points = []
     lines_created = 0
@@ -137,11 +137,11 @@ def extract_segment_lines(segment, num_bins):
     return lines
 
 # Returns the ground lines for all segments
-def extract_lines(segments_bins_prototype, num_segments, num_bins):
+def get_ground_plane(segments_bins_prototype, num_segments, num_bins):
     ground_plane = []
     for i in range(num_segments):
         #print("Extracting lines from Segment:", i+1)
-        ground_plane.append(extract_segment_lines(segments_bins_prototype[i], num_bins))
+        ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
     return ground_plane
 
 # Notes
@@ -156,7 +156,7 @@ def extract_lines(segments_bins_prototype, num_segments, num_bins):
 #     to the line previously fitted must not exceed T_D_PREV, 
 #     enforcing smooth transitions between pairs of successive 
 #     lines. 
-#   - extract_segment_lines(): Only one prototype point is expected 
+#   - get_ground_lines(): Only one prototype point is expected 
 #     since each bin is reduced to one point with the lowest z value.
 #   - IMPORTANT: Isn't it possible for one segment to have multiple lines?
 #     If so, this algorithm does not return the rho (norm) of the line,
