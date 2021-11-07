@@ -70,10 +70,6 @@ To avoid conflicts with multiple distros, uncheck any "Enable integration with a
 Ensure Docker Compose v2 is unchecked, or the container will be unable to make with out lowercase letters in the repo.
 This means the repo name QUTMS_Driverless would not be valid.
 
-## Set Up Repository
-
-Clone/download this repository (QUTMS_Driverless) into a folder in Windows using any method of choice.
-
 ## Building Images
 
 In the CMD terminal, type:
