@@ -88,3 +88,12 @@ services:
         <<: *network
         <<: *visible
         command: /home/${USERNAME}/start.sh
+    
+    rosboard:
+        image: qutms_driverless_base
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        command: /home/${USERNAME}/rosboard/run
