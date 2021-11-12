@@ -37,6 +37,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # set python3 as python command
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+# Install rosboard https://github.com/dheera/rosboard
+WORKDIR /home/$USERNAME
+RUN pip3 install tornado simplejpeg
+RUN git clone https://github.com/dheera/rosboard.git
+
 
 # ==============================================================================
 #                      Install src Dependencies

@@ -16,6 +16,7 @@ x-volumes_local: &volumes_local
         # Below is fix so that two foxy containers can talk to each other when using net=host
         # see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
+        - /dev/sbg:/dev/sbg
 
 x-devices: &devices
     devices:
@@ -88,3 +89,12 @@ services:
         <<: *network
         <<: *visible
         command: /home/${USERNAME}/start.sh
+    
+    rosboard:
+        image: qutms_driverless_base
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        command: /home/${USERNAME}/rosboard/run
