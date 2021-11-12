@@ -16,9 +16,8 @@ x-volumes_local: &volumes_local
         # Below is fix so that two foxy containers can talk to each other when using net=host
         # see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
-        - type: bind
-          source: /dev/sbg
-          target: /dev/sbg
+        # Mounted in to access /dev/sbg
+        - /dev:/dev
 
 x-devices: &devices
     devices:
