@@ -555,7 +555,7 @@ def get_ground_plane(point_cloud):
 
     ground_plane = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
-    if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
+    #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     labelled_points = label_points_2(segments, ground_plane)
     if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
@@ -652,7 +652,7 @@ import time
 
 start_time = time.time()
 
-#main(test_data, True, True, False)
+main(test_data, False, True, False)
 
 print("\n Total Time: %s seconds " % (time.time() - start_time))
 
