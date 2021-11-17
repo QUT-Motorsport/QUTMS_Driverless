@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from . import line_extraction
 
 # Point Cloud Clustering
-from. import DBSCAN
+from . import DBSCAN
 
 # Visualiser
 from . import visualiser as vis
@@ -206,7 +206,6 @@ def object_reconstruction(cluster_centers, points):
             if get_distance(cluster_center, point) <= cone_width:
                 reconstructed_clusters[j].append(point)
                 break;
-
     return reconstructed_clusters
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
@@ -224,21 +223,21 @@ def get_cones(reconstructed_clusters):
     error_margin = 0.1
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
+        if point_count > 0:
+            x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
+            y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            # Univserity of melbourne used z as well
+            #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            x_mean  = sum(x_cluster) / len(x_cluster)
+            y_mean  = sum(y_cluster) / len(y_cluster)
+            #z_mean  = sum(y_cluster) / len(y_cluster)
+            distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
 
-        x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
-        y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
-        # Univserity of melbourne used z as well
-        #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
-        x_mean  = sum(x_cluster) / len(x_cluster)
-        y_mean  = sum(y_cluster) / len(y_cluster)
-        #z_mean  = sum(y_cluster) / len(y_cluster)
-        distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
-
-        # Rule based filter
-        exp_point_count = cone_filter(distance)
-        #print(exp_point_count, point_count)
-        if (exp_point_count*(1 - error_margin) <= point_count <= exp_point_count*(1 + error_margin)):
-            cones.append([x_mean, y_mean])
+            # Rule based filter
+            exp_point_count = cone_filter(distance)
+            #print(exp_point_count, point_count)
+            if (exp_point_count*(1 - error_margin) <= point_count <= exp_point_count*(1 + error_margin)):
+                cones.append([x_mean, y_mean])
     return cones
 
 
@@ -339,7 +338,7 @@ def lidar_main(point_cloud, _visualise=False):
     # --------------------------------------------------------------
 
     if VISUALISE:
-        FIGURES_DIR = "./datasets"
+        FIGURES_DIR = "/home/developer/datasets/"
         vis.init(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, True, FIGURES_DIR)
 
     cones = get_ground_plane(point_cloud)
