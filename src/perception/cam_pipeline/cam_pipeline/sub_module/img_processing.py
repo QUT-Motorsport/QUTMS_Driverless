@@ -286,11 +286,6 @@ def cam_main(frame, display=False):
     # TODO: try Feature Matching here - https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
 
 
-
-
-
-
-
     cv2.waitKey(1)
 
     if display == True:

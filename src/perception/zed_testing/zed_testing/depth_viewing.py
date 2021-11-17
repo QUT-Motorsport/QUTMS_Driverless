@@ -19,14 +19,14 @@ class Depth_Processing(Node):
         super().__init__('depth_processing')
         # create a quality of service profile compatible with zed node
         qos_profile = QoSProfile(depth=1)
-        qos_profile.reliability = QoSReliabilityPolicy.RELIABLE
+        qos_profile.reliability = QoSReliabilityPolicy.BEST_EFFORT
         qos_profile.durability = QoSDurabilityPolicy.VOLATILE
         qos_profile.history = QoSHistoryPolicy.KEEP_LAST
 
         # creates subscriber to 'depth' with type Image that sends data to depth_callback
         self.disp_subscription_ = self.create_subscription(
             DisparityImage,
-            '/zed2/zed_node/disparity/disparity_image',
+            '/zed2/zed_node/depth/depth_registered',
             self.depth_callback,
             qos_profile)
         self.disp_subscription_  # prevent unused variable warning
