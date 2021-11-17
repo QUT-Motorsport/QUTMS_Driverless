@@ -15,7 +15,7 @@ import time
 from .sub_module.read_pcl import read_points
 # helper math function
 from .sub_module.simple_lidar import find_cones
-from .sub_module.ground_plane_estimation import main as lidar_main
+from .sub_module.ground_plane_estimation import lidar_main
 
 class LidarDetection(Node):
     def __init__(self):
@@ -56,7 +56,7 @@ class LidarDetection(Node):
 
         # calls first module from ground estimation algorithm
         
-        self.cones = lidar_main(pcl_array.tolist(), True, True, False, False) 
+        self.cones = lidar_main(pcl_array.tolist(), False) 
         print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
@@ -90,6 +90,7 @@ class LidarDetection(Node):
 
 ## main call
 def main(args=None):
+    print("| STARTING | lidar.py: main()")
     rclpy.init(args=args)
 
     node = LidarDetection()
