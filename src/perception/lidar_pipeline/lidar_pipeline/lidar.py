@@ -90,6 +90,7 @@ class LidarDetection(Node):
 
 ## main call
 def main(args=None):
+    print("| STARTING | lidar.py: main()")
     rclpy.init(args=args)
 
     node = LidarDetection()
