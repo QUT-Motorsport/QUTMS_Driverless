@@ -1,11 +1,12 @@
 from setuptools import setup
 
 package_name = 'control'
+submodule_name = 'control/sub_module'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=[package_name, submodule_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -20,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller = control.controller:main'
+            'main = control.main:main'
         ],
     },
 )
