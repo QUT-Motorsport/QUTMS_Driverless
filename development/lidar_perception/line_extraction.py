@@ -108,6 +108,7 @@ def get_ground_lines(segment, num_bins):
                 temp_line_points.append(new_point)
                 [m_new, b_new] = total_least_squares.fit_line(temp_line_points)
                 #print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
+                # should the m_new > T_M_SMALL be in abs()
                 if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
                     new_line_points.append(new_point)
                     temp_line_points = []
@@ -119,12 +120,17 @@ def get_ground_lines(segment, num_bins):
                     lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     new_line_points = []
                     lines_created += 1
-                    i = i - 1
+                    i = i - 2
+                    # used to be i - 1
             else:
-                if lines_created == 0 or len(new_line_points) != 0 or dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV:
+                #if lines_created == 0 or len(new_line_points) != 0 or dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV:
+                #    new_line_points.append(new_point)
+                    # or dist_point_line(new_point, lines[lines_created-2][0], lines[lines_created-2][1]) <= T_D_PREV
+                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
                     new_line_points.append(new_point)
                 else:
-                    #print("no", new_point, i)
+                    # i = i + 1
+                    print("no", new_point, i)
                     pass
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
