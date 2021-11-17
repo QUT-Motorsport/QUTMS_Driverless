@@ -1,7 +1,7 @@
 from setuptools import setup
 
-package_name = 'cam_pipeline'
-submodule_name = 'cam_pipeline/sub_module'
+package_name = 'ml_training'
+submodule_name = 'ml_training/sub_module'
 
 setup(
     name=package_name,
@@ -14,14 +14,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Alastair Bradford, Harl Towne',
+    maintainer='Alastair Bradford',
     maintainer_email='qutmotorsport.team@gmail.com',
-    description='Image analysis in python',
+    description='ML training for YOLOv5',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'cam = cam_pipeline.cam:main'
+            'training = ml_training.training:main'
         ],
     },
 )

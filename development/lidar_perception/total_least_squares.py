@@ -1,4 +1,5 @@
 import math
+import sys
 
 # INCORRECT POINT WISE VARIANCE. HACKY FIX:
 # Point Wise Variance 
@@ -21,6 +22,7 @@ def get_sample_vars(points, x_mean, y_mean, num_points):
 
 # Theta
 def get_theta(x, y):
+    if x == 0: x = sys.maxsize
     theta = math.atan(y/x)
     return theta
 
@@ -76,6 +78,9 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
         #print(w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0]))
         denominator += w_mat[i] * ((y_weight - points[i][1])**2 - (x_weight - points[i][0])**2)
     numerator = -2 * numerator
+
+    # if exactly linear line, this get_alpha breaks, i.e. denominator equals 0 in this case
+    # this is practically impossible
     tan_2_alpha = numerator / denominator
 
     # Custom code # If difference in height between first and last point is negative, make tan_2_alpha negative, otherwise, positive

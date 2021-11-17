@@ -1,4 +1,4 @@
 float32 x
 float32 y
 float32 z
-float32 i
+int8 c
