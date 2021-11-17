@@ -10,9 +10,10 @@ from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolic
 from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
 
-from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 import cv2 # OpenCV library
 import numpy as np
+
+from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 
 class Depth_Processing(Node):
     def __init__(self):
