@@ -25,6 +25,7 @@ all:
 	@echo "    navigation"
 	@echo "    perception"
 	@echo "    unreal_sim"
+	@echo "    rosboard"
 	@echo "Not supplying a target for 'make build' will build all environments."
 
 build_docker_base:

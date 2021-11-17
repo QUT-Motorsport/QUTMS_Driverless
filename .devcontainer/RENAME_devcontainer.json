@@ -1,0 +1,17 @@
+// 1. COPY THIS FILE and RENAME to devcontainer.json
+// 2. uncomment a "name" and "image" based on which environment you want to develop against.
+{
+	// "name": "QUTMS Driverless Navigation Dev Environment",
+	// "image": "qutms_driverless_navigation",
+
+	// "name": "QUTMS Driverless Perception Dev Environment",
+	// "image": "qutms_driverless_perception",
+	"extensions": [
+		"ms-vscode.cpptools",
+		"twxs.cmake",
+		"ms-python.python",
+		"eamodio.gitlens",
+		"ms-azuretools.vscode-docker"
+	],
+	"containerUser": "developer"
+}
