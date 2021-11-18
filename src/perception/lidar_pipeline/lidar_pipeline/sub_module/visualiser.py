@@ -155,14 +155,14 @@ def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
     if SAVE_FIGURES : plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
 def plot_segments_fitted(segments_bins_prototype, ground_lines):
-    # print("SP", segments_bins_prototype)
+    print("SP", segments_bins_prototype)
     print("--- Prototype Points ---")
     for i in range(len(segments_bins_prototype)):
         # This if statement is hacky. Without it, this visualisation function crashes
         if len(ground_lines[i]) > 0:
             color_1 = get_colour(i)
             print("Segment:", i + 1, "Count:", ground_lines[i][0][4])
-            # init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
+            init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
             plt.ylim(-2, 2)
             x = []
             y = []
