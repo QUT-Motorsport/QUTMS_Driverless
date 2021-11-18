@@ -70,61 +70,6 @@ def points_to_bins_2(segments):
                 segments_bins[i][bin_index].append(point)
     return segments_bins
 
-# Creates a 2D approximation of the 3D points
-def approximate_2D(segments_bins):
-    segments_bins_2D = copy.deepcopy(segments_bins) 
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                x = segments_bins[i][j][k][0]
-                y = segments_bins[i][j][k][1]
-                z = segments_bins[i][j][k][2]
-                point_prime = [math.sqrt(x**2 + y**2), z]
-                segments_bins_2D[i][j][k] = point_prime
-            # This should order the points by range for each bin:
-            segments_bins_2D[i][j] = sorted(segments_bins_2D[i][j], key=lambda lam: lam[0])
-            segments_bins_2D[i][j].reverse()
-    return segments_bins_2D
-
-def approximate_2D_2(segments_bins):
-    segments_bins_2D = []
-    for i in range(NUM_SEGMENTS):
-        segments_bins_2D.append([])
-        for j in range(NUM_BINS):
-            segments_bins_2D[i].append([])
-            for k in range(len(segments_bins[i][j])):
-                x = segments_bins[i][j][k][0]
-                y = segments_bins[i][j][k][1]
-                z = segments_bins[i][j][k][2]
-                point_prime = [math.sqrt(x**2 + y**2), z]
-                segments_bins_2D[i][j].append(point_prime)
-            segments_bins_2D[i][j].sort(reverse=True)
-    return segments_bins_2D
-
-# Modifies input array
-def approximate_2D_3(segments_bins):
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                x = segments_bins[i][j][k][0]
-                y = segments_bins[i][j][k][1]
-                z = segments_bins[i][j][k][2]
-                point_prime = [math.sqrt(x**2 + y**2), z]
-                segments_bins[i][j][k] = point_prime
-            segments_bins[i][j].sort(reverse=True)
-    return segments_bins
-
-# Modifies input array
-def approximate_2D_4(segments_bins):
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                point = segments_bins[i][j][k] # [x, y, z]
-                point_prime = [math.sqrt(point[0]**2 + point[1]**2), point[2]]
-                segments_bins[i][j][k] = point_prime
-            segments_bins[i][j].sort(reverse=True)
-    return segments_bins
-
 # Modifies input array
 def approximate_2D_5(segments_bins):
     for i in range(NUM_SEGMENTS):
