@@ -557,28 +557,6 @@ def get_ground_plane(point_cloud):
     if VISUALISE and DISPLAY: plt.show() 
     return cones
 
-
-def visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters, cones):
-    # Could add a try except here so I can always see the plots even if error occurs
-    #vis.plot_data_2D()
-    vis.plot_data_3D()
-        #vis.plot_segments(segments)
-        #vis.plot_segments_bins(segments_bins, False) # Laggy due to bin count (Set False to decrease lag)
-    #vis.plot_segments_bins_2D(segments_bins_2D, False) # Laggy due to bin count (Set False to decrease lag)
-    #vis.plot_segments_bins_2D_3D(segments_bins_2D, False) # Laggy due to bin count (Set False to decrease lag)
-    #vis.plot_segments_bins_prototype_3D(segments_bins_prototype, False) # Laggy due to bin count (Set False to decrease lag)
-        #vis.plot_ground_lines_3D(segments_bins_prototype, ground_lines, False) # Laggy due to bin count (Set False to decrease lag)
-    #vis.plot_segments_fitted(segments_bins_prototype, ground_lines) # Creates many figures (One for each segment)
-    vis.plot_labelled_points(labelled_points, ground_lines)
-    vis.plot_grid_2D(object_points)
-    vis.plot_clusters(clusters, noise)
-    vis.plot_reconstruction(reconstructed_clusters)
-    vis.plot_cones(cones)
-    plt.show()
-
-# new_x.append(norm[k] * math.cos((i + 0.5) * DELTA_ALPHA))
-# new_y.append(norm[k] * math.sin((i + 0.5) * DELTA_ALPHA))
-
 def init_constants():
     global LIDAR_RANGE
     global DELTA_ALPHA
