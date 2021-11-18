@@ -8,7 +8,7 @@ from fs_msgs.msg import ControlCommand
 from qutms_msgs.msg import ConeScan, ConeData
 
 # import helper drive processing module
-from .sub_module.move_processing import *
+from .sub_module.move_processing import * 
 
 class SimpleController(Node):
     def __init__(self):
@@ -74,7 +74,7 @@ class SimpleController(Node):
         # accel + vel targets
         self.vel_p = 0.7
         self.max_throttle = 0.20 # m/s^2
-        self.max_vel = 6 # m/s
+        self.max_vel = 1.5 # m/s
         self.target_vel = self.max_vel # initially target is max
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
@@ -95,7 +95,7 @@ class SimpleController(Node):
             cone.append(cones[j].x)
             cone.append(cones[j].y)
             cone.append(cones[j].z)
-            cone.append(cones[j].c)
+            cone.append(cones[j].i)
 
             # check which bin cone falls in
             # further cones will have less impact on immediate decisions
@@ -122,6 +122,8 @@ class SimpleController(Node):
             cone.append(cones[j].z)
             cone.append(cones[j].c)
 
+            # check which bin cone falls in
+            # further cones will have less impact on immediate decisions
             if distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
                 self.close_cones.append(cone)
             if distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
@@ -146,8 +148,9 @@ class SimpleController(Node):
         calc_steering = 0.0
 
         # call cone detection
-        close_avg_y = find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
-        far_avg_y = find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
+        # frame of reference is flipped along FOV (for some reason)
+        close_avg_y = find_avg_y(self.close_cones) 
+        far_avg_y = find_avg_y(self.far_cones)
 
         # wait for initial publishing delay
         if (self.time >= 3): 

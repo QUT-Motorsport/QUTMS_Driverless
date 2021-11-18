@@ -13,11 +13,17 @@ x-volumes_local: &volumes_local
         - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
         - ../src:/home/${USERNAME}/driverless_ws/src
         - ../datasets:/home/${USERNAME}/datasets
-        # Below is fix so that two foxy containers can talk to each other when using net=host
-        # see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
-        - /dev/shm:/dev/shm
-        # Mounted in to access /dev/sbg
-        # - /dev:/dev
+        # see note below for /dev
+        - /dev:/dev
+        # Mount in dev to get access to places below. Can't do indiviaul mounts
+        # as not guaranteed to exist, so will then end up creating garbage 
+        # folders on host.
+        # 
+        # - /dev/shm 
+        #     - so that two foxy containers can talk to each other when using 
+        #       net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
+        # - /dev/sbg
+        #     - for sbg sensor access
 
 x-devices: &devices
     devices:

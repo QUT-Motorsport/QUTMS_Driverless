@@ -14,7 +14,6 @@ import time
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import read_points
 # helper math function
-from .sub_module.simple_lidar import find_cones
 from .sub_module.ground_plane_estimation import lidar_main
 
 
@@ -55,17 +54,21 @@ class LidarProcessing(Node):
         pcl_array = numpy.array(list(read_points(pcl_msg)))
         # print('points:', pcl_array)
 
+        # pcl_list = pcl_array.tolist()
+        # textfile = open("/home/developer/datasets/16k_points.txt", "w")
+        # textfile.write(str(pcl_list))
+        # textfile.close()
+
         # calls first module from ground estimation algorithm
-        
-        self.cones = lidar_main(pcl_array.tolist(), False) 
-        print('cones:', self.cones)
+        self.cones = lidar_main(pcl_array.tolist(), False, False, False, "/home/developer/datasets/figures") 
+        # print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
 
         # finds cone locations for single layer lidar
         # self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
 
-        time.sleep(15)
+        # time.sleep(15)
 
 
     def publisher(self):
@@ -78,7 +81,7 @@ class LidarProcessing(Node):
             cone.x = self.cones[i][0] # x, y, z coords + intensity
             cone.y = self.cones[i][1]
             cone.z = 0.2 #self.cones[i][2]
-            cone.i = 3 #self.cones[i][3]
+            cone.i = 3.0 #self.cones[i][3]
             cone_data.append(cone) # add cone to msg list
        
         # head.stamp = rospy.Time.now()
