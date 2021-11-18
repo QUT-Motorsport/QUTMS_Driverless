@@ -74,32 +74,10 @@ class SimpleController(Node):
         # accel + vel targets
         self.vel_p = 0.7
         self.max_throttle = 0.20 # m/s^2
-        self.max_vel = 6 # m/s
+        self.max_vel = 1.5 # m/s
         self.target_vel = self.max_vel # initially target is max
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
-
-        ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
-        ## img segmenting
-        # cone point vars
-        self.close_range_cutoff = 6.5 # m
-        self.far_range_cutoff = 11 # m
-
-        # PID coeffs
-        self.steering_pc = 0.08
-        self.steering_ic = 0
-        self.steering_dc = 1
-        self.steering_pf = 0.02
-        self.steering_if = 0
-        self.steering_df = 0.6
-
-        # accel + vel targets
-        self.vel_p = 0.7
-        self.max_throttle = 0.20 # m/s^2
-        self.max_vel = 5 # m/s
-        self.target_vel = self.max_vel # initially target is max
-        self.min_vel = self.max_vel / 2
-        self.brake_p = 0
 
 
     ## callback for lidar processed data to be sent to
@@ -117,7 +95,7 @@ class SimpleController(Node):
             cone.append(cones[j].x)
             cone.append(cones[j].y)
             cone.append(cones[j].z)
-            cone.append(cones[j].c)
+            cone.append(cones[j].i)
 
             # check which bin cone falls in
             # further cones will have less impact on immediate decisions

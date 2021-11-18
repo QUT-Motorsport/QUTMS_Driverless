@@ -54,21 +54,21 @@ class LidarProcessing(Node):
         pcl_array = numpy.array(list(read_points(pcl_msg)))
         # print('points:', pcl_array)
 
-        pcl_list = pcl_array.tolist()
-        textfile = open("/home/developer/datasets/16k_points.txt", "w")
-        textfile.write(str(pcl_list))
-        textfile.close()
+        # pcl_list = pcl_array.tolist()
+        # textfile = open("/home/developer/datasets/16k_points.txt", "w")
+        # textfile.write(str(pcl_list))
+        # textfile.close()
 
         # calls first module from ground estimation algorithm
         self.cones = lidar_main(pcl_array.tolist(), False, False, False, "/home/developer/datasets/figures") 
-        print('cones:', self.cones)
+        # print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
 
         # finds cone locations for single layer lidar
         # self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
 
-        time.sleep(15)
+        # time.sleep(15)
 
 
     def publisher(self):
