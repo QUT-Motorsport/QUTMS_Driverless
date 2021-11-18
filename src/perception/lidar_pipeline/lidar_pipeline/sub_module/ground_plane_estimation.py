@@ -581,69 +581,6 @@ def get_cones(reconstructed_clusters):
                 cones.append([x_mean, y_mean]) # Remove when real-er data
     return cones
 
-def benchmarking(points):
-    print("here")
-    # Optimised
-    start_time = time.time()
-    segments = points_to_segment_2(points)
-    time_1 = time.time() - start_time
-
-    # Optimised 
-    start_time = time.time()
-    segments_bins = points_to_bins_2(segments)
-    time_2 = time.time() - start_time
-
-    # Optimised
-    #start_time = time.time()
-    #segments_bins_2D = approximate_2D_4(segments_bins)
-    #time_3 = time.time() - start_time
-
-    # Optimised
-    #start_time = time.time()
-    #segments_bins_prototype = prototype_points_2(segments_bins_2D)
-    #time_4 = time.time() - start_time
-
-    # - Merging 2 Components -
-
-    # Optimised: Modifies input array
-    start_time = time.time()
-    segments_bins_prototype = approximate_2D_5(segments_bins)
-    time_3 = time.time() - start_time
-    time_4 = 0 # Component Merged.
-
-    start_time = time.time()
-    ground_lines = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
-    time_5 = time.time() - start_time
-
-    # Improved: Modifies input 
-    # You need to re-optimise the new label points function
-    start_time = time.time()
-    labelled_points = label_points_2(segments, ground_lines)
-    time_6 = time.time() - start_time
-
-    # Optimised
-    start_time = time.time()
-    object_points = non_ground_points_2(labelled_points)
-    time_7 = time.time() - start_time
-
-    # Optimised? (should be quicker for larger array)
-    start_time = time.time()
-    #clusters, noise, cluster_centers = DBSCAN.init_DBSCAN(object_points)
-    cluster_centers = DBSCAN.init_DBSCAN_2(object_points)
-    time_8 = time.time() - start_time
-
-    # Optimised (A tiny bit faster)
-    start_time = time.time()
-    reconstructed_clusters = object_reconstruction_2(cluster_centers, points)
-    time_9 = time.time() - start_time
-
-    # Already Optimised
-    start_time = time.time()
-    cones = get_cones(reconstructed_clusters)
-    time_10 = time.time() - start_time
-
-    return [time_1, time_2, time_3, time_4, time_5, time_6, time_7, time_8, time_9, time_10]
-
 def get_ground_plane_old(points):
     # This is still using the unoptimised functions (for visualisation purposes)
     segments = points_to_segment(points)
@@ -770,34 +707,31 @@ def init_constants():
     if (math.pi % DELTA_ALPHA != 0):
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
 
-def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
+def lidar_main(point_cloud, _visualise, _display, _figures_dir):
     start_time = time.time()
     init_constants()
-    if benchmark:
-        return benchmarking(point_cloud)
-    else:
-        global VISUALISE
-        global DISPLAY
-        VISUALISE = _visualise
-        DISPLAY = _display
-        if _display: VISUALISE = True
+    global VISUALISE
+    global DISPLAY
+    VISUALISE = _visualise
+    DISPLAY = _display
+    if _display: VISUALISE = True
 
-        # Remove this when a max range for the Lidar has been decided on
-        global LIDAR_RANGE
+    # Remove this when a max range for the Lidar has been decided on
+    global LIDAR_RANGE
         
-        # values = []
-        # for i in range(len(point_cloud)):
-        #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
-        # LIDAR_RANGE = math.ceil(max(values))
+    # values = []
+    # for i in range(len(point_cloud)):
+    #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
+    # LIDAR_RANGE = math.ceil(max(values))
 
-        print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
+    print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
 
-        if VISUALISE:
-            FIGURES_DIR = _figures_dir
-            vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
-        print("INIT:", time.time() - start_time)
-        cones = get_ground_plane(point_cloud)
-        return cones
+    if VISUALISE:
+        FIGURES_DIR = _figures_dir
+        vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
+    print("INIT:", time.time() - start_time)
+    cones = get_ground_plane(point_cloud)
+    return cones
 
 #lidar_main(test_data, True, True, False)
 
