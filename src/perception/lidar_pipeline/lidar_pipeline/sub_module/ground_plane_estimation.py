@@ -500,29 +500,6 @@ def get_cones(reconstructed_clusters):
                 cones.append([x_mean, y_mean]) # Remove when real-er data
     return cones
 
-def get_ground_plane_old(points):
-    # This is still using the unoptimised functions (for visualisation purposes)
-    segments = points_to_segment(points)
-    segments_bins = points_to_bins(segments)
-    segments_bins_2D = approximate_2D_4(segments_bins)
-    segments_bins_prototype = prototype_points(segments_bins_2D)
-    ground_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
-    # label_points labels ALL points, but don't we only need to append non-ground points (would speed up algorithm)
-    labelled_points = label_points_2(segments, ground_lines)
-    object_points = non_ground_points(labelled_points)
-    clusters, noise, cluster_centers = DBSCAN.init_DBSCAN(object_points)
-    reconstructed_clusters = object_reconstruction(cluster_centers, points)
-    cones = get_cones(reconstructed_clusters)
-
-    # Plotting
-    # Could have plot after each thing above ^ and then have all of that
-    # inside of a try() except with plt.show() guaranteed to occur.
-    if VISUALISE : visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters, cones)
-
-    #print("\n\n\n", object_points)
-    print(cones)
-    return cones
-
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
     start_time = time.time()
