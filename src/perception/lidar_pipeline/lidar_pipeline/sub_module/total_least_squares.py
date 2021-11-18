@@ -1,3 +1,4 @@
+# Modules
 import math
 import sys
 
@@ -18,7 +19,7 @@ def get_sample_vars(points, x_mean, y_mean, num_points):
 
     x_sample_var = x_sample_var / (num_points - 1)
     y_sample_var = y_sample_var / (num_points - 1)
-    
+
     return [x_sample_var, y_sample_var]
 
 # Theta
