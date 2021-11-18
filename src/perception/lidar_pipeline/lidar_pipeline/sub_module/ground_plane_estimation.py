@@ -60,17 +60,6 @@ def get_bin(x, y):
         print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Assign each point to a bin
-def points_to_bins(segments):
-    segments_bins = init_bins()
-    for i in range(NUM_SEGMENTS):
-        for j in range(len(segments[i])):
-            x = segments[i][j][0]
-            y = segments[i][j][1]
-            bin_index = get_bin(x, y)
-            segments_bins[i][bin_index].append(segments[i][j])
-    return segments_bins
-
 def points_to_bins_2(segments):
     segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(NUM_SEGMENTS):
