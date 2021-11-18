@@ -253,12 +253,12 @@ def plot_labelled_points(labelled_points, ground_lines):
     ground_points = []
     object_points = []
     for i in range(len(labelled_points)):
-
-        point = labelled_points[i]
-        if point[3] == True:
-            ground_points.append(point)
-        else:
-            object_points.append(point)
+        for j in range(len(labelled_points[i])):
+            point = labelled_points[i][j]
+            if point[3] == True:
+                ground_points.append(point)
+            else:
+                object_points.append(point)
 
     x_ground = [coords[0] for coords in ground_points]
     y_ground = [coords[1] for coords in ground_points]
@@ -367,6 +367,12 @@ def init_constants(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_fig
     global CMAPS
     global SAVE_FIGURES
     global FIGURES_DIR
+    
+    for i in range(len(point_cloud) - 1, -1, -1):
+        point = point_cloud[i]
+        if math.sqrt(point[0]**2 + point[1]**2 + point[2]**2) >= _lidar_range:
+            point_cloud.pop(i)
+            
 
     X_RAW = [coords[0] for coords in point_cloud]
     Y_RAW = [coords[1] for coords in point_cloud]
