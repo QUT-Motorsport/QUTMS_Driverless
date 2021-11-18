@@ -2,11 +2,11 @@ import math
 import copy
 import total_least_squares
 
-T_M = 2*math.pi / 128 # Max angle that will be considered as ground plane # 45 deg
-T_M_SMALL = math.pi / 128  # Angle considered to be a small slope # 5.625 deg
+T_M = 2*math.pi / 1024 # Max angle that will be considered as ground plane # 45 deg
+T_M_SMALL = 0  # Angle considered to be a small slope # 5.625 deg
 T_B = 0.1 # Max y-intercept for a ground plane line # 5 cm 
 T_RMSE = 0.2 # Threshold of the Root Mean Square Error of the fit # Recommended: 0.2 - 0.5
-T_D_PREV = 0.5 # Max distance of the first point of a line to the line previously fitted # 1 m
+T_D_PREV = 3 # Max distance of the first point of a line to the line previously fitted # 1 m
 # Unsure of how T_D_PREV impacts line_extraction
 
 # Returns the distance from a point to a line
@@ -109,17 +109,21 @@ def get_ground_lines(segment, num_bins):
                 [m_new, b_new] = total_least_squares.fit_line(temp_line_points)
                 #print(abs(m_new), m_new, abs(b_new), fit_error(m_new, b_new, temp_line_points))
                 # should the m_new > T_M_SMALL be in abs()
-                if (abs(m_new) <= T_M and (m_new > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
                     new_line_points.append(new_point)
                     temp_line_points = []
                 else:
                     # It appears that this if statement might occur for the same point that the 
                     # else statement print("no", new_point, i) does too
                     [m_new, b_new] = total_least_squares.fit_line(new_line_points)
+                    if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+                        lines_created += 1
+                        #i = i + 1 INVESTIGATE THIS
+                        # this was put in place to skip proto points that were actually cones
+                        # i *think* it doesn't need to be added back
                     #print("Adding line to segment")
-                    lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                     new_line_points = []
-                    lines_created += 1
                     i = i - 2
                     # used to be i - 1
             else:
