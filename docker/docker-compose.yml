@@ -17,7 +17,7 @@ x-volumes_local: &volumes_local
         # see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
         # Mounted in to access /dev/sbg
-        - /dev:/dev
+        # - /dev:/dev
 
 x-devices: &devices
     devices:

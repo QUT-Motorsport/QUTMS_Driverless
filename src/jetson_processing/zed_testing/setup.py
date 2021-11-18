@@ -13,10 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='wsl',
-    maintainer_email='wsl@todo.todo',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    maintainer='Alastair Bradford',
+    maintainer_email='qutmotorsport.team@gmail.com',
+    description='ZED2i depth processing',
+    license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [

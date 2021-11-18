@@ -32,18 +32,17 @@ class Depth_Processing(Node):
             qos_profile)
         self.disp_subscription_  # prevent unused variable warning
 
-        # creates subscriber to 'depth' with type Image that sends data to depth_callback
-        self.depth_subscription_ = self.create_subscription(
-            Image,
-            '/zed2i/zed_node/depth/depth_registered',
-            self.depth_callback,
-            qos_profile)
-        self.depth_subscription_  # prevent unused variable warning
+        # # creates subscriber to 'depth' with type Image that sends data to depth_callback
+        # self.depth_subscription_ = self.create_subscription(
+        #     Image,
+        #     '/zed2i/zed_node/depth/depth_registered',
+        #     self.depth_callback,
+        #     qos_profile)
+        # self.depth_subscription_  # prevent unused variable warning
 
         self.br = CvBridge()
 
     def disp_callback(self, disp_msg):
-        print("received")
         disp_img = disp_msg.image
         current_frame =  self.br.imgmsg_to_cv2(disp_img)
         cv2.imshow("depth camera", current_frame)
