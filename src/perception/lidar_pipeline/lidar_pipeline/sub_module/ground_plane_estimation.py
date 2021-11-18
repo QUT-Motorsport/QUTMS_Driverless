@@ -26,16 +26,6 @@ def init_segments():
     for i in range(NUM_SEGMENTS):
         segments.append([])
     return segments
-    
-# Assign each point to a segment 
-def points_to_segment(points):
-    segments = init_segments()
-    for i in range(len(points)):
-        x = points[i][0]
-        y = points[i][1]
-        s_index = get_segment(x, y)
-        segments[s_index].append(points[i])
-    return segments
 
 def points_to_segment_2(points):
     segments = [[] for i in range(NUM_SEGMENTS)]
