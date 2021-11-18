@@ -1,8 +1,13 @@
 .env
 
+# datasets
+datasets/*
+
 # - VSCode -
-.vscode
+.vscode/*
 !.vscode/cpp_properties.json
+.devcontainer/*
+!.devcontainer/RENAME_devcontainer.json
 
 # - Lidar Perception -
 # Python Virtual Environment
@@ -12,4 +17,3 @@ development/lidar_perception/__pycache__/*
 # Figures
 development/lidar_perception/figures/*
 development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt
-datasets

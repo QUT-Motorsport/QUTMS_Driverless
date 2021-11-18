@@ -1,10 +1,10 @@
-# ROS2 libraries
+# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
-# ROS2 message libraries
+# import ROS2 message libraries
 from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
-# custom sim data message libraries
+# import custom sim data message libraries
 from qutms_msgs.msg import ConeScan, ConeData
 # other python libraries
 import numpy
@@ -17,9 +17,10 @@ from .sub_module.read_pcl import read_points
 from .sub_module.simple_lidar import find_cones
 from .sub_module.ground_plane_estimation import lidar_main
 
-class LidarDetection(Node):
+
+class LidarProcessing(Node):
     def __init__(self):
-        super().__init__('lidar_pipe')
+        super().__init__('lidar_processing')
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
@@ -28,12 +29,12 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
-        self.cones = []
+        self.cones = list()
 
         ## creates publisher to 'lidar_output' with type ConeScan
         self.scan_publisher_ = self.create_publisher(
             ConeScan,
-            'lidar_output', 
+            'lidar_processed', 
             10)
         # creates timer for publishing commands
         self.timer_period = 0.001  # seconds
@@ -97,7 +98,7 @@ def main(args=None):
     print("| STARTING | lidar.py: main()")
     rclpy.init(args=args)
 
-    node = LidarDetection()
+    node = LidarProcessing()
     rclpy.spin(node)
     
     node.destroy_node()
