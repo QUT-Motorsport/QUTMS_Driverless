@@ -1,7 +1,7 @@
 # Modules
 import math
 import copy
-from . import total_least_squares
+import total_least_squares
 
 # Constants
 T_M = 2*math.pi / 512 # Max angle that will be considered for ground lines
@@ -72,7 +72,7 @@ def get_ground_lines(segment, num_bins):
                     new_line_points.append(new_point)
                 else:
                     # i = i + 1
-                    print("no", new_point, i)
+                    # print("no", new_point, i)
                     pass
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             # This case should not be possible
