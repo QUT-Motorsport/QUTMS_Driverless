@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Line Fitting
-from . import line_extraction
+import line_extraction
 
 # Point Cloud Clustering
-from . import DBSCAN
+import DBSCAN
 
 # Visualiser
-from . import visualiser as vis
+import visualiser as vis
 
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
@@ -71,7 +71,7 @@ def get_bin(x, y):
     # based on the specified range. Thus, by this point, all points should
     # belong a bin
     if bin_index >= NUM_BINS:
-        bin_index = LIDAR_RANGE / BIN_SIZE - 1
+        bin_index = -1
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
@@ -92,7 +92,8 @@ def points_to_bins_2(segments):
         for j in range(len(segments[i])):
             point = segments[i][j] # [x, y, z]
             bin_index = get_bin(point[0], point[1])
-            segments_bins[i][bin_index].append(point)
+            if bin_index != -1:
+                segments_bins[i][bin_index].append(point)
     return segments_bins
 
 # Creates a 2D approximation of the 3D points
@@ -163,6 +164,21 @@ def approximate_2D_5(segments_bins):
             if len(segments_bins[i][j]) > 0:
                 segments_bins[i][j] = segments_bins[i][j][0]
     return segments_bins
+
+# Does not modify input array
+def approximate_2D_6(segments_bins):
+    segments_approx = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    for i in range(NUM_SEGMENTS):
+        for j in range(NUM_BINS):
+            for k in range(len(segments_bins[i][j])):
+                point = segments_bins[i][j][k] # [x, y, z]
+                point_prime = [math.sqrt(point[0]**2 + point[1]**2), point[2]]
+                segments_approx[i][j].append(point_prime)
+            segments_approx[i][j].sort(reverse=True)
+            # Prototype points
+            if len(segments_approx[i][j]) > 0:
+                segments_approx[i][j] = segments_approx[i][j][0]
+    return segments_approx
 
 # Reduces all points in a bin to a single prototype point
 def prototype_points(segments_bins_2D):
@@ -396,6 +412,55 @@ def label_points_3(segments, ground_lines):
 
 # Conservative approach implemented using T_D_MAX parameter
 # Modifies input
+def label_points_4(segments_bins, ground_lines):
+    # Assuming multiple lines can be in one segment
+    # Identifying closest line for each point
+    for i in range(NUM_SEGMENTS):
+        for j in range(len(segments_bins[i])):
+            for k in range(len(segments_bins[i][j])):
+                point = segments_bins[i][j][k]
+                is_ground = False
+                num_lines = len(ground_lines[i])
+                seg_idx = i
+                # If there is no ground line in current segment, find the closest one
+                if num_lines == 0:
+                    left_counter = i-1
+                    right_counter = i+1
+                    left_idx = (left_counter) % NUM_SEGMENTS
+                    right_idx = (right_counter) % NUM_SEGMENTS
+                    while left_idx != right_idx:
+                        #print("i:", i, "left:", left_idx, "right:", right_idx)
+                        if len(ground_lines[left_idx]) > 0:
+                            seg_idx = left_idx
+                            break
+                        elif len(ground_lines[right_idx]) > 0:
+                            seg_idx = right_idx
+                            break
+                        left_counter -= 1
+                        right_counter += 1
+                        left_idx = (left_counter) % NUM_SEGMENTS
+                        right_idx = (right_counter) % NUM_SEGMENTS
+                    if left_idx == right_idx:
+                        raise AssertionError("No ground lines found")
+                ground_line = ground_lines[seg_idx][0]
+                line_height = ground_line[0] * j + ground_line[1]
+                if point[2] < line_height + 0.08: # Make this a constant
+                    line = line_to_end_points(ground_line, seg_idx)
+                    closest_dist = dist_points_3D(point, line[0], line[1])
+                    for m in range(1, num_lines):
+                        line = ground_lines[seg_idx][m]
+                        dist_to_line = dist_points_3D(point, line[0], line[1])
+                        if (dist_to_line < closest_dist):
+                            closest_dist = dist_to_line
+                    # bin_index + 2 is extra leeway
+                    dynamic_T_D_GROUND = 4*(BIN_SIZE*(j))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
+                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
+                        is_ground = True
+                segments_bins[i][j][k].append(is_ground)
+    return segments_bins
+
+# Conservative approach implemented using T_D_MAX parameter
+# Modifies input
 def label_points_2_old(segments, ground_lines):
     # Assuming multiple lines in one segment
     # Identifying closest line for each point
@@ -434,6 +499,8 @@ def non_ground_points(labelled_points):
     return object_points
 
 def non_ground_points_2(labelled_points):
+    # Flatten parent array (remove bins)
+    labelled_points = [points for sublist in labelled_points for points in sublist]
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
     # Return all objects that are NOT flagged as ground
@@ -602,30 +669,55 @@ def get_ground_plane_old(points):
 
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
+    start_time = time.time()
     segments = points_to_segment_2(point_cloud)
+    print("points_to_segment", time.time() - start_time)
+
     if VISUALISE: vis.plot_segments(segments)
 
+    start_time = time.time()
     segments_bins = points_to_bins_2(segments)
+    print("points_to_bins", time.time() - start_time)
+    
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
-    segments_bins_prototype = approximate_2D_5(segments_bins)
+    start_time = time.time()
+    segments_bins_prototype = approximate_2D_6(segments_bins)
+    print("approximate_2D", time.time() - start_time)
 
+    start_time = time.time()
     ground_plane = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
+    print("get_ground_plane", time.time() - start_time)
+
     if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
     #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
-    labelled_points = label_points_3(segments, ground_plane)
+    start_time = time.time()
+    labelled_points = label_points_4(segments_bins, ground_plane)
+    print("label_points", time.time() - start_time)
+
     if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
+    start_time = time.time()
     object_points = non_ground_points_2(labelled_points)
+    print("non_ground_points", time.time() - start_time)
+
     if VISUALISE: vis.plot_grid_2D(object_points)
 
+    start_time = time.time()
     cluster_centers = DBSCAN.get_objects(object_points)
+    print("get_objects", time.time() - start_time)
 
+    start_time = time.time()
     reconstructed_clusters = object_reconstruction_2(cluster_centers, point_cloud)
+    print("object_reconstruction", time.time() - start_time)
+
     if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
 
+    start_time = time.time()
     cones = get_cones(reconstructed_clusters)
+    print("get_cones", time.time() - start_time)
+
     if VISUALISE: vis.plot_cones(cones)
 
     # Could consider try except block to ensure plotting - even during failure
@@ -664,7 +756,7 @@ def init_constants():
     global T_D_MAX
 
     # Constants
-    LIDAR_RANGE = 15 # Max range of the LIDAR # 100 # in metres
+    LIDAR_RANGE = 32 # Max range of the LIDAR # 100 # in metres
     DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 45 deg
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
     BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
@@ -679,6 +771,7 @@ def init_constants():
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
 
 def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
+    start_time = time.time()
     init_constants()
     if benchmark:
         return benchmarking(point_cloud)
@@ -691,12 +784,7 @@ def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
 
         # Remove this when a max range for the Lidar has been decided on
         global LIDAR_RANGE
-
-        for i in range(len(point_cloud) - 1, -1, -1):
-            point = point_cloud[i]
-            if math.sqrt(point[0]**2 + point[1]**2 + point[2]**2) >= LIDAR_RANGE:
-                point_cloud.remove(point)
-        print(len(point_cloud))
+        
         # values = []
         # for i in range(len(point_cloud)):
         #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
@@ -707,7 +795,7 @@ def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
         if VISUALISE:
             FIGURES_DIR = _figures_dir
             vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
-
+        print("INIT:", time.time() - start_time)
         cones = get_ground_plane(point_cloud)
         return cones
 
