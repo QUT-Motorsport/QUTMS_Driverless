@@ -14,7 +14,6 @@ import time
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import read_points
 # helper math function
-from .sub_module.simple_lidar import find_cones
 from .sub_module.ground_plane_estimation import lidar_main
 
 

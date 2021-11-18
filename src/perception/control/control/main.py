@@ -7,34 +7,8 @@ from geometry_msgs.msg import TwistStamped
 from fs_msgs.msg import ControlCommand
 from qutms_msgs.msg import ConeScan, ConeData
 
-<<<<<<< HEAD:src/perception/control/control/controller.py
-#############################
-##### utility functions #####
-#############################
-
-## helper function to find distances (magnitude) between two top-down points
-def distance(x1, y1, x2, y2): 
-    distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
-    return distance
-
-## helper function to find the average y "centre" of the cones. this is calculated wrt the FOV centre
-def find_avg_y(cone_set):
-    length = len(cone_set)
-    if length != 0:
-        average_y = 0
-        for cone in cone_set:
-            average_y += cone[1]
-        average_y = average_y / length
-
-        return -average_y
-    
-    else:
-        return 0 
-
-=======
 # import helper drive processing module
-from .sub_module.move_processing import *
->>>>>>> QUTMS-967-image-processing:src/perception/control/control/main.py
+from .sub_module.move_processing import * 
 
 class SimpleController(Node):
     def __init__(self):
@@ -105,8 +79,6 @@ class SimpleController(Node):
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
 
-<<<<<<< HEAD:src/perception/control/control/controller.py
-=======
         ## MODIFY THESE AND MAKE COPIES OF WORKING CONFIGURATIONS
         ## img segmenting
         # cone point vars
@@ -120,7 +92,6 @@ class SimpleController(Node):
         self.steering_pf = 0.02
         self.steering_if = 0
         self.steering_df = 0.6
->>>>>>> QUTMS-967-image-processing:src/perception/control/control/main.py
 
         # accel + vel targets
         self.vel_p = 0.7
@@ -173,11 +144,8 @@ class SimpleController(Node):
             cone.append(cones[j].z)
             cone.append(cones[j].c)
 
-<<<<<<< HEAD:src/perception/control/control/controller.py
-=======
             # check which bin cone falls in
             # further cones will have less impact on immediate decisions
->>>>>>> QUTMS-967-image-processing:src/perception/control/control/main.py
             if distance(0, 0, cone[0], cone[1]) < self.close_range_cutoff:
                 self.close_cones.append(cone)
             if distance(0, 0, cone[0], cone[1]) < self.far_range_cutoff:
@@ -202,14 +170,9 @@ class SimpleController(Node):
         calc_steering = 0.0
 
         # call cone detection
-<<<<<<< HEAD:src/perception/control/control/controller.py
-        close_avg_y = find_avg_y(self.close_cones) # frame of reference is flipped along FOV (for some reason)
-        far_avg_y = find_avg_y(self.far_cones) # frame of reference is flipped along FOV (for some reason)
-=======
         # frame of reference is flipped along FOV (for some reason)
         close_avg_y = find_avg_y(self.close_cones) 
         far_avg_y = find_avg_y(self.far_cones)
->>>>>>> QUTMS-967-image-processing:src/perception/control/control/main.py
 
         # wait for initial publishing delay
         if (self.time >= 3): 
