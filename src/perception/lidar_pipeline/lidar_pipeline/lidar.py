@@ -61,7 +61,7 @@ class LidarProcessing(Node):
         textfile.close()
 
         # calls first module from ground estimation algorithm
-        self.cones = lidar_main(pcl_array.tolist(), True, True, True, False) 
+        self.cones = lidar_main(pcl_array.tolist(), True, True, False, "/home/developer/datasets/figures") 
         print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
