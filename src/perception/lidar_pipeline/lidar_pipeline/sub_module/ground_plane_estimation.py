@@ -55,14 +55,9 @@ def get_bin(x, y):
     bin_index = math.floor(norm / BIN_SIZE)
     if norm % BIN_SIZE != 0:
         bin_index += 1
-    # If a point REALLY exceeds the limits, it shouldn't be included
-    # Since processing points based on range will be done at the start,
-    # this shouldn't be needed since the number of bins is calculated 
-    # based on the specified range. Thus, by this point, all points should
-    # belong a bin
     if bin_index >= NUM_BINS:
         bin_index = -1
-        #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
+        print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
 # Assign each point to a bin
