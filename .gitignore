@@ -14,6 +14,7 @@ datasets/*
 development/lidar_perception/venv/*
 # pycache
 development/lidar_perception/__pycache__/*
+src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
 # Figures
 development/lidar_perception/figures/*
 development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt
