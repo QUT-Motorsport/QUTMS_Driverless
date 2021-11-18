@@ -54,9 +54,13 @@ class LidarDetection(Node):
         pcl_array = numpy.array(list(read_points(pcl_msg)))
         # print('points:', pcl_array)
 
+        pcl_list = pcl_array.tolist()
+        textfile = open("/home/developer/datasets/16k_points.txt", "w")
+        textfile.write(str(pcl_list))
+        textfile.close()
+
         # calls first module from ground estimation algorithm
-        
-        self.cones = lidar_main(pcl_array.tolist(), False) 
+        self.cones = lidar_main(pcl_array.tolist(), True, True, True, False) 
         print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
@@ -77,7 +81,7 @@ class LidarDetection(Node):
             cone.x = self.cones[i][0] # x, y, z coords + intensity
             cone.y = self.cones[i][1]
             cone.z = 0.2 #self.cones[i][2]
-            cone.i = 3 #self.cones[i][3]
+            cone.i = 3.0 #self.cones[i][3]
             cone_data.append(cone) # add cone to msg list
        
         # head.stamp = rospy.Time.now()
