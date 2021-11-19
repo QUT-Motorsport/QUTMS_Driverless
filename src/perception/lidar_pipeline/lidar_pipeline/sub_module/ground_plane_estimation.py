@@ -35,6 +35,26 @@ def points_to_segment_2(points):
         segments[seg_idx].append(point)
     return segments
 
+def points_to_bins_2(segments):
+    segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    for i in range(NUM_SEGMENTS):
+        for j in range(len(segments[i])):
+            point = segments[i][j] # [x, y, z]
+            bin_index = get_bin(point[0], point[1])
+            if bin_index != -1:
+                segments_bins[i][bin_index].append(point)
+    return segments_bins
+
+def points_to_seg_bin(point_cloud):
+    segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    for i in range(len(point_cloud)):
+        point = point_cloud[i]
+        bin_idx = get_bin(point[0], point[1])
+        if bin_idx != -1:
+            seg_idx = get_segment(point[0], point[1])
+            segments_bins[seg_idx][bin_idx].append(point)
+    return segments_bins
+
 # Creates a set of segments with bins
 def init_bins():
     segments_bins = []
@@ -59,16 +79,6 @@ def get_bin(x, y):
         bin_index = -1
         print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
-
-def points_to_bins_2(segments):
-    segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
-    for i in range(NUM_SEGMENTS):
-        for j in range(len(segments[i])):
-            point = segments[i][j] # [x, y, z]
-            bin_index = get_bin(point[0], point[1])
-            if bin_index != -1:
-                segments_bins[i][bin_index].append(point)
-    return segments_bins
 
 # Modifies input array
 def approximate_2D_5(segments_bins):
@@ -502,15 +512,20 @@ def get_cones(reconstructed_clusters):
 
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
-    start_time = time.time()
-    segments = points_to_segment_2(point_cloud)
-    print("points_to_segment", time.time() - start_time)
+    
+    # start_time = time.time()
+    # segments = points_to_segment_2(point_cloud)
+    # print("points_to_segment", time.time() - start_time)
 
-    if VISUALISE: vis.plot_segments(segments)
+    # if VISUALISE: vis.plot_segments(segments)
 
+    # start_time = time.time()
+    # segments_bins = points_to_bins_2(segments)
+    # print("points_to_bins", time.time() - start_time)
+    
     start_time = time.time()
-    segments_bins = points_to_bins_2(segments)
-    print("points_to_bins", time.time() - start_time)
+    segments_bins = points_to_seg_bin(point_cloud)
+    print("points_to_seg_bin", time.time() - start_time)
     
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
