@@ -45,16 +45,6 @@ def approximate_2D_6(segments_bins):
                 segments_approx[i][j] = segments_approx[i][j][0]
     return segments_approx
 
-# Creates a set of segments with bins
-def init_bins():
-    segments_bins = []
-    for i in range(NUM_SEGMENTS):
-        segments_bins.append([])
-        for j in range(NUM_BINS):
-            segments_bins[i].append([])
-    #print("Number of bins:", len(segments_bins[0]))
-    return segments_bins
-
 # Returns true if the point (x, y) is in bin j
 def in_bin(x, y, j):
     return (j*BIN_SIZE <= math.sqrt((x**2)+(y**2)) <= (j+1)*BIN_SIZE)
