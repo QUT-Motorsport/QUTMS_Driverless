@@ -1,24 +1,24 @@
 # Modules
 import time
 import math
-import copy
 import numpy as np
 
 # Plotting Data
 import matplotlib.pyplot as plt
 
-# Line Fitting
-import line_extraction
-
-# Point Cloud Clustering
-import DBSCAN
-
-# Visualiser
-import visualiser as vis
+# Line Fitting 
+from . import line_extraction 
+ 
+# Point Cloud Clustering 
+from . import DBSCAN 
+ 
+# Visualiser 
+from . import visualiser as vis 
 
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
+
 
 # Creates the set of segments for points
 def init_segments():
@@ -27,15 +27,6 @@ def init_segments():
         segments.append([])
     return segments
     
-# Assign each point to a segment 
-# def points_to_segment(points):
-#     segments = init_segments()
-#     for i in range(len(points)):
-#         x = points[i][0]
-#         y = points[i][1]
-#         s_index = get_segment(x, y)
-#         segments[s_index].append(points[i])
-#     return segments
 
 def points_to_segment_2(points):
     segments = [[] for i in range(NUM_SEGMENTS)]
@@ -44,6 +35,7 @@ def points_to_segment_2(points):
         seg_idx = get_segment(point[0], point[1])
         segments[seg_idx].append(point)
     return segments
+
 
 # Creates a set of segments with bins
 def init_bins():
@@ -55,9 +47,11 @@ def init_bins():
     #print("Number of bins:", len(segments_bins[0]))
     return segments_bins
 
+
 # Returns true if the point (x, y) is in bin j
 def in_bin(x, y, j):
     return (j*BIN_SIZE <= math.sqrt((x**2)+(y**2)) <= (j+1)*BIN_SIZE)
+
 
 # Returns the index to a bin that a point (x, y) maps to 
 def get_bin(x, y):
@@ -75,16 +69,6 @@ def get_bin(x, y):
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Assign each point to a bin
-# def points_to_bins(segments):
-#     segments_bins = init_bins()
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(len(segments[i])):
-#             x = segments[i][j][0]
-#             y = segments[i][j][1]
-#             bin_index = get_bin(x, y)
-#             segments_bins[i][bin_index].append(segments[i][j])
-#     return segments_bins
 
 def points_to_bins_2(segments):
     segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
@@ -96,74 +80,6 @@ def points_to_bins_2(segments):
                 segments_bins[i][bin_index].append(point)
     return segments_bins
 
-# Creates a 2D approximation of the 3D points
-# def approximate_2D(segments_bins):
-#     segments_bins_2D = copy.deepcopy(segments_bins) 
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(NUM_BINS):
-#             for k in range(len(segments_bins[i][j])):
-#                 x = segments_bins[i][j][k][0]
-#                 y = segments_bins[i][j][k][1]
-#                 z = segments_bins[i][j][k][2]
-#                 point_prime = [math.sqrt(x**2 + y**2), z]
-#                 segments_bins_2D[i][j][k] = point_prime
-#             # This should order the points by range for each bin:
-#             segments_bins_2D[i][j] = sorted(segments_bins_2D[i][j], key=lambda lam: lam[0])
-#             segments_bins_2D[i][j].reverse()
-#     return segments_bins_2D
-
-# def approximate_2D_2(segments_bins):
-#     segments_bins_2D = []
-#     for i in range(NUM_SEGMENTS):
-#         segments_bins_2D.append([])
-#         for j in range(NUM_BINS):
-#             segments_bins_2D[i].append([])
-#             for k in range(len(segments_bins[i][j])):
-#                 x = segments_bins[i][j][k][0]
-#                 y = segments_bins[i][j][k][1]
-#                 z = segments_bins[i][j][k][2]
-#                 point_prime = [math.sqrt(x**2 + y**2), z]
-#                 segments_bins_2D[i][j].append(point_prime)
-#             segments_bins_2D[i][j].sort(reverse=True)
-#     return segments_bins_2D
-
-# Modifies input array
-# def approximate_2D_3(segments_bins):
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(NUM_BINS):
-#             for k in range(len(segments_bins[i][j])):
-#                 x = segments_bins[i][j][k][0]
-#                 y = segments_bins[i][j][k][1]
-#                 z = segments_bins[i][j][k][2]
-#                 point_prime = [math.sqrt(x**2 + y**2), z]
-#                 segments_bins[i][j][k] = point_prime
-#             segments_bins[i][j].sort(reverse=True)
-#     return segments_bins
-
-# Modifies input array
-# def approximate_2D_4(segments_bins):
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(NUM_BINS):
-#             for k in range(len(segments_bins[i][j])):
-#                 point = segments_bins[i][j][k] # [x, y, z]
-#                 point_prime = [math.sqrt(point[0]**2 + point[1]**2), point[2]]
-#                 segments_bins[i][j][k] = point_prime
-#             segments_bins[i][j].sort(reverse=True)
-#     return segments_bins
-
-# Modifies input array
-# def approximate_2D_5(segments_bins):
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(NUM_BINS):
-#             for k in range(len(segments_bins[i][j])):
-#                 point = segments_bins[i][j][k] # [x, y, z]
-#                 point_prime = [math.sqrt(point[0]**2 + point[1]**2), point[2]]
-#                 segments_bins[i][j][k] = point_prime
-#             segments_bins[i][j].sort(reverse=True)
-#             # Prototype points
-#             if len(segments_bins[i][j]) > 0:
-#                 segments_bins[i][j] = segments_bins[i][j][0]
-#     return segments_bins
 
 # Does not modify input array
 def approximate_2D_6(segments_bins):
@@ -180,16 +96,6 @@ def approximate_2D_6(segments_bins):
                 segments_approx[i][j] = segments_approx[i][j][0]
     return segments_approx
 
-# Reduces all points in a bin to a single prototype point
-# def prototype_points(segments_bins_2D):
-#     segments_bins_prototype = [] 
-#     for i in range(NUM_SEGMENTS):
-#         segments_bins_prototype.append([])
-#         for j in range(NUM_BINS):
-#             segments_bins_prototype[i].append([])
-#             if len(segments_bins_2D[i][j]) > 0:
-#                 segments_bins_prototype[i][j] = segments_bins_2D[i][j][0]
-#     return segments_bins_prototype
 
 # Modifies input
 def prototype_points_2(segments_bins_2D):
@@ -199,12 +105,6 @@ def prototype_points_2(segments_bins_2D):
                 segments_bins_2D[i][j] = segments_bins_2D[i][j][0]
     return segments_bins_2D
 
-# Not sure if this is working correctly
-# Should compare 3D distance between points and start of line point
-# def dist_points_3D_old(x1, x2, m, b):
-#     x2_z = m*x2[0] + b
-#     distance = math.sqrt((x2[0] - x1[0])**2 + (x2[1] - x1[1])**2 + (x2_z - x1[2])**2)
-#     return distance
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 def dist_points_3D(x_0, x_1, x_2):
@@ -212,52 +112,6 @@ def dist_points_3D(x_0, x_1, x_2):
     denom = np.linalg.norm(np.subtract(x_2, x_1))
     distance = numer/denom
     return distance
-
-# distance from point to line in 3D space
-# def point_line_dist_3D():
-#    pass
-
-# might need to investigate line extraction distance from point to line, making large values.
-
-# m
-# b
-# first point
-# last point
-# num points
-
-# Can there be multiple lines PER segment?? I still don't know and this will
-# directly affect how this function is written. 
-# But assuming that there is multiple lines ...
-
-# Conservative approach implemented using T_D_MAX parameter
-# def label_points_old(segments, ground_lines):
-#     labelled_points = copy.deepcopy(segments)
-
-#     # Assuming multiple lines in one segment
-#     # Identifying closest line for each point
-#     for i in range(NUM_SEGMENTS):
-#         num_points = len(segments[i])
-#         for j in range(num_points): 
-#             point = segments[i][j]
-#             is_ground = False
-#             closest_line = None
-#             num_lines = len(ground_lines[i])
-#             if num_lines > 0:
-#                 line = ground_lines[i][0]
-#                 closest_line = line
-#                 closest_dist = dist_points_3D_old(point, line[2], line[0], line[1])
-#                 for k in range(1, num_lines):
-#                     line = ground_lines[i][k]
-#                     dist_to_line = dist_points_3D_old(point, line[2], line[0], line[1])
-#                     if (dist_to_line < closest_dist):
-#                         closest_line = line
-#                         closest_dist = dist_to_line
-#                 hacky_point = [math.sqrt(point[0]**2 + point[1]**2), point[2]] # fix this
-#                 point_to_line_dist = line_extraction.dist_point_line(hacky_point, closest_line[0], closest_line[1])
-#                 if (closest_dist < T_D_MAX and point_to_line_dist < T_D_GROUND):
-#                     is_ground = True
-#             labelled_points[i][j].append(is_ground)
-#     return labelled_points
 
 
 def line_to_end_points(line, segment_idx):
@@ -271,145 +125,6 @@ def line_to_end_points(line, segment_idx):
     x_2 = [x[1], y[1], z[1]]
     return [x_1, x_2]
 
-# Conservative approach implemented using T_D_MAX parameter
-# def label_points(segments, ground_lines):
-#     labelled_points = copy.deepcopy(segments)
-
-#     # Assuming multiple lines in one segment
-#     # Identifying closest line for each point
-#     for i in range(NUM_SEGMENTS):
-#         num_points = len(segments[i])
-#         for j in range(num_points): 
-#             point = segments[i][j]
-#             is_ground = False
-#             num_lines = len(ground_lines[i])
-#             seg_idx = i
-#             # If there is ground line in corresponding segment
-#             # find the closest one
-#             if num_lines == 0:
-#                 left_counter = i-1
-#                 right_counter = i+1
-#                 left_idx = (left_counter) % NUM_SEGMENTS
-#                 right_idx = (right_counter) % NUM_SEGMENTS
-#                 while left_idx != right_idx:
-#                     #print("i:", i, "left:", left_idx, "right:", right_idx)
-#                     if len(ground_lines[left_idx]) > 0:
-#                         seg_idx = left_idx
-#                         break
-#                     elif len(ground_lines[right_idx]) > 0:
-#                         seg_idx = right_idx
-#                         break
-#                     left_counter -= 1
-#                     right_counter += 1
-#                     left_idx = (left_counter) % NUM_SEGMENTS
-#                     right_idx = (right_counter) % NUM_SEGMENTS
-#                 if left_idx == right_idx:
-#                     raise AssertionError("No ground lines found")
-#             line = line_to_end_points(ground_lines[seg_idx][0], seg_idx)
-#             closest_dist = dist_points_3D(point, line[0], line[1])
-#             for k in range(1, num_lines):
-#                 line = ground_lines[seg_idx][k]
-#                 dist_to_line = dist_points_3D(point, line[0], line[1])
-#                 if (dist_to_line < closest_dist):
-#                     closest_dist = dist_to_line
-#             #point_to_line_dist = dist_points_3D(point, closest_line)
-#             if (closest_dist < T_D_MAX and closest_dist < T_D_GROUND):
-#                 is_ground = True
-#             labelled_points[i][j].append(is_ground)
-#     return labelled_points
-
-# Conservative approach implemented using T_D_MAX parameter
-# Modifies input
-# def label_points_2(segments, ground_lines):
-#     # Assuming multiple lines can be in one segment
-#     # Identifying closest line for each point
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(len(segments[i])): 
-#             point = segments[i][j]
-#             is_ground = False
-#             num_lines = len(ground_lines[i])
-#             seg_idx = i
-#             # If there is no ground line in current segment, find the closest one
-#             if num_lines == 0:
-#                 left_counter = i-1
-#                 right_counter = i+1
-#                 left_idx = (left_counter) % NUM_SEGMENTS
-#                 right_idx = (right_counter) % NUM_SEGMENTS
-#                 while left_idx != right_idx:
-#                     #print("i:", i, "left:", left_idx, "right:", right_idx)
-#                     if len(ground_lines[left_idx]) > 0:
-#                         seg_idx = left_idx
-#                         break
-#                     elif len(ground_lines[right_idx]) > 0:
-#                         seg_idx = right_idx
-#                         break
-#                     left_counter -= 1
-#                     right_counter += 1
-#                     left_idx = (left_counter) % NUM_SEGMENTS
-#                     right_idx = (right_counter) % NUM_SEGMENTS
-#                 if left_idx == right_idx:
-#                     raise AssertionError("No ground lines found")
-#             line = line_to_end_points(ground_lines[seg_idx][0], seg_idx)
-#             closest_dist = dist_points_3D(point, line[0], line[1])
-#             for k in range(1, num_lines):
-#                 line = ground_lines[seg_idx][k]
-#                 dist_to_line = dist_points_3D(point, line[0], line[1])
-#                 if (dist_to_line < closest_dist):
-#                     closest_dist = dist_to_line
-#             dynamic_T_D_GROUND = (BIN_SIZE*(get_bin(point[0], point[1])))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
-#             if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
-#                 is_ground = True
-#             segments[i][j].append(is_ground)
-#     return segments
-
-# Conservative approach implemented using T_D_MAX parameter
-# Modifies input
-# def label_points_3(segments, ground_lines):
-#     # Assuming multiple lines can be in one segment
-#     # Identifying closest line for each point
-#     for i in range(NUM_SEGMENTS):
-#         for j in range(len(segments[i])): 
-#             point = segments[i][j]
-#             is_ground = False
-#             num_lines = len(ground_lines[i])
-#             seg_idx = i
-#             # If there is no ground line in current segment, find the closest one
-#             if num_lines == 0:
-#                 left_counter = i-1
-#                 right_counter = i+1
-#                 left_idx = (left_counter) % NUM_SEGMENTS
-#                 right_idx = (right_counter) % NUM_SEGMENTS
-#                 while left_idx != right_idx:
-#                     #print("i:", i, "left:", left_idx, "right:", right_idx)
-#                     if len(ground_lines[left_idx]) > 0:
-#                         seg_idx = left_idx
-#                         break
-#                     elif len(ground_lines[right_idx]) > 0:
-#                         seg_idx = right_idx
-#                         break
-#                     left_counter -= 1
-#                     right_counter += 1
-#                     left_idx = (left_counter) % NUM_SEGMENTS
-#                     right_idx = (right_counter) % NUM_SEGMENTS
-#                 if left_idx == right_idx:
-#                     raise AssertionError("No ground lines found")
-#             ground_line = ground_lines[seg_idx][0]
-#             bin_index = get_bin(point[0], point[1])
-#             line_height = ground_line[0] * bin_index + ground_line[1]
-#             if point[2] < line_height + 0.08: # Make this a constant
-#                 line = line_to_end_points(ground_line, seg_idx)
-#                 closest_dist = dist_points_3D(point, line[0], line[1])
-#                 for k in range(1, num_lines):
-#                     line = ground_lines[seg_idx][k]
-#                     dist_to_line = dist_points_3D(point, line[0], line[1])
-#                     if (dist_to_line < closest_dist):
-#                         closest_dist = dist_to_line
-#                 # bin_index + 2 is extra leeway
-#                 dynamic_T_D_GROUND = 4*(BIN_SIZE*(bin_index))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
-#                 if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
-#                     is_ground = True
-#             segments[i][j].append(is_ground)
-#     return segments
 
 # Conservative approach implemented using T_D_MAX parameter
 # Modifies input
@@ -420,7 +135,7 @@ def label_points_4(segments_bins, ground_lines):
         for j in range(len(segments_bins[i])):
             for k in range(len(segments_bins[i][j])):
                 point = segments_bins[i][j][k]
-                is_ground = False
+                is_ground = True
                 num_lines = len(ground_lines[i])
                 seg_idx = i
                 # If there is no ground line in current segment, find the closest one
@@ -445,59 +160,73 @@ def label_points_4(segments_bins, ground_lines):
                         raise AssertionError("No ground lines found")
                 ground_line = ground_lines[seg_idx][0]
                 line_height = ground_line[0] * j + ground_line[1]
-                if point[2] < line_height + 0.08: # Make this a constant
-                    line = line_to_end_points(ground_line, seg_idx)
-                    closest_dist = dist_points_3D(point, line[0], line[1])
-                    for m in range(1, num_lines):
-                        line = ground_lines[seg_idx][m]
-                        dist_to_line = dist_points_3D(point, line[0], line[1])
-                        if (dist_to_line < closest_dist):
-                            closest_dist = dist_to_line
-                    # bin_index + 2 is extra leeway
-                    dynamic_T_D_GROUND = 4*(BIN_SIZE*(j))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
-                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
-                        is_ground = True
+                if point[2] > line_height + 0.08: # Make this a constant
+                    is_ground = False
+                #     line = line_to_end_points(ground_line, seg_idx) 
+                #     closest_dist = dist_points_3D(point, line[0], line[1]) 
+                #     for m in range(1, num_lines): 
+                #         line = ground_lines[seg_idx][m] 
+                #         dist_to_line = dist_points_3D(point, line[0], line[1]) 
+                #         if (dist_to_line < closest_dist): 
+                #             closest_dist = dist_to_line 
+                #     # bin_index + 2 is extra leeway 
+                #     dynamic_T_D_GROUND = 4*(BIN_SIZE*(j))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance 
+                #     print("closest, dynamic:", closest_dist, dynamic_T_D_GROUND)
+                #     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND): 
+                #         is_ground = True 
+
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
 
-# Conservative approach implemented using T_D_MAX parameter
-# Modifies input
-# def label_points_2_old(segments, ground_lines):
-#     # Assuming multiple lines in one segment
-#     # Identifying closest line for each point
-#     for i in range(NUM_SEGMENTS):
-#         # For every point in each segment. Perhaps make an array of constants of point counts?
-#         for j in range(len(segments[i])):
-#             point = segments[i][j]
-#             is_ground = False
-#             closest_line = None
-#             num_lines = len(ground_lines[i])
-#             if num_lines > 0:
-#                 line = ground_lines[i][0]
-#                 closest_line = line
-#                 closest_dist = dist_points_3D(point, line[2], line[0], line[1])
-#                 for k in range(1, num_lines):
-#                     line = ground_lines[i][k]
-#                     dist_to_line = dist_points_3D(point, line[2], line[0], line[1])
-#                     if (dist_to_line < closest_dist):
-#                         closest_line = line
-#                         closest_dist = dist_to_line
-#                 hacky_point = [math.sqrt(point[0]**2 + point[1]**2), point[2]] # fix this
-#                 point_to_line_dist = line_extraction.dist_point_line(hacky_point, closest_line[0], closest_line[1])
-#                 if (closest_dist < T_D_MAX and point_to_line_dist < T_D_GROUND):
-#                     is_ground = True
-#             segments[i][j].append(is_ground)
-#     return segments
 
-# def non_ground_points(labelled_points):
-#     # Flatten parent array (remove segements)
-#     labelled_points = [points for sublist in labelled_points for points in sublist]
-#     object_points = []
-#     for i in range(len(labelled_points)):
-#         point = labelled_points[i]
-#         if point[3] == False:
-#             object_points.append([point[0], point[1], point[2]])
-#     return object_points
+# def label_points_4(segments_bins, ground_lines): 
+#     # Assuming multiple lines can be in one segment 
+#     # Identifying closest line for each point 
+#     for i in range(NUM_SEGMENTS): 
+#         for j in range(len(segments_bins[i])): 
+#             for k in range(len(segments_bins[i][j])): 
+#                 point = segments_bins[i][j][k] 
+#                 is_ground = False 
+#                 num_lines = len(ground_lines[i]) 
+#                 seg_idx = i 
+#                 # If there is no ground line in current segment, find the closest one 
+#                 if num_lines == 0: 
+#                     left_counter = i-1 
+#                     right_counter = i+1 
+#                     left_idx = (left_counter) % NUM_SEGMENTS 
+#                     right_idx = (right_counter) % NUM_SEGMENTS 
+#                     while left_idx != right_idx: 
+#                         #print("i:", i, "left:", left_idx, "right:", right_idx) 
+#                         if len(ground_lines[left_idx]) > 0: 
+#                             seg_idx = left_idx 
+#                             break 
+#                         elif len(ground_lines[right_idx]) > 0: 
+#                             seg_idx = right_idx 
+#                             break 
+#                         left_counter -= 1 
+#                         right_counter += 1 
+#                         left_idx = (left_counter) % NUM_SEGMENTS 
+#                         right_idx = (right_counter) % NUM_SEGMENTS 
+#                     if left_idx == right_idx: 
+#                         raise AssertionError("No ground lines found") 
+#                 ground_line = ground_lines[seg_idx][0] 
+#                 line_height = ground_line[0] * j + ground_line[1] 
+#                 if point[2] < line_height + 0.08: # Make this a constant 
+#                     line = line_to_end_points(ground_line, seg_idx) 
+#                     closest_dist = dist_points_3D(point, line[0], line[1]) 
+#                     for m in range(1, num_lines): 
+#                         line = ground_lines[seg_idx][m] 
+#                         dist_to_line = dist_points_3D(point, line[0], line[1]) 
+#                         if (dist_to_line < closest_dist): 
+#                             closest_dist = dist_to_line 
+#                     # bin_index + 2 is extra leeway 
+#                     dynamic_T_D_GROUND = 4*(BIN_SIZE*(j))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance 
+#                     print("closest, dynamic:", closest_dist, dynamic_T_D_GROUND)
+#                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND): 
+#                         is_ground = True 
+#                 segments_bins[i][j][k].append(is_ground) 
+#     return segments_bins 
+ 
 
 def non_ground_points_2(labelled_points):
     # Flatten parent array (remove bins)
@@ -507,30 +236,12 @@ def non_ground_points_2(labelled_points):
     # Return all objects that are NOT flagged as ground
     return [point for point in labelled_points if point[3] == False]
 
+
 # Ignoring height
 def get_distance(point_a, point_b):
     # Distance
     return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
 
-# def object_reconstruction(cluster_centers, points):
-#     cone_width = 0.15
-#     reconstructed_clusters = []
-#     # You might want to sort points by x coords here
-#     # since that is how the clusters are sorted
-#     # This may reduce overall time
-#     for i in range (len(cluster_centers)):
-#         reconstructed_clusters.append([])
-#     for i in range(len(points)):
-#         point = points[i]
-#         for j in range(len(cluster_centers)):
-#             cluster_center = cluster_centers[j]
-#             # I'm gonna be hoping a point wont be in two clusters at the same time
-#             # therefore ill break after the first match for each point
-#             # Increases speed of algorithm
-#             if get_distance(cluster_center, point) <= cone_width:
-#                 reconstructed_clusters[j].append(point)
-#                 break
-#     return reconstructed_clusters
 
 def object_reconstruction_2(cluster_centers, points):
     cone_width = 0.15
@@ -558,6 +269,7 @@ def cone_filter(distance):
     vertical_res = 2 * (math.pi / 180) # 2 degrees in between each point
     exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
     return exp_point_count
+
 
 def get_cones(reconstructed_clusters):
     cones = []
@@ -637,32 +349,8 @@ def benchmarking(point_cloud):
     if VISUALISE: vis.plot_cones(cones)
 
     # Could consider try except block to ensure plotting - even during failure
-    if VISUALISE and DISPLAY: plt.show() 
+    plt.show() 
     return cones
-
-
-# def get_ground_plane_old(points): 
-#     # This is still using the unoptimised functions (for visualisation purposes) 
-#     segments = points_to_segment(points) 
-#     segments_bins = points_to_bins(segments) 
-#     segments_bins_2D = approximate_2D_4(segments_bins) 
-#     segments_bins_prototype = prototype_points(segments_bins_2D) 
-#     ground_lines = line_extraction.extract_lines(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS) 
-#     # label_points labels ALL points, but don't we only need to append non-ground points (would speed up algorithm) 
-#     labelled_points = label_points_2(segments, ground_lines) 
-#     object_points = non_ground_points(labelled_points) 
-#     clusters, noise, cluster_centers = DBSCAN.init_DBSCAN(object_points) 
-#     reconstructed_clusters = object_reconstruction(cluster_centers, points) 
-#     cones = get_cones(reconstructed_clusters) 
- 
-#     # Plotting 
-#     # Could have plot after each thing above ^ and then have all of that 
-#     # inside of a try() except with plt.show() guaranteed to occur. 
-#     if VISUALISE : visualise_data(segments, segments_bins, segments_bins_2D, segments_bins_prototype, ground_lines, labelled_points, object_points, clusters, noise, reconstructed_clusters, cones) 
- 
-#     #print("\n\n\n", object_points) 
-#     print(cones) 
-#     return cones 
 
 
 def get_ground_plane(point_cloud):
@@ -742,7 +430,6 @@ def init_constants():
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
 
 def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
-    start_time = time.time()
     init_constants()
     global VISUALISE
     global DISPLAY
@@ -753,13 +440,11 @@ def lidar_main(point_cloud, _visualise, _display, benchmark, _figures_dir):
     # Remove this when a max range for the Lidar has been decided on
     global LIDAR_RANGE
     
-    print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
+    # print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
 
     if VISUALISE:
         FIGURES_DIR = _figures_dir
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
-
-    print("INIT:", time.time() - start_time)
     
     # values = []
     # for i in range(len(point_cloud)):
