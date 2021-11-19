@@ -20,13 +20,6 @@ import visualiser as vis
 def get_segment(x, y):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
 
-# Creates the set of segments for points
-def init_segments():
-    segments = [] 
-    for i in range(NUM_SEGMENTS):
-        segments.append([])
-    return segments
-
 def points_to_seg_bin(point_cloud):
     segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)):
