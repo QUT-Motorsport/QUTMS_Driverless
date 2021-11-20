@@ -212,6 +212,28 @@ def cam_main(frame, display=False):
 
     except Exception as e:
         print(e)
+    
+    try:
+        cone_im_size = [100, 100]
+        yellow_cones = [cone for cone in cones if cone[0] == "blue"]
+        big_yellow_cone = yellow_cones[0]
+        left = int(big_yellow_cone[3]-cone_im_size[0]/2)
+        top = int(big_yellow_cone[4]-cone_im_size[1]/2)
+        right = left + cone_im_size[0]
+        bottom = top + cone_im_size[1]
+
+        cropped_img = frame[top:bottom, left:right]
+        cv2.imshow("camera-base2", cropped_img) # image with bounding boxes
+
+        im_name=1
+        saved_images = os.listdir("/home/developer/driverless_ws/src/images")
+        saved_images.sort()
+        if len(saved_images) > 0:
+            im_name = int(saved_images[-1][0:5])+1
+        print(cv2.imwrite("/home/developer/driverless_ws/src/images/{:05}.jpg".format(im_name), cropped_img), im_name)
+
+    except Exception as e:
+        print(e)
 
 
     
