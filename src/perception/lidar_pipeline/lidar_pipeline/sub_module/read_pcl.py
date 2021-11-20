@@ -1,6 +1,8 @@
 ## The code below is "ported" from 
 # https://github.com/ros/common_msgs/tree/noetic-devel/sensor_msgs/src/sensor_msgs
 import sys
+from collections import namedtuple
+import ctypes
 import math
 import struct
 from sensor_msgs.msg import PointCloud2, PointField

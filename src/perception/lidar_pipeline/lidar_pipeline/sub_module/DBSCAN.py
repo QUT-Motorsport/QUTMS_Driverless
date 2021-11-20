@@ -34,7 +34,7 @@ def get_objects(object_points):
 #    GIT history for deprecated code that offered noise and preserved clusters).
 # 2. z_cluster and z_mean: I don't think we need to know the height value of the
 #    center of a cluster. We are reconstructing an unbounded cylinder at each
-#    center - not a sphere, so the height should not matter. 
-#    That said, I believe Monash University uses it - but they're a bunch of monkeys anyways. 
+#    cetner - not a sphere, so the height should not matter. That said, I believe
+#    Monash University uses it - but they're a bunch of monkeys anyways. 
 # 3. Neighbourhood scan size should be roughly the diameter of the cones that are
 #    used on the track.

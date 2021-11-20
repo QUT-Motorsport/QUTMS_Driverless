@@ -1,7 +1,7 @@
 # Modules
 import math
 import copy
-from . import total_least_squares
+import total_least_squares
 
 # Constants
 T_M = 2*math.pi / 512 # Max angle that will be considered for ground lines
