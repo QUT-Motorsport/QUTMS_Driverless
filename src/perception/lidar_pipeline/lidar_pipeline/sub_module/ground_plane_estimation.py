@@ -74,7 +74,8 @@ def dist_points_3D(x_0, p_1, p_2):
     distance = dist_norm / p_norm
     return distance
 
-def line_to_end_points_2(line, segment_idx):
+# Returns the start and end points (x, y, z) of a line
+def line_to_end_points(line, segment_idx):
     start = line[2] # First point in line
     end = line[3] # Last point in line
     
@@ -88,53 +89,6 @@ def line_to_end_points_2(line, segment_idx):
     p_2 = [x_2, y_2, end[1]]
     
     return [p_1, p_2]
-
-# Conservative approach implemented using T_D_MAX parameter
-def label_points(segments, ground_lines):
-    labelled_points = copy.deepcopy(segments)
-
-    # Assuming multiple lines in one segment
-    # Identifying closest line for each point
-    for i in range(NUM_SEGMENTS):
-        num_points = len(segments[i])
-        for j in range(num_points): 
-            point = segments[i][j]
-            is_ground = False
-            num_lines = len(ground_lines[i])
-            seg_idx = i
-            # If there is ground line in corresponding segment
-            # find the closest one
-            if num_lines == 0:
-                left_counter = i-1
-                right_counter = i+1
-                left_idx = (left_counter) % NUM_SEGMENTS
-                right_idx = (right_counter) % NUM_SEGMENTS
-                while left_idx != right_idx:
-                    #print("i:", i, "left:", left_idx, "right:", right_idx)
-                    if len(ground_lines[left_idx]) > 0:
-                        seg_idx = left_idx
-                        break
-                    elif len(ground_lines[right_idx]) > 0:
-                        seg_idx = right_idx
-                        break
-                    left_counter -= 1
-                    right_counter += 1
-                    left_idx = (left_counter) % NUM_SEGMENTS
-                    right_idx = (right_counter) % NUM_SEGMENTS
-                if left_idx == right_idx:
-                    raise AssertionError("No ground lines found")
-            line = line_to_end_points(ground_lines[seg_idx][0], seg_idx)
-            closest_dist = dist_points_3D(point, line[0], line[1])
-            for k in range(1, num_lines):
-                line = ground_lines[seg_idx][k]
-                dist_to_line = dist_points_3D(point, line[0], line[1])
-                if (dist_to_line < closest_dist):
-                    closest_dist = dist_to_line
-            #point_to_line_dist = dist_points_3D(point, closest_line)
-            if (closest_dist < T_D_MAX and closest_dist < T_D_GROUND):
-                is_ground = True
-            labelled_points[i][j].append(is_ground)
-    return labelled_points
 
 # Conservative approach implemented using T_D_MAX parameter
 # Modifies input
@@ -310,7 +264,7 @@ def label_points_5(segments_bins, ground_lines):
                 is_ground = False
                 line_height = ground_line[0] * (j * BIN_SIZE) + ground_line[1]
                 if point[2] < line_height + 0.08: # Make this a constant
-                    line = line_to_end_points_2(ground_line, seg_idx)
+                    line = line_to_end_points(ground_line, seg_idx)
                     closest_dist = dist_points_3D(point, line[0], line[1])
                     for m in range(1, num_lines):
                         line = ground_lines[seg_idx][m]
@@ -361,7 +315,7 @@ def label_points_6(segments_bins, ground_lines):
                 
                 segments_bins[i][j][k].append(is_ground)
 
-            line = line_to_end_points_2(ground_line, seg_idx)
+            line = line_to_end_points(ground_line, seg_idx)
             closest_dist = dist_points_3D(avg_point, line[0], line[1])
             
             for k in range(1, num_lines):
