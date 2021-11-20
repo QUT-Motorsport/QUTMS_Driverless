@@ -462,16 +462,17 @@ def label_points_6(segments_bins, ground_lines):
                 avg_point[0] += segments_bins[i][j][k][0]
                 avg_point[1] += segments_bins[i][j][k][1]
                 avg_point[2] += segments_bins[i][j][k][2]
+                
                 segments_bins[i][j][k].append(is_ground)
 
             line = line_to_end_points_2(ground_line, seg_idx)
             closest_dist = dist_points_3D_2(avg_point, line[0], line[1])
             
-            # for k in range(1, num_lines):
-            #     line = ground_lines[seg_idx][k]
-            #     dist_to_line = dist_points_3D(avg_point, line[0], line[1])
-            #     if (dist_to_line < closest_dist):
-            #         closest_dist = dist_to_line
+            for k in range(1, num_lines):
+                line = ground_lines[seg_idx][k]
+                dist_to_line = dist_points_3D(avg_point, line[0], line[1])
+                if (dist_to_line < closest_dist):
+                    closest_dist = dist_to_line
             
                 
     return segments_bins
@@ -673,7 +674,7 @@ def init_constants():
     LIDAR_RANGE = 32 # Max range of the LIDAR # 100 # in metres
     DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-    BIN_SIZE = 0.1 # The length of a bin (in metres) # 1
+    BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
     NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 
     T_D_GROUND = 0.1 # Maximum distance between point and line to be considered part of ground plane. # 2
