@@ -92,50 +92,6 @@ def line_to_end_points(line, segment_idx):
 
 # Conservative approach implemented using T_D_MAX parameter
 # Modifies input
-def label_points_2(segments, ground_lines):
-    # Assuming multiple lines can be in one segment
-    # Identifying closest line for each point
-    for i in range(NUM_SEGMENTS):
-        for j in range(len(segments[i])): 
-            point = segments[i][j]
-            is_ground = False
-            num_lines = len(ground_lines[i])
-            seg_idx = i
-            # If there is no ground line in current segment, find the closest one
-            if num_lines == 0:
-                left_counter = i-1
-                right_counter = i+1
-                left_idx = (left_counter) % NUM_SEGMENTS
-                right_idx = (right_counter) % NUM_SEGMENTS
-                while left_idx != right_idx:
-                    #print("i:", i, "left:", left_idx, "right:", right_idx)
-                    if len(ground_lines[left_idx]) > 0:
-                        seg_idx = left_idx
-                        break
-                    elif len(ground_lines[right_idx]) > 0:
-                        seg_idx = right_idx
-                        break
-                    left_counter -= 1
-                    right_counter += 1
-                    left_idx = (left_counter) % NUM_SEGMENTS
-                    right_idx = (right_counter) % NUM_SEGMENTS
-                if left_idx == right_idx:
-                    raise AssertionError("No ground lines found")
-            line = line_to_end_points(ground_lines[seg_idx][0], seg_idx)
-            closest_dist = dist_points_3D(point, line[0], line[1])
-            for k in range(1, num_lines):
-                line = ground_lines[seg_idx][k]
-                dist_to_line = dist_points_3D(point, line[0], line[1])
-                if (dist_to_line < closest_dist):
-                    closest_dist = dist_to_line
-            dynamic_T_D_GROUND = (BIN_SIZE*(get_bin(point[0], point[1])))*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
-            if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
-                is_ground = True
-            segments[i][j].append(is_ground)
-    return segments
-
-# Conservative approach implemented using T_D_MAX parameter
-# Modifies input
 def label_points_3(segments, ground_lines):
     # Assuming multiple lines can be in one segment
     # Identifying closest line for each point
@@ -233,6 +189,7 @@ def label_points_4(segments_bins, ground_lines):
     return segments_bins
 
 # Modifies input
+# Conservative approach implemented using T_D_MAX parameter
 def label_points_5(segments_bins, ground_lines):
     for i in range(NUM_SEGMENTS):
         num_lines = len(ground_lines[i])
