@@ -14,7 +14,7 @@ x-volumes_local: &volumes_local
         - ../src:/home/${USERNAME}/driverless_ws/src
         - ../datasets:/home/${USERNAME}/datasets
         # see note below for /dev
-        - /dev:/dev
+        - /dev/shm:/dev/shm
         # Mount in dev to get access to places below. Can't do indiviaul mounts
         # as not guaranteed to exist, so will then end up creating garbage 
         # folders on host.
