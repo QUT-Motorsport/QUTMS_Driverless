@@ -12,5 +12,5 @@ test_data2 = [[7.770136107865255e-07, -2.0462563037872314, -0.5482915639877319],
 import time
 
 start_time = time.time()
-gpe.lidar_main(test_data, False, False, False, "./datasets/figures")
+gpe.lidar_main(test_data, False, False, "./datasets/figures")
 print("\nTotal Time:", time.time() - start_time)
