@@ -153,6 +153,20 @@ def dist_points_3D(x_0, x_1, x_2):
     distance = numer/denom
     return distance
 
+# https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+def dist_points_3D_2(x_0, p_1, p_2):
+    p_1_dist = [x_0[0] - p_1[0], x_0[1] - p_1[1], x_0[2] - p_1[2]]
+    p_2_dist = [x_0[0] - p_2[0], x_0[1] - p_2[1], x_0[2] - p_2[2]]
+    
+    dist_cross = [p_1_dist[1]*p_2_dist[2] - p_2_dist[1]*p_1_dist[2], -(p_1_dist[0]*p_2_dist[2] - p_2_dist[0]*p_1_dist[2]), p_1_dist[0]*p_2_dist[1] - p_2_dist[0]*p_1_dist[1]]
+    dist_norm = math.sqrt(dist_cross[0]**2 + dist_cross[1]**2 + dist_cross[2]**2)
+
+    p_diff = [p_2[0] - p_1[0], p_2[1] - p_1[1], p_2[2] - p_1[2]]
+    p_norm = math.sqrt(p_diff[0]**2 + p_diff[1]**2 + p_diff[2]**2)
+    
+    distance = dist_norm / p_norm
+    return distance
+
 def line_to_end_points(line, segment_idx):
     start = line[2] # First point in line
     end = line[3] # Last point in line
@@ -163,6 +177,21 @@ def line_to_end_points(line, segment_idx):
     x_1 = [x[0], y[0], z[0]]
     x_2 = [x[1], y[1], z[1]]
     return [x_1, x_2]
+
+def line_to_end_points_2(line, segment_idx):
+    start = line[2] # First point in line
+    end = line[3] # Last point in line
+    
+    x_1 = start[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    x_2 = end[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    
+    y_1 = start[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    y_2 = end[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    
+    p_1 = [x_1, y_1, start[1]]
+    p_2 = [x_2, y_2, end[1]]
+    
+    return [p_1, p_2]
 
 # Conservative approach implemented using T_D_MAX parameter
 def label_points(segments, ground_lines):
@@ -353,6 +382,100 @@ def label_points_4(segments_bins, ground_lines):
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
 
+# Modifies input
+def label_points_5(segments_bins, ground_lines):
+    for i in range(NUM_SEGMENTS):
+        num_lines = len(ground_lines[i])
+        seg_idx = i
+        # If there is no ground line in current segment, find the closest one
+        if num_lines == 0:
+            left_counter = i-1
+            right_counter = i+1
+            left_idx = (left_counter) % NUM_SEGMENTS
+            right_idx = (right_counter) % NUM_SEGMENTS
+            while left_idx != right_idx:
+                #print("i:", i, "left:", left_idx, "right:", right_idx)
+                if len(ground_lines[left_idx]) > 0:
+                    seg_idx = left_idx
+                    break
+                elif len(ground_lines[right_idx]) > 0:
+                    seg_idx = right_idx
+                    break
+                left_counter -= 1
+                right_counter += 1
+                left_idx = (left_counter) % NUM_SEGMENTS
+                right_idx = (right_counter) % NUM_SEGMENTS
+            if left_idx == right_idx:
+                raise AssertionError("No ground lines found")
+        ground_line = ground_lines[seg_idx][0]
+        for j in range(NUM_BINS):
+            for k in range(len(segments_bins[i][j])):
+                point = segments_bins[i][j][k]
+                is_ground = False
+                line_height = ground_line[0] * (j * BIN_SIZE) + ground_line[1]
+                if point[2] < line_height + 0.08: # Make this a constant
+                    line = line_to_end_points_2(ground_line, seg_idx)
+                    closest_dist = dist_points_3D_2(point, line[0], line[1])
+                    for m in range(1, num_lines):
+                        line = ground_lines[seg_idx][m]
+                        dist_to_line = dist_points_3D(point, line[0], line[1])
+                        if (dist_to_line < closest_dist):
+                            closest_dist = dist_to_line
+                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
+                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
+                        is_ground = True
+                segments_bins[i][j][k].append(is_ground)
+    return segments_bins
+
+# Modifies input
+def label_points_6(segments_bins, ground_lines):
+    for i in range(NUM_SEGMENTS):
+        num_lines = len(ground_lines[i])
+        seg_idx = i
+        # If there is no ground line in current segment, find the closest one:
+        if num_lines == 0:
+            left_counter = i-1
+            right_counter = i+1
+            left_idx = (left_counter) % NUM_SEGMENTS
+            right_idx = (right_counter) % NUM_SEGMENTS
+            while left_idx != right_idx:
+                if len(ground_lines[left_idx]) > 0:
+                    seg_idx = left_idx
+                    break
+                elif len(ground_lines[right_idx]) > 0:
+                    seg_idx = right_idx
+                    break
+                left_counter -= 1
+                right_counter += 1
+                left_idx = (left_counter) % NUM_SEGMENTS
+                right_idx = (right_counter) % NUM_SEGMENTS
+            if left_idx == right_idx:
+                raise AssertionError("No ground lines found")
+        ground_line = ground_lines[seg_idx][0]
+        
+        
+        
+        for j in range(NUM_BINS):
+            avg_point = [0, 0, 0]
+            is_ground = False
+            for k in range(len(segments_bins[i][j])):
+                avg_point[0] += segments_bins[i][j][k][0]
+                avg_point[1] += segments_bins[i][j][k][1]
+                avg_point[2] += segments_bins[i][j][k][2]
+                segments_bins[i][j][k].append(is_ground)
+
+            line = line_to_end_points_2(ground_line, seg_idx)
+            closest_dist = dist_points_3D_2(avg_point, line[0], line[1])
+            
+            # for k in range(1, num_lines):
+            #     line = ground_lines[seg_idx][k]
+            #     dist_to_line = dist_points_3D(avg_point, line[0], line[1])
+            #     if (dist_to_line < closest_dist):
+            #         closest_dist = dist_to_line
+            
+                
+    return segments_bins
+
 # Conservative approach implemented using T_D_MAX parameter
 # Modifies input
 def label_points_2_old(segments, ground_lines):
@@ -506,7 +629,7 @@ def get_ground_plane(point_cloud):
     #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     start_time = time.time()
-    labelled_points = label_points_4(segments_bins, ground_plane)
+    labelled_points = label_points_5(segments_bins, ground_plane)
     print("label_points", time.time() - start_time)
 
     if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
@@ -548,9 +671,9 @@ def init_constants():
 
     # Constants
     LIDAR_RANGE = 32 # Max range of the LIDAR # 100 # in metres
-    DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 45 deg
+    DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-    BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
+    BIN_SIZE = 0.1 # The length of a bin (in metres) # 1
     NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 
     T_D_GROUND = 0.1 # Maximum distance between point and line to be considered part of ground plane. # 2
@@ -637,3 +760,7 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
 # 7. T_D_PREV has been updated to a dynamic mathematical relation that increases
 #    as points get further from the origin. HOWEVER, T_D_PREV is used in
 #    ground_plane_estimation, not here anymore. 
+# 8. Implement logging
+# 9. Consider removing completly empty segments at the start and see if that works!!!
+#    I might still be treating this like I have a full circle of vision when really
+#    It would only be 180 degrees
