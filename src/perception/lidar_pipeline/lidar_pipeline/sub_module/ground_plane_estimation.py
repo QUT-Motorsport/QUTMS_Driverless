@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Line Fitting
-from . import line_extraction
+import line_extraction
 
 # Point Cloud Clustering
-from . import DBSCAN
+import DBSCAN
 
 # Visualiser
-from . import visualiser as vis
+import visualiser as vis
 
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
@@ -31,7 +31,7 @@ def points_to_seg_bin(point_cloud):
     return segments_bins
 
 # Does not modify input array
-def approximate_2D_6(segments_bins):
+def approximate_2D(segments_bins):
     segments_approx = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(NUM_SEGMENTS):
         for j in range(NUM_BINS):
@@ -59,20 +59,6 @@ def get_bin(x, y):
         bin_index = -1
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
-
-# Modifies input array
-def approximate_2D_5(segments_bins):
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                point = segments_bins[i][j][k] # [x, y, z]
-                point_prime = [math.sqrt(point[0]**2 + point[1]**2), point[2]]
-                segments_bins[i][j][k] = point_prime
-            segments_bins[i][j].sort(reverse=True)
-            # Prototype points
-            if len(segments_bins[i][j]) > 0:
-                segments_bins[i][j] = segments_bins[i][j][0]
-    return segments_bins
 
 # Reduces all points in a bin to a single prototype point
 def prototype_points(segments_bins_2D):
@@ -652,7 +638,7 @@ def get_ground_plane(point_cloud):
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     start_time = time.time()
-    segments_bins_prototype = approximate_2D_6(segments_bins)
+    segments_bins_prototype = approximate_2D(segments_bins)
     print("approximate_2D", time.time() - start_time)
 
     start_time = time.time()
