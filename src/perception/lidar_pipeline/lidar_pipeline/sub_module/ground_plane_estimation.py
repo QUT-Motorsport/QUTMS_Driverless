@@ -60,36 +60,6 @@ def get_bin(x, y):
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Conservative approach implemented using T_D_MAX parameter
-def label_points_old(segments, ground_lines):
-    labelled_points = copy.deepcopy(segments)
-
-    # Assuming multiple lines in one segment
-    # Identifying closest line for each point
-    for i in range(NUM_SEGMENTS):
-        num_points = len(segments[i])
-        for j in range(num_points): 
-            point = segments[i][j]
-            is_ground = False
-            closest_line = None
-            num_lines = len(ground_lines[i])
-            if num_lines > 0:
-                line = ground_lines[i][0]
-                closest_line = line
-                closest_dist = dist_points_3D_old(point, line[2], line[0], line[1])
-                for k in range(1, num_lines):
-                    line = ground_lines[i][k]
-                    dist_to_line = dist_points_3D_old(point, line[2], line[0], line[1])
-                    if (dist_to_line < closest_dist):
-                        closest_line = line
-                        closest_dist = dist_to_line
-                hacky_point = [math.sqrt(point[0]**2 + point[1]**2), point[2]] # fix this
-                point_to_line_dist = line_extraction.dist_point_line(hacky_point, closest_line[0], closest_line[1])
-                if (closest_dist < T_D_MAX and point_to_line_dist < T_D_GROUND):
-                    is_ground = True
-            labelled_points[i][j].append(is_ground)
-    return labelled_points
-
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 def dist_points_3D(x_0, x_1, x_2):
     numer = np.linalg.norm(np.cross(np.subtract(x_0, x_1), np.subtract(x_0, x_2)))
