@@ -60,17 +60,6 @@ def get_bin(x, y):
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Reduces all points in a bin to a single prototype point
-def prototype_points(segments_bins_2D):
-    segments_bins_prototype = [] 
-    for i in range(NUM_SEGMENTS):
-        segments_bins_prototype.append([])
-        for j in range(NUM_BINS):
-            segments_bins_prototype[i].append([])
-            if len(segments_bins_2D[i][j]) > 0:
-                segments_bins_prototype[i][j] = segments_bins_2D[i][j][0]
-    return segments_bins_prototype
-
 # Modifies input
 def prototype_points_2(segments_bins_2D):
     for i in range(NUM_SEGMENTS):
