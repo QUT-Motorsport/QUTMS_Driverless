@@ -6,13 +6,13 @@ import math
 import matplotlib.pyplot as plt
 
 # Line Fitting
-import line_extraction
+from . import line_extraction
 
 # Point Cloud Clustering
-import DBSCAN
+from . import DBSCAN
 
 # Visualiser
-import visualiser as vis
+from . import visualiser as vis
 
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
@@ -196,23 +196,6 @@ def non_ground_points(labelled_points):
 def get_distance(point_a, point_b):
     # Distance
     return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
-
-def object_reconstruction_2(cluster_centers, points):
-    cone_width = 0.15
-    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
-    # You might want to sort points by x coords here
-    # since that is how the clusters are sorted
-    # This may reduce overall time
-    for i in range(len(points)):
-        point = points[i]
-        for j in range(len(cluster_centers)):
-            # I'm gonna be hoping a point wont be in two clusters at the same time
-            # therefore ill break after the first match for each point
-            # Increases speed of algorithm
-            if get_distance(cluster_centers[j], point) <= cone_width:
-                reconstructed_clusters[j].append(point)
-                break;
-    return reconstructed_clusters
 
 def object_reconstruction_3(cluster_centers, segments_bins):
     cone_width = 0.15
