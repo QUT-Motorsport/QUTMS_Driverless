@@ -61,13 +61,6 @@ def get_bin(x, y):
     return math.floor(bin_index)
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-def dist_points_3D(x_0, x_1, x_2):
-    numer = np.linalg.norm(np.cross(np.subtract(x_0, x_1), np.subtract(x_0, x_2)))
-    denom = np.linalg.norm(np.subtract(x_2, x_1))
-    distance = numer/denom
-    return distance
-
-# https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 def dist_points_3D_2(x_0, p_1, p_2):
     p_1_dist = [x_0[0] - p_1[0], x_0[1] - p_1[1], x_0[2] - p_1[2]]
     p_2_dist = [x_0[0] - p_2[0], x_0[1] - p_2[1], x_0[2] - p_2[2]]
