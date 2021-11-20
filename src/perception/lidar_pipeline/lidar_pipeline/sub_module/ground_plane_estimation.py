@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Line Fitting
-import line_extraction
+from . import line_extraction
 
 # Point Cloud Clustering
-import DBSCAN
+from . import DBSCAN
 
 # Visualiser
-import visualiser as vis
+from . import visualiser as vis
 
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
