@@ -57,7 +57,7 @@ def get_bin(x, y):
         bin_index += 1
     if bin_index >= NUM_BINS:
         bin_index = -1
-        print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
+        #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
 # Modifies input array
@@ -566,6 +566,39 @@ def object_reconstruction_2(cluster_centers, points):
                 break;
     return reconstructed_clusters
 
+def object_reconstruction_3(cluster_centers, segments_bins):
+    cone_width = 0.15
+    #print(cluster_centers)
+    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
+    for i in range(NUM_SEGMENTS):
+        for j in range(NUM_BINS):
+            for k in range(len(segments_bins[i][j])):
+                point = segments_bins[i][j][k]
+                for m in range(len(cluster_centers)):
+                    if get_distance(cluster_centers[m], point) <= cone_width:
+                        reconstructed_clusters[m].append(point)
+                        break
+    return reconstructed_clusters
+
+def object_reconstruction_4(cluster_centers, segments_bins):
+    cone_width = 0.15
+    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
+    for i in range(len(cluster_centers)):
+        cluster = cluster_centers[i]
+        seg_idx = get_segment(cluster[0], cluster[1])
+        bin_idx = get_bin(cluster[0], cluster[1])
+        for j in range(seg_idx-1, (seg_idx+2) % NUM_SEGMENTS):
+            for k in range(bin_idx-1, (bin_idx+2) % NUM_BINS):
+                for m in range(len(segments_bins[j][k])):
+                    point = segments_bins[j][k][m]
+                    if get_distance(cluster, point) <= cone_width:
+                        reconstructed_clusters[i].append(point)
+                        break
+                    
+    return reconstructed_clusters
+    
+    
+
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 def cone_filter(distance):
@@ -646,7 +679,7 @@ def get_ground_plane(point_cloud):
     print("get_objects", time.time() - start_time)
 
     start_time = time.time()
-    reconstructed_clusters = object_reconstruction_2(cluster_centers, point_cloud)
+    reconstructed_clusters = object_reconstruction_4(cluster_centers, segments_bins)
     print("object_reconstruction", time.time() - start_time)
 
     if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
@@ -671,8 +704,8 @@ def init_constants():
     global T_D_MAX
 
     # Constants
-    LIDAR_RANGE = 32 # Max range of the LIDAR # 100 # in metres
-    DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 2*pi / 64 implies 64 segments
+    LIDAR_RANGE = 15 # Max range of the LIDAR # 100 # in metres
+    DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
     BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
     NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
