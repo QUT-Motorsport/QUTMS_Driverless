@@ -197,26 +197,6 @@ def get_distance(point_a, point_b):
     # Distance
     return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
 
-def object_reconstruction(cluster_centers, points):
-    cone_width = 0.15
-    reconstructed_clusters = []
-    # You might want to sort points by x coords here
-    # since that is how the clusters are sorted
-    # This may reduce overall time
-    for i in range (len(cluster_centers)):
-        reconstructed_clusters.append([])
-    for i in range(len(points)):
-        point = points[i]
-        for j in range(len(cluster_centers)):
-            cluster_center = cluster_centers[j]
-            # I'm gonna be hoping a point wont be in two clusters at the same time
-            # therefore ill break after the first match for each point
-            # Increases speed of algorithm
-            if get_distance(cluster_center, point) <= cone_width:
-                reconstructed_clusters[j].append(point)
-                break;
-    return reconstructed_clusters
-
 def object_reconstruction_2(cluster_centers, points):
     cone_width = 0.15
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
@@ -470,3 +450,10 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
 #     has definitely been resolved though.
 # 11. Review the non_ground_points function for the double flattening and see if 
 #     this can be simpler. 
+# 12. Object Reconstruction
+# # You might want to sort points by x coords here
+    # since that is how the clusters are sorted
+    # This may reduce overall time
+    # I'm gonna be hoping a point wont be in two clusters at the same time
+            # therefore ill break after the first match for each point
+            # Increases speed of algorithm
