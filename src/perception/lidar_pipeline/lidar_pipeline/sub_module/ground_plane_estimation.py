@@ -197,20 +197,6 @@ def get_distance(point_a, point_b):
     # Distance
     return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
 
-def object_reconstruction_3(cluster_centers, segments_bins):
-    cone_width = 0.15
-    #print(cluster_centers)
-    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                point = segments_bins[i][j][k]
-                for m in range(len(cluster_centers)):
-                    if get_distance(cluster_centers[m], point) <= cone_width:
-                        reconstructed_clusters[m].append(point)
-                        break
-    return reconstructed_clusters
-
 def object_reconstruction_4(cluster_centers, segments_bins):
     cone_width = 0.15
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
