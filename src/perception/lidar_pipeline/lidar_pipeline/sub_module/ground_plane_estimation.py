@@ -1,8 +1,6 @@
 # Modules
 import time
 import math
-import copy
-import numpy as np
 
 # Plotting Data
 import matplotlib.pyplot as plt
@@ -187,16 +185,6 @@ def label_points_6(segments_bins, ground_lines):
     return segments_bins
 
 def non_ground_points(labelled_points):
-    # Flatten parent array (remove segements)
-    labelled_points = [points for sublist in labelled_points for points in sublist]
-    object_points = []
-    for i in range(len(labelled_points)):
-        point = labelled_points[i]
-        if point[3] == False:
-            object_points.append([point[0], point[1], point[2]])
-    return object_points
-
-def non_ground_points_2(labelled_points):
     # Flatten parent array (remove bins)
     labelled_points = [points for sublist in labelled_points for points in sublist]
     # Flatten parent array (remove segements)
@@ -349,7 +337,7 @@ def get_ground_plane(point_cloud):
     if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
     start_time = time.time()
-    object_points = non_ground_points_2(labelled_points)
+    object_points = non_ground_points(labelled_points)
     print("non_ground_points", time.time() - start_time)
 
     if VISUALISE: vis.plot_grid_2D(object_points)
@@ -478,3 +466,7 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
 # 9. Consider removing completly empty segments at the start and see if that works!!!
 #    I might still be treating this like I have a full circle of vision when really
 #    It would only be 180 degrees
+# 10. Investigate potential 'hacky point fix' in label_points function. I think this
+#     has definitely been resolved though.
+# 11. Review the non_ground_points function for the double flattening and see if 
+#     this can be simpler. 
