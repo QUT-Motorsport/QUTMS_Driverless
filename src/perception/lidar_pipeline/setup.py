@@ -14,7 +14,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='QUT Motorsport',
+    maintainer='Liam Ferrante, Alastair Bradford',
     maintainer_email='qutmotorsport.team@gmail.com',
     description='LiDAR analysis in python',
     license='MIT',
