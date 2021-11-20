@@ -60,29 +60,6 @@ def get_bin(x, y):
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Not sure if this is working correctly
-# Should compare 3D distance between points and start of line point
-def dist_points_3D_old(x1, x2, m, b):
-    x2_z = m*x2[0] + b
-    distance = math.sqrt((x2[0] - x1[0])**2 + (x2[1] - x1[1])**2 + (x2_z - x1[2])**2)
-    return distance
-
-# distance from point to line in 3D space
-# def point_line_dist_3D():
-#    pass
-
-# might need to investigate line extraction distance from point to line, making large values.
-
-# m
-# b
-# first point
-# last point
-# num points
-
-# Can there be multiple lines PER segment?? I still don't know and this will
-# directly affect how this function is written. 
-# But assuming that there is multiple lines ...
-
 # Conservative approach implemented using T_D_MAX parameter
 def label_points_old(segments, ground_lines):
     labelled_points = copy.deepcopy(segments)
