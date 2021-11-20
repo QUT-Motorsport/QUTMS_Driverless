@@ -214,8 +214,6 @@ def object_reconstruction_4(cluster_centers, segments_bins):
                     
     return reconstructed_clusters
     
-    
-
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 def cone_filter(distance):
@@ -251,16 +249,6 @@ def get_cones(reconstructed_clusters):
 
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
-    
-    # start_time = time.time()
-    # segments = points_to_segment_2(point_cloud)
-    # print("points_to_segment", time.time() - start_time)
-
-    # if VISUALISE: vis.plot_segments(segments)
-
-    # start_time = time.time()
-    # segments_bins = points_to_bins_2(segments)
-    # print("points_to_bins", time.time() - start_time)
     
     start_time = time.time()
     segments_bins = points_to_seg_bin(point_cloud)
@@ -360,8 +348,6 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
     print("INIT:", time.time() - start_time)
     cones = get_ground_plane(point_cloud)
     return cones
-
-#lidar_main(test_data, True, True, False)
 
 # Notes
 #   - Explore Python threading for this entire process
