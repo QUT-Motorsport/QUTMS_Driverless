@@ -60,14 +60,6 @@ def get_bin(x, y):
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
-# Modifies input
-def prototype_points_2(segments_bins_2D):
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            if len(segments_bins_2D[i][j]) > 0:
-                segments_bins_2D[i][j] = segments_bins_2D[i][j][0]
-    return segments_bins_2D
-
 # Not sure if this is working correctly
 # Should compare 3D distance between points and start of line point
 def dist_points_3D_old(x1, x2, m, b):
