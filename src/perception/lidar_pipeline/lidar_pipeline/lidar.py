@@ -24,7 +24,7 @@ class LidarProcessing(Node):
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
             '/fsds/lidar/Lidar1', # used for complex ground removal
-            # '/fsds/lidar/Lidar2', # used for simple single layer lidar
+            # '/velodyne_points', 
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
@@ -52,7 +52,7 @@ class LidarProcessing(Node):
         start = time.time()
         # Convert the list of floats into a list of xyz coordinates
         pcl_array = numpy.array(list(read_points(pcl_msg)))
-        # print('points:', pcl_array)
+        print('points:', pcl_array)
 
         # pcl_list = pcl_array.tolist()
         # textfile = open("/home/developer/datasets/16k_points.txt", "w")
@@ -60,7 +60,7 @@ class LidarProcessing(Node):
         # textfile.close()
 
         # calls first module from ground estimation algorithm
-        self.cones = lidar_main(pcl_array.tolist(), False, False, False, "/home/developer/datasets/figures") 
+        # self.cones = lidar_main(pcl_array.tolist(), False, False, "/home/developer/datasets/figures") 
         # print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
