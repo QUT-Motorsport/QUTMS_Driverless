@@ -186,35 +186,6 @@ def label_points_6(segments_bins, ground_lines):
                 
     return segments_bins
 
-# Conservative approach implemented using T_D_MAX parameter
-# Modifies input
-def label_points_2_old(segments, ground_lines):
-    # Assuming multiple lines in one segment
-    # Identifying closest line for each point
-    for i in range(NUM_SEGMENTS):
-        # For every point in each segment. Perhaps make an array of constants of point counts?
-        for j in range(len(segments[i])):
-            point = segments[i][j]
-            is_ground = False
-            closest_line = None
-            num_lines = len(ground_lines[i])
-            if num_lines > 0:
-                line = ground_lines[i][0]
-                closest_line = line
-                closest_dist = dist_points_3D(point, line[2], line[0], line[1])
-                for k in range(1, num_lines):
-                    line = ground_lines[i][k]
-                    dist_to_line = dist_points_3D(point, line[2], line[0], line[1])
-                    if (dist_to_line < closest_dist):
-                        closest_line = line
-                        closest_dist = dist_to_line
-                hacky_point = [math.sqrt(point[0]**2 + point[1]**2), point[2]] # fix this
-                point_to_line_dist = line_extraction.dist_point_line(hacky_point, closest_line[0], closest_line[1])
-                if (closest_dist < T_D_MAX and point_to_line_dist < T_D_GROUND):
-                    is_ground = True
-            segments[i][j].append(is_ground)
-    return segments
-
 def non_ground_points(labelled_points):
     # Flatten parent array (remove segements)
     labelled_points = [points for sublist in labelled_points for points in sublist]
