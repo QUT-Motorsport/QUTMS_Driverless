@@ -61,7 +61,7 @@ def get_bin(x, y):
     return math.floor(bin_index)
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-def dist_points_3D_2(x_0, p_1, p_2):
+def dist_points_3D(x_0, p_1, p_2):
     p_1_dist = [x_0[0] - p_1[0], x_0[1] - p_1[1], x_0[2] - p_1[2]]
     p_2_dist = [x_0[0] - p_2[0], x_0[1] - p_2[1], x_0[2] - p_2[2]]
     
@@ -73,17 +73,6 @@ def dist_points_3D_2(x_0, p_1, p_2):
     
     distance = dist_norm / p_norm
     return distance
-
-def line_to_end_points(line, segment_idx):
-    start = line[2] # First point in line
-    end = line[3] # Last point in line
-    r = np.linspace(start[0], end[0], 2)
-    z = line[0] * r + line[1]
-    x = r * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
-    y = r * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
-    x_1 = [x[0], y[0], z[0]]
-    x_2 = [x[1], y[1], z[1]]
-    return [x_1, x_2]
 
 def line_to_end_points_2(line, segment_idx):
     start = line[2] # First point in line
@@ -322,7 +311,7 @@ def label_points_5(segments_bins, ground_lines):
                 line_height = ground_line[0] * (j * BIN_SIZE) + ground_line[1]
                 if point[2] < line_height + 0.08: # Make this a constant
                     line = line_to_end_points_2(ground_line, seg_idx)
-                    closest_dist = dist_points_3D_2(point, line[0], line[1])
+                    closest_dist = dist_points_3D(point, line[0], line[1])
                     for m in range(1, num_lines):
                         line = ground_lines[seg_idx][m]
                         dist_to_line = dist_points_3D(point, line[0], line[1])
@@ -373,7 +362,7 @@ def label_points_6(segments_bins, ground_lines):
                 segments_bins[i][j][k].append(is_ground)
 
             line = line_to_end_points_2(ground_line, seg_idx)
-            closest_dist = dist_points_3D_2(avg_point, line[0], line[1])
+            closest_dist = dist_points_3D(avg_point, line[0], line[1])
             
             for k in range(1, num_lines):
                 line = ground_lines[seg_idx][k]
