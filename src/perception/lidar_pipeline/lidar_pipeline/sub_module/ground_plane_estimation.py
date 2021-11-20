@@ -57,7 +57,7 @@ def get_bin(x, y):
         bin_index += 1
     if bin_index >= NUM_BINS:
         bin_index = -1
-        print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
+        # print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
 # Modifies input array
@@ -671,7 +671,7 @@ def init_constants():
     global T_D_MAX
 
     # Constants
-    LIDAR_RANGE = 32 # Max range of the LIDAR # 100 # in metres
+    LIDAR_RANGE = 15 # Max range of the LIDAR # 100 # in metres
     DELTA_ALPHA = 2*math.pi / 64 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
     BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
