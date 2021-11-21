@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
 
 import cv2 # OpenCV library
-import numpy as np
+import time
 
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 
@@ -47,13 +47,41 @@ class Depth_Processing(Node):
         self.display = True
         self.bounding_box_frame = list()
 
+        self.count = 0
+
 
     # callback function for camera image processing
     def stereo_callback(self, cam_msg):
         # get image
         raw_frame = self.br.imgmsg_to_cv2(cam_msg)
-        self.found_cones, self.bounding_box_frame = cam_main(raw_frame)
+        self.found_cones, self.bounding_box_frame, left_frame = cam_main(raw_frame)
 
+        h, w, _ = left_frame.shape
+
+        if self.count % 30 == 0:
+            file_name = "/home/developer/datasets/annotation/annotate_" + str(self.count) + ".txt"
+            img_name = "/home/developer/datasets/annotation/annotate_" + str(self.count) + ".png"
+            check_name = "/home/developer/datasets/annotation/check_" + str(self.count) + ".png"
+            textfile = open(file_name, "w")
+
+            for cone in self.found_cones:
+                x_norm = cone[2] / w
+                y_norm = cone[3] / h
+                w_norm = cone[4] / w
+                h_norm = cone[5] / h
+                coords = "0 " + str(x_norm) + " " + str(y_norm) + " " + str(w_norm) + " " + str(h_norm) + "\n"
+                textfile.write(coords)
+                print(coords)
+            
+            textfile.close()
+
+            cv2.imwrite(img_name, left_frame)
+            cv2.imwrite(check_name, self.bounding_box_frame)
+            cv2.imshow('left', left_frame)
+            cv2.waitKey(1)
+
+        self.count += 1
+            
 
     def disp_callback(self, disp_msg):
         disp_img = disp_msg.image # disparity image of floats

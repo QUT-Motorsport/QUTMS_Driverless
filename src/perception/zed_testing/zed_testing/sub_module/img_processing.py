@@ -4,7 +4,7 @@ import numpy as np
 
 # HSV limits
 orange_low = np.array([0, 125, 80])
-orange_high = np.array([15, 255, 255])
+orange_high = np.array([20, 255, 255])
 
 # used for removing noise via erode/dilate
 kernel = np.ones((3, 3), np.uint8)
@@ -59,7 +59,7 @@ def bounds(bounding_box_frame, cones, mask):
                 (0, 255, 0), 1) # colour and thickness of box (pixels)
 
             # append object properties to array
-            cones.append([x_centroid, y_centroid, left_edge, top_edge])
+            cones.append([x_centroid, y_centroid, left_edge, top_edge, width, height])
 
     return [bounding_box_frame, cones] # return bounds for each object + drawn-on frame
 
@@ -71,7 +71,7 @@ def cam_main(frame):
     left_frame = frame[0:h, 0:int(w/2-1)]
     right_frame = frame[0:h, int(w/2):w]
 
-    bounding_box_frame = left_frame # frame to display on
+    bounding_box_frame = np.copy(left_frame) # frame to display on
 
     # convert to hsv
     current_hsv = cv2.cvtColor(left_frame, cv2.COLOR_BGR2HSV)
@@ -97,4 +97,4 @@ def cam_main(frame):
     #         cv2.FONT_HERSHEY_SIMPLEX, 0.4, # font, font size
     #         (0, 255, 0), 1) # red font colour, thickness 1
 
-    return [cones, bounding_box_frame]
+    return [cones, bounding_box_frame, left_frame]
