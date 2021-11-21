@@ -1,7 +1,6 @@
 # TO run this script, enter a frame path as cmd line arg: python3 color_thresholder_app.py frame01.png
 import cv2
 import numpy as np
-import sys
 
 def nothing(x):
     pass

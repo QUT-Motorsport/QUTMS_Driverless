@@ -14,9 +14,11 @@ from . import DBSCAN
 # Visualiser
 from . import visualiser as vis
 
+
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
+
 
 def points_to_seg_bin(point_cloud):
     segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
@@ -27,6 +29,7 @@ def points_to_seg_bin(point_cloud):
             seg_idx = get_segment(point[0], point[1])
             segments_bins[seg_idx][bin_idx].append(point)
     return segments_bins
+
 
 # Does not modify input array
 def approximate_2D(segments_bins):
@@ -47,6 +50,7 @@ def approximate_2D(segments_bins):
 def in_bin(x, y, j):
     return (j*BIN_SIZE <= math.sqrt((x**2)+(y**2)) <= (j+1)*BIN_SIZE)
 
+
 # Returns the index to a bin that a point (x, y) maps to 
 def get_bin(x, y):
     norm = math.sqrt((x**2)+(y**2))
@@ -57,6 +61,7 @@ def get_bin(x, y):
         bin_index = -1
         #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
+
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 def dist_points_3D(x_0, p_1, p_2):
@@ -71,6 +76,7 @@ def dist_points_3D(x_0, p_1, p_2):
     
     distance = dist_norm / p_norm
     return distance
+
 
 # Returns the start and end points (x, y, z) of a line
 def line_to_end_points(line, segment_idx):
@@ -87,6 +93,7 @@ def line_to_end_points(line, segment_idx):
     p_2 = [x_2, y_2, end[1]]
     
     return [p_1, p_2]
+
 
 # Modifies input
 # Conservative approach implemented using T_D_MAX parameter
@@ -134,6 +141,7 @@ def label_points_5(segments_bins, ground_lines):
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
 
+
 # Modifies input
 def label_points_6(segments_bins, ground_lines):
     for i in range(NUM_SEGMENTS):
@@ -159,9 +167,7 @@ def label_points_6(segments_bins, ground_lines):
             if left_idx == right_idx:
                 raise AssertionError("No ground lines found")
         ground_line = ground_lines[seg_idx][0]
-        
-        
-        
+                
         for j in range(NUM_BINS):
             avg_point = [0, 0, 0]
             is_ground = False
@@ -180,9 +186,8 @@ def label_points_6(segments_bins, ground_lines):
                 dist_to_line = dist_points_3D(avg_point, line[0], line[1])
                 if (dist_to_line < closest_dist):
                     closest_dist = dist_to_line
-            
-                
     return segments_bins
+
 
 def non_ground_points(labelled_points):
     # Flatten parent array (remove bins)
@@ -192,10 +197,12 @@ def non_ground_points(labelled_points):
     # Return all objects that are NOT flagged as ground
     return [point for point in labelled_points if point[3] == False]
 
+
 # Ignoring height
 def get_distance(point_a, point_b):
     # Distance
     return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
+
 
 def object_reconstruction_4(cluster_centers, segments_bins):
     cone_width = 0.15
@@ -214,6 +221,7 @@ def object_reconstruction_4(cluster_centers, segments_bins):
                     
     return reconstructed_clusters
     
+
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 def cone_filter(distance):
@@ -223,6 +231,7 @@ def cone_filter(distance):
     vertical_res = 2 * (math.pi / 180) # 2 degrees in between each point
     exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
     return exp_point_count
+
 
 def get_cones(reconstructed_clusters):
     cones = []
@@ -246,6 +255,7 @@ def get_cones(reconstructed_clusters):
             else:
                 cones.append([x_mean, y_mean]) # Remove when real-er data
     return cones
+
 
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
@@ -299,6 +309,7 @@ def get_ground_plane(point_cloud):
     if VISUALISE and DISPLAY: plt.show() 
     return cones
 
+
 def init_constants():
     global LIDAR_RANGE
     global DELTA_ALPHA
@@ -322,6 +333,7 @@ def init_constants():
     
     if (math.pi % DELTA_ALPHA != 0):
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
+
 
 def lidar_main(point_cloud, _visualise, _display, _figures_dir):
     start_time = time.time()

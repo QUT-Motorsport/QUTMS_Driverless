@@ -57,12 +57,7 @@ class YOLODetection(Node):
 
 
     def cam_callback(self, msg):
-        try:
-            #original = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-
-        except CvBridgeError as e:
-            print(e)
+        frame = self.bridge.imgmsg_to_cv2(msg)
 
         h, w, _ = frame.shape
         cropped = frame[int(h/2):int(h*3/4), 0:w]

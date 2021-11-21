@@ -12,10 +12,12 @@ import time
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .sub_module.read_pcl import read_points
+from .sub_module.read_pcl import *
 # helper math function
 from .sub_module.ground_plane_estimation import lidar_main
 
+LIDAR_NODE = '/fsds/lidar/Lidar1'
+# LIDAR_NODE = '/velodyne_points'
 
 class LidarProcessing(Node):
     def __init__(self):
@@ -23,12 +25,16 @@ class LidarProcessing(Node):
         ## creates subscriber to 'Lidar2' with type PointCloud2 that sends data to lidar_callback
         self.pcl_subscription_ = self.create_subscription(
             PointCloud2,
-            '/fsds/lidar/Lidar1', # used for complex ground removal
-            # '/velodyne_points', 
+            LIDAR_NODE,
             self.pcl_callback,
             10)
         self.pcl_subscription_  # prevent unused variable warning
         self.cones = list()
+
+        if LIDAR_NODE == '/fsds/lidar/Lidar1':
+            print("LiDAR Processing for FSDS")
+        elif LIDAR_NODE == '/velodyne_points':
+            print("LiDAR Processing for Velodyne")
 
         ## creates publisher to 'lidar_output' with type ConeScan
         self.scan_publisher_ = self.create_publisher(
@@ -51,8 +57,18 @@ class LidarProcessing(Node):
         
         start = time.time()
         # Convert the list of floats into a list of xyz coordinates
-        pcl_array = numpy.array(list(read_points(pcl_msg)))
-        print('points:', pcl_array)
+
+        pcl_array = read_points_list(pcl_msg)
+        pcl_list = list()
+        for point in pcl_array:
+            if LIDAR_NODE == '/fsds/lidar/Lidar1':
+                pcl_list.append([point[0], point[1], point[2]])
+            elif LIDAR_NODE == '/velodyne_points':
+                pcl_list.append([point[0], point[1], point[2], point[3]])
+
+        print("convert time: ", time.time()-start)
+
+        pcl_list = numpy.array(list(read_points(pcl_msg)))
 
         # pcl_list = pcl_array.tolist()
         # textfile = open("/home/developer/datasets/16k_points.txt", "w")
@@ -60,15 +76,10 @@ class LidarProcessing(Node):
         # textfile.close()
 
         # calls first module from ground estimation algorithm
-        # self.cones = lidar_main(pcl_array.tolist(), False, False, "/home/developer/datasets/figures") 
-        # print('cones:', self.cones)
+        self.cones = lidar_main(pcl_list.tolist(), False, False, "/home/developer/datasets/figures") 
+        print('cones:', self.cones)
 
         print("total time: ", time.time()-start)
-
-        # finds cone locations for single layer lidar
-        # self.cones = find_cones(pcl_array, self.max_range_cutoff, self.distance_cutoff)
-
-        # time.sleep(15)
 
 
     def publisher(self):
