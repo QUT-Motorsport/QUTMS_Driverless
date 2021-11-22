@@ -102,16 +102,19 @@ services:
         <<: *network
         command: /home/${USERNAME}/rosboard/run
 
-    jetson:
+    jetson_zed:
         build:
             context: ../
-            dockerfile: ./src/jetson/Dockerfile
+            dockerfile: ./src/jetson/Dockerfile.ZED
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
         <<: *env-file
-        <<: *user
-        <<: *volumes_local
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+            # mount in X11 stuff for display
+            - /tmp/.X11-unix:/tmp/.X11-unix
         <<: *devices
         <<: *network
         <<: *interactive
