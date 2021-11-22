@@ -19,7 +19,6 @@ from . import visualiser as vis
 def get_segment(x, y):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
 
-
 def points_to_seg_bin(point_cloud):
     segments_bins = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)):
@@ -131,7 +130,8 @@ def label_points_5(segments_bins, ground_lines):
                     line = line_to_end_points(ground_line, seg_idx)
                     closest_dist = dist_points_3D(point, line[0], line[1])
                     for m in range(1, num_lines):
-                        line = ground_lines[seg_idx][m]
+                        ground_line = ground_lines[seg_idx][m]
+                        line = line_to_end_points(ground_line, seg_idx)
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
@@ -232,7 +232,6 @@ def cone_filter(distance):
     exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
     return exp_point_count
 
-
 def get_cones(reconstructed_clusters):
     cones = []
     ERROR_MARGIN = 0.2 # Constant
@@ -260,53 +259,55 @@ def get_cones(reconstructed_clusters):
 def get_ground_plane(point_cloud):
     # might be able to modifiy segments directly if label points doesn't need it
     
-    start_time = time.time()
+    #start_time = time.time()
     segments_bins = points_to_seg_bin(point_cloud)
-    print("points_to_seg_bin", time.time() - start_time)
+    #print("points_to_seg_bin", time.time() - start_time)
     
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
-    start_time = time.time()
+    #start_time = time.time()
     segments_bins_prototype = approximate_2D(segments_bins)
-    print("approximate_2D", time.time() - start_time)
+    #print("approximate_2D", time.time() - start_time)
 
-    start_time = time.time()
+    #start_time = time.time()
     ground_plane = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
-    print("get_ground_plane", time.time() - start_time)
+    #print("get_ground_plane", time.time() - start_time)
 
     if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
     #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
-    start_time = time.time()
+    #start_time = time.time()
     labelled_points = label_points_5(segments_bins, ground_plane)
-    print("label_points", time.time() - start_time)
+    #print("label_points", time.time() - start_time)
 
     if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
-    start_time = time.time()
+    #start_time = time.time()
     object_points = non_ground_points(labelled_points)
-    print("non_ground_points", time.time() - start_time)
+    #print("non_ground_points", time.time() - start_time)
 
     if VISUALISE: vis.plot_grid_2D(object_points)
 
-    start_time = time.time()
+    #start_time = time.time()
     cluster_centers = DBSCAN.get_objects(object_points)
-    print("get_objects", time.time() - start_time)
+    #print("get_objects", time.time() - start_time)
 
-    start_time = time.time()
+    #start_time = time.time()
     reconstructed_clusters = object_reconstruction_4(cluster_centers, segments_bins)
-    print("object_reconstruction", time.time() - start_time)
+    #print("object_reconstruction", time.time() - start_time)
 
     if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
 
-    start_time = time.time()
+    #start_time = time.time()
     cones = get_cones(reconstructed_clusters)
-    print("get_cones", time.time() - start_time)
+    #print("get_cones", time.time() - start_time)
 
     if VISUALISE: vis.plot_cones(cones)
 
     # Could consider try except block to ensure plotting - even during failure
-    if VISUALISE and DISPLAY: plt.show() 
+    if VISUALISE and DISPLAY: plt.show()
+    
+    #print("Total Time:", time.time() - start_time)
     return cones
 
 
@@ -320,7 +321,7 @@ def init_constants():
     global T_D_MAX
 
     # Constants
-    LIDAR_RANGE = 15 # Max range of the LIDAR # 100 # in metres
+    LIDAR_RANGE = 16 # Max range of the LIDAR # 100 # in metres
     DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
     BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
@@ -352,12 +353,12 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
     #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
     # LIDAR_RANGE = math.ceil(max(values))
 
-    print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
+    #print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
 
     if VISUALISE:
         FIGURES_DIR = _figures_dir
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
-    print("INIT:", time.time() - start_time)
+    #print("INIT:", time.time() - start_time)
     cones = get_ground_plane(point_cloud)
     return cones
 
