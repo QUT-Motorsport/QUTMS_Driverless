@@ -51,7 +51,8 @@ RUN /bin/bash -c \
     apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y &&\
 	rm -rf /var/lib/apt/lists/* && \
-	colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release"
+	# extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
+	colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs"
 
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
