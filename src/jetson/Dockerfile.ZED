@@ -1,51 +1,40 @@
-FROM dustynv/ros:foxy-ros-base-l4t-r32.6.1
+ARG L4T_MINOR_VERSION=6.1
 
-# taken from: https://github.com/stereolabs/zed-docker/blob/master/3.X/jetpack_4.X/tools-devel/Dockerfile
+# ZED_SDK=3.6
+ARG ZED_SDK_MAJOR=3
+ARG ZED_SDK_MINOR=6
 
-# #https://ngc.nvidia.com/catalog/containers/nvidia:l4t-base
-# ARG L4T_MINOR_VERSION
+# JETPACK=4.6
+ARG JETPACK_MAJOR=4
+ARG JETPACK_MINOR=6
 
-# FROM nvcr.io/nvidia/l4t-base:r32.${L4T_MINOR_VERSION}
-
-# ARG L4T_MINOR_VERSION
-# ARG ZED_SDK_MAJOR
-# ARG ZED_SDK_MINOR
-# ARG JETPACK_MAJOR
-# ARG JETPACK_MINOR
-
-# #This environment variable is needed to use the streaming features on Jetson inside a container
-# ENV LOGNAME root
-# ENV DEBIAN_FRONTEND noninteractive
-# RUN apt-get update -y && apt-get install --no-install-recommends lsb-release wget less udev sudo apt-transport-https -y && \
-#     echo "# R32 (release), REVISION: ${L4T_MINOR_VERSION}" > /etc/nv_tegra_release ; \
-#     wget -q --no-check-certificate -O ZED_SDK_Linux_JP.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/jp${JETPACK_MAJOR}${JETPACK_MINOR}/jetsons && \
-#     chmod +x ZED_SDK_Linux_JP.run ; ./ZED_SDK_Linux_JP.run silent && \
-#     rm -rf /usr/local/zed/resources/* \
-#     rm -rf ZED_SDK_Linux_JP.run && \
-#     rm -rf /var/lib/apt/lists/*
-
-# #This symbolic link is needed to use the streaming features on Jetson inside a container
-# RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so
-
-# WORKDIR /usr/local/zed
+FROM dustynv/ros:foxy-ros-base-l4t-r32.${L4T_MINOR_VERSION}
 
 
 # ==============================================================================
-#                    (BEGIN CUSTOM DOCKERFILE)
+#                           Install ZED Drivers
+# https://github.com/stereolabs/zed-docker/blob/master/3.X/jetpack_4.X/tools-devel/Dockerfile
+# ==============================================================================
+
+#This environment variable is needed to use the streaming features on Jetson inside a container
+ENV LOGNAME root
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update -y && apt-get install --no-install-recommends lsb-release wget less udev sudo apt-transport-https -y && \
+    echo "# R32 (release), REVISION: ${L4T_MINOR_VERSION}" > /etc/nv_tegra_release ; \
+    wget -q --no-check-certificate -O ZED_SDK_Linux_JP.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/jp${JETPACK_MAJOR}${JETPACK_MINOR}/jetsons && \
+    chmod +x ZED_SDK_Linux_JP.run ; ./ZED_SDK_Linux_JP.run silent && \
+    rm -rf /usr/local/zed/resources/* \
+    rm -rf ZED_SDK_Linux_JP.run && \
+    rm -rf /var/lib/apt/lists/*
+
+#This symbolic link is needed to use the streaming features on Jetson inside a container
+RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so
+
+
+# ==============================================================================
 #                      Install ZED ROS nodes
 #     Following instructions from https://www.stereolabs.com/docs/ros2/
 # ==============================================================================
-
-# STOLEN FROM: https://github.com/dusty-nv/jetson-containers/blob/master/Dockerfile.ros.foxy
-# fix broken package.xml in test_pluginlib that crops up if/when rosdep is run again
-#
-#   Error(s) in package '/opt/ros/foxy/build/pluginlib/prefix/share/test_pluginlib/package.xml':
-#   Package 'test_pluginlib' must declare at least one maintainer
-#   The package node must contain at least one "license" tag
-# RUN TEST_PLUGINLIB_PACKAGE="${ROS_ROOT}/build/pluginlib/prefix/share/test_pluginlib/package.xml" && \
-#    	sed -i '/<\/description>/a <license>BSD<\/license>' $TEST_PLUGINLIB_PACKAGE && \
-#    	sed -i '/<\/description>/a <maintainer email="michael@openrobotics.org">Michael Carroll<\/maintainer>' $TEST_PLUGINLIB_PACKAGE && \
-#    	cat $TEST_PLUGINLIB_PACKAGE
 
 WORKDIR /ros_zed_ws/src
 # POTENTIALLY USE branch=eloquent INSTEAD
