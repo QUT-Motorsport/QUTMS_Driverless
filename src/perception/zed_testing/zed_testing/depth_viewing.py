@@ -12,6 +12,7 @@ from stereo_msgs.msg import DisparityImage
 
 import cv2 # OpenCV library
 import time
+import numpy as np
 
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 
@@ -58,26 +59,33 @@ class Depth_Processing(Node):
 
         h, w, _ = left_frame.shape
 
-        if self.count % 30 == 0:
+        if self.count % 15 == 0 and self.count > 300:
             file_name = "/home/developer/datasets/annotation/annotate_" + str(self.count) + ".txt"
             img_name = "/home/developer/datasets/annotation/annotate_" + str(self.count) + ".png"
-            check_name = "/home/developer/datasets/annotation/check_" + str(self.count) + ".png"
+            check_name = "/home/developer/datasets/annotation/annotate_" + str(self.count) + "_check.png"
             textfile = open(file_name, "w")
 
+            check_img = np.copy(self.bounding_box_frame)
+
             for cone in self.found_cones:
-                x_norm = cone[2] / w
-                y_norm = cone[3] / h
+                x_norm = cone[0] / w
+                y_norm = cone[1] / h
                 w_norm = cone[4] / w
                 h_norm = cone[5] / h
                 coords = "0 " + str(x_norm) + " " + str(y_norm) + " " + str(w_norm) + " " + str(h_norm) + "\n"
                 textfile.write(coords)
-                print(coords)
-            
+                string = str(round(x_norm, 4))
+                cv2.putText(
+                    check_img, string, # frame to draw on, label to draw
+                    (cone[2], cone[3]-3), # position
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, # font, font size
+                    (0, 255, 0), 1) # red font colour, thickness 1
+
             textfile.close()
 
             cv2.imwrite(img_name, left_frame)
-            cv2.imwrite(check_name, self.bounding_box_frame)
-            cv2.imshow('left', left_frame)
+            cv2.imwrite(check_name, check_img)
+            cv2.imshow('left', check_img)
             cv2.waitKey(1)
 
         self.count += 1

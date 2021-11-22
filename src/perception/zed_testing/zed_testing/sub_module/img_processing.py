@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 
 # HSV limits
-orange_low = np.array([0, 125, 80])
-orange_high = np.array([20, 255, 255])
+orange_low = np.array([0, 100, 50])
+orange_high = np.array([15, 255, 255])
 
 # used for removing noise via erode/dilate
 kernel = np.ones((3, 3), np.uint8)

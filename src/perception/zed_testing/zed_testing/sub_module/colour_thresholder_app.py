@@ -14,7 +14,7 @@ cv2.createTrackbar("SMin", "Thresholder_App",0,255,nothing)
 cv2.createTrackbar("HMax", "Thresholder_App",0,179,nothing)
 cv2.createTrackbar("HMin", "Thresholder_App",0,179,nothing)
 
-img = cv2.imread('datasets/thresh.png')
+img = cv2.imread('datasets/annotation/annotate_0.png')
 
 scale_percent = 100 # percent of original size
 width = int(img.shape[1] * scale_percent / 100)
