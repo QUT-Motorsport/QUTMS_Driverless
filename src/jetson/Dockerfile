@@ -28,35 +28,35 @@ RUN useradd \
 #                           Override udev rules
 #             (allows ${USERNAME} user to open the ZED Camera)
 # ==============================================================================
-RUN echo '\
+RUN echo "\
 # --- begin 99-slabs.rules ---
 \# HIDAPI/libusb \n\
-SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f681", MODE="0666", OWNER=${USERNAME} \n\
-SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", MODE="0666", OWNER=${USERNAME} \n\
-SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", MODE="0666", OWNER=${USERNAME} \n\
-SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", OWNER=${USERNAME} \n\
+SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f681\", MODE=\"0666\", OWNER=${USERNAME} \n\
+SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", MODE=\"0666\", OWNER=${USERNAME} \n\
+SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", MODE=\"0666\", OWNER=${USERNAME} \n\
+SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"0483\", ATTRS{idProduct}==\"df11\", MODE=\"0666\", OWNER=${USERNAME} \n\
 \n\
 \# HIDAPI/hidraw \n\
-KERNEL=="hidraw*", ATTRS{busnum}=="1", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f681", MODE="0666", OWNER=${USERNAME} \n\
-KERNEL=="hidraw*", ATTRS{busnum}=="1", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", MODE="0666", OWNER=${USERNAME} \n\
-KERNEL=="hidraw*", ATTRS{busnum}=="1", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", MODE="0666", OWNER=${USERNAME} \n\
-KERNEL=="hidraw*", ATTRS{busnum}=="1", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", OWNER=${USERNAME} \n\
+KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f681\", MODE=\"0666\", OWNER=${USERNAME} \n\
+KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", MODE=\"0666\", OWNER=${USERNAME} \n\
+KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", MODE=\"0666\", OWNER=${USERNAME} \n\
+KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"0483\", ATTRS{idProduct}==\"df11\", MODE=\"0666\", OWNER=${USERNAME} \n\
 \n\
 \# blacklist for usb autosuspend \n\
 \# http://kernel.org/doc/Documentation/usb/power-management.txt \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f780", TEST=="power/control", ATTR{power/control}="on" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", TEST=="power/control", ATTR{power/control}="on" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", TEST=="power/control", ATTR{power/control}="on" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0424", ATTRS{idProduct}=="2512", TEST=="power/control", ATTR{power/control}="on" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f780\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"0424\", ATTRS{idProduct}==\"2512\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
 \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f780", TEST=="power/autosuspend", ATTR{power/autosuspend}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", TEST=="power/autosuspend", ATTR{power/autosuspend}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", TEST=="power/autosuspend", ATTR{power/autosuspend}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0424", ATTRS{idProduct}=="2512", TEST=="power/autosuspend", ATTR{power/autosuspend}="-1" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f780\", TEST==\"power/autosuspend\", ATTR{power/autosuspend}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", TEST==\"power/autosuspend\", ATTR{power/autosuspend}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", TEST==\"power/autosuspend\", ATTR{power/autosuspend}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"0424\", ATTRS{idProduct}==\"2512\", TEST==\"power/autosuspend\", ATTR{power/autosuspend}=\"-1\" \n\
 \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f780", TEST=="power/autosuspend_delay_ms", ATTR{power/autosuspend_delay_ms}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", TEST=="power/autosuspend_delay_ms", ATTR{power/autosuspend_delay_ms}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", TEST=="power/autosuspend_delay_ms", ATTR{power/autosuspend_delay_ms}="-1" \n\
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0424", ATTRS{idProduct}=="2512", TEST=="power/autosuspend_delay_ms", ATTR{power/autosuspend_delay_ms}="-1" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f780\", TEST==\"power/autosuspend_delay_ms\", ATTR{power/autosuspend_delay_ms}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", TEST==\"power/autosuspend_delay_ms\", ATTR{power/autosuspend_delay_ms}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", TEST==\"power/autosuspend_delay_ms\", ATTR{power/autosuspend_delay_ms}=\"-1\" \n\
+ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"0424\", ATTRS{idProduct}==\"2512\", TEST==\"power/autosuspend_delay_ms\", ATTR{power/autosuspend_delay_ms}=\"-1\" \n\
 # --- end 99-slabs.rules ---
-' > /etc/udev/rules.d/99-slabs.rules
+" > /etc/udev/rules.d/99-slabs.rules
