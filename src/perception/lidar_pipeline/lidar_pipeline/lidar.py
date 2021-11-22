@@ -64,20 +64,13 @@ class LidarProcessing(Node):
             if LIDAR_NODE == '/fsds/lidar/Lidar1':
                 pcl_list.append([point[0], point[1], point[2]])
             elif LIDAR_NODE == '/velodyne_points':
-                pcl_list.append([point[0], point[1], point[2], point[3]])
+                pcl_list.append([point[0], point[1], point[2]])
 
         #print("convert time: ", time.time()-start)
 
-        pcl_list = numpy.array(list(read_points(pcl_msg)))
-
-        # pcl_list = pcl_array.tolist()
-        # textfile = open("/home/developer/datasets/16k_points.txt", "w")
-        # textfile.write(str(pcl_list))
-        # textfile.close()
-
         # calls first module from ground estimation algorithm
-        self.cones = lidar_main(pcl_list.tolist(), False, False, "/home/developer/datasets/figures") 
-        #print('cones:', self.cones)
+        self.cones = lidar_main(pcl_list, False, False, "/home/developer/datasets/figures") 
+        print('cones:', self.cones)
 
         print("Total Time:", time.time()-start)
 
