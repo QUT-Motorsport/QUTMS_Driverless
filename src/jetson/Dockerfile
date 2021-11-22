@@ -30,20 +30,20 @@ RUN useradd \
 # ==============================================================================
 RUN echo "\
 # --- begin 99-slabs.rules ---
-# HIDAPI/libusb \n\
+# HIDAPI/libusb
 SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f681\", MODE=\"0666\", OWNER=${USERNAME} \n\
 SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", MODE=\"0666\", OWNER=${USERNAME} \n\
 SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", MODE=\"0666\", OWNER=${USERNAME} \n\
 SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"0483\", ATTRS{idProduct}==\"df11\", MODE=\"0666\", OWNER=${USERNAME} \n\
 \n\
-# HIDAPI/hidraw \n\
+# HIDAPI/hidraw
 KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f681\", MODE=\"0666\", OWNER=${USERNAME} \n\
 KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", MODE=\"0666\", OWNER=${USERNAME} \n\
 KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", MODE=\"0666\", OWNER=${USERNAME} \n\
 KERNEL==\"hidraw*\", ATTRS{busnum}==\"1\", ATTRS{idVendor}==\"0483\", ATTRS{idProduct}==\"df11\", MODE=\"0666\", OWNER=${USERNAME} \n\
 \n\
-# blacklist for usb autosuspend \n\
-# http://kernel.org/doc/Documentation/usb/power-management.txt \n\
+# blacklist for usb autosuspend
+# http://kernel.org/doc/Documentation/usb/power-management.txt
 ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f780\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
 ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f781\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
 ACTION==\"add\", SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b03\", ATTRS{idProduct}==\"f881\", TEST==\"power/control\", ATTR{power/control}=\"on\" \n\
