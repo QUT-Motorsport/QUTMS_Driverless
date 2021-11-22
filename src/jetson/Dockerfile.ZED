@@ -49,7 +49,8 @@ FROM dustynv/ros:foxy-ros-base-l4t-r32.6.1
 
 WORKDIR /ros_zed_ws/src
 # POTENTIALLY USE branch=eloquent INSTEAD
-RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
+	cd zed-ros2-wrapper && git checkout eloquent
 
 WORKDIR /ros_zed_ws
 RUN apt-get update && \
