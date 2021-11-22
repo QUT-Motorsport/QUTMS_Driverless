@@ -39,26 +39,19 @@ RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-
 #     Following instructions from https://www.stereolabs.com/docs/ros2/
 # ==============================================================================
 
+# patch a typo in image_transport package header
+RUN sed -i 's/cammera_publisher.hpp/camera_publisher.hpp' ${ROS_ROOT}/install/include/image_transport/camera_publisher.h
+
 WORKDIR /ros_zed_ws/src
 RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
-	cd zed-ros2-wrapper && git checkout eloquent
-
-# https://github.com/stereolabs/zed-ros2-wrapper#image-transport-plugins-and-compressed-topics
-RUN apt remove \
-	ros-foxy-image-transport-plugins \
-	ros-foxy-compressed-depth-image-transport \
-	ros-foxy-compressed-image-transport
-
+    git clone https://github.com/ros/diagnostics.git && \
+    git clone https://github.com/ros/xacro.git && \
+    cd /ros_zed_ws/src/diagnostics && git checkout foxy &&\
+    cd /ros_zed_ws/src/xacro && git checkout ros2
 
 WORKDIR /ros_zed_ws
-RUN /bin/bash -c \
-    "source ${ROS_ROOT}/install/setup.bash; \
-    rosdep update && \
-    apt-get update && \
-    rosdep install --from-paths src --ignore-src -r -y &&\
-	rm -rf /var/lib/apt/lists/* && \
-	# extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
-	colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs"
+# build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
+RUN colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs
 
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
