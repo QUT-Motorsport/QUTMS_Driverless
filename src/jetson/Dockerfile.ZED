@@ -105,7 +105,7 @@ RUN rm ${ROS_ROOT}/src/libyaml_vendor/CMakeLists.txt && \
 RUN cd ${ROS_ROOT} && colcon build --symlink-install
 
 # setup entrypoint
-COPY ./packages/ros_entrypoint.sh /ros_entrypoint.sh
+COPY ./src/jetson/ros_entrypoint.sh /ros_entrypoint.sh
 
 RUN sed -i \
     's/source "\/opt\/ros\/$ROS_DISTRO\/setup.bash"/source "${ROS_ROOT}\/install\/setup.bash"/g' \
