@@ -30,7 +30,7 @@ RUN useradd \
 # ==============================================================================
 RUN cat > /etc/udev/rules.d/99-slabs.rules << EOF \
 # --- begin 99-slabs.rules ---
-\# HIDAPI/libusb
+\# HIDAPI/libusb \
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f681", MODE="0666", OWNER=${USERNAME} \
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f781", MODE="0666", OWNER=${USERNAME} \
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2b03", ATTRS{idProduct}=="f881", MODE="0666", OWNER=${USERNAME} \
