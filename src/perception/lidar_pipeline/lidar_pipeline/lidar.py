@@ -66,7 +66,7 @@ class LidarProcessing(Node):
             elif LIDAR_NODE == '/velodyne_points':
                 pcl_list.append([point[0], point[1], point[2], point[3]])
 
-        print("convert time: ", time.time()-start)
+        #print("convert time: ", time.time()-start)
 
         pcl_list = numpy.array(list(read_points(pcl_msg)))
 
@@ -77,9 +77,9 @@ class LidarProcessing(Node):
 
         # calls first module from ground estimation algorithm
         self.cones = lidar_main(pcl_list.tolist(), False, False, "/home/developer/datasets/figures") 
-        print('cones:', self.cones)
+        #print('cones:', self.cones)
 
-        print("total time: ", time.time()-start)
+        print("Total Time:", time.time()-start)
 
 
     def publisher(self):
