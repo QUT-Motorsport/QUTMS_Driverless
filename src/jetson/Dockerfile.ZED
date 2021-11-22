@@ -1,5 +1,6 @@
 FROM stereolabs/zed:3.6-tools-devel-jetson-jp4.6
 
+
 # ==============================================================================
 #                 This entire docker file is basically coped from:
 # https://github.com/NVIDIA-AI-IOT/ros2_jetson/blob/main/docker/DockerFile.l4tbase.ros2.foxy
@@ -104,14 +105,23 @@ RUN rm ${ROS_ROOT}/src/libyaml_vendor/CMakeLists.txt && \
 # build
 RUN cd ${ROS_ROOT} && colcon build --symlink-install
 
+
+# ==============================================================================
+#                    (BEGIN CUSTOM DOCKERFILE)
+#                      Install ZED ROS nodes
+#     Following instructions from https://www.stereolabs.com/docs/ros2/
+# ==============================================================================
+
+WORKDIR /ros_zed_ws/src
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git
+WORKDIR /ros_zed_ws
+RUN apt-get update && \
+    rosdep update && \
+	rosdep install --from-paths src --ignore-src -r -y &&\
+	rm -rf /var/lib/apt/lists/* && \
+	colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release
+
 # setup entrypoint
-COPY ./src/jetson/ros_entrypoint.sh /ros_entrypoint.sh
-
-RUN sed -i \
-    's/source "\/opt\/ros\/$ROS_DISTRO\/setup.bash"/source "${ROS_ROOT}\/install\/setup.bash"/g' \
-    /ros_entrypoint.sh && \
-    cat /ros_entrypoint.sh
-
-RUN echo 'source ${ROS_ROOT}/install/setup.bash' >> /root/.bashrc
-
-ENTRYPOINT ["/ros_entrypoint.sh"]
+COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
+ENTRYPOINT ["/ros_zed_entrypoint.sh"]
+RUN echo "/ros_zed_ws/install/setup.bash" >> /root/.bashrc
