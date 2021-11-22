@@ -73,8 +73,8 @@ class SimpleController(Node):
 
         # accel + vel targets
         self.vel_p = 0.7
-        self.max_throttle = 0.20 # m/s^2
-        self.max_vel = 3 # m/s
+        self.max_throttle = 0.2 # m/s^2
+        self.max_vel = 1.4 # m/s
         self.target_vel = self.max_vel # initially target is max
         self.min_vel = self.max_vel / 2
         self.brake_p = 0.1
