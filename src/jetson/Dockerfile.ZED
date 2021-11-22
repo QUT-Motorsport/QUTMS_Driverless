@@ -124,18 +124,19 @@ RUN TEST_PLUGINLIB_PACKAGE="${ROS_ROOT}/build/pluginlib/prefix/share/test_plugin
    	cat $TEST_PLUGINLIB_PACKAGE
 
 WORKDIR /ros_zed_ws/src
-RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
-	git clone https://github.com/ros/diagnostics.git && \
-	git clone https://github.com/ament/ament_cmake && \
-	git clone https://github.com/ros2/rosidl_defaults && \
-	git clone https://github.com/ros2/rcutils && \
-    cd /ros_zed_ws/src/diagnostics && git checkout foxy && \
-    cd /ros_zed_ws/src/ament_cmake && git checkout foxy && \
-    cd /ros_zed_ws/src/rosidl_defaults && git checkout foxy && \
-    cd /ros_zed_ws/src/rcutils && git checkout foxy
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git
+# 	git clone https://github.com/ros/diagnostics.git && \
+# 	git clone https://github.com/ament/ament_cmake && \
+# 	git clone https://github.com/ros2/rosidl_defaults && \
+# 	git clone https://github.com/ros2/rcutils && \
+#     cd /ros_zed_ws/src/diagnostics && git checkout foxy && \
+#     cd /ros_zed_ws/src/ament_cmake && git checkout foxy && \
+#     cd /ros_zed_ws/src/rosidl_defaults && git checkout foxy && \
+#     cd /ros_zed_ws/src/rcutils && git checkout foxy
 
 WORKDIR /ros_zed_ws
-RUN apt-get update && \
+RUN source /opt/ros/foxy/install/setup.bash && \
+	apt-get update && \
     rosdep update && \
 	rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y &&\
 	rm -rf /var/lib/apt/lists/* && \
