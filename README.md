@@ -2,4 +2,4 @@
 
 ## Start Here
 
-> [https://qut-motorsport.github.io/QUTMS_Driverless/](https://qut-motorsport.github.io/QUTMS_Driverless/)
+> [QUTMS Wiki](https://github.com/QUT-Motorsport/QUTMS_Driverless/wiki)
