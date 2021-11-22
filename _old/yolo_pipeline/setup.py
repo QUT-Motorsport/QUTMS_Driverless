@@ -14,7 +14,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='QUT Motorsport',
+    maintainer='Lachlan Masson',
     maintainer_email='qutmotorsport.team@gmail.com',
     description='YOLOv5 image analysis in python',
     license='MIT',

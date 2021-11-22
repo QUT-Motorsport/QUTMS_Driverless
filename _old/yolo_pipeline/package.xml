@@ -4,7 +4,7 @@
     <name>yolo_pipeline</name>
     <version>0.0.0</version>
     <description>YOLOv5 image analysis in python</description>
-    <maintainer email="qutmotorsport.team@gmail.com">QUT Motorsport</maintainer>
+    <maintainer email="qutmotorsport.team@gmail.com">Lachlan Masson</maintainer>
     <license>MIT</license>
 
     <depend>libopencv-dev</depend>
