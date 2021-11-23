@@ -45,9 +45,7 @@ RUN sed -i 's/cammera_publisher.hpp/camera_publisher.hpp/' ${ROS_ROOT}/install/i
 WORKDIR /ros_zed_ws/src
 RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
     git clone https://github.com/ros/diagnostics.git -b foxy && \
-    git clone https://github.com/ros/xacro.git -b ros2 && \
-    git clone https://github.com/ros-perception/image_common.git -b galactic && \
-    git clone https://github.com/ros-perception/image_transport_plugins.git -b foxy-devel
+    git clone https://github.com/ros/xacro.git -b ros2
 
 WORKDIR /ros_zed_ws
 # build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
