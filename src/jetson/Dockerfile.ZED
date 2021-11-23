@@ -53,7 +53,7 @@ WORKDIR /ros_zed_ws
 # build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
 RUN /bin/bash -c \
     "source ${ROS_ROOT}/install/setup.bash; \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS='-Wl,--allow-shlib-undefined'"
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined"
 
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
