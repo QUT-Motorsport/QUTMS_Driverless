@@ -58,4 +58,4 @@ RUN /bin/bash -c \
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
 ENTRYPOINT ["/ros_zed_entrypoint.sh"]
-RUN echo "/ros_zed_ws/install/setup.bash" >> /root/.bashrc
+RUN echo "source /ros_zed_ws/install/setup.bash" >> /root/.bashrc

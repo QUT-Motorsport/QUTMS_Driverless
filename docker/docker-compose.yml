@@ -119,7 +119,7 @@ services:
         <<: *network
         <<: *interactive
         <<: *jetson-extras
-        command: bash
+        command: ros2 launch zed_wrapper zed2i.launch.py
 
     jetson_processing:
         build:
