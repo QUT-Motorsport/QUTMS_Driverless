@@ -1,0 +1,61 @@
+ARG L4T_MINOR_VERSION=6.1
+
+FROM dustynv/ros:foxy-ros-base-l4t-r32.${L4T_MINOR_VERSION}
+
+# value comes from above, see https://stackoverflow.com/a/56748289
+ARG L4T_MINOR_VERSION
+
+# ZED_SDK=3.6
+ARG ZED_SDK_MAJOR=3
+ARG ZED_SDK_MINOR=6
+
+# JETPACK=4.6
+ARG JETPACK_MAJOR=4
+ARG JETPACK_MINOR=6
+
+
+# ==============================================================================
+#                           Install ZED Drivers
+# https://github.com/stereolabs/zed-docker/blob/master/3.X/jetpack_4.X/tools-devel/Dockerfile
+# ==============================================================================
+
+#This environment variable is needed to use the streaming features on Jetson inside a container
+ENV LOGNAME root
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update -y && apt-get install --no-install-recommends lsb-release wget less udev sudo apt-transport-https -y && \
+    echo "# R32 (release), REVISION: ${L4T_MINOR_VERSION}" > /etc/nv_tegra_release ; \
+    wget -q --no-check-certificate -O ZED_SDK_Linux_JP.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/jp${JETPACK_MAJOR}${JETPACK_MINOR}/jetsons && \
+    chmod +x ZED_SDK_Linux_JP.run ; ./ZED_SDK_Linux_JP.run silent && \
+    rm -rf /usr/local/zed/resources/* \
+    rm -rf ZED_SDK_Linux_JP.run && \
+    rm -rf /var/lib/apt/lists/*
+
+#This symbolic link is needed to use the streaming features on Jetson inside a container
+RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so
+
+
+# ==============================================================================
+#                      Install ZED ROS nodes
+#     Following instructions from https://www.stereolabs.com/docs/ros2/
+# ==============================================================================
+
+# patch a typo in image_transport package header
+RUN sed -i 's/cammera_publisher.hpp/camera_publisher.hpp/' ${ROS_ROOT}/install/include/image_transport/camera_publisher.h
+
+WORKDIR /ros_zed_ws/src
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
+    git clone https://github.com/ros/diagnostics.git && \
+    git clone https://github.com/ros/xacro.git && \
+    cd /ros_zed_ws/src/diagnostics && git checkout foxy &&\
+    cd /ros_zed_ws/src/xacro && git checkout ros2
+
+WORKDIR /ros_zed_ws
+# build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
+RUN /bin/bash -c \
+    "source ${ROS_ROOT}/install/setup.bash; \
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined"
+
+# setup entrypoint
+COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
+ENTRYPOINT ["/ros_zed_entrypoint.sh"]
+RUN echo "source /ros_zed_ws/install/setup.bash" >> /root/.bashrc
