@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller = simple_zed_controller.controller:main'
+            'controller = simple_zed_controller.node_controller:main',
+            'thresholder = simple_zed_controller.node_thresholder:main',
         ],
     },
 )
