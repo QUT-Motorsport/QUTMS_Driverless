@@ -17,13 +17,13 @@ from typing import Optional
 cv_bridge = CvBridge()
 
 
-LEFT_THRESH = Threshold(
-    lower=[20, 140, 180],
+LEFT_THRESH = Threshold(  # yellow
+    lower=[20, 170, 100],
     upper=[40, 255, 255],
 )
 
-RIGHT_THRESH = Threshold(
-    lower=[110, 120, 40],
+RIGHT_THRESH = Threshold(  # blue
+    lower=[120, 160, 50],
     upper=[130, 255, 255],
 )
 
