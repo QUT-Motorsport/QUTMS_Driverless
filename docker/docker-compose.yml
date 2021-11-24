@@ -13,9 +13,10 @@ x-volumes_local: &volumes_local
         - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
         - ../src:/home/${USERNAME}/driverless_ws/src
         - ../datasets:/home/${USERNAME}/datasets
-        # Below is fix so that two foxy containers can talk to each other when using net=host
-        # see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
+        # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
+        # TODO: figure out a good way to mount in /dev/sbg so that it doesnt create an empty folder when the device isnt present
+        # - /dev/sbg:/dev/sbg
 
 x-devices: &devices
     devices:
@@ -35,6 +36,9 @@ x-interactive: &interactive
 
 x-visible: &visible
     tty: true
+
+x-jetson-extras: &jetson-extras
+    runtime: nvidia
 
 
 # ==============================================================================
@@ -103,3 +107,67 @@ services:
         <<: *network
         <<: *visible
         command: /home/${USERNAME}/start.sh
+    
+    rosboard:
+        image: qutms_driverless_base
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        command: /home/${USERNAME}/rosboard/run
+
+    jetson_zed:
+        build:
+            context: ../
+            dockerfile: ./src/jetson/Dockerfile.ZED
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+            # mount in X11 stuff for display
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
+        command: ros2 launch zed_wrapper zed2i.launch.py
+    
+    jetson:
+        build:
+            context: ../
+            dockerfile: ./src/jetson/Dockerfile.ZED
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+            # mount in X11 stuff for display
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - ../src:/home/${USERNAME}/driverless_ws/src
+            - ../datasets:/home/${USERNAME}/datasets
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
+        command: bash
+
+    jetson_processing:
+        build:
+            context: ../
+            dockerfile: ./src/jetson_processing/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: bash

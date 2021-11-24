@@ -26,6 +26,9 @@ all:
 	@echo "    perception"
 	@echo "    unreal_sim"
 	@echo "    hardware"
+	@echo "    rosboard"
+	@echo "    jetson"
+	@echo "    jetson_processing"
 	@echo "Not supplying a target for 'make build' will build all environments."
 
 build_docker_base:

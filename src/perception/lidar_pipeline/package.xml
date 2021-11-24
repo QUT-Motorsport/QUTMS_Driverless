@@ -4,10 +4,9 @@
     <name>lidar_pipeline</name>
     <version>0.0.0</version>
     <description>LiDAR analysis in python</description>
-    <maintainer email="qutmotorsport.team@gmail.com">QUT Motorsport</maintainer>
+    <maintainer email="qutmotorsport.team@gmail.com">Liam Ferrante, Alastair Bradford</maintainer>
     <license>MIT</license>
 
-    <depend>libopencv-dev</depend>
     <depend>rclpy</depend>
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>

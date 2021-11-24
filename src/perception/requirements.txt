@@ -3,6 +3,7 @@
 # common --------------------------------------
 numpy>=1.18.5
 matplotlib>=3.2.2
+transforms3d
 
 # vision --------------------------------------
 opencv-python>=4.1.2
