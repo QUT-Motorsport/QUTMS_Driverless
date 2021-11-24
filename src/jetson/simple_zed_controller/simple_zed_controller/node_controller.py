@@ -44,7 +44,8 @@ class ControllerNode(Node):
         self.get_logger().info("Controller Node Initalised")
 
     def image_callback(self, msg):
-        self.get_logger().info("Recieved image")
+        logger = self.get_logger()
+        logger.info("Recieved image")
         frame: np.ndarray = cv_bridge.imgmsg_to_cv2(msg)
         hsv_frame: np.ndarray = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         left_objects = get_coloured_objects(hsv_frame, [LEFT_THRESH])
@@ -67,8 +68,9 @@ class ControllerNode(Node):
             draw_box(frame, box=closest_right, colour=RIGHT_DISP_COLOUR)
         
         if closest_left is not None and closest_right is not None:
+            logger.info("Calculating Target")
             target = closest_right.bl - closest_left.bl
-            cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_CROSS, markerSize=2)
+            cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_CROSS)
 
         cv2.imshow("frame", frame)
         cv2.waitKey(1)
