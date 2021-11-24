@@ -21,13 +21,15 @@ LEFT_THRESH = Threshold(
     lower=[20, 140, 180],
     upper=[40, 255, 255],
 )
-LEFT_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 
 RIGHT_THRESH = Threshold(
     lower=[110, 120, 40],
     upper=[130, 255, 255],
 )
+
+LEFT_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 RIGHT_DISP_COLOUR = (255, 0, 0)  # bgr - blue
+TARGET_DISP_COLOUR = (0, 0, 255)  # bgr - red
 
 
 class ControllerNode(Node):
@@ -53,16 +55,20 @@ class ControllerNode(Node):
         closest_right: Optional[Rect] = None
 
         if len(left_objects) > 0:
-            closest_left = max(left_objects, key=lambda r: r.bottom)
+            closest_left = max(left_objects, key=lambda r: r.bc.y)
     
         if len(right_objects) > 0:
-            closest_right = max(right_objects, key=lambda r: r.bottom)
+            closest_right = max(right_objects, key=lambda r: r.bc.y)
 
         if closest_left is not None:
             draw_box(frame, box=closest_left, colour=LEFT_DISP_COLOUR)
         
         if closest_right is not None:
             draw_box(frame, box=closest_right, colour=RIGHT_DISP_COLOUR)
+        
+        if closest_left is not None and closest_right is not None:
+            target = closest_right.bl - closest_left.bl
+            cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_CROSS, markerSize=2)
 
         cv2.imshow("frame", frame)
         cv2.waitKey(1)
