@@ -165,6 +165,7 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 
     # install https://github.com/ros-perception/image_common/releases/tag/3.0.0
     cd ${ROS_ROOT}/src/ && \
+    rm -r  image_common && \
     git clone https://github.com/ros-perception/image_common.git --branch 3.0.0 --depth 1 && \
 
     #  patch libyaml - https://github.com/dusty-nv/jetson-containers/issues/41#issuecomment-774767272
