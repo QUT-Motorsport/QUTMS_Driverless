@@ -18,16 +18,16 @@ cv_bridge = CvBridge()
 
 
 LEFT_THRESH = Threshold(
-    lower=[55, 170, 0],
-    upper=[65, 255, 255],
+    lower=[20, 140, 180],
+    upper=[40, 255, 255],
 )
-LEFT_DISP_COLOUR = (255, 0, 0)  # bgr - blue
+LEFT_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 
 RIGHT_THRESH = Threshold(
-    lower=[55, 170, 0],
-    upper=[65, 255, 255],
+    lower=[110, 120, 40],
+    upper=[130, 255, 255],
 )
-RIGHT_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
+RIGHT_DISP_COLOUR = (255, 0, 0)  # bgr - blue
 
 
 class ControllerNode(Node):
