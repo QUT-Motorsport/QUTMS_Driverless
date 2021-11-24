@@ -145,6 +145,8 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     # (required by zed camera node)
     #   - diagnostics
     #   - xacro
+    # (dev tools)
+    #   - rviz2 (TODO)
 
     rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
 		launch_xml \
@@ -160,6 +162,7 @@ RUN mkdir -p ${ROS_ROOT}/src && \
         # TODO: remove diagnostics and clone like image_common (git clone https://github.com/ros/diagnostics.git -b foxy)
         diagnostics \
         xacro \
+        # TODO: add rviz2
 		> ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
     cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
     vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
