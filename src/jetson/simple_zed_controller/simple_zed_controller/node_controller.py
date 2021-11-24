@@ -69,7 +69,7 @@ class ControllerNode(Node):
         
         if closest_left is not None and closest_right is not None:
             logger.info("Calculating Target")
-            target = closest_left.bc + ((closest_right.bc - closest_left.bc) / 2)
+            target = closest_left.bc + (closest_right.bc - closest_left.bc) / 2
             cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_CROSS)
 
         cv2.imshow("frame", frame)

@@ -39,7 +39,7 @@ class Rect:
     
     @property
     def bc(self) -> Point:
-        return Point(self.tl.x + self.width / 2, self.tl.y + self.height)
+        return Point(self.tl.x + int(round(self.width / 2)), self.tl.y + self.height)
 
     @property
     def center(self) -> Point:
