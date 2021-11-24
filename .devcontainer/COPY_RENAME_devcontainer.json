@@ -4,8 +4,12 @@
 	// "name": "QUTMS Driverless Navigation Dev Environment",
 	// "image": "qutms_driverless_navigation",
 
-	"name": "QUTMS Driverless Perception Dev Environment",
-	"image": "qutms_driverless_perception",
+	// "name": "QUTMS Driverless Perception Dev Environment",
+	// "image": "qutms_driverless_perception",
+
+	// "name": "QUTMS Driverless Hardware Dev Environment",
+	// "image": "qutms_driverless_hardware",
+
 	"containerUser": "developer",
 	"runArgs": [
         // This will allow you to use a ptrace-based debugger like C++, Go, and Rust.
