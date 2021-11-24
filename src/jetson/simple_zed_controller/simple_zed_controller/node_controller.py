@@ -9,7 +9,7 @@ import numpy as np
 
 from .threshold import Threshold
 from .hsv_cv import get_coloured_objects
-from .rect import Rect, draw_box
+from .rect import Rect, Point, draw_box
 
 from typing import Optional
 
@@ -70,7 +70,10 @@ class ControllerNode(Node):
         if closest_left is not None and closest_right is not None:
             logger.info("Calculating Target")
             target = closest_left.bc + (closest_right.bc - closest_left.bc) / 2
-            cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_CROSS)
+            cv2.drawMarker(frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
+            width, height, _ = frame.shape
+            bottom_center = Point(width/2, height)
+            cv2.line(frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2)
 
         cv2.imshow("frame", frame)
         cv2.waitKey(1)
