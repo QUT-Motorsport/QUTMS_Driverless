@@ -10,14 +10,16 @@ import numpy as np
 
 cv_bridge = CvBridge()
 
+WINDOW_NAME = "Thresholder"
+
 
 def get_thresh():
-    vmax = cv2.getTrackbarPos("VMax", "Thresholder_App")
-    vmin = cv2.getTrackbarPos("VMin", "Thresholder_App")
-    smax = cv2.getTrackbarPos("SMax", "Thresholder_App")
-    smin = cv2.getTrackbarPos("SMin", "Thresholder_App")
-    hmax = cv2.getTrackbarPos("HMax", "Thresholder_App")
-    hmin = cv2.getTrackbarPos("HMin", "Thresholder_App")
+    vmax = cv2.getTrackbarPos("VMax", WINDOW_NAME)
+    vmin = cv2.getTrackbarPos("VMin", WINDOW_NAME)
+    smax = cv2.getTrackbarPos("SMax", WINDOW_NAME)
+    smin = cv2.getTrackbarPos("SMin", WINDOW_NAME)
+    hmax = cv2.getTrackbarPos("HMax", WINDOW_NAME)
+    hmin = cv2.getTrackbarPos("HMin", WINDOW_NAME)
 
     min_ = np.array([hmin, smin, vmin])
     max_ = np.array([hmax, smax, vmax])
@@ -32,21 +34,21 @@ def print_thresh(_):
     print()
 
 
-cv2.namedWindow("Thresholder_App")
+cv2.namedWindow(WINDOW_NAME)
 
-cv2.createTrackbar("HMax", "Thresholder_App", 0, 179, print_thresh)
-cv2.createTrackbar("HMin", "Thresholder_App", 0, 179, print_thresh)
-cv2.createTrackbar("SMax", "Thresholder_App", 0, 255, print_thresh)
-cv2.createTrackbar("SMin", "Thresholder_App", 0, 255, print_thresh)
-cv2.createTrackbar("VMax", "Thresholder_App", 0, 255, print_thresh)
-cv2.createTrackbar("VMin", "Thresholder_App", 0, 255, print_thresh)
+cv2.createTrackbar("HMax", WINDOW_NAME, 0, 179, print_thresh)
+cv2.createTrackbar("HMin", WINDOW_NAME, 0, 179, print_thresh)
+cv2.createTrackbar("SMax", WINDOW_NAME, 0, 255, print_thresh)
+cv2.createTrackbar("SMin", WINDOW_NAME, 0, 255, print_thresh)
+cv2.createTrackbar("VMax", WINDOW_NAME, 0, 255, print_thresh)
+cv2.createTrackbar("VMin", WINDOW_NAME, 0, 255, print_thresh)
 
-cv2.setTrackbarPos("VMax", "Thresholder_App", 255)
-cv2.setTrackbarPos("VMin", "Thresholder_App", 0)
-cv2.setTrackbarPos("SMax", "Thresholder_App", 255)
-cv2.setTrackbarPos("SMin", "Thresholder_App", 0)
-cv2.setTrackbarPos("HMax", "Thresholder_App", 179)
-cv2.setTrackbarPos("HMin", "Thresholder_App", 0)
+cv2.setTrackbarPos("VMax", WINDOW_NAME, 255)
+cv2.setTrackbarPos("VMin", WINDOW_NAME, 0)
+cv2.setTrackbarPos("SMax", WINDOW_NAME, 255)
+cv2.setTrackbarPos("SMin", WINDOW_NAME, 0)
+cv2.setTrackbarPos("HMax", WINDOW_NAME, 179)
+cv2.setTrackbarPos("HMin", WINDOW_NAME, 0)
 
 
 class ThresholderNode(Node):
@@ -68,7 +70,7 @@ class ThresholderNode(Node):
         mask = cv2.inRange(hsv_frame, min_, max_)
 
         thresholded_frame = cv2.bitwise_and(frame, frame, mask=mask)
-        cv2.imshow("Thresholded", thresholded_frame)
+        cv2.imshow(WINDOW_NAME, thresholded_frame)
         k = cv2.waitKey(1) & 0xFF
 
         # exit if q or esc are pressed
