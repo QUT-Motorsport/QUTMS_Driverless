@@ -16,7 +16,7 @@ import numpy as np
 
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 
-from .sub_module.img_processing import * # import image processing func
+from .img_processing import * # import image processing func
 
 class Depth_Processing(Node):
     def __init__(self):

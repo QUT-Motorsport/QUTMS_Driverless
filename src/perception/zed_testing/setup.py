@@ -1,12 +1,11 @@
 from setuptools import setup
 
 package_name = 'zed_testing'
-submodule_name = 'zed_testing/sub_module'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name, submodule_name],
+    packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -21,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'depth_viewing = zed_testing.depth_viewing:main'
+            'depth_node = zed_testing.depth_node:main'
         ],
     },
 )

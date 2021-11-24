@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/bin/python3",
+    "python.pythonPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Python37_64\\python.exe",
     "python.analysis.extraPaths": [
         "/opt/ros/foxy/lib/python3.8/site-packages",
     ],
