@@ -5,7 +5,9 @@ datasets/*
 
 # - VSCode -
 .vscode/*
-!.vscode/cpp_properties.json
+!.vscode/c_cpp_properties.json
+!.vscode/launch.json
+!.vscode/settings.json
 .devcontainer/*
 !.devcontainer/COPY_RENAME_devcontainer.json
 
