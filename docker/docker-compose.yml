@@ -120,6 +120,27 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: ros2 launch zed_wrapper zed2i.launch.py
+    
+    jetson:
+        build:
+            context: ../
+            dockerfile: ./src/jetson/Dockerfile.ZED
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+            # mount in X11 stuff for display
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - ../src:/home/${USERNAME}/driverless_ws/src
+            - ../datasets:/home/${USERNAME}/datasets
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
+        command: bash
 
     jetson_processing:
         build:
