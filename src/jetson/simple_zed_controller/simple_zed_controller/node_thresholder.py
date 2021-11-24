@@ -63,7 +63,6 @@ class ThresholderNode(Node):
         self.get_logger().info("Thresholder Node Initalised")
     
     def image_callback(self, msg):
-        self.get_logger().info("Recieved image")
         frame: np.ndarray = cv_bridge.imgmsg_to_cv2(msg)
         hsv_frame: np.ndarray = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         min_, max_ = get_thresh()
