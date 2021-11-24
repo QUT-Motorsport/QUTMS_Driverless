@@ -200,8 +200,6 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 
-
-
 # ==============================================================================
 #                           Install ZED Drivers
 # https://github.com/stereolabs/zed-docker/blob/master/3.X/jetpack_4.X/tools-devel/Dockerfile
@@ -231,14 +229,13 @@ RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-
 # RUN sed -i 's/cammera_publisher.hpp/camera_publisher.hpp/' ${ROS_ROOT}/install/include/image_transport/camera_publisher.h
 
 WORKDIR /ros_zed_ws/src
-RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git
-    # git clone https://github.com/ros/diagnostics.git -b foxy && \
-    # git clone https://github.com/ros/xacro.git -b ros2
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git && \
+    git clone https://github.com/ros/diagnostics.git -b foxy
 
 WORKDIR /ros_zed_ws
 # build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
 RUN source ${ROS_ROOT}/install/setup.bash; \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined"
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
