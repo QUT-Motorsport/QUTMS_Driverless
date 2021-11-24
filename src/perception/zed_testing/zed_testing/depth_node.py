@@ -12,19 +12,15 @@ from .threshold import Threshold
 from .img_proc import get_coloured_objects
 from .cone_rect import ConeRect, draw_box
 
-from typing import Optional
-
-
 cv_bridge = CvBridge()
 
-
 YELLOW_THRESH = Threshold(
-    lower=[20, 140, 180],
-    upper=[40, 255, 255],
+    lower=[20, 80, 60],
+    upper=[45, 255, 255],
 )
 BLUE_THRESH = Threshold(
-    lower=[110, 120, 40],
-    upper=[130, 255, 255],
+    lower=[110, 60, 50],
+    upper=[125, 255, 255],
 )
 ORANGE_THRESH = Threshold(
     lower=[0, 100, 50],
@@ -35,7 +31,6 @@ YELLOW_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR = (0, 102, 255)  # bgr - orange
 TEXT_DISP_COLOUR = (0, 255, 0) # bgr - green
-TARGET_DISP_COLOUR = (0, 0, 255)  # bgr - red
 
 
 class DepthNode(Node):
@@ -58,8 +53,10 @@ class DepthNode(Node):
         )
         self.get_logger().info("Depth Node Initalised")
 
-        self.cones = list()
-        self.bounding_box_frame = None
+        self.orange_cones = list()
+        self.blue_cones = list()
+        self.yellow_cones = list()
+        self.bounding_box_frame = []
         self.display = True
 
     def image_callback(self, msg):
@@ -68,8 +65,11 @@ class DepthNode(Node):
         frame: np.ndarray = cv_bridge.imgmsg_to_cv2(msg)
         h, w, _ = frame.shape
         left_frame: np.ndarray = frame[0:h, 0:int(w/2-1)]
-        hsv_frame: np.ndarray = cv2.cvtColor(left_frame, cv2.COLOR_BGR2HSV)
-        self.cones = get_coloured_objects(hsv_frame, [ORANGE_THRESH], size=70)
+        resized_frame: np.ndarray = left_frame[int(4*h/7):h, 0:w]
+        hsv_frame: np.ndarray = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2HSV)
+        self.orange_cones = get_coloured_objects(hsv_frame, [ORANGE_THRESH], size=20)
+        self.blue_cones = get_coloured_objects(hsv_frame, [BLUE_THRESH], size=30)
+        self.yellow_cones = get_coloured_objects(hsv_frame, [YELLOW_THRESH], size=30)
 
         self.bounding_box_frame = np.copy(left_frame)
 
@@ -77,17 +77,31 @@ class DepthNode(Node):
         logger = self.get_logger()
 
         depth_map: np.ndarray = cv_bridge.imgmsg_to_cv2(msg.image, desired_encoding='32FC1')
+        h, w = depth_map.shape
+        offset_y = int(4*h/7)
 
-        for cone in self.cones:
-            draw_box(self.bounding_box_frame, box=cone, disp_colour=ORANGE_DISP_COLOUR)
+        for cone in self.yellow_cones:
+            draw_box(self.bounding_box_frame, box=cone, disp_colour=YELLOW_DISP_COLOUR, offset=offset_y)
 
-            depth = -msg.f * msg.t / depth_map[(cone.center.y, cone.center.x)]
+            depth = -msg.f * msg.t / depth_map[(cone.center.y + offset_y, cone.center.x)]
             string = str(round(depth, 3)) + "m"
             cv2.putText(
                 self.bounding_box_frame, string, # frame to draw on, label to draw
-                (cone.tl.x, cone.tl.y - 3), # position
+                (cone.tl.x, cone.tl.y - 3 + offset_y), # position
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, # font, font size
                 TEXT_DISP_COLOUR, 1) # thickness 1
+
+        for cone in self.blue_cones:
+            draw_box(self.bounding_box_frame, box=cone, disp_colour=BLUE_DISP_COLOUR, offset=offset_y)
+
+            depth = -msg.f * msg.t / depth_map[(cone.center.y + offset_y, cone.center.x)]
+            string = str(round(depth, 3)) + "m"
+            cv2.putText(
+                self.bounding_box_frame, string, # frame to draw on, label to draw
+                (cone.tl.x, cone.tl.y - 3 + offset_y), # position
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, # font, font size
+                TEXT_DISP_COLOUR, 1) # thickness 1
+
 
         if self.display == True and self.bounding_box_frame != []:
             # show bounding boxes

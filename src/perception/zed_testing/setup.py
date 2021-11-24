@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'depth_node = zed_testing.depth_node:main'
+            # 'thresholder_node = zed_testing.thresholder_node:main'
         ],
     },
 )
