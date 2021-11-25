@@ -31,11 +31,13 @@ class SteeringControl {
 	void targetPosition(int32_t target);
 	// Target a position with custom velocity and accelerations, does not set
 	// internal values
-	void targetPosition(int32_t target, int32_t velocity, std::pair<uint32_t, uint32_t> accelerations);
+	void targetPosition(int32_t target, int32_t velocity);
 	// Set the limits for the motor
 	void setLimits(std::pair<int32_t, int32_t> limits);
 	// Set the internal velocity limit for the motor
 	void setVelocity(int32_t velocity);
 	// Set hte internal acceleration limits for the motor
 	void setAcceleration(std::pair<uint32_t, uint32_t> accelerations);
+
+	bool reachedTarget();
 };

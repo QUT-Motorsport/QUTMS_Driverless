@@ -33,6 +33,11 @@ bool TCPClient::setup(std::string address, int port) {
 	this->server.sin_family = AF_INET;
 	this->server.sin_port = htons(port);
 
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 1000;
+	setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
 	this->_connect();
 	return true;
 }
@@ -72,7 +77,7 @@ std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
 	// this->_connect();
 	{
 		if ((b = recv(this->sock, buf, RECV_SIZE, 0)) < 0) {
-			std::cout << "Failed to recv on socket" << this->sock << std::endl;
+			// std::cout << "Failed to recv on socket: " << this->sock << std::endl;
 			return nullptr;
 		}
 	}
