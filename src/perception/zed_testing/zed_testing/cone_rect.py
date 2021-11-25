@@ -19,7 +19,7 @@ class Point:
         return Point(int(round(self.x/divisor)), int(round(self.y/divisor)))
 
 @dataclass
-class Rect:
+class ConeRect:
     tl: Point
     width: int
     height: int
@@ -50,6 +50,6 @@ class Rect:
         return self.width * self.height
 
 
-def draw_box(img: np.ndarray, box: Rect, colour: Tuple):
+def draw_box(img: np.ndarray, box: ConeRect, disp_colour: Tuple, offset: int = 0):
     # draw a bounding box around the image and display it
-    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
+    cv2.rectangle(img, (box.tl.x, box.tl.y + offset), (box.tl.x + box.width, box.tl.y + box.height + offset), disp_colour, thickness=1)
