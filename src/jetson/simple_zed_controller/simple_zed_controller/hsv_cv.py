@@ -10,7 +10,7 @@ Contour = List
 
 kernal = np.ones((5, 5), "uint8")
 
-def get_coloured_objects(hsv_img: np.ndarray, thresholds: List[Threshold]) -> List[Rect]:
+def get_coloured_bounding_boxes(hsv_img: np.ndarray, thresholds: List[Threshold]) -> List[Rect]:
     contours = get_coloured_contours(hsv_img, thresholds)
     return get_large_contour_bounds(contours)
 
