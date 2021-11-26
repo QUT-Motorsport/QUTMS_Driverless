@@ -244,9 +244,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
 
+# install python dependencies
+RUN pip3 install \
+    dataclasses \
+    tornado \
+    simplejpeg
+
 # Install rosboard https://github.com/dheera/rosboard
 WORKDIR /home/$USERNAME
-RUN pip3 install tornado simplejpeg
 RUN git clone https://github.com/dheera/rosboard.git
 
 
