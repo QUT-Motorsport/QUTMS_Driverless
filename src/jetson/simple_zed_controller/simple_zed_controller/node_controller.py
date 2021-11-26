@@ -107,9 +107,9 @@ class ControllerNode(Node):
                 + (closest_right_cone.bounding_box.bc - closest_left_cone.bounding_box.bc) / 2
             )
         elif closest_left_cone is not None:
-            target = closest_left_cone + Point(50, 0)
+            target = closest_left_cone.bounding_box.bc + Point(50, 0)
         elif closest_right_cone is not None:
-            target = closest_right_cone + Point(-50, 0)
+            target = closest_right_cone.bounding_box.bc + Point(-50, 0)
         
         if target is not None:
             cv2.drawMarker(colour_frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
