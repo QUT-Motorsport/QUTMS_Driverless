@@ -44,7 +44,8 @@ def cone_from_bounding_box(
 ) -> Cone:
     return Cone(
         bounding_box=bounding_box,
-        distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
+        # distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
+        distance=1
     )
 
 
@@ -114,7 +115,7 @@ class ControllerNode(Node):
         if target is not None:
             cv2.drawMarker(colour_frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
             width, height, _ = colour_frame.shape
-            bottom_center = Point(width/2, height)
+            bottom_center = Point(int(round(width/2)), height)
             cv2.line(
                 colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
             )
