@@ -156,18 +156,3 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: bash
-
-    jetson_processing:
-        build:
-            context: ../
-            dockerfile: ./src/jetson_processing/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
