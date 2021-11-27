@@ -248,6 +248,9 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
 # install dataclasses
 RUN pip3 install dataclasses
 
+# copy calibration file
+COPY ./src/jetson/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
+
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
 ENTRYPOINT ["/ros_zed_entrypoint.sh"]
