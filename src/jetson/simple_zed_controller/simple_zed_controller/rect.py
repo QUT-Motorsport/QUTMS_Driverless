@@ -2,7 +2,7 @@ import cv2
 from dataclasses import dataclass
 import numpy as np
 
-from typing import Tuple
+from typing import Tuple, Optional
 
 @dataclass
 class Point:
@@ -50,6 +50,17 @@ class Rect:
         return self.width * self.height
 
 
-def draw_box(img: np.ndarray, box: Rect, colour: Tuple):
+def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
     # draw a bounding box around the image and display it
     cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
+
+    if distance is not None:
+        cv2.putText(
+            img,
+            str(distance),
+            (box.tl.x, box.tl.y - 3),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.4,
+            color=colour,
+            thickness=1
+        )

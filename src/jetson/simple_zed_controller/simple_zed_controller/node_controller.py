@@ -45,7 +45,6 @@ def cone_from_bounding_box(
     return Cone(
         bounding_box=bounding_box,
         distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
-        # distance=1
     )
 
 
@@ -89,9 +88,9 @@ class ControllerNode(Node):
         ]
 
         for c in left_cones:
-            draw_box(colour_frame, box=c.bounding_box, colour=LEFT_DISP_COLOUR)
+            draw_box(colour_frame, box=c.bounding_box, colour=LEFT_DISP_COLOUR, distance=c.distance)
         for c in right_cones:
-            draw_box(colour_frame, box=c.bounding_box, colour=RIGHT_DISP_COLOUR)
+            draw_box(colour_frame, box=c.bounding_box, colour=RIGHT_DISP_COLOUR, distance=c.distance)
         
         closest_left_cone: Optional[Cone] = None
         closest_right_cone: Optional[Cone] = None
