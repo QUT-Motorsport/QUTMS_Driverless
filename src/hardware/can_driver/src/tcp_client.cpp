@@ -38,7 +38,7 @@ bool TCPClient::setup(std::string address, int port) {
 	tv.tv_usec = 1000;
 	setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-	// this->_connect();
+	this->_connect();
 	return true;
 }
 
@@ -55,6 +55,7 @@ void TCPClient::_disconnect() { close(this->sock); }
 
 bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
 	if (this->sock != -1) {
+		this->setup(this->address, this->port);
 		this->_connect();
 		{
 			if (send(this->sock, data->data(), data->size(), 0) < 0) {
@@ -74,6 +75,7 @@ bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
 std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
 	char buf[RECV_SIZE];
 	int b;
+	this->setup(this->address, this->port);
 	this->_connect();
 	{
 		if ((b = recv(this->sock, buf, RECV_SIZE, 0)) < 0) {
