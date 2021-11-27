@@ -31,7 +31,10 @@ public:
         this->steering = std::make_shared<SteeringControl>(c);
 	    this->steering->setAcceleration(std::make_pair<uint32_t, uint32_t>(10000, 10000));
     }
-    ~Steering(){};
+    
+    ~Steering(){
+        this->steering->shutdown();
+    }
 };
 
 int main(int argc, char* argv[]) {

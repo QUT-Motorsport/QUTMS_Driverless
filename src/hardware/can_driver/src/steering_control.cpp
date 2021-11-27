@@ -185,4 +185,13 @@ bool SteeringControl::reachedTarget() {
 	return false;
 }
 
+void SteeringControl::shutdown() {
+	uint32_t id;
+	uint8_t out[8];
+	
+	uint16_t control_word = 6;
+	sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t*)&control_word, 2, &id, out);	 // Shutdown
+	this->can->tx(id, 0, out);
+}
+
 SteeringControl::~SteeringControl() {}

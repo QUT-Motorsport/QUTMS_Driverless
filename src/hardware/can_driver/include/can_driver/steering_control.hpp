@@ -38,6 +38,8 @@ class SteeringControl {
 	void setVelocity(int32_t velocity);
 	// Set hte internal acceleration limits for the motor
 	void setAcceleration(std::pair<uint32_t, uint32_t> accelerations);
+	// Shutdown the controller
+	void shutdown();
 
 	bool reachedTarget();
 };
