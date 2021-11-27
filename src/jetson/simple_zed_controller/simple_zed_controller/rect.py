@@ -61,6 +61,6 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
             (box.tl.x, box.tl.y - 3),
             cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=0.4,
-            color=colour,
+            color=(0, 165, 255),
             thickness=1
         )
