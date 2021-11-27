@@ -245,6 +245,9 @@ WORKDIR /ros_zed_ws
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
+# install dataclasses
+RUN pip3 install dataclasses
+
 # setup entrypoint
 COPY ./src/jetson/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
 ENTRYPOINT ["/ros_zed_entrypoint.sh"]
