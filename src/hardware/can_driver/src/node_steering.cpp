@@ -21,6 +21,7 @@ void topic_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) co
         RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
         RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
         this->steering->targetPosition(steeringDemandStepper);
+        this->steering->reachedTarget();
     }
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr subscription_;
 
