@@ -44,8 +44,8 @@ def cone_from_bounding_box(
 ) -> Cone:
     return Cone(
         bounding_box=bounding_box,
-        # distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
-        distance=1
+        distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
+        # distance=1
     )
 
 
