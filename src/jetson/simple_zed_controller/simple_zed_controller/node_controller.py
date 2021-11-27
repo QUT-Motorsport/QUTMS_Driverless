@@ -135,7 +135,7 @@ class ControllerNode(Node):
         
         if target is not None:
             cv2.drawMarker(colour_frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
-            width, height, _ = colour_frame.shape
+            height, width, _ = colour_frame.shape
             bottom_center = Point(int(round(width/2)), height)
             cv2.line(
                 colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
