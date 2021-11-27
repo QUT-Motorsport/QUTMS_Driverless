@@ -4,6 +4,7 @@
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "can2etherenet_adapter.hpp"
 #include "steering_control.hpp"
+#include <algorithm>
 
 using std::placeholders::_1;
 
@@ -14,10 +15,11 @@ std::shared_ptr<Can2Ethernet> c;
 std::shared_ptr<SteeringControl> steering;
 
 void topic_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) const{
-        int32_t steeringDemandStepper = (msg->steering_angle) * 5000/M_PI;
+        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
+        int32_t steeringDemandStepper = cappedAngle * 5000/M_PI;
 
         RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-        RCLCPP_INFO(this->get_logger(), "Radians: %f", msg->steering_angle);
+        RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
         this->steering->targetPosition(steeringDemandStepper);
     }
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr subscription_;
