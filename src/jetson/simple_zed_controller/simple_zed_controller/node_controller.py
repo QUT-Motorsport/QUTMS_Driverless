@@ -71,7 +71,7 @@ class ControllerNode(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.steering_publisher: Publisher = self.create_publisher("steering", AckermannDrive, queue_size=1)
+        self.steering_publisher: Publisher = self.create_publisher("steering", AckermannDrive)
 
         self.get_logger().info("Controller Node Initalised")
 
