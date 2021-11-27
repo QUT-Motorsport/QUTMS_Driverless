@@ -138,7 +138,6 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     #   - compressed_depth_image_transport
     # ==== List modified to ADD: ====
     # (required by zed camera node)
-    #   - diagnostics
     #   - xacro
     # (dev tools)
     #   - rviz2
