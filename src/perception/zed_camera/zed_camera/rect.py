@@ -2,7 +2,7 @@ import cv2
 from dataclasses import dataclass
 import numpy as np
 
-from typing import Tuple
+from typing import Tuple, Optional
 
 @dataclass
 class Point:
@@ -19,7 +19,7 @@ class Point:
         return Point(int(round(self.x/divisor)), int(round(self.y/divisor)))
 
 @dataclass
-class ConeRect:
+class Rect:
     tl: Point
     width: int
     height: int
@@ -50,6 +50,17 @@ class ConeRect:
         return self.width * self.height
 
 
-def draw_box(img: np.ndarray, box: ConeRect, disp_colour: Tuple, offset: int = 0):
+def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
     # draw a bounding box around the image and display it
-    cv2.rectangle(img, (box.tl.x, box.tl.y + offset), (box.tl.x + box.width, box.tl.y + box.height + offset), disp_colour, thickness=1)
+    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
+
+    if distance is not None:
+        cv2.putText(
+            img,
+            str(round(distance, 2)),
+            (box.tl.x, box.tl.y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.6,
+            color=(255, 255, 255),
+            thickness=2
+        )

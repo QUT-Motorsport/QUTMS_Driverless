@@ -13,9 +13,9 @@ import cv2
 import time
 
 # import helper image processing module
-from .sub_module.img_processing import *
+from .img_proc import *
 # import helper cone location processing module
-from .sub_module.loc_processing import *
+from .depth_proc import *
 
 
 class CamProcessing(Node):

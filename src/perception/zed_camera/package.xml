@@ -3,7 +3,7 @@
 <package format="3">
     <name>zed_testing</name>
     <version>0.0.0</version>
-    <description>ZED2i depth processing</description>
+    <description>Test for ZED2i depth processing in Python</description>
     <maintainer email="qutmotorsport.team@gmail.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 

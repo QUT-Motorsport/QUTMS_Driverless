@@ -8,7 +8,7 @@ from fs_msgs.msg import ControlCommand
 from qutms_msgs.msg import ConeScan, ConeData
 
 # import helper drive processing module
-from .sub_module.move_processing import * 
+from .motion_proc import * 
 
 class SimpleController(Node):
     def __init__(self):

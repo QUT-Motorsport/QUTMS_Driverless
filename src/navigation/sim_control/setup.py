@@ -1,12 +1,11 @@
 from setuptools import setup
 
-package_name = 'control'
-submodule_name = 'control/sub_module'
+package_name = 'sim_control'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name, submodule_name],
+    packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -14,14 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='QUT Motorsport',
+    maintainer='Alastair Bradford',
     maintainer_email='qutmotorsport.team@gmail.com',
-    description='Simulator control in python',
+    description='Simulator control in Python',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'main = control.main:main'
+            'sim_controller = sim_control.node_controller:main'
         ],
     },
 )

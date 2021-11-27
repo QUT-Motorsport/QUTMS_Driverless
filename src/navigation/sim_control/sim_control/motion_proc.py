@@ -1,7 +1,6 @@
 # import python libraries
 import math
 
-
 ## helper function to find distances (magnitude) between two top-down points
 def distance(x1, y1, x2, y2): 
     distance = math.sqrt(math.pow(abs(x1-x2), 2) + math.pow(abs(y1-y2), 2))
