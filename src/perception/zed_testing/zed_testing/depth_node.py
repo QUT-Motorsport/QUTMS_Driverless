@@ -39,7 +39,7 @@ class DepthNode(Node):
 
         self.create_subscription(
             Image,
-            "/zed2i/zed_node/rgb/image_rect_color",
+            "/zed2i/zed_node/stereo/image_rect_color",
             self.image_callback,
             10,
         )
