@@ -1,8 +1,12 @@
+from math import atan2
+
 import rclpy
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 
 from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
+from ackermann_msgs.msg import AckermannDrive
 
 from cv_bridge import CvBridge
 import message_filters
@@ -52,6 +56,7 @@ class ControllerNode(Node):
     def __init__(self):
         super().__init__("controller")
 
+        # subscribers
         colour_sub = message_filters.Subscriber(
             self, Image, "/zed2i/zed_node/rgb/image_rect_color"
         )
@@ -64,6 +69,9 @@ class ControllerNode(Node):
             queue_size=30,
         )
         synchronizer.registerCallback(self.callback)
+
+        # publishers
+        self.steering_publisher: Publisher = self.create_publisher("steering", AckermannDrive, queue_size=1)
 
         self.get_logger().info("Controller Node Initalised")
 
@@ -132,6 +140,12 @@ class ControllerNode(Node):
             cv2.line(
                 colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
             )
+
+            steering_angle = atan2(target.y-bottom_center.y, target.x-bottom_center.x)
+            steering_msg = AckermannDrive()
+            steering_msg.steering_angle = steering_angle
+            self.steering_publisher.publish(steering_msg)
+            logger.info(f"Published steering angle: {steering_angle}")
 
         cv2.imshow("frame", colour_frame)
         cv2.waitKey(1)
