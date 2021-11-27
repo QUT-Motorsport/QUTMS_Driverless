@@ -54,7 +54,7 @@ class ControllerNode(Node):
         super().__init__("controller")
 
         colour_sub = message_filters.Subscriber(
-            self, Image, "/zed2i/zed_node/stereo/image_rect_color"
+            self, Image, "/zed2i/zed_node/rgb/image_rect_color"
         )
         disparity_sub = message_filters.Subscriber(
             self, DisparityImage, "/zed2i/zed_node/disparity/disparity_image"
