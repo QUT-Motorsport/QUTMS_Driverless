@@ -1,4 +1,4 @@
-from math import atan2
+from math import atan2, pi
 
 import rclpy
 from rclpy.node import Node
@@ -141,7 +141,7 @@ class ControllerNode(Node):
                 colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
             )
 
-            steering_angle = atan2(target.y-bottom_center.y, target.x-bottom_center.x)
+            steering_angle = pi - atan2(-(target.y-bottom_center.y), target.x-bottom_center.x)
             steering_msg = AckermannDrive()
             steering_msg.steering_angle = steering_angle
             self.steering_publisher.publish(steering_msg)
