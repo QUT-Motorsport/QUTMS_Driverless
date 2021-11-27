@@ -125,13 +125,14 @@ class ControllerNode(Node):
         target: Optional[Point] = None
         if closest_left_cone is not None and closest_right_cone is not None:
             target = (
-                closest_left_cone.bounding_box.bc
-                + (closest_right_cone.bounding_box.bc - closest_left_cone.bounding_box.bc) / 2
+                closest_left_cone.bounding_box.br
+                + (closest_right_cone.bounding_box.bl - closest_left_cone.bounding_box.br)
+                / 2
             )
         elif closest_left_cone is not None:
-            target = closest_left_cone.bounding_box.bc + Point(50, 0)
+            target = closest_left_cone.bounding_box.br + Point(100, 0)
         elif closest_right_cone is not None:
-            target = closest_right_cone.bounding_box.bc + Point(-50, 0)
+            target = closest_right_cone.bounding_box.bl + Point(-100, 0)
         
         if target is not None:
             cv2.drawMarker(colour_frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
@@ -141,7 +142,7 @@ class ControllerNode(Node):
                 colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
             )
 
-            steering_angle = (pi/2) - atan2(-(target.y-bottom_center.y), target.x-bottom_center.x)
+            steering_angle = ((pi/2) - atan2(-(target.y-bottom_center.y), target.x-bottom_center.x))*2
             steering_msg = AckermannDrive()
             steering_msg.steering_angle = steering_angle
             self.steering_publisher.publish(steering_msg)
