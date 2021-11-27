@@ -28,7 +28,7 @@ SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can) {
 	uint32_t id;	 // Packet id out
 	uint8_t out[8];	 // Data out
 
-	printf("Performing C5-E Setup... ");
+	std::cout << "Performing C5-E Setup... ";
 
 	sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t*)&this->target, 4, &id, out);	 // Target
 	this->can->tx(id, 0, out);
@@ -89,7 +89,7 @@ SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can) {
 	sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t*)&control_word, 2, &id, out);	 // Op Enabled
 	this->can->tx(id, 0, out);
 
-	printf("Done (Operation Enabled)\n");
+	std::cout << "Done (Operation Enabled)" << std::endl;
 }
 
 void SteeringControl::targetPosition(int32_t target) {
