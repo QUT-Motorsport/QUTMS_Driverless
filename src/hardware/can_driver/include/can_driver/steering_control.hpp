@@ -6,6 +6,7 @@
 
 #include "can2etherenet_adapter.hpp"
 #include "canopen.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 #define C5_E_ID 0x70  // C5-E-2-9 Controller Node ID
 
