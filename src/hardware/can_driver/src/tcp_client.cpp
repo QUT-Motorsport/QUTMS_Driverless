@@ -51,11 +51,13 @@ bool TCPClient::_connect() {
 	return true;
 }
 
-void TCPClient::_disconnect() { close(this->sock); }
+void TCPClient::_disconnect() { 
+	// close(this->sock);
+	shutdown(this->sock, SHUT_RDWR);
+	}
 
 bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
 	if (this->sock != -1) {
-		this->setup(this->address, this->port);
 		this->_connect();
 		{
 			if (send(this->sock, data->data(), data->size(), 0) < 0) {
@@ -75,7 +77,6 @@ bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
 std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
 	char buf[RECV_SIZE];
 	int b;
-	this->setup(this->address, this->port);
 	this->_connect();
 	{
 		if ((b = recv(this->sock, buf, RECV_SIZE, 0)) < 0) {
