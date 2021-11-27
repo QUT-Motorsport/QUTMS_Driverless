@@ -97,8 +97,22 @@ class ControllerNode(Node):
 
         if len(left_cones) > 0:
             closest_left_cone = min(left_cones, key=lambda c: c.distance)
+            cv2.drawMarker(
+                colour_frame, 
+                (closest_left_cone.bounding_box.center.x, closest_left_cone.bounding_box.center.y),
+                LEFT_DISP_COLOUR,
+                markerSize=cv2.MARKER_STAR,
+                thickness=20,
+            )
         if len(right_cones) > 0:
             closest_right_cone = min(right_cones, key=lambda c: c.distance)
+            cv2.drawMarker(
+                colour_frame, 
+                (closest_right_cone.bounding_box.center.x, closest_right_cone.bounding_box.center.y),
+                RIGHT_DISP_COLOUR,
+                markerSize=cv2.MARKER_STAR,
+                thickness=20,
+            )
         
         target: Optional[Point] = None
         if closest_left_cone is not None and closest_right_cone is not None:
