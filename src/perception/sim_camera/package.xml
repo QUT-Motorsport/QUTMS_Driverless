@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>cam_pipeline</name>
+    <name>sim_camera</name>
     <version>0.0.0</version>
     <description>ISimulator camera processing in Python</description>
     <maintainer email="qutmotorsport.team@gmail.com">Alastair Bradford, Harl Towne</maintainer>
