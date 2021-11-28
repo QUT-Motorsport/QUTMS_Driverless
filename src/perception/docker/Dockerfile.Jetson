@@ -141,6 +141,8 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     #   - xacro
     # (dev tools)
     #   - rviz2
+    # (dev message)
+    #   - ackermann_msgs
 
     rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
 		launch_xml \
@@ -155,6 +157,7 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 		image_pipeline \
         xacro \
         rviz2 \
+        ackermann_msgs \
 		> ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
     cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
     vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall && \
@@ -205,7 +208,7 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # setup entrypoint
-COPY ./src/perception/ros_entrypoint.sh /ros_entrypoint.sh
+COPY ./src/perception/docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
 
 
@@ -323,7 +326,13 @@ WORKDIR /ros_zed_ws
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
+# install dataclasses
+RUN pip3 install dataclasses
+
+# copy calibration file
+COPY ./src/jetson/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
+
 # setup entrypoint
-COPY ./src/perception/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
+COPY ./src/perception/docker/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
 ENTRYPOINT ["/ros_zed_entrypoint.sh"]
 RUN echo "source /ros_zed_ws/install/setup.bash" >> /root/.bashrc
