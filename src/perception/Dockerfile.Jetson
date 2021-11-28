@@ -138,7 +138,6 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     #   - compressed_depth_image_transport
     # ==== List modified to ADD: ====
     # (required by zed camera node)
-    #   - diagnostics
     #   - xacro
     # (dev tools)
     #   - rviz2
@@ -169,6 +168,10 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     # install https://github.com/ros/diagnostics.git branch foxy
     rm -rf diagnostics && \
     git clone https://github.com/ros/diagnostics.git --branch foxy --depth 1 && \
+
+    # install https://github.com/ament/google_benchmark_vendor/releases/tag/0.0.6
+    rm -rf google_benchmark_vendor && \
+    git clone https://github.com/ament/google_benchmark_vendor.git --branch 0.0.6 --depth 1 && \
 
     #  patch libyaml - https://github.com/dusty-nv/jetson-containers/issues/41#issuecomment-774767272
     rm ${ROS_ROOT}/src/libyaml_vendor/CMakeLists.txt && \
@@ -244,9 +247,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
 
+# install python dependencies
+RUN pip3 install \
+    dataclasses \
+    tornado \
+    simplejpeg
+
 # Install rosboard https://github.com/dheera/rosboard
 WORKDIR /home/$USERNAME
-RUN pip3 install tornado simplejpeg
 RUN git clone https://github.com/dheera/rosboard.git
 
 

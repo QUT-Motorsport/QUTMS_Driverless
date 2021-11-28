@@ -120,7 +120,8 @@ services:
     jetson_zed:
         build:
             context: ../
-            dockerfile: ./src/jetson/Dockerfile.ZED
+            dockerfile: ./src/perception/Dockerfile.Jetson
+            target: jetson_ros_zed
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -139,7 +140,8 @@ services:
     jetson:
         build:
             context: ../
-            dockerfile: ./src/jetson/Dockerfile.ZED
+            dockerfile: ./src/perception/Dockerfile.Jetson
+            target: jetson_ros
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
