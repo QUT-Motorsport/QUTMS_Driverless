@@ -3,7 +3,7 @@
 <package format="3">
     <name>can_driver</name>
     <version>0.0.0</version>
-    <description></description>
+    <description>Can driver node.</description>
     <maintainer email="qutmotorsport.team@gmail.com">Thomas Fraser, Alistair English</maintainer>
     <license>MIT</license>
 
