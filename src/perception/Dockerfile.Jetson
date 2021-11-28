@@ -169,6 +169,10 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     rm -rf diagnostics && \
     git clone https://github.com/ros/diagnostics.git --branch foxy --depth 1 && \
 
+    # install https://github.com/ament/google_benchmark_vendor/releases/tag/0.0.6
+    rm -rf google_benchmark_vendor && \
+    git clone https://github.com/ament/google_benchmark_vendor.git --branch 0.0.6 --depth 1 && \
+
     #  patch libyaml - https://github.com/dusty-nv/jetson-containers/issues/41#issuecomment-774767272
     rm ${ROS_ROOT}/src/libyaml_vendor/CMakeLists.txt && \
     wget --no-check-certificate https://raw.githubusercontent.com/ros2/libyaml_vendor/master/CMakeLists.txt -P ${ROS_ROOT}/src/libyaml_vendor/ && \
