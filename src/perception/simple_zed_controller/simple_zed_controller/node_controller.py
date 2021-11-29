@@ -72,7 +72,7 @@ class ControllerNode(Node):
 
         # publishers
         self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_zed_controller/debug_img")
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_zed_controller/debug_img", 1)
 
         self.get_logger().info("Simple ZED Controller Node Initalised")
 
