@@ -54,7 +54,7 @@ def cone_from_bounding_box(
 
 class ControllerNode(Node):
     def __init__(self):
-        super().__init__("controller")
+        super().__init__("simple_zed_controller")
 
         # subscribers
         colour_sub = message_filters.Subscriber(
@@ -72,8 +72,9 @@ class ControllerNode(Node):
 
         # publishers
         self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_zed_controller/debug_img")
 
-        self.get_logger().info("Controller Node Initalised")
+        self.get_logger().info("Simple ZED Controller Node Initalised")
 
 
     def callback(self, colour_msg: Image, disparity_msg: DisparityImage):
@@ -148,8 +149,7 @@ class ControllerNode(Node):
             self.steering_publisher.publish(steering_msg)
             logger.info(f"Published steering angle: {steering_angle}")
 
-        cv2.imshow("frame", colour_frame)
-        cv2.waitKey(1)
+        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame))
 
 
 def main(args=None):
