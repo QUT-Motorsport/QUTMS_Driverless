@@ -1,4 +1,4 @@
-# ORIGINALLY FROM https://raw.githubusercontent.com/stereolabs/zed-ros2-wrapper/master/zed_wrapper/config/zed2i.yaml
+# ORIGINALLY FROM https://github.com/stereolabs/zed-ros2-wrapper/blob/foxy-v3.5.1/zed_wrapper/config/zed2i.yaml
 # MODIFIED AS NEEDED
 # config/zed2i_yaml
 # Parameters for Stereolabs zed2i camera

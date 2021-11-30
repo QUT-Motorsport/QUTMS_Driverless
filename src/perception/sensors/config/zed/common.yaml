@@ -1,4 +1,4 @@
-# ORIGINALLY FROM https://github.com/stereolabs/zed-ros2-wrapper/blob/master/zed_wrapper/config/common.yaml
+# ORIGINALLY FROM https://github.com/stereolabs/zed-ros2-wrapper/blob/foxy-v3.5.1/zed_wrapper/config/common.yaml
 # MODIFIED AS NEEDED
 # config/common_yaml
 # Common parameters to Stereolabs ZED and ZED mini cameras
