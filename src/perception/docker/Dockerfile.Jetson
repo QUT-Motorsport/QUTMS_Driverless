@@ -280,7 +280,7 @@ WORKDIR /home/$USERNAME/driverless_ws
 #                          jetson_ros_zed
 # ==============================================================================
 
-FROM jetson_ros as jetson_ros_zed
+FROM jetson_ros_base as jetson_ros_zed
 
 # value comes from above, see https://stackoverflow.com/a/56748289
 ARG L4T_MINOR_VERSION
@@ -330,7 +330,7 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
 RUN pip3 install dataclasses
 
 # copy calibration file
-COPY ./src/jetson/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
+COPY ./src/perception/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
 # setup entrypoint
 COPY ./src/perception/docker/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh

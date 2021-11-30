@@ -131,6 +131,7 @@ services:
             - /dev/shm:/dev/shm
             # mount in X11 stuff for display
             - /tmp/.X11-unix:/tmp/.X11-unix
+            - ../src:/driverless_ws/src
         <<: *devices
         <<: *network
         <<: *interactive
