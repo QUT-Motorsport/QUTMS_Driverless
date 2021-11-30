@@ -27,7 +27,7 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource(
             [
                 get_package_share_directory("zed_wrapper"),
-                "/launch/zed2i_camera.launch.py"
+                "/launch/zed2i.launch.py"
             ]
         ),
         launch_arguments={
