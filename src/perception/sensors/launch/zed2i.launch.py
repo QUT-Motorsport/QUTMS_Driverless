@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
+
 # ORIGINALLY FROM https://github.com/stereolabs/zed-ros2-wrapper/blob/foxy-v3.5.1/zed_wrapper/launch/zed2i.launch.py
 # MODIFIED AS NEEDED
-#!/usr/bin/env python3
 
 import os
 
