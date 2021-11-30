@@ -153,6 +153,7 @@ services:
             - /tmp/.X11-unix:/tmp/.X11-unix
             - ../src:/home/${USERNAME}/driverless_ws/src
             - ../datasets:/home/${USERNAME}/datasets
+        <<: *user
         <<: *devices
         <<: *network
         <<: *interactive
