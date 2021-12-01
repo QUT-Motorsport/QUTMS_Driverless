@@ -82,7 +82,7 @@ def cone_msg(
     location = Point(
         x=distance*cos(radians(bearing)),
         y=distance*sin(radians(bearing)),
-        z=0,
+        z=0.0,
     )
 
     return Cone(
