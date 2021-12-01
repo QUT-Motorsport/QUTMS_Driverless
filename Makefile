@@ -36,7 +36,8 @@ build_docker_base:
 	--build-arg USERNAME=$(USERNAME) --build-arg HOST_UID=$(HOST_UID) .
 
 # use make build target=<value>
-build: build_docker_base
+build:
+	@echo "REMEMBER to run `make build_docker_base` if package dependencies have changed!"
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build $(target)
 
 # use make build target=<value>
