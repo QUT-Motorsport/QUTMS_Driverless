@@ -1,4 +1,4 @@
-.PHONY: build run
+.PHONY: all help build_docker_base build run ssh
 
 include .env
 export  # export all variables from .env
@@ -17,19 +17,34 @@ export CURR_DIR=$(notdir $(shell pwd))
 #     2. document the target option to the `all` rule in this file below
 
 all:
-	@echo "usage: make [COMMAND] target=[TARGET]"
+	@echo "usage: make [COMMAND]"
+	@echo
 	@echo "COMMAND options:"
-	@echo "    build"
-	@echo "    run"
-	@echo "TARGET options:"
+	@echo "    help"
+	@echo "        - show this message"
+	@echo "    build_docker_base"
+	@echo "        - build the base x86 docker container"
+	@echo "    build target=[ENVIRONMENT_TARGET]"
+	@echo "        - build a target (see ENVIRONMENT_TARGET options). Not supplying a target will build all environments."
+	@echo "    run target=[ENVIRONMENT_TARGET]"
+	@echo "        - run a target (see ENVIRONMENT_TARGET options)"
+	@echo "    ssh target=[SSH_TARGET]"
+	@echo "        - ssh into a target (see SSH_TARGET options)"
+	@echo
+	@echo "ENVIRONMENT_TARGET options:"
 	@echo "    navigation"
 	@echo "    perception"
 	@echo "    unreal_sim"
 	@echo "    hardware"
 	@echo "    rosboard"
 	@echo "    jetson"
-	@echo "    jetson_processing"
-	@echo "Not supplying a target for 'make build' will build all environments."
+	@echo "    jetson_zed"
+	@echo
+	@echo "SSH_TARGET options:"
+	@echo "    ROSCUBE"
+	@echo "    JETSON"
+
+help: all
 
 build_docker_base:
 	docker build -f docker/Dockerfile -t qutms_driverless_base \
@@ -43,3 +58,7 @@ build:
 # use make build target=<value>
 run:
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run --rm $(target)
+
+# use make ssh target=<value>
+ssh:
+	ssh qutms@$($(target)_IP)
