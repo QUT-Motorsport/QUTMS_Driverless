@@ -61,3 +61,12 @@ RUN rosdep update && \
 
 # remove files
 RUN rm -r /home/${USERNAME}/driverless_ws/src/*
+
+
+# ==============================================================================
+#                           Add ROS entrypoint
+# ==============================================================================
+# setup entrypoint
+COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+RUN echo "source /opt/ros/foxy/setup.bash" >> /home/$USERNAME/.bashrc

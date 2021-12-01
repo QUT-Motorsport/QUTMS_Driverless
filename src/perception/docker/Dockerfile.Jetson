@@ -208,8 +208,8 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # setup entrypoint
-COPY ./src/perception/docker/ros_entrypoint.sh /ros_entrypoint.sh
-ENTRYPOINT ["/ros_entrypoint.sh"]
+COPY ./src/perception/docker/jetson_ros_entrypoint.sh /jetson_ros_entrypoint.sh
+ENTRYPOINT ["/jetson_ros_entrypoint.sh"]
 
 
 # ==============================================================================
@@ -273,6 +273,9 @@ RUN git clone https://github.com/dheera/rosboard.git
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
 WORKDIR /home/$USERNAME/driverless_ws
+
+# source foxy setup
+RUN echo "source /opt/ros/foxy/install/setup.bash" >> /home/$USERNAME/.bashrc
 
 
 # ==============================================================================
@@ -339,7 +342,7 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-select sensors
 
 # setup entrypoint
-COPY ./src/perception/docker/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
-ENTRYPOINT ["/ros_zed_entrypoint.sh"]
-RUN echo "source /ros_zed_wsz/install/setup.bash" >> /root/.bashrc
+COPY ./src/perception/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
+ENTRYPOINT ["/jetson_ros_zed_entrypoint.sh"]
+RUN echo "source /ros_zed_ws/install/setup.bash" >> /root/.bashrc
 RUN echo "source /driverless_ws/install/setup.bash" >> /root/.bashrc
