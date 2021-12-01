@@ -333,6 +333,7 @@ RUN pip3 install dataclasses
 COPY ./src/perception/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
 # copy perception and run a thin build
+WORKDIR /driverless_ws
 COPY ./src/perception /driverless_ws/src/perception
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-select sensors
