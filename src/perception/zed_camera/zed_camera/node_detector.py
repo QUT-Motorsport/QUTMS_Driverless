@@ -44,8 +44,8 @@ BLUE_HSV_THRESH = Threshold(
 )
 
 ORANGE_HSV_THRESH = Threshold(
-    lower=[120, 160, 50],
-    upper=[130, 255, 255],
+    lower=[0, 100, 50],
+    upper=[15, 255, 255],
 )
 
 
