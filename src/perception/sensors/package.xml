@@ -11,7 +11,8 @@
 
     <depend>sbg_driver</depend>
     <depend>velodyne</depend>
-    <depend>zed_wrapper</depend>
+    <!-- ZED Dep disabled as is compiled from source on Jetson ONLY -->
+    <!-- <depend>zed_wrapper</depend> -->
 
     <exec_depend>ros2launch</exec_depend>
 
