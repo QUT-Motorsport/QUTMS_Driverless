@@ -5,7 +5,7 @@ from cv_bridge import CvBridge # package to convert between ROS and OpenCV Image
 # import ROS2 message libraries
 from sensor_msgs.msg import Image
 # importcustom sim data message libraries
-from qutms_msgs.msg import ConeScan, ConeData
+from driverless_msgs.msg import ConeScan, ConeData
 
 # import other python libraries
 import numpy as np

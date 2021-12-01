@@ -1,5 +1,10 @@
 FROM osrf/ros:foxy-desktop
 
+# Docker config setup
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL /bin/bash
+SHELL ["/bin/bash", "-c"]
+
 
 # ==============================================================================
 #                           Set up a user using host UID
@@ -44,7 +49,16 @@ RUN git clone https://github.com/dheera/rosboard.git
 
 
 # ==============================================================================
-#                      Install src Dependencies
+#                           Add ROS entrypoint
+# ==============================================================================
+# setup entrypoint
+COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+RUN echo "source /opt/ros/foxy/setup.bash" >> /home/$USERNAME/.bashrc
+
+
+# ==============================================================================
+#                         Install src Dependencies
 # ==============================================================================
 
 # make driverless workspace
@@ -59,14 +73,9 @@ RUN rosdep update && \
     rosdep install -i --from-path src -y --rosdistro foxy -y \
     && rm -rf /var/lib/apt/lists/
 
+# run a build
+RUN source /opt/ros/foxy/setup.bash; \
+    colcon build --symlink-install --packages-up-to driverless_msgs
+
 # remove files
 RUN rm -r /home/${USERNAME}/driverless_ws/src/*
-
-
-# ==============================================================================
-#                           Add ROS entrypoint
-# ==============================================================================
-# setup entrypoint
-COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
-ENTRYPOINT ["/ros_entrypoint.sh"]
-RUN echo "source /opt/ros/foxy/setup.bash" >> /home/$USERNAME/.bashrc

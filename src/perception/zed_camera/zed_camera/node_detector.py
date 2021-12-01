@@ -6,6 +6,7 @@ from rclpy.publisher import Publisher
 
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDrive
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from cv_bridge import CvBridge
 import message_filters
@@ -57,7 +58,7 @@ def cone_from_bounding_box(
 
 class ControllerNode(Node):
     def __init__(self):
-        super().__init__("simple_zed_controller")
+        super().__init__("zed_detector")
 
         # subscribers
         colour_sub = message_filters.Subscriber(
@@ -74,10 +75,9 @@ class ControllerNode(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_zed_controller/debug_img", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("Simple ZED Controller Node Initalised")
+        self.get_logger().info("ZED Detector Node Initalised")
 
 
     def callback(self, colour_msg: Image, depth_msg: Image):
