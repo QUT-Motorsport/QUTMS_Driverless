@@ -158,7 +158,7 @@ class ControllerNode(Node):
             self.steering_publisher.publish(steering_msg)
             logger.info(f"Published steering angle: {steering_angle}")
 
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgr8"))
+        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
 
 def main(args=None):
