@@ -7,9 +7,11 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 
+
 cv_bridge = CvBridge()
 
 WINDOW_NAME = "Thresholder"
+
 
 def get_thresh():
     vmax = cv2.getTrackbarPos("VMax", WINDOW_NAME)
@@ -51,10 +53,10 @@ cv2.setTrackbarPos("HMin", WINDOW_NAME, 0)
 
 class ThresholderNode(Node):
     def __init__(self):
-        super().__init__("thresholder_node")
+        super().__init__("thresholder")
         self.create_subscription(
             Image,
-            "/zed2i/zed_node/stereo/image_rect_color",
+            "/zed2i/zed_node/left/image_rect_color",
             self.image_callback,
             10,
         )
@@ -75,13 +77,12 @@ class ThresholderNode(Node):
             cv2.destroyAllWindows()
             self.destroy_node()
 
-
 def main(args=None):
     rclpy.init(args=args)
 
-    node = ThresholderNode()
+    thresholder_node = ThresholderNode()
 
-    rclpy.spin(node)
+    rclpy.spin(thresholder_node)
     rclpy.shutdown()
 
 

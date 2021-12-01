@@ -5,7 +5,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
 # import custom sim data message libraries
 from fs_msgs.msg import ControlCommand
-from qutms_msgs.msg import ConeScan, ConeData
+from driverless_msgs.msg import ConeDetectionStamped
 
 # import helper drive processing module
 from .motion_proc import * 
@@ -13,17 +13,17 @@ from .motion_proc import *
 class SimpleController(Node):
     def __init__(self):
         super().__init__('simple_controller')
-        ## creates subscriber to 'lidar_processed' with type ConeScan that sends data to lidar_callback
+        ## creates subscriber to 'lidar_processed' with type ConeDetectionStamped that sends data to lidar_callback
         self.lidar_subscription_ = self.create_subscription(
-            ConeScan,
+            ConeDetectionStamped,
             'lidar_processed',
             self.lidar_callback,
             10)
         self.lidar_subscription_ 
 
-        ## creates subscriber to 'cam_processed' with type ConeScan that sends data to cam_callback
+        ## creates subscriber to 'cam_processed' with type ConeDetectionStamped that sends data to cam_callback
         self.cam_subscription_ = self.create_subscription(
-            ConeScan,
+            ConeDetectionStamped,
             'cam_processed',
             self.cam_callback,
             10)
@@ -88,6 +88,7 @@ class SimpleController(Node):
         self.far_cones = list()
 
         # retrieve message data
+        # TODO - update this to use interface defined by ConeDetectionStamped
         cones = cone_scan.data
         # calculate distance between lidar and cone
         for j in range(0, len(cones)):

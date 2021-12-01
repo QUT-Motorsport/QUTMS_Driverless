@@ -1,28 +1,27 @@
 from setuptools import setup
 
-package_name = 'zed_camera'
+package_name = "zed_camera"
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version="0.0.0",
     packages=[package_name],
     data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        ("share/" + package_name, ["package.xml"]),
     ],
-    install_requires=['setuptools'],
+    install_requires=["setuptools"],
     zip_safe=True,
-    maintainer='Alastair Bradford',
-    maintainer_email='qutmotorsport.team@gmail.com',
-    description='Test for ZED2i depth processing in Python',
-    license='MIT',
-    tests_require=['pytest'],
+    maintainer="Alistair English, Alastair Bradford",
+    maintainer_email="team@qutmotorsport.com",
+    description="ZED2i package",
+    license="MIT",
+    tests_require=["pytest"],
     entry_points={
-        'console_scripts': [
-            'depth_proc = zed_camera.node_depth_proc:main'
-            'thresholder = zed_camera.node_thresholder:main'
-            'depth_test = zed_camera.node_depth_test:main'
+        "console_scripts": [
+            "controller = zed_camera.node_controller:main",
+            "thresholder = zed_camera.node_thresholder:main",
+            "detector = zed_camera.detector:main",
         ],
     },
 )

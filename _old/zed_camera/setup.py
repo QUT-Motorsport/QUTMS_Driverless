@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'simple_zed_controller'
+package_name = 'zed_camera'
 
 setup(
     name=package_name,
@@ -13,15 +13,16 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Alistair English, Alastair Bradford',
+    maintainer='Alastair Bradford',
     maintainer_email='qutmotorsport.team@gmail.com',
-    description='ZED2i depth processing + control',
+    description='Test for ZED2i depth processing in Python',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller = simple_zed_controller.node_controller:main',
-            'thresholder = simple_zed_controller.node_thresholder:main',
+            'depth_proc = zed_camera.node_depth_proc:main'
+            'thresholder = zed_camera.node_thresholder:main'
+            'depth_test = zed_camera.node_depth_test:main'
         ],
     },
 )
