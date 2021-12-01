@@ -61,7 +61,6 @@ def generate_launch_description():
         "zed2i.yaml"
     )
 
-
     # URDF/xacro file to be loaded by the Robot State Publisher node
     xacro_path = os.path.join(
         get_package_share_directory('zed_wrapper'),
