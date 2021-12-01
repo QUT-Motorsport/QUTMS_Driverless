@@ -5,7 +5,6 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from sensor_msgs.msg import Image
-from stereo_msgs.msg import DisparityImage
 from ackermann_msgs.msg import AckermannDrive
 
 from cv_bridge import CvBridge
@@ -40,15 +39,25 @@ RIGHT_DISP_COLOUR = (255, 0, 0)  # bgr - blue
 TARGET_DISP_COLOUR = (0, 0, 255)  # bgr - red
 
 
+# TO USE DISPARITY:
+# def cone_from_bounding_box(
+#     bounding_box: Rect,
+#     disparity_frame: np.ndarray,
+#     f: float,
+#     t: float
+# ) -> Cone:
+#     return Cone(
+#         bounding_box=bounding_box,
+#         distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
+#     )
+
 def cone_from_bounding_box(
     bounding_box: Rect,
-    disparity_frame: np.ndarray,
-    f: float,
-    t: float
+    depth_frame: np.ndarray,
 ) -> Cone:
     return Cone(
         bounding_box=bounding_box,
-        distance=-f * t / disparity_frame[(bounding_box.center.y, bounding_box.center.x)]
+        distance=depth_frame[(bounding_box.center.y, bounding_box.center.x)]
     )
 
 
@@ -60,12 +69,12 @@ class ControllerNode(Node):
         colour_sub = message_filters.Subscriber(
             self, Image, "/zed2i/zed_node/rgb/image_rect_color"
         )
-        disparity_sub = message_filters.Subscriber(
-            self, DisparityImage, "/zed2i/zed_node/disparity/disparity_image"
+        depth_sub = message_filters.Subscriber(
+            self, Image, "/zed2i/zed_node/depth/depth_registered"
         )
 
         synchronizer = message_filters.TimeSynchronizer(
-            fs=[colour_sub, disparity_sub],
+            fs=[colour_sub, depth_sub],
             queue_size=30,
         )
         synchronizer.registerCallback(self.callback)
@@ -77,12 +86,12 @@ class ControllerNode(Node):
         self.get_logger().info("Simple ZED Controller Node Initalised")
 
 
-    def callback(self, colour_msg: Image, disparity_msg: DisparityImage):
+    def callback(self, colour_msg: Image, depth_msg: Image):
         logger = self.get_logger()
         logger.info("Recieved image")
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
-        disparity_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(disparity_msg.image, desired_encoding='32FC1')
+        depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
 
@@ -90,10 +99,10 @@ class ControllerNode(Node):
         right_bounds = get_coloured_bounding_boxes(hsv_frame, [RIGHT_THRESH])
 
         left_cones = [
-            cone_from_bounding_box(b, disparity_frame, disparity_msg.f, disparity_msg.t) for b in left_bounds
+            cone_from_bounding_box(b, depth_frame) for b in left_bounds
         ]
         right_cones = [
-            cone_from_bounding_box(b, disparity_frame, disparity_msg.f, disparity_msg.t) for b in right_bounds
+            cone_from_bounding_box(b, depth_frame) for b in right_bounds
         ]
 
         for c in left_cones:
