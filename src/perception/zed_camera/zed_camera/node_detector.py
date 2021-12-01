@@ -1,4 +1,4 @@
-from math import sin, cos, radians
+from math import sin, cos, radians, isnan
 
 import rclpy
 from rclpy.node import Node
@@ -46,6 +46,7 @@ ORANGE_HSV_THRESH = Threshold(
 YELLOW_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR = (0, 165, 255)  # bgr - orange
+
 
 # thresh, cone_colour, display_colour
 CONE_DETECTION_PARAMETERS = [
@@ -131,8 +132,10 @@ class DetectorNode(Node):
         detected_cones: List[Cone] = []
         for thresh, cone_colour, display_colour in CONE_DETECTION_PARAMETERS:
             for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
-                bearing = cone_bearing(bounding_box, colour_camera_info_msg)
                 distance = cone_distance(bounding_box, depth_frame)
+                if isnan(distance):
+                    continue
+                bearing = cone_bearing(bounding_box, colour_camera_info_msg)
                 detected_cones.append(cone_msg(distance, bearing, cone_colour))
                 draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
