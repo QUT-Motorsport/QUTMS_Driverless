@@ -37,7 +37,7 @@ build_docker_base:
 
 # use make build target=<value>
 build:
-	@echo "REMEMBER to run `make build_docker_base` if package dependencies have changed!"
+	@echo "REMEMBER to run 'make build_docker_base' if package dependencies have changed!"
 	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build $(target)
 
 # use make build target=<value>
