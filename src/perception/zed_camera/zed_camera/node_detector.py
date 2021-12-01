@@ -1,11 +1,11 @@
-from math import atan2, pi
+from math import sin, cos, radians
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from sensor_msgs.msg import Image
-from ackermann_msgs.msg import AckermannDrive
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import Point
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from cv_bridge import CvBridge
@@ -16,26 +16,28 @@ import numpy as np
 
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
-from .rect import Rect, Point, draw_box
-from .cone import Cone
+from .rect import Rect, draw_box
 
-from typing import Optional
+from typing import List
 
 
 cv_bridge = CvBridge()
 
 
-YELLOW_THRESH = Threshold(
+CAMERA_FOV = 120  # degrees
+
+
+YELLOW_HSV_THRESH = Threshold(
     lower=[20, 170, 100],
     upper=[40, 255, 255],
 )
 
-BLUE_THRESH = Threshold(
+BLUE_HSV_THRESH = Threshold(
     lower=[120, 160, 50],
     upper=[130, 255, 255],
 )
 
-ORANGE_THRESH = Threshold(
+ORANGE_HSV_THRESH = Threshold(
     lower=[120, 160, 50],
     upper=[130, 255, 255],
 )
@@ -45,18 +47,51 @@ YELLOW_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR = (0, 165, 255)  # bgr - orange
 
+# thresh, cone_colour, display_colour
+CONE_DETECTION_PARAMETERS = [
+    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
+    (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
+    (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+]
 
-def cone_from_bounding_box(
-    bounding_box: Rect,
+
+def cone_distance(
+    colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
+) -> float:
+    cone_center = colour_frame_cone_bounding_box.center
+    # TODO: take vertical slice of center of cone and average for a better distance
+    return depth_frame[(cone_center.y, cone_center.x)]
+
+
+def cone_bearing(
+    colour_frame_cone_bounding_box: Rect,
+    colour_frame_camera_info: CameraInfo,
+) -> float:
+    cone_center = colour_frame_cone_bounding_box.center
+    frame_width = colour_frame_camera_info.width
+    center_scaled = (frame_width - cone_center / 2) / (frame_width / 2)  # 1 to -1 left to right
+    return CAMERA_FOV/2 * center_scaled
+
+
+def cone_msg(
+    distance: float,
+    bearing: float,
+    colour: int,  # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
 ) -> Cone:
+    location = Point(
+        x=distance*cos(radians(bearing)),
+        y=distance*sin(radians(bearing)),
+        z=0,
+    )
+
     return Cone(
-        bounding_box=bounding_box,
-        distance=depth_frame[(bounding_box.center.y, bounding_box.center.x)]
+        location=location,
+        color=colour,
     )
 
 
-class ControllerNode(Node):
+class DetectorNode(Node):
     def __init__(self):
         super().__init__("zed_detector")
 
@@ -64,23 +99,27 @@ class ControllerNode(Node):
         colour_sub = message_filters.Subscriber(
             self, Image, "/zed2i/zed_node/rgb/image_rect_color"
         )
+        colour_camera_info_sub = message_filters.Subscriber(
+            self, CameraInfo, "/zed2i/zed_node/rgb/camera_info"
+        )
         depth_sub = message_filters.Subscriber(
             self, Image, "/zed2i/zed_node/depth/depth_registered"
         )
 
         synchronizer = message_filters.TimeSynchronizer(
-            fs=[colour_sub, depth_sub],
+            fs=[colour_sub, colour_camera_info_sub, depth_sub],
             queue_size=30,
         )
         synchronizer.registerCallback(self.callback)
 
         # publishers
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
         self.get_logger().info("ZED Detector Node Initalised")
 
 
-    def callback(self, colour_msg: Image, depth_msg: Image):
+    def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         logger = self.get_logger()
         logger.info("Recieved image")
 
@@ -89,78 +128,29 @@ class ControllerNode(Node):
 
         hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
 
-        left_bounds = get_coloured_bounding_boxes(hsv_frame, [LEFT_THRESH])
-        right_bounds = get_coloured_bounding_boxes(hsv_frame, [RIGHT_THRESH])
+        detected_cones: List[Cone] = []
+        for thresh, cone_colour, display_colour in CONE_DETECTION_PARAMETERS:
+            for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
+                bearing = cone_bearing(bounding_box, colour_camera_info_msg)
+                distance = cone_distance(bounding_box, depth_frame)
+                detected_cones.append(cone_msg(distance, bearing, cone_colour))
+                draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
-        left_cones = [
-            cone_from_bounding_box(b, depth_frame) for b in left_bounds
-        ]
-        right_cones = [
-            cone_from_bounding_box(b, depth_frame) for b in right_bounds
-        ]
+        detection_msg = ConeDetectionStamped(
+            header=colour_msg.header,
+            cones=detected_cones,
+        )
 
-        for c in left_cones:
-            draw_box(colour_frame, box=c.bounding_box, colour=LEFT_DISP_COLOUR, distance=c.distance)
-        for c in right_cones:
-            draw_box(colour_frame, box=c.bounding_box, colour=RIGHT_DISP_COLOUR, distance=c.distance)
-        
-        closest_left_cone: Optional[Cone] = None
-        closest_right_cone: Optional[Cone] = None
-
-        if len(left_cones) > 0:
-            closest_left_cone = min(left_cones, key=lambda c: c.distance)
-            cv2.drawMarker(
-                colour_frame, 
-                (closest_left_cone.bounding_box.center.x, closest_left_cone.bounding_box.center.y),
-                LEFT_DISP_COLOUR,
-                markerSize=cv2.MARKER_STAR,
-                thickness=20,
-            )
-        if len(right_cones) > 0:
-            closest_right_cone = min(right_cones, key=lambda c: c.distance)
-            cv2.drawMarker(
-                colour_frame, 
-                (closest_right_cone.bounding_box.center.x, closest_right_cone.bounding_box.center.y),
-                RIGHT_DISP_COLOUR,
-                markerSize=cv2.MARKER_STAR,
-                thickness=20,
-            )
-        
-        target: Optional[Point] = None
-        if closest_left_cone is not None and closest_right_cone is not None:
-            target = (
-                closest_left_cone.bounding_box.br
-                + (closest_right_cone.bounding_box.bl - closest_left_cone.bounding_box.br)
-                / 2
-            )
-        elif closest_left_cone is not None:
-            target = closest_left_cone.bounding_box.br + Point(100, 0)
-        elif closest_right_cone is not None:
-            target = closest_right_cone.bounding_box.bl + Point(-100, 0)
-        
-        if target is not None:
-            cv2.drawMarker(colour_frame, (target.x, target.y), TARGET_DISP_COLOUR, cv2.MARKER_TILTED_CROSS)
-            height, width, _ = colour_frame.shape
-            bottom_center = Point(int(round(width/2)), height)
-            cv2.line(
-                colour_frame, (bottom_center.x, bottom_center.y), (target.x, target.y), TARGET_DISP_COLOUR, thickness=2
-            )
-
-            steering_angle = ((pi/2) - atan2(-(target.y-bottom_center.y), target.x-bottom_center.x))*2
-            steering_msg = AckermannDrive()
-            steering_msg.steering_angle = steering_angle
-            self.steering_publisher.publish(steering_msg)
-            logger.info(f"Published steering angle: {steering_angle}")
-
+        self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    controller_node = ControllerNode()
+    detector_node = DetectorNode()
 
-    rclpy.spin(controller_node)
+    rclpy.spin(detector_node)
     rclpy.shutdown()
 
 

@@ -57,7 +57,7 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
     if distance is not None:
         cv2.putText(
             img,
-            str(round(distance, 2)),
+            str(round(distance, 2)) + "m",
             (box.tl.x, box.tl.y - 5),
             cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=0.6,

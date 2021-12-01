@@ -21,7 +21,7 @@ setup(
         "console_scripts": [
             "controller = zed_camera.node_controller:main",
             "thresholder = zed_camera.node_thresholder:main",
-            "detector = zed_camera.detector:main",
+            "detector = zed_camera.node_detector:main",
         ],
     },
 )
