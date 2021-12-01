@@ -136,7 +136,7 @@ services:
         <<: *network
         <<: *interactive
         <<: *jetson-extras
-        command: ros2 launch zed_wrapper zed2i.launch.py
+        command: ros2 launch sensors zed2i.launch.py
     
     jetson:
         build:

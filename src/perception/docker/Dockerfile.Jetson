@@ -332,7 +332,13 @@ RUN pip3 install dataclasses
 # copy calibration file
 COPY ./src/perception/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
+# copy perception and run a thin build
+COPY ./src/perception /driverless_ws/src/perception
+RUN source ${ROS_ROOT}/install/setup.bash; \
+    colcon build --symlink-install --packages-select sensors
+
 # setup entrypoint
 COPY ./src/perception/docker/ros_zed_entrypoint.sh /ros_zed_entrypoint.sh
 ENTRYPOINT ["/ros_zed_entrypoint.sh"]
-RUN echo "source /ros_zed_ws/install/setup.bash" >> /root/.bashrc
+RUN echo "source /ros_zed_wsz/install/setup.bash" >> /root/.bashrc
+RUN echo "source /driverless_ws/install/setup.bash" >> /root/.bashrc
