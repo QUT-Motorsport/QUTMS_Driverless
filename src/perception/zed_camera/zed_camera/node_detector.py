@@ -30,7 +30,7 @@ cv_bridge = CvBridge()
 # model = yolov5_init(CONFIDENCE, MODEL_PATH)
 
 
-CAMERA_FOV = 120  # degrees
+CAMERA_FOV = 110  # degrees
 
 
 YELLOW_HSV_THRESH = Threshold(
