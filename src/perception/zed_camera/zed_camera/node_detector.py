@@ -77,7 +77,7 @@ def cone_bearing(
 ) -> float:
     cone_center = colour_frame_cone_bounding_box.center.x
     frame_width = colour_frame_camera_info.width
-    center_scaled = (frame_width - cone_center / 2) / (frame_width / 2)  # 1 to -1 left to right
+    center_scaled = (frame_width / 2 - cone_center) / (frame_width / 2)  # 1 to -1 left to right
     return CAMERA_FOV/2 * center_scaled
 
 
