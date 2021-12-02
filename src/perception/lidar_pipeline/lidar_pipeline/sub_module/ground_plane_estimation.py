@@ -14,7 +14,6 @@ from . import DBSCAN
 # Visualiser
 from . import visualiser as vis
 
-
 # Returns the index to a segment that a point maps to
 def get_segment(x, y):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
@@ -164,8 +163,7 @@ def label_points_6(segments_bins, ground_lines):
                 right_counter += 1
                 left_idx = (left_counter) % NUM_SEGMENTS
                 right_idx = (right_counter) % NUM_SEGMENTS
-            if left_idx == right_idx:
-                raise AssertionError("No ground lines found")
+            if left_idx == right_idx: raise AssertionError("No ground lines found") # probably shouldnt have an error thrown 
         ground_line = ground_lines[seg_idx][0]
                 
         for j in range(NUM_BINS):
@@ -224,13 +222,18 @@ def object_reconstruction_4(cluster_centers, segments_bins):
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
+HORIZONTAL_RES = 0.2 * (math.pi / 180) # 0.2 degrees in between each point
+VERTICAL_RES = 2 * (math.pi / 180) # 2 degrees in between each point
+
+CONE_HEIGHT = 0.325 #m
+CONE_WIDTH = 0.228 #m
+
 def cone_filter(distance):
-    cone_height = 0.325
-    cone_width = 0.228
-    horizontal_res = 0.2 * (math.pi / 180) # 0.2 degrees in between each point
-    vertical_res = 2 * (math.pi / 180) # 2 degrees in between each point
-    exp_point_count = (1/2) * (cone_height / (2 * distance * math.tan(vertical_res / 2))) * (cone_width / (2 * distance * math.tan(horizontal_res / 2)))
-    return exp_point_count
+    if distance < 0.01: distance = 0.01
+    return (1/2) * (CONE_HEIGHT / (2 * distance * math.tan(VERTICAL_RES / 2))) * (CONE_WIDTH / (2 * distance * math.tan(HORIZONTAL_RES / 2)))
+
+
+FAR_X = 6 #m
 
 def get_cones(reconstructed_clusters):
     cones = []
@@ -249,10 +252,11 @@ def get_cones(reconstructed_clusters):
             # Rule based filter
             exp_point_count = cone_filter(distance)
             #print(exp_point_count, point_count)
-            if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
-                cones.append([x_mean, y_mean])
-            else:
-                cones.append([x_mean, y_mean]) # Remove when real-er data
+            if abs(x_mean) < FAR_X: # only checks centre of scan for cones (noise filter)
+                if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
+                    cones.append([x_mean, y_mean])
+                else:
+                    cones.append([x_mean, y_mean]) # Remove when real-er data
     return cones
 
 
@@ -311,7 +315,7 @@ def get_ground_plane(point_cloud):
     return cones
 
 
-def init_constants():
+def init_constants(_max_range):
     global LIDAR_RANGE
     global DELTA_ALPHA
     global NUM_SEGMENTS
@@ -321,7 +325,7 @@ def init_constants():
     global T_D_MAX
 
     # Constants
-    LIDAR_RANGE = 16 # Max range of the LIDAR # 100 # in metres
+    LIDAR_RANGE = _max_range # Max range of the LIDAR (m)
     DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
     BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
@@ -336,9 +340,9 @@ def init_constants():
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
 
 
-def lidar_main(point_cloud, _visualise, _display, _figures_dir):
+def lidar_main(point_cloud, _visualise, _display, _figures_dir, _max_range=16):
     start_time = time.time()
-    init_constants()
+    init_constants(_max_range)
     global VISUALISE
     global DISPLAY
     VISUALISE = _visualise
@@ -359,8 +363,8 @@ def lidar_main(point_cloud, _visualise, _display, _figures_dir):
         FIGURES_DIR = _figures_dir
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
     #print("INIT:", time.time() - start_time)
-    cones = get_ground_plane(point_cloud)
-    return cones
+
+    return get_ground_plane(point_cloud)
 
 # Notes
 #   - Explore Python threading for this entire process
