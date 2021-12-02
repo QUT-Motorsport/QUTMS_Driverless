@@ -8,7 +8,6 @@ ARG HOST_GROUP=dialout
 
 # copy in perception files and install Python Dependencies
 COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/perception /home/${USERNAME}/driverless_ws/src/perception
-RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/requirements.txt
-
+RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_lidar.txt
 # remove files
 RUN rm -r /home/${USERNAME}/driverless_ws/src/*
