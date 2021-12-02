@@ -1,5 +1,3 @@
-from math import sin, cos, radians, isnan
-
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -13,21 +11,21 @@ import message_filters
 
 import cv2
 import numpy as np
+from math import sin, cos, radians, isnan
+from typing import List
 
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
 
-# from .yolo_model import yolov5_init
-
-from typing import List
+from .yolo_model import yolov5_init
 
 
 cv_bridge = CvBridge()
 
-# CONFIDENCE = 0.45
-# MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/model.pt"
-# model = yolov5_init(CONFIDENCE, MODEL_PATH)
+CONFIDENCE = 0.45
+MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/model.pt"
+model = yolov5_init(CONFIDENCE, MODEL_PATH)
 
 
 CAMERA_FOV = 110  # degrees
