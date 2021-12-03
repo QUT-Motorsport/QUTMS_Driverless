@@ -26,7 +26,6 @@ ConeMsgColour: int
 
 cv_bridge = CvBridge()
 
-
 CONFIDENCE = 0.45
 MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/models/model.pt"
 model = yolov5_init(CONFIDENCE, MODEL_PATH)
@@ -58,23 +57,42 @@ ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
 # thresh, cone_colour, display_colour
 HSV_CONE_DETECTION_PARAMETERS = [
-    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
     (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
+    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
     (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
 
+YOLO_CONE_DETECTION_PARAMETERS = [
+    (Cone.BLUE, BLUE_DISP_COLOUR),
+    (Cone.YELLOW, YELLOW_DISP_COLOUR),
+    (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+]
 
-def get_hsv_bounding_boxes(hsv_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    bounding_boxes = []
+CLASS = 5
+
+
+def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+    hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
+    
+    bounding_boxes = list()
     for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
         for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
             bounding_boxes.append((bounding_box, cone_colour, display_colour))
     return bounding_boxes
 
 
-def get_yolo_bounding_boxes(hsv_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    bounding_boxes = []
-    # TODO
+def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+    rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
+
+    bounding_boxes = list()
+    results = model(rgb_frame)
+    data = results.pandas().xyxy[0]
+
+    for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
+        for i in range(len(data.index)): 
+            if data.iloc[i, CLASS] == cone_colour:
+                bounding_box = Rect(data.xmin[i], data.ymin[i], (data.xmax[i]-data.xmin[i]), (data.ymax[i]-data.ymin[i]))
+                bounding_boxes.append(bounding_box, cone_colour, display_colour)
     return bounding_boxes
 
 
@@ -149,11 +167,9 @@ class DetectorNode(Node):
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
-        hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
-
         detected_cones: List[Cone] = []
-        for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(hsv_frame):
-        # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(hsv_frame):
+        for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
+        # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
             distance = cone_distance(bounding_box, depth_frame)
             if isnan(distance):
                 continue
