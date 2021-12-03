@@ -74,7 +74,7 @@ CLASS = 5
 def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
     hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
     
-    bounding_boxes = list()
+    bounding_boxes = []
     for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
         for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
             bounding_boxes.append((bounding_box, cone_colour, display_colour))
@@ -84,14 +84,19 @@ def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsg
 def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
     rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
 
-    bounding_boxes = list()
+    bounding_boxes = []
     results = model(rgb_frame)
     data = results.pandas().xyxy[0]
 
     for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
         for i in range(len(data.index)): 
             if data.iloc[i, CLASS] == cone_colour:
-                bounding_box = Rect(data.xmin[i], data.ymin[i], (data.xmax[i]-data.xmin[i]), (data.ymax[i]-data.ymin[i]))
+                bounding_box = Rect(
+                    data.xmin[i],
+                    data.ymin[i],
+                    (data.xmax[i]-data.xmin[i]),
+                    (data.ymax[i]-data.ymin[i]),
+                )
                 bounding_boxes.append(bounding_box, cone_colour, display_colour)
     return bounding_boxes
 
