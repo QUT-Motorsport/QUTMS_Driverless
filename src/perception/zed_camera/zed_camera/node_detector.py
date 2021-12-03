@@ -1,5 +1,3 @@
-from math import sin, cos, radians, isnan
-
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -13,21 +11,24 @@ import message_filters
 
 import cv2
 import numpy as np
+from math import sin, cos, radians, isnan
 
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
+from .yolo_model import yolov5_init
 
-# from .yolo_model import yolov5_init
+from typing import Generator, List, Tuple
 
-from typing import List
+Colour: Tuple[int, int, int]
+ConeMsgColour: int
 
 
 cv_bridge = CvBridge()
 
-# CONFIDENCE = 0.45
-# MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/model.pt"
-# model = yolov5_init(CONFIDENCE, MODEL_PATH)
+CONFIDENCE = 0.45
+MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/models/model.pt"
+model = yolov5_init(CONFIDENCE, MODEL_PATH)
 
 
 CAMERA_FOV = 110  # degrees
@@ -49,17 +50,50 @@ ORANGE_HSV_THRESH = Threshold(
 )
 
 
-YELLOW_DISP_COLOUR = (0, 255, 255)  # bgr - yellow
-BLUE_DISP_COLOUR = (255, 0, 0)  # bgr - blue
-ORANGE_DISP_COLOUR = (0, 165, 255)  # bgr - orange
+YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
+BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
+ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
 
 # thresh, cone_colour, display_colour
-CONE_DETECTION_PARAMETERS = [
-    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
+HSV_CONE_DETECTION_PARAMETERS = [
     (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
+    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
     (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
+
+YOLO_CONE_DETECTION_PARAMETERS = [
+    (Cone.BLUE, BLUE_DISP_COLOUR),
+    (Cone.YELLOW, YELLOW_DISP_COLOUR),
+    (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+]
+
+CLASS = 5
+
+
+def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+    hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
+    
+    bounding_boxes = list()
+    for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
+        for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
+            bounding_boxes.append((bounding_box, cone_colour, display_colour))
+    return bounding_boxes
+
+
+def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+    rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
+
+    bounding_boxes = list()
+    results = model(rgb_frame)
+    data = results.pandas().xyxy[0]
+
+    for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
+        for i in range(len(data.index)): 
+            if data.iloc[i, CLASS] == cone_colour:
+                bounding_box = Rect(data.xmin[i], data.ymin[i], (data.xmax[i]-data.xmin[i]), (data.ymax[i]-data.ymin[i]))
+                bounding_boxes.append(bounding_box, cone_colour, display_colour)
+    return bounding_boxes
 
 
 def cone_distance(
@@ -133,17 +167,15 @@ class DetectorNode(Node):
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
-        hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
-
         detected_cones: List[Cone] = []
-        for thresh, cone_colour, display_colour in CONE_DETECTION_PARAMETERS:
-            for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
-                distance = cone_distance(bounding_box, depth_frame)
-                if isnan(distance):
-                    continue
-                bearing = cone_bearing(bounding_box, colour_camera_info_msg)
-                detected_cones.append(cone_msg(distance, bearing, cone_colour))
-                draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
+        for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
+        # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+            distance = cone_distance(bounding_box, depth_frame)
+            if isnan(distance):
+                continue
+            bearing = cone_bearing(bounding_box, colour_camera_info_msg)
+            detected_cones.append(cone_msg(distance, bearing, cone_colour))
+            draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
         detection_msg = ConeDetectionStamped(
             header=colour_msg.header,
