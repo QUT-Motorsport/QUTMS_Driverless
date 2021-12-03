@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "zed_camera"
+package_name = "hsv_thresholder"
 
 setup(
     name=package_name,
@@ -12,16 +12,15 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English, Alastair Bradford",
+    maintainer="Alistair English",
     maintainer_email="team@qutmotorsport.com",
-    description="ZED2i package",
+    description="HSV Thresholding package",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "controller = zed_camera.node_controller:main",
-            "cv_thresholder = zed_camera.node_cv_thresholder:main",
-            "detector = zed_camera.node_detector:main",
+            "thresholder = hsv_thresholder.node_thresholder:main",
+            "gui = hsv_thresholder.node_gui:main",
         ],
     },
 )
