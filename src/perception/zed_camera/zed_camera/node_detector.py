@@ -21,8 +21,8 @@ from .rect import Rect, draw_box
 
 from typing import List, Tuple
 
-Colour: Tuple[int, int, int]
-ConeMsgColour: int
+Colour = Tuple[int, int, int]
+ConeMsgColour = int
 
 
 cv_bridge = CvBridge()
