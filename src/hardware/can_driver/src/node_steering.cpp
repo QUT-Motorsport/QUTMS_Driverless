@@ -28,7 +28,7 @@ void topic_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) co
 public:
     Steering() : Node("steering") {
         this->subscription_ = this->create_subscription<ackermann_msgs::msg::AckermannDrive>("steering", 10, std::bind(&Steering::topic_callback, this, _1));
-        this->c = std::make_shared<Can2Ethernet>("192.168.0.8", 20005);
+        this->c = std::make_shared<Can2Ethernet>("192.168.2.8", 20005);
         this->steering = std::make_shared<SteeringControl>(c);
 	    this->steering->setAcceleration(std::make_pair<uint32_t, uint32_t>(10000, 10000));
     }

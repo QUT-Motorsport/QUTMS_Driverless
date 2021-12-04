@@ -18,7 +18,7 @@ from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
 from .yolo_model import yolov5_init
 
-from typing import Generator, List, Tuple
+from typing import List, Tuple
 
 Colour: Tuple[int, int, int]
 ConeMsgColour: int

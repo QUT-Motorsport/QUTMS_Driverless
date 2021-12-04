@@ -12,7 +12,7 @@
 
 #define DEFAULT_VELOCITY 1000		// 1000 Encoder Counts / s
 #define DEFAULT_ACCELERATIONS 5000	// 5000 Encoder Counts / s^2
-#define DEFAULT_LIMITS 5000			// 5000, -5000 Encoder Counts
+#define DEFAULT_LIMITS 4500			// 4500, -4500 Encoder Counts
 #define DEFAULT_CURRENT 5000		// 5000mA
 
 class SteeringControl {
