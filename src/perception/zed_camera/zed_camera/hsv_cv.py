@@ -22,5 +22,5 @@ def get_coloured_contours(hsv_img: np.ndarray, thresholds: List[Threshold]) -> L
     contours, _ = cv2.findContours(full_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return contours
 
-def get_large_contour_bounds(contours: List[Contour], thresh: int = 100) -> List[Rect]:
-    return [Rect(*cv2.boundingRect(c)) for c in contours if cv2.contourArea(c) > thresh]
+def get_large_contour_bounds(contours: List[Contour], min_area: int = 100, max_area: int = 4500) -> List[Rect]:
+    return [Rect(*cv2.boundingRect(c)) for c in contours if min_area < cv2.contourArea(c) < max_area]
