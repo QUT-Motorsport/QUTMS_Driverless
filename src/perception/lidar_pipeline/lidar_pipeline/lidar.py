@@ -129,8 +129,6 @@ class LidarDetection(Node):
         # calls main module from ground estimation algorithm
         cones: list = lidar_main(point_list, DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE) 
 
-        logger.info("Algorithm Time:" + str(time.time()-start))
-
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
         markers_list: List[Marker] = []
@@ -156,6 +154,8 @@ class LidarDetection(Node):
 
         self.detection_publisher.publish(detection_msg) # publish cone data
         self.marker_publisher.publish(markers_msg) # publish marker points data
+
+        logger.info("Total Time:" + str(time.time()-start))
 
 
 ## main call
