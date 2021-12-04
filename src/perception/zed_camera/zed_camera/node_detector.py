@@ -16,7 +16,7 @@ from math import sin, cos, radians, isnan
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
-from .yolo_model import yolov5_init
+# from .yolo_model import yolov5_init
 
 from typing import List, Tuple
 
@@ -26,9 +26,9 @@ ConeMsgColour: int
 
 cv_bridge = CvBridge()
 
-CONFIDENCE = 0.45
-MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/models/model.pt"
-model = yolov5_init(CONFIDENCE, MODEL_PATH)
+# CONFIDENCE = 0.45
+# MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/models/model.pt"
+# model = yolov5_init(CONFIDENCE, MODEL_PATH)
 
 
 CAMERA_FOV = 110  # degrees
@@ -81,24 +81,24 @@ def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsg
     return bounding_boxes
 
 
-def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
+# def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+#     rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
 
-    bounding_boxes = []
-    results = model(rgb_frame)
-    data = results.pandas().xyxy[0]
+#     bounding_boxes = []
+#     results = model(rgb_frame)
+#     data = results.pandas().xyxy[0]
 
-    for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
-        for i in range(len(data.index)): 
-            if data.iloc[i, CLASS] == cone_colour:
-                bounding_box = Rect(
-                    data.xmin[i],
-                    data.ymin[i],
-                    (data.xmax[i]-data.xmin[i]),
-                    (data.ymax[i]-data.ymin[i]),
-                )
-                bounding_boxes.append(bounding_box, cone_colour, display_colour)
-    return bounding_boxes
+#     for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
+#         for i in range(len(data.index)): 
+#             if data.iloc[i, CLASS] == cone_colour:
+#                 bounding_box = Rect(
+#                     data.xmin[i],
+#                     data.ymin[i],
+#                     (data.xmax[i]-data.xmin[i]),
+#                     (data.ymax[i]-data.ymin[i]),
+#                 )
+#                 bounding_boxes.append(bounding_box, cone_colour, display_colour)
+#     return bounding_boxes
 
 
 def cone_distance(
