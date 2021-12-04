@@ -1,3 +1,6 @@
+import cv2
+import numpy as np
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -9,8 +12,6 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from cv_bridge import CvBridge
 import message_filters
 
-import cv2
-import numpy as np
 from math import sin, cos, radians, isnan
 
 from .threshold import Threshold
