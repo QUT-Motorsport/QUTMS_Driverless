@@ -46,7 +46,7 @@ class ThresholderNode(Node):
         mask = cv2.inRange(hsv_frame, self.threshold.lower, self.threshold.upper)
 
         thresholded_frame = cv2.bitwise_and(frame, frame, mask=mask)
-        self.threshold_img_publisher.publish(cv_bridge.cv2_to_imgmsg(thresholded_frame))
+        self.threshold_img_publisher.publish(cv_bridge.cv2_to_imgmsg(thresholded_frame, encoding="bgra8"))
     
     def threshold_callback(self, msg: String):
         self.threshold = Threshold.from_json(msg.data)
