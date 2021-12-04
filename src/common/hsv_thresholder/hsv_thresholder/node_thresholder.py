@@ -50,6 +50,8 @@ class ThresholderNode(Node):
     
     def threshold_callback(self, msg: String):
         self.threshold = Threshold.from_json(msg.data)
+        self.get_logger().info(f"lower={list(self.threshold.lower)},")
+        self.get_logger().info(f"upper={list(self.threshold.upper)},")
 
 def main(args=None):
     rclpy.init(args=args)
