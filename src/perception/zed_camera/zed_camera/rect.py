@@ -49,6 +49,9 @@ class Rect:
     def area(self) -> int:
         return self.width * self.height
 
+    def as_roi(self, frame: np.ndarray) -> np.ndarray:
+        return frame[self.tl.y:self.br.y, self.tl.x:self.br.x]
+
 
 def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
     # draw a bounding box around the image and display it
@@ -57,10 +60,10 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
     if distance is not None:
         cv2.putText(
             img,
-            str(round(distance, 2)) + "m",
-            (box.tl.x, box.tl.y - 5),
+            str(round(distance, 1)) + "m",
+            (box.tl.x, box.tl.y - 3),
             cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=0.6,
+            fontScale=0.4,
             color=(255, 255, 255),
-            thickness=2
+            thickness=1
         )

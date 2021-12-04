@@ -12,7 +12,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from cv_bridge import CvBridge
 import message_filters
 
-from math import sin, cos, radians, isnan
+from math import sin, cos, radians, isnan, isinf
 
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
@@ -36,13 +36,13 @@ CAMERA_FOV = 110  # degrees
 
 
 YELLOW_HSV_THRESH = Threshold(
-    lower=[20, 170, 100],
-    upper=[40, 255, 255],
+    lower=[10, 80, 100],
+    upper=[45, 255, 255],
 )
 
 BLUE_HSV_THRESH = Threshold(
-    lower=[120, 160, 50],
-    upper=[130, 255, 255],
+    lower=[105, 145, 60],
+    upper=[120, 255, 255],
 )
 
 ORANGE_HSV_THRESH = Threshold(
@@ -60,7 +60,7 @@ ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 HSV_CONE_DETECTION_PARAMETERS = [
     (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
     (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
-    (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+    # (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
 
 YOLO_CONE_DETECTION_PARAMETERS = [
@@ -106,9 +106,14 @@ def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
 ) -> float:
-    cone_center = colour_frame_cone_bounding_box.center
-    # TODO: take vertical slice of center of cone and average for a better distance
-    return depth_frame[(cone_center.y, cone_center.x)]
+
+    # get bounding box as roi
+    depth_roi = colour_frame_cone_bounding_box.as_roi(depth_frame)
+    # filter out nans
+    depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
+
+    # TODO: potentially take vertical slice of center of cone and average for a better distance
+    return np.mean(depth_roi)
 
 
 def cone_bearing(
@@ -177,7 +182,7 @@ class DetectorNode(Node):
         for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
         # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
             distance = cone_distance(bounding_box, depth_frame)
-            if isnan(distance):
+            if isnan(distance) or isinf(distance):
                 continue
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
