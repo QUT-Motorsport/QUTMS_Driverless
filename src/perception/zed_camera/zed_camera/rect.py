@@ -48,6 +48,10 @@ class Rect:
     @property
     def area(self) -> int:
         return self.width * self.height
+    
+    @property
+    def aspect_ratio(self) -> float:
+        return self.width / self.height
 
     def as_roi(self, frame: np.ndarray) -> np.ndarray:
         return frame[self.tl.y:self.br.y, self.tl.x:self.br.x]

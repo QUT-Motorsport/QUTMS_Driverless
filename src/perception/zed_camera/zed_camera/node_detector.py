@@ -181,9 +181,25 @@ class DetectorNode(Node):
         detected_cones: List[Cone] = []
         for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
         # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+            
+            # filter by height
+            if bounding_box.tl.y < colour_camera_info_msg.height/2:
+                continue
+
+            # filter on area
+            if bounding_box.area < 100 or bounding_box.area > 8000: 
+                continue
+            
+            # filter by aspect ratio
+            if bounding_box.aspect_ratio > 1.2:
+                continue
+            
             distance = cone_distance(bounding_box, depth_frame)
+
+            # filter on distance
             if isnan(distance) or isinf(distance):
                 continue
+
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
