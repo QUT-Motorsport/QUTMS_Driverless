@@ -262,7 +262,7 @@ RUN git clone https://github.com/dheera/rosboard.git
 
 # copy in perception files and install YOLOv5 vision dependancies
 COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/perception /home/${USERNAME}/driverless_ws/src/perception
-RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_vision.txt
+RUN pip3 install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_vision.txt
 # remove files
 RUN rm -r /home/${USERNAME}/driverless_ws/src/*
 
