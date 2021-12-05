@@ -1,12 +1,12 @@
 #include "steering_control.hpp"
 
-SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can) {
+SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can, c5e_config_t config) {
 	this->can = can;
-	this->velocity = DEFAULT_VELOCITY;
-	this->accelerations = std::make_pair<uint32_t, uint32_t>(DEFAULT_ACCELERATIONS, DEFAULT_ACCELERATIONS);
-	this->limits = std::make_pair<int32_t, int32_t>(DEFAULT_LIMITS, -DEFAULT_LIMITS);
+	this->velocity = config.default_velocity;
+	this->accelerations = std::make_pair<int32_t, int32_t>(config.default_accelerations, config.default_accelerations);
+	this->limits = std::make_pair<int32_t, int32_t>(config.default_limits, -config.default_limits);
 
-	this->current = DEFAULT_CURRENT;
+	this->current = config.default_current;
 	this->target = 0;
 
 	/* To initialise the controller to a usable state, we must set the:
@@ -92,7 +92,7 @@ SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can) {
 	std::cout << "Done (Operation Enabled)" << std::endl;
 }
 
-void SteeringControl::targetPosition(int32_t target) {
+void SteeringControl::target_position(int32_t target) {
 	// Set Target
 	this->target = target;
 
@@ -113,7 +113,7 @@ void SteeringControl::targetPosition(int32_t target) {
 	this->can->tx(id, 0, out);
 }
 
-void SteeringControl::targetPosition(int32_t target, int32_t velocity) {
+void SteeringControl::target_position(int32_t target, int32_t velocity) {
 	this->target = target;
 
 	uint32_t id;	 // Packet id out
@@ -137,7 +137,7 @@ void SteeringControl::targetPosition(int32_t target, int32_t velocity) {
 	this->can->tx(id, 0, out);
 }
 
-void SteeringControl::setVelocity(int32_t velocity) {
+void SteeringControl::set_velocity(int32_t velocity) {
 	this->velocity = velocity;
 
 	uint32_t id;	 // Packet id out
@@ -147,7 +147,7 @@ void SteeringControl::setVelocity(int32_t velocity) {
 	this->can->tx(id, 0, out);
 }
 
-void SteeringControl::setAcceleration(std::pair<uint32_t, uint32_t> accelerations) {
+void SteeringControl::set_acceleration(std::pair<uint32_t, uint32_t> accelerations) {
 	this->accelerations = accelerations;
 
 	uint32_t id;	 // Packet id out
@@ -169,7 +169,7 @@ void SteeringControl::setAcceleration(std::pair<uint32_t, uint32_t> acceleration
 	this->can->tx(id, 0, out);
 }
 
-bool SteeringControl::reachedTarget() {
+bool SteeringControl::reached_target() {
 	uint32_t id;
 	uint8_t out[8];
 
@@ -192,6 +192,17 @@ void SteeringControl::shutdown() {
 	uint16_t control_word = 6;
 	sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t*)&control_word, 2, &id, out);	 // Shutdown
 	this->can->tx(id, 0, out);
+}
+
+void SteeringControl::set_c5e_config(c5e_config_t config) {
+	this->defaults.default_accelerations = config.default_accelerations;
+	this->defaults.default_current = config.default_current;
+	this->defaults.default_limits = config.default_limits;
+	this->defaults.default_velocity = config.default_velocity;
+}
+
+c5e_config_t SteeringControl::get_c5e_config() {
+	return this->defaults;
 }
 
 SteeringControl::~SteeringControl() {}
