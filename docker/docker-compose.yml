@@ -42,17 +42,41 @@ x-jetson-extras: &jetson-extras
 
 
 # ==============================================================================
+#                             Build Environments
+# ==============================================================================
+
+x-perception-build: &perception-build
+    build:
+        context: ../
+        dockerfile: ./src/perception/docker/Dockerfile
+        args:
+            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+
+x-navigation-build: &navigation-build
+    build:
+        context: ../
+        dockerfile: ./src/navigation/docker/Dockerfile
+        args:
+            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+
+x-hardware-build: &hardware-build
+    build:
+        context: ../
+        dockerfile: ./src/hardware/docker/Dockerfile
+        args:
+            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+
+
+# ==============================================================================
 #                       Services (Targets in the Makefile)
 # ==============================================================================
 
 services:
     perception:
-        build:
-            context: ../
-            dockerfile: ./src/perception/docker/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *perception-build
         <<: *env-file
         <<: *user
         <<: *volumes_local
@@ -61,13 +85,18 @@ services:
         <<: *interactive
         command: bash
     
+    velodyne:
+        <<: *perception-build
+        <<: *env-file
+        <<: *user
+        <<: *volumes_local
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: ros2 launch velodyne velodyne-all-nodes-VLP32C-launch.py
+    
     navigation:
-        build:
-            context: ../
-            dockerfile: ./src/navigation/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *navigation-build
         <<: *env-file
         <<: *user
         <<: *volumes_local
@@ -77,12 +106,7 @@ services:
         command: bash
     
     hardware:
-        build:
-            context: ../
-            dockerfile: ./src/hardware/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *hardware-build
         <<: *env-file
         <<: *user
         <<: *volumes_local
