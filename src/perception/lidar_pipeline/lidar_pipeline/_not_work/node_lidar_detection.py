@@ -14,14 +14,13 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
 import time
-import numpy as np
-from typing import List, Tuple, NamedTuple
+from typing import List
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .sub_module.read_pcl import *
+from .read_pcl import *
 # lidar cone detection algorithm
-from .sub_module.ground_plane_estimation import lidar_main, lidar_init
+from .GPE2 import lidar_main, lidar_init
 
 from .point_obj import Point_Obj
 

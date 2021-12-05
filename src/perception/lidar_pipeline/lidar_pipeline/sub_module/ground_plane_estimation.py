@@ -1,21 +1,16 @@
 # Modules
 import time
 import math
-
+from typing import List, NamedTuple
 # Plotting Data
 import matplotlib.pyplot as plt
 
 # Line Fitting
 from . import line_extraction
-
 # Point Cloud Clustering
 from . import DBSCAN
-
 # Visualiser
 from . import visualiser as vis
-
-from typing import List, NamedTuple, Tuple
-
 
 X = 0
 Y = 1
@@ -24,9 +19,11 @@ I = 3
 
 # Returns the index to a bin that a point (x, y) maps to 
 def get_bin(x: float, y: float) -> int:
+    # distance
     norm = math.sqrt((x**2)+(y**2))
+    # which bin this distance falls in
     bin_index = math.floor(norm / BIN_SIZE)
-    if norm % BIN_SIZE != 0:
+    if norm % BIN_SIZE != 0: 
         bin_index += 1
     if bin_index >= NUM_BINS:
         bin_index = -1
@@ -36,17 +33,18 @@ def get_bin(x: float, y: float) -> int:
 
 # Returns the index to a segment that a point maps to
 def get_segment(x: float, y: float) -> int:
+    # which segment this angle falls in
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
 
 
 def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     # create segments[bins[points[]]]
-    segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)] # what is this
-    for i in range(len(point_cloud)):
-        point = point_cloud[i]
-        if point.x > 0:
+    segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    for i in range(len(point_cloud)): # iterate through each point
+        point = point_cloud[i] # current point
+        if point.x > 0: # only take points in front 180 degrees
             bin_idx = get_bin(point[X], point[Y])
-            if bin_idx != -1:
+            if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
                 segments_bins[seg_idx][bin_idx].append(
                     [point[X], point[Y], point[Z]]
@@ -72,22 +70,25 @@ def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
 
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-def dist_points_3D(x_0: list, p_1: list, p_2: list):
+def dist_points_3D(x_0: list, p_1: list, p_2: list) -> float:
+    # get distance in each dimension from x to point 1
     p_1_dist = [ (x_0[X] - p_1[X]), (x_0[Y] - p_1[Y]), (x_0[Z] - p_1[Z]) ]
+    # get distance in each dimension from x to point 2
     p_2_dist = [ (x_0[X] - p_2[X]), (x_0[Y] - p_2[Y]), (x_0[Z] - p_2[Z]) ]
-    
+    # cross product of dimension distances
     dist_cross = [
         p_1_dist[Y]*p_2_dist[Z] - p_2_dist[Y]*p_1_dist[Z], 
         -(p_1_dist[X]*p_2_dist[Z] - p_2_dist[X]*p_1_dist[Z]), 
         p_1_dist[X]*p_2_dist[Y] - p_2_dist[X]*p_1_dist[Y]
     ]
+    # normalise (pythag) each cross
     dist_norm: float = math.sqrt(dist_cross[X]**2 + dist_cross[Y]**2 + dist_cross[Z]**2)
-
-    p_diff = [p_2[X] - p_1[X], p_2[Y] - p_1[Y], p_2[Z] - p_1[Z]]
-    p_norm = math.sqrt(p_diff[X]**2 + p_diff[Y]**2 + p_diff[Z]**2)
-    
-    distance = dist_norm / p_norm
-    return distance
+    # normalise point 1 and 2 distances
+    p_norm: float = math.sqrt(
+        (p_2[X] - p_1[X])**2 + (p_2[Y] - p_1[Y])**2 + (p_2[Z] - p_1[Z])**2
+    )
+    # return distance
+    return dist_norm / p_norm
 
 
 # Returns the start and end points (x, y, z) of a line
