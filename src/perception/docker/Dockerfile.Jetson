@@ -282,7 +282,7 @@ RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
 WORKDIR /home/$USERNAME/driverless_ws
 
 # run a build
-COPY ./src/perception /driverless_ws/src/perception
+COPY ./src ./src
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-select \
         hsv_thresholder \
@@ -353,7 +353,7 @@ COPY ./src/perception/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.
 
 # copy perception and run a build
 WORKDIR /driverless_ws
-COPY ./src/perception /driverless_ws/src/perception
+COPY ./src ./src
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-select \
         sensors \
