@@ -284,8 +284,9 @@ WORKDIR /home/$USERNAME/driverless_ws
 # run a build
 COPY ./src ./src
 RUN source ${ROS_ROOT}/install/setup.bash; \
-    colcon build --symlink-install --packages-select \
+    colcon build --symlink-install --packages-up-to \
         hsv_thresholder \
+        zed_camera \
     && rm -r src \
     && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
