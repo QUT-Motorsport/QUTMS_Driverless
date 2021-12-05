@@ -291,7 +291,7 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
 
 # source foxy setup
 RUN echo "source /opt/ros/foxy/install/setup.bash" >> /home/$USERNAME/.bashrc
-RUN echo "source /driverless_ws/install/setup.bash" >> /root/.bashrc
+RUN echo "source /driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
 
 
 # ==============================================================================
