@@ -272,16 +272,26 @@ RUN git clone https://github.com/dheera/rosboard.git
 # ==============================================================================
 # NOTE: we don't run "copy in files and install dependencies" here because that
 # process relies on apt-packages existing for the dependencies we want to 
-# install because we're on Jetson 18.04, we have to build all deps ourselves
+# install. Because we're on Jetson 18.04, we have to build all deps ourselves
 # (hence why we're building ros from source above)
 
 # make driverless workspace
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
+
 WORKDIR /home/$USERNAME/driverless_ws
+
+# run a build
+COPY ./src/perception /driverless_ws/src/perception
+RUN source ${ROS_ROOT}/install/setup.bash; \
+    colcon build --symlink-install --packages-select \
+        hsv_thresholder \
+    && rm -r src \
+    && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
 # source foxy setup
 RUN echo "source /opt/ros/foxy/install/setup.bash" >> /home/$USERNAME/.bashrc
+RUN echo "source /driverless_ws/install/setup.bash" >> /root/.bashrc
 
 
 # ==============================================================================
@@ -347,7 +357,8 @@ COPY ./src/perception /driverless_ws/src/perception
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-select \
         sensors \
-        hsv_thresholder
+    && rm -r src \
+    && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
 # setup entrypoint
 COPY ./src/perception/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh

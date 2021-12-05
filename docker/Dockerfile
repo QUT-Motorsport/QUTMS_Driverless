@@ -73,13 +73,12 @@ RUN rosdep update && \
     rosdep install -i --from-path src -y --rosdistro foxy -y \
     && rm -rf /var/lib/apt/lists/
 
-# run a build
+# run a build and remove files
 RUN source /opt/ros/foxy/setup.bash; \
     colcon build --symlink-install --packages-up-to \
         driverless_msgs \
-        can_driver
-
-# remove files
-RUN rm -r /home/${USERNAME}/driverless_ws/src/*
+        can_driver \
+    && rm -r src \
+    && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
 RUN echo "source /driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
