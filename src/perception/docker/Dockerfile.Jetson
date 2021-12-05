@@ -207,10 +207,6 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 # https://github.com/ros2/rclcpp/issues/1335
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
-# setup entrypoint
-COPY ./src/perception/docker/jetson_ros_entrypoint.sh /jetson_ros_entrypoint.sh
-ENTRYPOINT ["/jetson_ros_entrypoint.sh"]
-
 
 # ==============================================================================
 #                          Secondary stage
@@ -290,7 +286,9 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
     && rm -r src \
     && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
-# source foxy setup
+# setup entrypoint
+COPY ./src/perception/docker/jetson_ros_entrypoint.sh /jetson_ros_entrypoint.sh
+ENTRYPOINT ["/jetson_ros_entrypoint.sh"]
 RUN echo "source /opt/ros/foxy/install/setup.bash" >> /home/$USERNAME/.bashrc
 RUN echo "source /home/$USERNAME/driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
 
