@@ -18,6 +18,15 @@ x-volumes_local: &volumes_local
         # TODO: figure out a good way to mount in /dev/sbg so that it doesnt create an empty folder when the device isnt present
         # - /dev/sbg:/dev/sbg
 
+x-volumes-jetson: &volumes-jetson
+    volumes:
+        # see x-volumes_local above for explanation of this
+        - /dev/shm:/dev/shm
+        # mount in X11 stuff for display
+        - /tmp/.X11-unix:/tmp/.X11-unix
+        - ../src:/home/${USERNAME}/driverless_ws/src
+        - ../datasets:/home/${USERNAME}/datasets
+
 x-devices: &devices
     devices:
        - /dev/dri:/dev/dri
@@ -65,6 +74,15 @@ x-hardware-build: &hardware-build
     build:
         context: ../
         dockerfile: ./src/hardware/Dockerfile
+        args:
+            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+
+x-jetson-build: &jetson-build
+    build:
+        context: ../
+        dockerfile: ./src/perception/docker/Dockerfile.Jetson
+        target: jetson_ros
         args:
             USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
             HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -161,23 +179,22 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: ros2 launch sensors zed2i.launch.py
+
+    zed_detection:
+        <<: *jetson-build
+        <<: *env-file
+        <<: *volumes-jetson
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
+        command: ros2 run zed_camera detection
     
     jetson:
-        build:
-            context: ../
-            dockerfile: ./src/perception/docker/Dockerfile.Jetson
-            target: jetson_ros
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *jetson-build
         <<: *env-file
-        volumes:
-            # see x-volumes_local above for explanation of this
-            - /dev/shm:/dev/shm
-            # mount in X11 stuff for display
-            - /tmp/.X11-unix:/tmp/.X11-unix
-            - ../src:/home/${USERNAME}/driverless_ws/src
-            - ../datasets:/home/${USERNAME}/datasets
+        <<: *volumes-jetson
         <<: *user
         <<: *devices
         <<: *network
