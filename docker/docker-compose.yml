@@ -56,7 +56,7 @@ x-perception-build: &perception-build
 x-navigation-build: &navigation-build
     build:
         context: ../
-        dockerfile: ./src/navigation/docker/Dockerfile
+        dockerfile: ./src/navigation/Dockerfile
         args:
             USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
             HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -64,7 +64,7 @@ x-navigation-build: &navigation-build
 x-hardware-build: &hardware-build
     build:
         context: ../
-        dockerfile: ./src/hardware/docker/Dockerfile
+        dockerfile: ./src/hardware/Dockerfile
         args:
             USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
             HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
