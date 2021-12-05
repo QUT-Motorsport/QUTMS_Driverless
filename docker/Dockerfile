@@ -81,4 +81,4 @@ RUN source /opt/ros/foxy/setup.bash; \
     && rm -r src \
     && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
-RUN echo "source /driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
+RUN echo "source /home/$USERNAME/driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
