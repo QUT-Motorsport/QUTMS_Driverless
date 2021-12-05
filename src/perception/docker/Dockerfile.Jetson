@@ -341,11 +341,13 @@ RUN pip3 install dataclasses
 # copy calibration file
 COPY ./src/perception/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
-# copy perception and run a thin build
+# copy perception and run a build
 WORKDIR /driverless_ws
 COPY ./src/perception /driverless_ws/src/perception
 RUN source ${ROS_ROOT}/install/setup.bash; \
-    colcon build --symlink-install --packages-select sensors
+    colcon build --symlink-install --packages-select \
+        sensors \
+        hsv_thresholder
 
 # setup entrypoint
 COPY ./src/perception/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
