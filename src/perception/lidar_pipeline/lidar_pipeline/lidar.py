@@ -113,21 +113,22 @@ class LidarDetection(Node):
         # Convert the list of floats into a list of xyz coordinates
 
         point_tuples: List[Tuple] = read_points_list(pcl_msg, skip_nans=True)
-        point_list: List[list] = []
-        for point in point_tuples:
-            if point[0] > 0:
-                if LIDAR_NODE == '/fsds/lidar/Lidar1':
-                    point_list.append([point[0], point[1], point[2]])
-                elif LIDAR_NODE == '/velodyne_points':
-                    point_list.append([point[0], point[1], point[2]])
-        logger.info("convert time: " + str(time.time()-start))
+
+        # point_list: List[List] = []
+        # for point in point_tuples:
+        #     if point[0] > 0:
+        #         if LIDAR_NODE == '/fsds/lidar/Lidar1':
+        #             point_list.append([point[0], point[1], point[2]])
+        #         elif LIDAR_NODE == '/velodyne_points':
+        #             point_list.append([point[0], point[1], point[2]])
+        # logger.info("convert time: " + str(time.time()-start))
 
         # with open('/home/developer/datasets/points1.txt', 'w') as f:
         #     f.write(str(point_list))
         # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
-        cones: list = lidar_main(point_list, DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE) 
+        cones: List[list] = lidar_main(point_tuples, DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE) 
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []

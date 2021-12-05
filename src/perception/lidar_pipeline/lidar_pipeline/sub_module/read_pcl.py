@@ -2,7 +2,6 @@
 # https://github.com/ros/common_msgs/tree/noetic-devel/sensor_msgs/src/sensor_msgs
 # https://github.com/ros2/common_interfaces/blob/master/sensor_msgs_py/sensor_msgs_py/point_cloud2.py
 from collections import namedtuple
-import ctypes
 import math
 import struct
 import sys
@@ -18,6 +17,27 @@ _DATATYPES[PointField.INT32]   = ('i', 4)
 _DATATYPES[PointField.UINT32]  = ('I', 4)
 _DATATYPES[PointField.FLOAT32] = ('f', 4)
 _DATATYPES[PointField.FLOAT64] = ('d', 8)
+
+
+def _get_struct_fmt(is_bigendian, fields, field_names=None):
+    fmt = '>' if is_bigendian else '<'
+
+    offset = 0
+    for field in (f for f in sorted(fields, key=lambda f: f.offset)
+                  if field_names is None or f.name in field_names):
+        if offset < field.offset:
+            fmt += 'x' * (field.offset - offset)
+            offset = field.offset
+        if field.datatype not in _DATATYPES:
+            print('Skipping unknown PointField datatype [%d]' %
+                  field.datatype, file=sys.stderr)
+        else:
+            datatype_fmt, datatype_length = _DATATYPES[field.datatype]
+            fmt += field.count * datatype_fmt
+            offset += field.count * datatype_length
+
+    return fmt
+
 
 def read_points(cloud, field_names=None, skip_nans=False, uvs=[]):
     """
@@ -99,25 +119,4 @@ def read_points_list(cloud, field_names=None, skip_nans=False, uvs=[]):
 
     Point = namedtuple('Point', field_names)
 
-    return [Point._make(p) for p in read_points(cloud, field_names,
-                                                skip_nans, uvs)]
-
-
-def _get_struct_fmt(is_bigendian, fields, field_names=None):
-    fmt = '>' if is_bigendian else '<'
-
-    offset = 0
-    for field in (f for f in sorted(fields, key=lambda f: f.offset)
-                  if field_names is None or f.name in field_names):
-        if offset < field.offset:
-            fmt += 'x' * (field.offset - offset)
-            offset = field.offset
-        if field.datatype not in _DATATYPES:
-            print('Skipping unknown PointField datatype [%d]' %
-                  field.datatype, file=sys.stderr)
-        else:
-            datatype_fmt, datatype_length = _DATATYPES[field.datatype]
-            fmt += field.count * datatype_fmt
-            offset += field.count * datatype_length
-
-    return fmt
+    return [Point._make(p) for p in read_points(cloud, field_names, skip_nans, uvs)]
