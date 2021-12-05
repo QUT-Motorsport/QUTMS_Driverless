@@ -189,7 +189,7 @@ services:
         <<: *network
         <<: *interactive
         <<: *jetson-extras
-        command: ros2 run zed_camera detection
+        command: ros2 run zed_camera detector
     
     jetson:
         <<: *jetson-build
