@@ -21,7 +21,6 @@ X = 0
 Y = 1
 Z = 2
 I = 3
-GROUND = 4
 
 # Returns the index to a bin that a point (x, y) maps to 
 def get_bin(x: float, y: float) -> int:
@@ -45,13 +44,13 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)] # what is this
     for i in range(len(point_cloud)):
         point = point_cloud[i]
+        norm = math.sqrt((point.x**2)+(point.y**2))
         if point.x > 0:
-            bin_idx = get_bin(point.x, point.y)
+            bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1:
-                seg_idx: int = get_segment(point.x, point.y)
-                print(point.x, point.y, point.z)
+                seg_idx: int = get_segment(point[X], point[Y])
                 segments_bins[seg_idx][bin_idx].append(
-                    [point.x, point.y, point.z]
+                    [point[X], point[Y], point[Z]]
                 )
     return segments_bins
 
@@ -75,18 +74,18 @@ def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
 
 # https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 def dist_points_3D(x_0: list, p_1: list, p_2: list):
-    p_1_dist = [ (x_0[0] - p_1[0]), (x_0[1] - p_1[1]), (x_0[2] - p_1[2]) ]
-    p_2_dist = [ (x_0[0] - p_2[0]), (x_0[1] - p_2[1]), (x_0[2] - p_2[2]) ]
+    p_1_dist = [ (x_0[X] - p_1[X]), (x_0[Y] - p_1[Y]), (x_0[Z] - p_1[Z]) ]
+    p_2_dist = [ (x_0[X] - p_2[X]), (x_0[Y] - p_2[Y]), (x_0[Z] - p_2[Z]) ]
     
     dist_cross = [
-        p_1_dist[1]*p_2_dist[2] - p_2_dist[1]*p_1_dist[2], 
-        -(p_1_dist[0]*p_2_dist[2] - p_2_dist[0]*p_1_dist[2]), 
-        p_1_dist[0]*p_2_dist[1] - p_2_dist[0]*p_1_dist[1]
+        p_1_dist[Y]*p_2_dist[Z] - p_2_dist[Y]*p_1_dist[Z], 
+        -(p_1_dist[X]*p_2_dist[Z] - p_2_dist[X]*p_1_dist[Z]), 
+        p_1_dist[X]*p_2_dist[Y] - p_2_dist[X]*p_1_dist[Y]
     ]
-    dist_norm: float = math.sqrt(dist_cross[0]**2 + dist_cross[1]**2 + dist_cross[2]**2)
+    dist_norm: float = math.sqrt(dist_cross[X]**2 + dist_cross[Y]**2 + dist_cross[Z]**2)
 
-    p_diff = [p_2[0] - p_1[0], p_2[1] - p_1[1], p_2[2] - p_1[2]]
-    p_norm = math.sqrt(p_diff[0]**2 + p_diff[1]**2 + p_diff[2]**2)
+    p_diff = [p_2[X] - p_1[X], p_2[Y] - p_1[Y], p_2[Z] - p_1[Z]]
+    p_norm = math.sqrt(p_diff[X]**2 + p_diff[Y]**2 + p_diff[Z]**2)
     
     distance = dist_norm / p_norm
     return distance
@@ -103,8 +102,8 @@ def line_to_end_points(line, segment_idx):
     y_1 = start[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
     y_2 = end[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
     
-    p_1 = [x_1, y_1, start[1]]
-    p_2 = [x_2, y_2, end[1]]
+    p_1 = [x_1, y_1, start[Y]]
+    p_2 = [x_2, y_2, end[Y]]
     
     return [p_1, p_2]
 
@@ -186,9 +185,9 @@ def label_points_6(segments_bins, ground_lines):
             avg_point = [0, 0, 0]
             is_ground = False
             for k in range(len(segments_bins[i][j])):
-                avg_point[0] += segments_bins[i][j][k][0]
-                avg_point[1] += segments_bins[i][j][k][1]
-                avg_point[2] += segments_bins[i][j][k][2]
+                avg_point[X] += segments_bins[i][j][k][X]
+                avg_point[Y] += segments_bins[i][j][k][Y]
+                avg_point[Z] += segments_bins[i][j][k][Z]
                 
                 segments_bins[i][j][k].append(is_ground)
 
@@ -215,7 +214,7 @@ def non_ground_points(labelled_points):
 # Ignoring height
 def get_distance(point_a, point_b):
     # Distance
-    return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1]-point_a[1])**2)
+    return math.sqrt((point_b[X] - point_a[X])**2 + (point_b[Y]-point_a[Y])**2)
 
 
 def object_reconstruction_4(cluster_centers, segments_bins):
@@ -257,8 +256,8 @@ def get_cones(reconstructed_clusters):
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
         if point_count >= 1:
-            x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
-            y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            x_cluster = [coords[X] for coords in reconstructed_clusters[i]]
+            y_cluster = [coords[Y] for coords in reconstructed_clusters[i]]
             # Univserity of melbourne used z as well
             #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
             x_mean  = sum(x_cluster) / len(x_cluster)
@@ -276,22 +275,22 @@ def get_cones(reconstructed_clusters):
     return cones
 
 
-def get_ground_plane(point_cloud: List):
+def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     # might be able to modifiy segments directly if label points doesn't need it
     
     start_time: float = time.time()
     now: float = time.time()
-    segments_bins: List[list] = points_to_seg_bin(point_cloud)
+    segments_bins: List[List[List]] = points_to_seg_bin(point_cloud)
     print("points_to_seg_bin", time.time() - now)
     
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     now = time.time()
-    segments_bins_prototype: List[list] = approximate_2D(segments_bins)
+    segments_bins_prototype: List[List[List]] = approximate_2D(segments_bins)
     print("approximate_2D", time.time() - now)
 
     now = time.time()
-    ground_plane: List[list] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
+    ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
     if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
@@ -366,19 +365,9 @@ def lidar_main(point_cloud: List, _visualise: bool, _display: bool, _figures_dir
     DISPLAY = _display
     if _display: VISUALISE = True
 
-    # Remove this when a max range for the Lidar has been decided on
-    global LIDAR_RANGE
-        
-    # values = []
-    # for i in range(len(point_cloud)):
-    #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
-    # LIDAR_RANGE = math.ceil(max(values))
-
-    #print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
-
     if VISUALISE:
         FIGURES_DIR = _figures_dir
-        vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
+        vis.init_constants(point_cloud, DELTA_ALPHA, _max_range, BIN_SIZE, VISUALISE, FIGURES_DIR)
     print("INIT:", time.time() - start_time)
 
     return get_ground_plane(point_cloud)

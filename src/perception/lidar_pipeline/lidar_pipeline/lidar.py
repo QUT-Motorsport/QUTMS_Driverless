@@ -14,7 +14,6 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
 import time
-import numpy as np
 from typing import List, NamedTuple, Tuple
 
 # import ROS function that has been ported to ROS2 by
@@ -26,8 +25,8 @@ from .sub_module.ground_plane_estimation import lidar_main
 # LIDAR_NODE = '/fsds/lidar/Lidar1'
 LIDAR_NODE = '/velodyne_points'
 
-DISPLAY = True
-VISUALISE = True
+DISPLAY = False
+VISUALISE = False
 MAX_RANGE = 10 #m
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
