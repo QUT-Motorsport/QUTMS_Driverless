@@ -22,6 +22,8 @@ Colour = Tuple[int, int, int]
 
 cv_bridge = CvBridge()
 
+ORIGIN = Point(0, 0)
+
 
 SCALE = 20
 WIDTH = 20*SCALE  # 10m either side
@@ -42,9 +44,15 @@ def robot_pt_to_img_pt(x: float, y: float) -> Point:
     )
 
 
-def dist(x: float, y: float) -> float:
-    return sqrt(x**2 + y**2)
+def dist(a: Point, b: Point) -> float:
+    return sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
 
+
+def cone_to_point(cone: Cone) -> Point:
+    return Point(
+        cone.location.x,
+        cone.location.y,
+    )
 
 class SimpleControllerNode(Node):
     def __init__(self):
@@ -61,10 +69,9 @@ class SimpleControllerNode(Node):
 
     def cone_detection_callback(self, msg: ConeDetectionStamped):
         logger = self.get_logger()
+        logger.info("Received detection")
 
         cones: List[Cone] = msg.cones
-
-        logger.info("Received detection")
 
         debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
         
@@ -74,7 +81,7 @@ class SimpleControllerNode(Node):
             elif cone.color == Cone.BLUE:
                 colour = BLUE_DISP_COLOUR
             else:
-                colour = (0, 0, 0)
+                colour = (255, 255, 255)
             
             cv2.drawMarker(
                 debug_img, 
@@ -90,11 +97,21 @@ class SimpleControllerNode(Node):
 
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
-
         if len(left_cones) > 0:
-            closest_left = min(left_cones, key=lambda c: dist(c.location.x, c.location.y))
+            closest_left = min(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
         if len(right_cones) > 0:
-            closest_right = min(right_cones, key=lambda c: dist(c.location.x, c.location.y))
+            closest_right = min(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+        
+        # if we have two cones, check if they are greater than 5 meters apart
+        if closest_left is not None and closest_right is not None:
+            if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
+                # if so - remove the furthest cone from the targeting
+                left_dist = dist(ORIGIN, cone_to_point(closest_left))
+                right_dist = dist(ORIGIN, cone_to_point(closest_right))
+                if left_dist <= right_dist:
+                    closest_right = None
+                else:
+                    closest_left = None
 
         target: Optional[Point] = None
         if closest_left is not None and closest_right is not None:
