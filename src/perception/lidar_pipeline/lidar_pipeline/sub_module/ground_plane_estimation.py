@@ -44,7 +44,6 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)] # what is this
     for i in range(len(point_cloud)):
         point = point_cloud[i]
-        norm = math.sqrt((point.x**2)+(point.y**2))
         if point.x > 0:
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1:
@@ -62,7 +61,7 @@ def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
     for i in range(NUM_SEGMENTS):
         for j in range(NUM_BINS):
             for k in range(len(segments_bins[i][j])):
-                point: list = segments_bins[i][j][k] # [x, y, z, i]
+                point: list = segments_bins[i][j][k] # [x, y, z]
                 point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z] ]
                 segments_approx[i][j].append(point_prime)
             segments_approx[i][j].sort(reverse=True)
@@ -331,7 +330,7 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     return cones
 
 
-def init_constants(_max_range: int):
+def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: int=16):
     global LIDAR_RANGE
     global DELTA_ALPHA
     global NUM_SEGMENTS
@@ -339,6 +338,10 @@ def init_constants(_max_range: int):
     global NUM_BINS
     global T_D_GROUND
     global T_D_MAX
+
+    global VISUALISE
+    global DISPLAY
+    global FIGURES_DIR
 
     # Constants
     LIDAR_RANGE = _max_range # Max range of the LIDAR (m)
@@ -354,21 +357,18 @@ def init_constants(_max_range: int):
     
     if (math.pi % DELTA_ALPHA != 0):
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
-
-
-def lidar_main(point_cloud: List, _visualise: bool, _display: bool, _figures_dir: str, _max_range: int=16):
-    start_time: float = time.time()
-    init_constants(_max_range)
-    global VISUALISE
-    global DISPLAY
+    
     VISUALISE = _visualise
     DISPLAY = _display
     if _display: VISUALISE = True
+    FIGURES_DIR = _figures_dir
+
+
+def lidar_main(point_cloud: List):
+    # init_constants(_max_range) # move to be a one-time call in lidar init
 
     if VISUALISE:
-        FIGURES_DIR = _figures_dir
-        vis.init_constants(point_cloud, DELTA_ALPHA, _max_range, BIN_SIZE, VISUALISE, FIGURES_DIR)
-    print("INIT:", time.time() - start_time)
+        vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
 
     return get_ground_plane(point_cloud)
 

@@ -21,7 +21,7 @@ from typing import List, Tuple, NamedTuple
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import *
 # lidar cone detection algorithm
-from .sub_module.ground_plane_estimation import lidar_main
+from .sub_module.ground_plane_estimation import lidar_main, lidar_init
 
 from .point_obj import Point_Obj
 
@@ -92,6 +92,7 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription  # prevent unused variable warning
+        lidar_init(DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE)
 
         self.detection_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, 
@@ -114,24 +115,15 @@ class LidarDetection(Node):
         start: float = time.time()
         # Convert the list of floats into a list of xyz coordinates
 
-        point_tuples: List[Point_Obj] = read_points_list(pcl_msg, skip_nans=True)
-        print(point_tuples[0].x, point_tuples[0].y, point_tuples[0].z, point_tuples[0].i)
-
-        # point_list: List[List] = []
-        # for point in point_tuples:
-        #     if point[0] > 0:
-        #         if LIDAR_NODE == '/fsds/lidar/Lidar1':
-        #             point_list.append([point[0], point[1], point[2]])
-        #         elif LIDAR_NODE == '/velodyne_points':
-        #             point_list.append([point[0], point[1], point[2]])
-        # logger.info("convert time: " + str(time.time()-start))
+        point_array: List[Point_Obj] = read_points_list(pcl_msg, skip_nans=True)
+        print(point_array[0].x, point_array[0].y, point_array[0].z, point_array[0].i)
 
         # with open('/home/developer/datasets/points1.txt', 'w') as f:
         #     f.write(str(point_list))
         # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
-        cones: List[list] = lidar_main(point_tuples, DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE) 
+        cones: List[list] = lidar_main(point_array) 
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []

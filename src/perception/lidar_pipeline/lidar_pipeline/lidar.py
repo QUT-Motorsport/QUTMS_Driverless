@@ -20,7 +20,7 @@ from typing import List, NamedTuple, Tuple
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .sub_module.read_pcl import *
 # lidar cone detection algorithm
-from .sub_module.ground_plane_estimation import lidar_main
+from .sub_module.ground_plane_estimation import lidar_main, lidar_init
 
 # LIDAR_NODE = '/fsds/lidar/Lidar1'
 LIDAR_NODE = '/velodyne_points'
@@ -89,6 +89,7 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription  # prevent unused variable warning
+        lidar_init(DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE)
 
         self.detection_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, 
@@ -118,7 +119,7 @@ class LidarDetection(Node):
         # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
-        cones: List[list] = lidar_main(point_array, DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE) 
+        cones: List[list] = lidar_main(point_array) 
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []

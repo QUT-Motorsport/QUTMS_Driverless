@@ -35,16 +35,15 @@ def get_segment(x: float, y: float):
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
 
 
+
 def points_to_seg_bin(point_cloud: List[Point_Obj]) -> List[List[List]]:
     # create segments[bins[points[]]]
-    segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
+    segments_bins: List[List[Point_Obj]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)):
-        point: NamedTuple = point_cloud[i]
-        bin_idx: int = get_bin(point.x, point.y)
-        if bin_idx != -1:
-            seg_idx: int = get_segment(point.x, point.y)
-            segments_bins[seg_idx][bin_idx].append(
-                [point.x, point.y, point.z, point.intensity]
+        point: Point_Obj = point_cloud[i]
+        if point.bin != -1 and point.valid == True:
+            segments_bins[point.segment][point.bin].append(
+                [point.x, point.y, point.z]
             )
     return segments_bins
 
@@ -53,15 +52,16 @@ def points_to_seg_bin(point_cloud: List[Point_Obj]) -> List[List[List]]:
 def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
     # create segments[bins[points[]]]
     segments_approx: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
-    for i in range(NUM_SEGMENTS):
-        for j in range(NUM_BINS):
-            for k in range(len(segments_bins[i][j])):
-                point: list = segments_bins[i][j][k] # [x, y, z, i]
-                point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z], point[I] ]
+    for i in range(NUM_SEGMENTS): # each segment
+        for j in range(NUM_BINS): # each bin
+            for k in range(len(segments_bins[i][j])): # each point
+                point: Point_Obj = segments_bins[i][j][k] # get current point
+                point_prime: list = [point.xy_distance, point.z]
                 segments_approx[i][j].append(point_prime)
             segments_approx[i][j].sort(reverse=True)
-            # Prototype points
-            if len(segments_approx[i][j]) > 0:
+
+            # if there are more than one prototype point in the segment - take first
+            if len(segments_approx[i][j]) > 0: 
                 segments_approx[i][j] = segments_approx[i][j][0]
     return segments_approx
 
@@ -269,18 +269,18 @@ def get_cones(reconstructed_clusters):
     return cones
 
 
-def get_ground_plane(point_cloud: List):
+def get_ground_plane(point_cloud: List[Point_Obj]) -> List[list]:
     # might be able to modifiy segments directly if label points doesn't need it
     
     start_time: float = time.time()
     now: float = time.time()
-    segments_bins: List[list] = points_to_seg_bin(point_cloud)
+    segments_bins: List[List[Point_Obj]] = points_to_seg_bin(point_cloud)
     print("points_to_seg_bin", time.time() - now)
     
     if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     now = time.time()
-    segments_bins_prototype: List[list] = approximate_2D(segments_bins)
+    segments_bins_prototype: List[List[List]] = approximate_2D(segments_bins)
     print("approximate_2D", time.time() - now)
 
     now = time.time()
@@ -325,7 +325,7 @@ def get_ground_plane(point_cloud: List):
     return cones
 
 
-def init_constants(_max_range: int):
+def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: int=16):
     global LIDAR_RANGE
     global DELTA_ALPHA
     global NUM_SEGMENTS
@@ -333,6 +333,10 @@ def init_constants(_max_range: int):
     global NUM_BINS
     global T_D_GROUND
     global T_D_MAX
+
+    global VISUALISE
+    global DISPLAY
+    global FIGURES_DIR
 
     # Constants
     LIDAR_RANGE = _max_range # Max range of the LIDAR (m)
@@ -348,31 +352,18 @@ def init_constants(_max_range: int):
     
     if (math.pi % DELTA_ALPHA != 0):
         raise ValueError("Value of DELTA_ALPHA:", DELTA_ALPHA, "does not divide a circle into an integer-number of segments.")
-
-
-def lidar_main(point_cloud: List, _visualise: bool, _display: bool, _figures_dir: str, _max_range: int=16):
-    start_time: float = time.time()
-    init_constants(_max_range)
-    global VISUALISE
-    global DISPLAY
+    
     VISUALISE = _visualise
     DISPLAY = _display
     if _display: VISUALISE = True
+    FIGURES_DIR = _figures_dir
 
-    # Remove this when a max range for the Lidar has been decided on
-    global LIDAR_RANGE
-        
-    # values = []
-    # for i in range(len(point_cloud)):
-    #    values.append(math.sqrt(point_cloud[i][0] ** 2 + point_cloud[i][1] ** 2))
-    # LIDAR_RANGE = math.ceil(max(values))
 
-    #print("Max xy norm:", LIDAR_RANGE) # Max value of the norm of x and y (excluding z)
+def lidar_main(point_cloud: List):
+    # init_constants(_max_range) # move to be a one-time call in lidar init
 
     if VISUALISE:
-        FIGURES_DIR = _figures_dir
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
-    print("INIT:", time.time() - start_time)
 
     return get_ground_plane(point_cloud)
 

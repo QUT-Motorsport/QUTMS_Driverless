@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import math
 
-from .GPE2 import BIN_SIZE, NUM_BINS, DELTA_ALPHA
+from .GPE2 import BIN_SIZE, NUM_BINS, DELTA_ALPHA, LIDAR_RANGE
 
 @dataclass
 class Point_Obj:
@@ -9,18 +9,16 @@ class Point_Obj:
     y: float
     z: float
     i: float
-    bin: int
-    segment: int
-    is_ground: bool
+    valid: bool
+    is_ground: bool = False
+    
 
     def __init__(self, x: float, y: float, z: float, intensity: float):
         self.x = x
         self.y = y
         self.z = z
         self.i = intensity
-        self.bin = None
-        self.segment = None
-        self.is_ground = None
+        self.valid = math.sqrt( (x**2) + (y**2) ) < LIDAR_RANGE
 
     @property
     def xy_distance(self) -> float:
