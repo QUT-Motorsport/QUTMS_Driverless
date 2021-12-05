@@ -14,7 +14,7 @@ from . import DBSCAN
 # Visualiser
 from . import visualiser as vis
 
-from typing import List, Tuple
+from typing import List, NamedTuple, Tuple
 
 
 X = 0
@@ -24,7 +24,7 @@ I = 3
 GROUND = 4
 
 # Returns the index to a bin that a point (x, y) maps to 
-def get_bin(x: float, y: float):
+def get_bin(x: float, y: float) -> int:
     norm = math.sqrt((x**2)+(y**2))
     bin_index = math.floor(norm / BIN_SIZE)
     if norm % BIN_SIZE != 0:
@@ -36,32 +36,35 @@ def get_bin(x: float, y: float):
 
 
 # Returns the index to a segment that a point maps to
-def get_segment(x: float, y: float):
+def get_segment(x: float, y: float) -> int:
     return math.floor(math.atan2(y, x) / DELTA_ALPHA)
 
 
-def points_to_seg_bin(point_cloud: List[Tuple]):
+def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     # create segments[bins[points[]]]
-    segments_bins: List[list] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)] # what is this
+    segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)] # what is this
     for i in range(len(point_cloud)):
-        bin_idx = get_bin(point_cloud[i][X], point_cloud[i][Y])
-        if bin_idx != -1:
-            seg_idx: int = get_segment(point_cloud[i][X], point_cloud[i][Y])
-            segments_bins[seg_idx][bin_idx].append(
-                [point_cloud[i][X], point_cloud[i][Y], point_cloud[i][Z], point_cloud[i][I]]
-            )
+        point = point_cloud[i]
+        if point.x > 0:
+            bin_idx = get_bin(point.x, point.y)
+            if bin_idx != -1:
+                seg_idx: int = get_segment(point.x, point.y)
+                print(point.x, point.y, point.z)
+                segments_bins[seg_idx][bin_idx].append(
+                    [point.x, point.y, point.z]
+                )
     return segments_bins
 
 
 # Does not modify input array
-def approximate_2D(segments_bins: List[List]):
+def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
     # create segments[bins[points[]]]
     segments_approx: List[list] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(NUM_SEGMENTS):
         for j in range(NUM_BINS):
             for k in range(len(segments_bins[i][j])):
                 point: list = segments_bins[i][j][k] # [x, y, z, i]
-                point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z], point[I] ]
+                point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z] ]
                 segments_approx[i][j].append(point_prime)
             segments_approx[i][j].sort(reverse=True)
             # Prototype points
