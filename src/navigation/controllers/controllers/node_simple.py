@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, atan2, pi
 
 import cv2
 import numpy as np
@@ -8,6 +8,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from sensor_msgs.msg import Image
+from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from cv_bridge import CvBridge
@@ -54,13 +55,16 @@ class SimpleControllerNode(Node):
 
         # publishers
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_controller/debug_img", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
 
         self.get_logger().info("Simple Controller Node Initalised")
 
     def cone_detection_callback(self, msg: ConeDetectionStamped):
+        logger = self.get_logger()
+
         cones: List[Cone] = msg.cones
 
-        self.get_logger().info("Received detection")
+        logger.info("Received detection")
 
         debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
         
@@ -110,14 +114,27 @@ class SimpleControllerNode(Node):
             )
         
         if target is not None:
+            target_img_pt = robot_pt_to_img_pt(target.x, target.y).to_tuple()
             cv2.drawMarker(
                 debug_img, 
-                robot_pt_to_img_pt(target.x, target.y).to_tuple(),
+                target_img_pt,
                 (0, 0, 255),
                 markerType=cv2.MARKER_TILTED_CROSS,
                 markerSize=10,
                 thickness=2
             )
+            cv2.line(
+                debug_img,
+                target_img_pt,
+                (int(WIDTH/2), HEIGHT),
+                (0, 0, 255)
+            )
+
+            steering_angle = ((pi/2) - atan2(target.x, target.y))*2
+            steering_msg = AckermannDrive()
+            steering_msg.steering_angle = steering_angle
+            self.steering_publisher.publish(steering_msg)
+            logger.info(f"Published steering angle: {steering_angle}")
         
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
