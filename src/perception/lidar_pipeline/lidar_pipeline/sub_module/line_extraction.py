@@ -1,7 +1,10 @@
 # Modules
 import math
 import copy
+from typing import List
+
 from . import total_least_squares
+
 
 # Constants
 T_M = 2*math.pi / 512 # Max angle that will be considered for ground lines
@@ -9,15 +12,12 @@ T_M_SMALL = 0          # Angle considered to be a small slope
 T_B = 0.1              # Max y-intercept for a ground plane line 
 T_RMSE = 0.2           # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
 
-# https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-def dist_point_line(point, m_c, b_c):
-    x_0 = point[0]
-    y_0 = point[1]
+X = 0
+Y = 1
+Z = 2
 
-    distance = abs(m_c*x_0 + y_0 + b_c) / math.sqrt(m_c**2 + 1)
-    return distance
 
-def fit_error(m, b, points):
+def fit_error(m, b, points) -> float:
     num_points = len(points)
 
     sse = 0
@@ -28,20 +28,19 @@ def fit_error(m, b, points):
         observed = points[i][1]
         sse += (best_fit - observed)**2
         
-    sse_mean = sse / num_points
+    # root mean square return
+    return math.sqrt(sse / num_points)
 
-    rmse = math.sqrt(sse_mean)
-    return rmse
 
 # The Incremental Algorithm
-def get_ground_lines(segment, num_bins):
-    lines = []
+def get_ground_lines(segment, num_bins) -> List[List]:
+    lines: List[List] = []
     new_line_points = []
     lines_created = 0
     m_new = None
     b_new = None
 
-    i = 0
+    i: int = 0
     while i < num_bins:
         if len(segment[i]) == 2:
             m_new = None
@@ -79,6 +78,7 @@ def get_ground_lines(segment, num_bins):
             raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
 
         i += 1
+        
     if len(new_line_points) > 1 and m_new != None and b_new != None:
         lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
 
@@ -87,9 +87,10 @@ def get_ground_lines(segment, num_bins):
 
     return lines
 
+
 # Returns the ground lines for all segments
-def get_ground_plane(segments_bins_prototype, num_segments, num_bins):
-    ground_plane = []
+def get_ground_plane(segments_bins_prototype, num_segments, num_bins) -> List[List[List]]:
+    ground_plane: List[List[List]] = []
     for i in range(num_segments):
         #print("Extracting lines from Segment:", i+1)
         ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))

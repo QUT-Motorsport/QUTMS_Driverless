@@ -14,13 +14,15 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
 import time
-from typing import List, NamedTuple, Tuple
+from typing import List
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .sub_module.read_pcl import *
+from .read_pcl import *
 # lidar cone detection algorithm
-from .sub_module.ground_plane_estimation import lidar_main, lidar_init
+from .GPE2 import lidar_main, lidar_init
+
+from .point_obj import Point_Obj
 
 # LIDAR_NODE = '/fsds/lidar/Lidar1'
 LIDAR_NODE = '/velodyne_points'
@@ -112,7 +114,8 @@ class LidarDetection(Node):
         start: float = time.time()
         # Convert the list of floats into a list of xyz coordinates
 
-        point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
+        point_array: List[Point_Obj] = read_points_list(pcl_msg, skip_nans=True)
+        print(point_array[0].x, point_array[0].y, point_array[0].z, point_array[0].i)
 
         # with open('/home/developer/datasets/points1.txt', 'w') as f:
         #     f.write(str(point_list))
