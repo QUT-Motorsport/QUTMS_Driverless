@@ -10,7 +10,7 @@ from . import line_extraction
 # Point Cloud Clustering
 from . import DBSCAN
 # Visualiser
-from . import visualiser as vis
+import visualiser as vis
 
 X = 0
 Y = 1

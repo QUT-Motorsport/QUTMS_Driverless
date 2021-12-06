@@ -77,7 +77,7 @@ class SimpleController(Node):
         self.max_vel = 1.4 # m/s
         self.target_vel = self.max_vel # initially target is max
         self.min_vel = self.max_vel / 2
-        self.brake_p = 0.1
+        self.brake_p = 0
 
 
     ## callback for lidar processed data to be sent to
