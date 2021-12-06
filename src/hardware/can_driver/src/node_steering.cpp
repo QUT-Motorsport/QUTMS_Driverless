@@ -58,15 +58,16 @@ class Steering : public rclcpp::Node {
 		}
 
 		this->c = std::make_shared<Can2Ethernet>(_ip, _port);
-		
+
 		c5e_config_t config;
 		config.default_accelerations = _d_acceleration;
 		config.default_current = _d_current;
 		config.default_limits = _d_limits;
 		config.default_velocity = _d_velocity;
 
+		RCLCPP_INFO(this->get_logger(), "Using c5e_config: %s", config.to_string().c_str());
+
 		this->steering = std::make_shared<SteeringControl>(c, config);
-		this->steering->set_acceleration(std::make_pair<uint32_t, uint32_t>(10000, 10000));
 	}
 
 	~Steering() { this->steering->shutdown(); }
