@@ -7,10 +7,10 @@ from . import total_least_squares
 
 
 # Constants
-T_M = 2*math.pi / 512 # Max angle that will be considered for ground lines
-T_M_SMALL = 0          # Angle considered to be a small slope 
-T_B = 0.1              # Max y-intercept for a ground plane line 
-T_RMSE = 0.2           # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
+T_M = 2*math.pi / 152 # Max angle that will be considered for ground lines
+T_M_SMALL = 0         # Angle considered to be a small slope 
+T_B = 0.1            # Max y-intercept for a ground plane line 
+T_RMSE = 0.2          # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
 
 X = 0
 Y = 1
