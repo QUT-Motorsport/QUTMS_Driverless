@@ -42,7 +42,7 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)): # iterate through each point
         point = point_cloud[i] # current point
-        if point.x > 0: # only take points in front 180 degrees
+        if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
@@ -149,7 +149,7 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + 0.25 # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
@@ -237,22 +237,27 @@ def object_reconstruction_4(cluster_centers, segments_bins):
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
-HORIZONTAL_RES = 0.2 * (math.pi / 180) # 0.2 degrees in between each point
-VERTICAL_RES = 2 * (math.pi / 180) # 2 degrees in between each point
+HORIZONTAL_RES = 0.384 * (math.pi / 180) # 0.384 degrees in between each point
+VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
-CONE_HEIGHT = 0.325 #m
-CONE_WIDTH = 0.228 #m
+CONE_HEIGHT = 0.29 #m
+CONE_WIDTH = 0.14 #m
 
-def cone_filter(distance):
+def cone_filter_old(distance):
     if distance < 0.01: distance = 0.01
     return (1/2) * (CONE_HEIGHT / (2 * distance * math.tan(VERTICAL_RES / 2))) * (CONE_WIDTH / (2 * distance * math.tan(HORIZONTAL_RES / 2)))
 
+def cone_filter_old_2(distance):
+	return -1.5 * distance + 11.5
+	
+def cone_filter(distance):
+	return (1/2) * (CONE_HEIGHT / (2*distance*math.tan(VERTICAL_RES/2))) * (CONE_WIDTH / (2*distance*math.tan(HORIZONTAL_RES/2)))
 
 FAR_X = 6 #m
 
 def get_cones(reconstructed_clusters):
     cones = []
-    ERROR_MARGIN = 0.2 # Constant
+    ERROR_MARGIN = 0.45 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
         if point_count >= 1:
@@ -266,18 +271,20 @@ def get_cones(reconstructed_clusters):
             distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
             # Rule based filter
             exp_point_count = cone_filter(distance)
-            #print(exp_point_count, point_count)
+            
             if abs(x_mean) < FAR_X: # only checks centre of scan for cones (noise filter)
                 if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
                     cones.append([x_mean, y_mean])
                 else:
-                    cones.append([x_mean, y_mean]) # Remove when real-er data
+                    print(x_mean, y_mean, exp_point_count, point_count)
+                    #cones.append([x_mean, y_mean]) # Remove when real-er data
+                    pass
     return cones
 
 
 def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     # might be able to modifiy segments directly if label points doesn't need it
-    
+    # print(len(point_cloud))
     start_time: float = time.time()
     now: float = time.time()
     segments_bins: List[List[List]] = points_to_seg_bin(point_cloud)
@@ -293,7 +300,7 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
-    if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
+    #if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
     #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     now = time.time()
