@@ -106,14 +106,19 @@ def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
 ) -> float:
-
-    # get bounding box as roi
-    depth_roi = colour_frame_cone_bounding_box.as_roi(depth_frame)
+    # get center as roi
+    depth_roi = Rect(
+        x=colour_frame_cone_bounding_box.center.x - 3,
+        y=colour_frame_cone_bounding_box.center.y - 3,
+        width=6,
+        height=6,
+    ).as_roi(depth_frame)
+    
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
 
     # TODO: potentially take vertical slice of center of cone and average for a better distance
-    return np.median(depth_roi)
+    return np.mean(depth_roi)
 
 
 def cone_bearing(
