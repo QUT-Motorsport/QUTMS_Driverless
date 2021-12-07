@@ -277,7 +277,7 @@ def get_cones(reconstructed_clusters):
                     cones.append([x_mean, y_mean])
                 else:
                     print(x_mean, y_mean, exp_point_count, point_count)
-                    #cones.append([x_mean, y_mean]) # Remove when real-er data
+                    cones.append([x_mean, y_mean]) # Remove when real-er data
                     pass
     return cones
 
