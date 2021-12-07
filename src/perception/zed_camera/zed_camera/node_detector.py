@@ -36,13 +36,13 @@ CAMERA_FOV = 110  # degrees
 
 
 YELLOW_HSV_THRESH = Threshold(
-    lower=[10, 80, 100],
-    upper=[45, 255, 255],
+    lower=[27, 125, 50],
+    upper=[40, 255, 255],
 )
 
 BLUE_HSV_THRESH = Threshold(
-    lower=[105, 145, 60],
-    upper=[120, 255, 255],
+    lower=[120, 100, 40],
+    upper=[130, 255, 255],
 )
 
 ORANGE_HSV_THRESH = Threshold(
@@ -113,7 +113,7 @@ def cone_distance(
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
 
     # TODO: potentially take vertical slice of center of cone and average for a better distance
-    return np.mean(depth_roi)
+    return np.median(depth_roi)
 
 
 def cone_bearing(
