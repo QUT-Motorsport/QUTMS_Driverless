@@ -36,7 +36,7 @@ CAMERA_FOV = 110  # degrees
 
 
 YELLOW_HSV_THRESH = Threshold(
-    lower=[27, 125, 50],
+    lower=[27, 125, 130],
     upper=[40, 255, 255],
 )
 
