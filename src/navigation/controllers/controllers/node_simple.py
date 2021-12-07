@@ -147,7 +147,7 @@ class SimpleControllerNode(Node):
                 (0, 0, 255)
             )
 
-            steering_angle = -((pi/2) - atan2(target.x, target.y))*2
+            steering_angle = -((pi/2) - atan2(target.x, target.y))*5
             steering_msg = AckermannDrive()
             steering_msg.steering_angle = steering_angle
             self.steering_publisher.publish(steering_msg)
