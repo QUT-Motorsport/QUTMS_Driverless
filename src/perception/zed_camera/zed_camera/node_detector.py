@@ -113,7 +113,7 @@ def cone_distance(
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
 
     # TODO: potentially take vertical slice of center of cone and average for a better distance
-    return np.mean(depth_roi)
+    return np.median(depth_roi)
 
 
 def cone_bearing(
