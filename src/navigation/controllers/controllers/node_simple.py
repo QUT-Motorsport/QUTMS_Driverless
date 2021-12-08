@@ -1,4 +1,4 @@
-from math import sqrt, atan2, pi
+from math import sqrt, atan2, pi, sin, cos
 
 import cv2
 import numpy as np
@@ -22,12 +22,12 @@ Colour = Tuple[int, int, int]
 
 cv_bridge = CvBridge()
 
-ORIGIN = Point(0, 0)
-
-
 SCALE = 20
 WIDTH = 20*SCALE  # 10m either side
 HEIGHT = 20*SCALE  # 20m forward
+
+ORIGIN = Point(0, 0)
+IMG_ORIGIN = Point(int(WIDTH/2), HEIGHT)
 
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
@@ -131,19 +131,21 @@ class SimpleControllerNode(Node):
             )
         
         if target is not None:
-            target_img_pt = robot_pt_to_img_pt(target.x, target.y).to_tuple()
-            cv2.drawMarker(
-                debug_img, 
-                target_img_pt,
-                (0, 0, 255),
-                markerType=cv2.MARKER_TILTED_CROSS,
-                markerSize=10,
-                thickness=2
-            )
+            target_img_pt = robot_pt_to_img_pt(target.x, target.y)
+        #     cv2.drawMarker(
+        #         debug_img, 
+        #         target_img_pt,
+        #         (0, 0, 255),
+        #         markerType=cv2.MARKER_TILTED_CROSS,
+        #         markerSize=10,
+        #         thickness=2
+        #     )
+            target_img_angle = atan2(target_img_pt.y - IMG_ORIGIN.y, target_img_pt.x - IMG_ORIGIN.x)
+            
             cv2.line(
                 debug_img,
-                target_img_pt,
-                (int(WIDTH/2), HEIGHT),
+                (50*cos(target_img_angle) + IMG_ORIGIN.x, 50*sin(target_img_angle) + IMG_ORIGIN.y),
+                IMG_ORIGIN.to_tuple(),
                 (0, 0, 255)
             )
 
