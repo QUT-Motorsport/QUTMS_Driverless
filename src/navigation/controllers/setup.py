@@ -19,7 +19,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "simple = controllers.node_simple:main"
+            "simple = controllers.node_simple:main",
+            "sine = controllers.node_sine:main"
         ],
     },
 )
