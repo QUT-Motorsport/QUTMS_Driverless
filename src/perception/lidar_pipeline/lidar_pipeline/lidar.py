@@ -121,9 +121,9 @@ class LidarDetection(Node):
         #with open(f"/home/developer/driverless_ws/src/perception/lidar_pipeline/lidar_pipeline/points_dump/{dt.datetime.now().strftime('%m-%d-%Y_%H-%M-%S')}", "wb") as f:
         #    pickle.dump(point_array, f)
 
-        # with open('/home/developer/datasets/points1.txt', 'w') as f:
-        #     f.write(str(point_list))
-        # logger.info("wrote points")
+        with open(f"/home/developer/datasets/{dt.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.txt", 'w') as f:
+            f.write(str(point_array))
+        #logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
         cones: List[list] = lidar_main(point_array) 

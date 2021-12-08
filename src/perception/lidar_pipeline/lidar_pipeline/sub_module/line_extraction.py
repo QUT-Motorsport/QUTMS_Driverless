@@ -3,13 +3,13 @@ import math
 import copy
 from typing import List
 
-from . import total_least_squares
+import total_least_squares
 
 
 # Constants
-T_M = 2*math.pi / 256 # Max angle that will be considered for ground lines
+T_M = 2*math.pi / 64 # Max angle that will be considered for ground lines
 T_M_SMALL = 0         # Angle considered to be a small slope 
-T_B = 0.1            # Max y-intercept for a ground plane line 
+T_B = 0.2            # Max y-intercept for a ground plane line 
 T_RMSE = 0.2          # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
 
 X = 0
@@ -65,13 +65,13 @@ def get_ground_lines(segment, num_bins) -> List[List]:
 
                     #print("Adding line to segment")
                     new_line_points = []
-                    i = i - 2 
+                    i = i - 2
             else:
                 if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
                     new_line_points.append(new_point)
                 else:
                     # i = i + 1
-                    # print("no", new_point, i)
+                    print("no", new_point, i)
                     pass
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             # This case should not be possible

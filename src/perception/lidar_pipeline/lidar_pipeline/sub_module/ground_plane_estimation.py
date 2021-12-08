@@ -6,11 +6,11 @@ from typing import List, NamedTuple
 import matplotlib.pyplot as plt
 
 # Line Fitting
-from . import line_extraction
+import line_extraction
 # Point Cloud Clustering
-from . import DBSCAN
+import DBSCAN
 # Visualiser
-from . import visualiser as vis
+import visualiser as vis
 
 X = 0
 Y = 1
@@ -149,7 +149,7 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + 0.25 # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
@@ -374,7 +374,6 @@ def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: 
 
 def lidar_main(point_cloud: List):
     # init_constants(_max_range) # move to be a one-time call in lidar init
-    print(point_cloud)
     if VISUALISE:
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
 
