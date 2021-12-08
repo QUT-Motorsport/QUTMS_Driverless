@@ -122,12 +122,12 @@ class SimpleControllerNode(Node):
         elif closest_left is not None:
             target = Point(
                 x=closest_left.location.x,
-                y=closest_left.location.y - 2,
+                y=closest_left.location.y - 4,
             )
         elif closest_right is not None:
             target = Point(
                 x=closest_right.location.x,
-                y=closest_right.location.y + 2,
+                y=closest_right.location.y + 4,
             )
         
         if target is not None:
@@ -147,7 +147,7 @@ class SimpleControllerNode(Node):
                 (0, 0, 255)
             )
 
-            steering_angle = ((pi/2) - atan2(target.x, target.y))*2
+            steering_angle = -((pi/2) - atan2(target.x, target.y))*5
             steering_msg = AckermannDrive()
             steering_msg.steering_angle = steering_angle
             self.steering_publisher.publish(steering_msg)
