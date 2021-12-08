@@ -1,3 +1,6 @@
+import pickle
+import datetime as dt
+
 # import ROS2 libraries
 from math import fabs
 import rclpy
@@ -18,7 +21,7 @@ from typing import List, NamedTuple, Tuple
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .sub_module.read_pcl import *
+from .sub_module.read_pcl import read_points_list
 # lidar cone detection algorithm
 from .sub_module.ground_plane_estimation import lidar_main, lidar_init
 
@@ -113,6 +116,10 @@ class LidarDetection(Node):
         # Convert the list of floats into a list of xyz coordinates
 
         point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
+
+        # Dumping point_cloud
+        #with open(f"/home/developer/driverless_ws/src/perception/lidar_pipeline/lidar_pipeline/points_dump/{dt.datetime.now().strftime('%m-%d-%Y_%H-%M-%S')}", "wb") as f:
+        #    pickle.dump(point_array, f)
 
         # with open('/home/developer/datasets/points1.txt', 'w') as f:
         #     f.write(str(point_list))

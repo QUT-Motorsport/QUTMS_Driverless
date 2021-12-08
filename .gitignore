@@ -22,6 +22,9 @@ src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
 development/lidar_perception/figures/*
 development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt
 
+# Datasets
+datasets/velodyne/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -374,7 +374,7 @@ def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: 
 
 def lidar_main(point_cloud: List):
     # init_constants(_max_range) # move to be a one-time call in lidar init
-
+    print(point_cloud)
     if VISUALISE:
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
 
