@@ -369,6 +369,7 @@ def init_constants(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_fig
     global SAVE_FIGURES
     global FIGURES_DIR
     
+    print(len(point_cloud))
     for i in range(len(point_cloud) - 1, -1, -1):
         point = point_cloud[i]
         if math.sqrt(point[0]**2 + point[1]**2 + point[2]**2) >= _lidar_range:
