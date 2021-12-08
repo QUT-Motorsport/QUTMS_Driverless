@@ -25,23 +25,26 @@ class Steering : public rclcpp::Node {
 	rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr subscription_;
 
 	rcl_interfaces::msg::SetParametersResult parameter_callback(const std::vector<rclcpp::Parameter> &parameters) {
+		rcl_interfaces::msg::SetParametersResult result;
+		result.successful = true;
+		result.reason = "success";
 
 		for(const auto &param : parameters) {
 			if(param.get_name() == "d_acceleration") {
 				RCLCPP_INFO(this->get_logger(), "Setting acceleration to %i.", param.as_int());
 				this->steering->set_acceleration(std::make_pair<uint32_t, uint32_t>(param.as_int(), param.as_int()));
+				
 			}
 			else if(param.get_name() == "d_velocity") {
 				RCLCPP_INFO(this->get_logger(), "Setting velocity to %i.", param.as_int());
 				this->steering->set_velocity(param.as_int());
 			} else {
 				RCLCPP_ERROR(this->get_logger(), "Do not set current and limits on the fly. Request ignored.");
+				result.successful = false;
+				result.reason = "Do not set current and limits on the fly.";
 			}
 		}
-
-		rcl_interfaces::msg::SetParametersResult result;
-		result.successful = true;
-		result.reason = "success";
+		
 		return result;
 	}
 
@@ -82,17 +85,17 @@ class Steering : public rclcpp::Node {
 			rclcpp::shutdown();
 		}
 
-		this->c = std::make_shared<Can2Ethernet>(_ip, _port);
+		// this->c = std::make_shared<Can2Ethernet>(_ip, _port);
 
-		c5e_config_t config;
-		config.default_accelerations = _d_acceleration;
-		config.default_current = _d_current;
-		config.default_limits = _d_limits;
-		config.default_velocity = _d_velocity;
+		// c5e_config_t config;
+		// config.default_accelerations = _d_acceleration;
+		// config.default_current = _d_current;
+		// config.default_limits = _d_limits;
+		// config.default_velocity = _d_velocity;
 
-		RCLCPP_INFO(this->get_logger(), "Using c5e_config: %s", config.to_string().c_str());
+		// RCLCPP_INFO(this->get_logger(), "Using c5e_config: %s", config.to_string().c_str());
 
-		this->steering = std::make_shared<SteeringControl>(c, config);
+		// this->steering = std::make_shared<SteeringControl>(c, config);
 	}
 
 
