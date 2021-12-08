@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "simple = controllers.node_simple:main"
+            "sine = controllers.node_sine:main"
         ],
     },
 )
