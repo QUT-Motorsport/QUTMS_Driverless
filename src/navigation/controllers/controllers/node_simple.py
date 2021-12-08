@@ -144,7 +144,7 @@ class SimpleControllerNode(Node):
             
             cv2.line(
                 debug_img,
-                (50*cos(target_img_angle) + IMG_ORIGIN.x, 50*sin(target_img_angle) + IMG_ORIGIN.y),
+                (int(50*cos(target_img_angle) + IMG_ORIGIN.x), int(50*sin(target_img_angle) + IMG_ORIGIN.y)),
                 IMG_ORIGIN.to_tuple(),
                 (0, 0, 255)
             )
