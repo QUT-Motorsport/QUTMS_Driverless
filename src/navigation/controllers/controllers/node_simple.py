@@ -122,12 +122,12 @@ class SimpleControllerNode(Node):
         elif closest_left is not None:
             target = Point(
                 x=closest_left.location.x,
-                y=closest_left.location.y - 4,
+                y=closest_left.location.y - 2,
             )
         elif closest_right is not None:
             target = Point(
                 x=closest_right.location.x,
-                y=closest_right.location.y + 4,
+                y=closest_right.location.y + 2,
             )
         
         if target is not None:
