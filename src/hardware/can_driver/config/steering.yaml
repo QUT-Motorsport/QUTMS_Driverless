@@ -4,5 +4,5 @@ steering:
     port: 20005
     d_velocity: 1000
     d_acceleration: 10000
-    d_limits: 4500
+    d_limits: 6000
     d_current: 5000
