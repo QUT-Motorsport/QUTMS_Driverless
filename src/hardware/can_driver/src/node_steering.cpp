@@ -24,6 +24,29 @@ class Steering : public rclcpp::Node {
 	}
 	rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr subscription_;
 
+	rcl_interfaces::msg::SetParametersResult parameter_callback(const std::vector<rclcpp::Parameter> &parameters) {
+
+		for(const auto &param : parameters) {
+			if(param.get_name() == "d_acceleration") {
+				RCLCPP_INFO(this->get_logger(), "Setting acceleration to %i.", param.as_int());
+				this->steering->set_acceleration(std::make_pair<uint32_t, uint32_t>(param.as_int(), param.as_int()));
+			}
+			else if(param.get_name() == "d_velocity") {
+				RCLCPP_INFO(this->get_logger(), "Setting velocity to %i.", param.as_int());
+				this->steering->set_velocity(param.as_int());
+			} else {
+				RCLCPP_ERROR(this->get_logger(), "Do not set current and limits on the fly. Request ignored.");
+			}
+		}
+
+		rcl_interfaces::msg::SetParametersResult result;
+		result.successful = true;
+		result.reason = "success";
+		return result;
+	}
+
+	OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle;
+
    public:
 	Steering() : Node("steering") {
         this->declare_parameter<std::string>("ip", "");
@@ -37,6 +60,8 @@ class Steering : public rclcpp::Node {
 
 		this->subscription_ = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
 			"steering", 10, std::bind(&Steering::topic_callback, this, _1));
+
+		this->parameter_callback_handle = this->add_on_set_parameters_callback(std::bind(&Steering::parameter_callback, this, _1));
 
 		std::string _ip;
 		int _port;
@@ -69,6 +94,8 @@ class Steering : public rclcpp::Node {
 
 		this->steering = std::make_shared<SteeringControl>(c, config);
 	}
+
+
 
 	~Steering() { this->steering->shutdown(); }
 };
