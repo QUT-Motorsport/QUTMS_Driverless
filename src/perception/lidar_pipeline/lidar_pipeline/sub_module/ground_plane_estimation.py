@@ -149,7 +149,7 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 4*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 1.2*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
@@ -315,26 +315,29 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
 
     if VISUALISE: vis.plot_grid_2D(object_points)
 
-    now = time.time()
-    cluster_centers = DBSCAN.get_objects(object_points)
-    print("get_objects", time.time() - now)
+    cones = []
+    if len(object_points) > 0:
+        now = time.time()
+        cluster_centers = DBSCAN.get_objects(object_points)
+        print("get_objects", time.time() - now)
 
-    now = time.time()
-    reconstructed_clusters = object_reconstruction_4(cluster_centers, segments_bins)
-    print("object_reconstruction", time.time() - now)
+        now = time.time()
+        reconstructed_clusters = object_reconstruction_4(cluster_centers, segments_bins)
+        print("object_reconstruction", time.time() - now)
 
-    if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
+        if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
 
-    now = time.time()
-    cones = get_cones(reconstructed_clusters)
-    print("get_cones", time.time() - now)
+        now = time.time()
+        cones = get_cones(reconstructed_clusters)
+        print("get_cones", time.time() - now)
 
-    if VISUALISE: vis.plot_cones(cones)
+        if VISUALISE: vis.plot_cones(cones)
+
+    print("Algorithm Time:", time.time() - start_time)
 
     # Could consider try except block to ensure plotting - even during failure
     if VISUALISE and DISPLAY: plt.show()
     
-    print("Algorithm Time:", time.time() - start_time)
     return cones
 
 
@@ -355,7 +358,7 @@ def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: 
     LIDAR_RANGE = _max_range # Max range of the LIDAR (m)
     DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-    BIN_SIZE = 0.25 # The length of a bin (in metres) # 1
+    BIN_SIZE = 0.15 # The length of a bin (in metres) # 1
     NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 
     T_D_GROUND = 0.1 # Maximum distance between point and line to be considered part of ground plane. # 2
@@ -442,3 +445,7 @@ def lidar_main(point_cloud: List):
     # I'm gonna be hoping a point wont be in two clusters at the same time
             # therefore ill break after the first match for each point
             # Increases speed of algorithm
+
+# Consider having the TM_SMALL simply has negative T_M, since we may have a line
+# that slopes slightly downwards. But right now all angles below 0 degress are being
+# filtered out
