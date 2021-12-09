@@ -220,7 +220,7 @@ def get_distance(point_a, point_b):
 
 
 def object_reconstruction_4(cluster_centers, segments_bins):
-    cone_width = 0.15
+    cone_width = 0.14
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
     for i in range(len(cluster_centers)):
         cluster = cluster_centers[i]
@@ -279,7 +279,7 @@ def get_cones(reconstructed_clusters):
                     cones.append([x_mean, y_mean])
                 else:
                     print(x_mean, y_mean, exp_point_count, point_count)
-                    cones.append([x_mean, y_mean]) # Remove when real-er data
+                    #cones.append([x_mean, y_mean]) # Remove when real-er data
                     pass
     return cones
 
@@ -452,3 +452,7 @@ def lidar_main(point_cloud: List):
 # Consider having the TM_SMALL simply has negative T_M, since we may have a line
 # that slopes slightly downwards. But right now all angles below 0 degress are being
 # filtered out
+
+# Need to create a mathematical relationship between how many segments to check for points
+# that may belong to a cluster vs. how far away the cluster is from the origin. Need to 
+# consider the diameter of a cone. and mathy the bin sizs w.r.t. cone size
