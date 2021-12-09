@@ -149,9 +149,11 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 1.2*(j * BIN_SIZE)*math.tan(DELTA_ALPHA/2) # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 1.8*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
+                if is_ground == False:
+                    print(i, j, k, closest_dist, dynamic_T_D_GROUND)
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
 
@@ -311,6 +313,7 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
 
     now = time.time()
     object_points = non_ground_points(labelled_points)
+    print("object points", len(object_points))
     print("non_ground_points", time.time() - now)
 
     if VISUALISE: vis.plot_grid_2D(object_points)
