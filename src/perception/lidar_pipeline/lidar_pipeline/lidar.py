@@ -30,7 +30,7 @@ LIDAR_NODE = '/velodyne_points'
 
 DISPLAY = False
 VISUALISE = True
-MAX_RANGE = 7.5 #m
+MAX_RANGE = 10 #m
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
@@ -92,7 +92,7 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription  # prevent unused variable warning
-        lidar_init(DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE)
+        lidar_init(VISUALISE, DISPLAY, "/home/developer/datasets/figures/", MAX_RANGE)
 
         self.detection_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, 
@@ -119,13 +119,14 @@ class LidarDetection(Node):
 
         point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
 
-        with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'x') as f:
+        with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
             f.write(str(point_array))
-        self.count += 1
         # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
         cones: List[list] = lidar_main(point_array, self.count) 
+        
+        self.count += 1
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []

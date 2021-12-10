@@ -291,7 +291,7 @@ def plot_grid_2D(object_points: List[List[List]]):
     if SAVE_FIGURES: 
         plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
-def plot_reconstruction(reconstructed_clusters: List[List]):
+def plot_reconstruction(reconstructed_clusters: List[List], count: int):
     init_plot_2D("Reconstructed Clusters", "x", "y")
 
     colours = ['g', 'grey', 'm', 'orange']
@@ -310,6 +310,8 @@ def plot_reconstruction(reconstructed_clusters: List[List]):
     plt.plot(0, 0, '>', color="blue")
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+
+    plt.savefig("/home/developer/datasets/reconstruction/" + str(count) + "_Reconstructed_Clusters")
 
     if SAVE_FIGURES:
          plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")

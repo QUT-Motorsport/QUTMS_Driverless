@@ -322,11 +322,11 @@ def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
             exp_point_count = cone_filter(distance)
 
             if RUN_ROS:
-                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'x') as f:
+                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
                     f.write("cluster: " + str(i) + ", frame: " + str(count) + \
                         ", point count: " + str(point_count) + ", x mean: " + \
-                        str(x_mean) + ", y mean: " + str(y_mean) + ", exp point count" + \
-                        str(exp_point_count))
+                        str(x_mean) + ", y mean: " + str(y_mean) + \
+                        ", exp point count: " + str(exp_point_count) + "\n")
             
             # # only checks centre of scan for cones - noise filter (delete if needed)
             # if abs(x_mean) < FAR_X: 
@@ -348,7 +348,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     segments_bins: List[List[List]] = points_to_seg_bin(point_cloud)
     print("points_to_seg_bin", time.time() - now)
     
-    if VISUALISE: vis.plot_segments_bins(segments_bins, False)
+    # if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     now = time.time()
     segments_bins_prototype: List[List[List]] = approximate_2D(segments_bins)
@@ -365,14 +365,14 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     labelled_points: List[List[List]] = label_points_5(segments_bins, ground_plane)
     print("label_points", time.time() - now)
 
-    if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
+    # if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
     now = time.time()
     object_points: List[List[List]] = non_ground_points(labelled_points)
     print("object points", len(object_points))
     print("non_ground_points", time.time() - now)
 
-    if VISUALISE: vis.plot_grid_2D(object_points)
+    # if VISUALISE: vis.plot_grid_2D(object_points)
 
     cones: List = []
     if len(object_points) > 0:
@@ -384,13 +384,13 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
         reconstructed_clusters: List[List] = object_reconstruction_4(cluster_centers, segments_bins)
         print("object_reconstruction", time.time() - now)
 
-        if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
+        if VISUALISE: vis.plot_reconstruction(reconstructed_clusters, count)
 
         now = time.time()
         cones: List[List] = get_cones(reconstructed_clusters, count)
         print("get_cones", time.time() - now)
 
-        if VISUALISE: vis.plot_cones(cones)
+        # if VISUALISE: vis.plot_cones(cones)
 
     print("Algorithm Time:", time.time() - start_time)
 
