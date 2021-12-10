@@ -149,7 +149,7 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 1.8*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 1.8*((j) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 if is_ground == False:
@@ -219,6 +219,12 @@ def get_distance(point_a, point_b):
     return math.sqrt((point_b[X] - point_a[X])**2 + (point_b[Y]-point_a[Y])**2)
 
 
+def count_nearby_segs(bin_idx, object_width):
+    norm = bin_idx * BIN_SIZE
+    seg_length = norm * math.tan(DELTA_ALPHA / 2)
+    nearby_segs = object_width / seg_length
+    return nearby_segs
+
 def object_reconstruction_4(cluster_centers, segments_bins):
     cone_width = 0.14
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
@@ -226,6 +232,7 @@ def object_reconstruction_4(cluster_centers, segments_bins):
         cluster = cluster_centers[i]
         seg_idx = get_segment(cluster[0], cluster[1])
         bin_idx = get_bin(cluster[0], cluster[1])
+        segs_to_check = get_nearby_segs()
         for j in range(seg_idx-1, (seg_idx+2) % NUM_SEGMENTS):
             for k in range(bin_idx-1, (bin_idx+2) % NUM_BINS):
                 for m in range(len(segments_bins[j][k])):
