@@ -29,7 +29,7 @@ from .sub_module.ground_plane_estimation import lidar_main, lidar_init
 LIDAR_NODE = '/velodyne_points'
 
 DISPLAY = False
-VISUALISE = False
+VISUALISE = True
 MAX_RANGE = 7.5 #m
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
@@ -104,6 +104,8 @@ class LidarDetection(Node):
             "lidar_detector/debug_cones_array", 
             1)
 
+        self.count: int = 0
+
 
     ## callback for lidar data to be sent to. used to call funtion to find cone coords
     def pcl_callback(self, pcl_msg: PointCloud2):
@@ -117,16 +119,13 @@ class LidarDetection(Node):
 
         point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
 
-        # Dumping point_cloud
-        #with open(f"/home/developer/driverless_ws/src/perception/lidar_pipeline/lidar_pipeline/points_dump/{dt.datetime.now().strftime('%m-%d-%Y_%H-%M-%S')}", "wb") as f:
-        #    pickle.dump(point_array, f)
-
-        with open(f"/home/developer/datasets/{dt.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.txt", 'w') as f:
+        with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'x') as f:
             f.write(str(point_array))
-        #logger.info("wrote points")
+        self.count += 1
+        # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
-        cones: List[list] = lidar_main(point_array) 
+        cones: List[list] = lidar_main(point_array, self.count) 
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []

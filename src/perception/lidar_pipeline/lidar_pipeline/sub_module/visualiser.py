@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import math
+from typing import List
 
 def init_plot_2D(title, xlabel, ylabel):
     plt.figure()
@@ -114,7 +115,7 @@ def plot_segments(segments):
     if SAVE_FIGURES:
         plt.savefig(FIGURES_DIR + "3_Segments")
 
-def plot_segments_bins(segments_bins, plot_bins):
+def plot_segments_bins(segments_bins: List[List[List]], plot_bins: bool):
     init_plot_2D("Points assigned to Bins within Segments", "x", "y")
 
     for i in range(len(segments_bins)):
@@ -202,7 +203,7 @@ def plot_segments_bins_prototype_3D(segments_bins_prototype, plot_bins):
     if SAVE_FIGURES:
         plt.savefig(FIGURES_DIR + "7_Prototype-Points")
 
-def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
+def plot_ground_lines_3D(segments_bins_prototype: List[List[List]], ground_lines: List[List[List]], plot_bins: bool):
     ax = init_plot_3D("Ground Plane Estimation", "x", "y", "Height", 45, 45)
 
     plot_seg_bin_prototype(ax, segments_bins_prototype, plot_bins)
@@ -211,7 +212,7 @@ def plot_ground_lines_3D(segments_bins_prototype, ground_lines, plot_bins):
     if SAVE_FIGURES:
         plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
-def plot_segments_fitted(segments_bins_prototype, ground_lines):
+def plot_segments_fitted(segments_bins_prototype: List[List[List]], ground_lines: List[List[List]]):
     # print("SP", segments_bins_prototype)
     # print("--- Prototype Points ---")
     for i in range(len(segments_bins_prototype)):
@@ -243,7 +244,7 @@ def plot_segments_fitted(segments_bins_prototype, ground_lines):
             if SAVE_FIGURES:
                  plt.savefig(FIGURES_DIR + "9_Segment-" + str(i+1) + "-Fitted_Line")
 
-def plot_labelled_points(labelled_points, ground_lines):
+def plot_labelled_points(labelled_points: List[List[List]], ground_lines: List[List[List]]):
     ax = init_plot_3D("Point Cloud Labelled", "x", "y", "Height", 45, 45)
     
     plot_ground_lines(ax, ground_lines, 'yellow')
@@ -276,7 +277,7 @@ def plot_labelled_points(labelled_points, ground_lines):
     if SAVE_FIGURES:
          plt.savefig(FIGURES_DIR + "10_Point_Cloud_Labelled")
 
-def plot_grid_2D(object_points):
+def plot_grid_2D(object_points: List[List[List]]):
     init_plot_2D("Non-ground Points", "x", "y")
 
     x = [coords[0] for coords in object_points]
@@ -290,7 +291,7 @@ def plot_grid_2D(object_points):
     if SAVE_FIGURES: 
         plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
-def plot_reconstruction(reconstructed_clusters):
+def plot_reconstruction(reconstructed_clusters: List[List]):
     init_plot_2D("Reconstructed Clusters", "x", "y")
 
     colours = ['g', 'grey', 'm', 'orange']
@@ -339,7 +340,7 @@ def plot_clusters(clusters, noise):
     if SAVE_FIGURES: 
         plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
 
-def plot_cones(cones):
+def plot_cones(cones: List[List]):
     init_plot_2D("Identified Cones", "x", "y")
 
     plt.plot(X_RAW, Y_RAW, '.', color='black')
