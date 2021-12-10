@@ -354,6 +354,30 @@ def plot_cones(cones):
     if SAVE_FIGURES: 
         plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
+def plot_bad_boys(cluster, bad_boys, good_boys, segs_to_count):
+    ax = init_plot_3D(str(cluster[0]) + " " + str(cluster[1]) + " stc: " + str(segs_to_count), "x", "y", "Height", 45, 45)
+
+    x_bad = [coords[0] for coords in bad_boys]
+    y_boys = [coords[1] for coords in bad_boys]
+    z = [coords[2] for coords in bad_boys]
+
+    ax.scatter3D(x_bad, y_boys, z, color='red')
+
+    x_good = [coords[0] for coords in good_boys]
+    y_boys = [coords[1] for coords in good_boys]
+    z = [coords[2] for coords in good_boys]
+
+    ax.scatter3D(x_good, y_boys, z, color='green')
+
+    plt.xlim([-1, LIDAR_RANGE])
+    plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
+
+    ax.scatter3D(cluster[0], cluster[1], 0, color='blue')
+
+    if SAVE_FIGURES: 
+        plt.savefig(FIGURES_DIR + "14_bad_boys")
+
+
 def init_constants(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_figures, _figures_dir):
     global X_RAW
     global Y_RAW

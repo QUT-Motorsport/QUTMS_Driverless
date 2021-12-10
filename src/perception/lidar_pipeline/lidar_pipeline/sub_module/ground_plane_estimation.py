@@ -42,7 +42,8 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)): # iterate through each point
         point = point_cloud[i] # current point
-        if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
+        #if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
+        if point.z <= 0.25 and point.x > 0: # only take points in front 180 degrees
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
@@ -149,11 +150,12 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 1.8*((j) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 1.8*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 if is_ground == False:
-                    print(i, j, k, closest_dist, dynamic_T_D_GROUND)
+                    #print(i, j, k, closest_dist, dynamic_T_D_GROUND)
+                    pass
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
 
@@ -220,27 +222,51 @@ def get_distance(point_a, point_b):
 
 
 def count_nearby_segs(bin_idx, object_width):
-    norm = bin_idx * BIN_SIZE
+    norm = (bin_idx + 1) * BIN_SIZE
     seg_length = norm * math.tan(DELTA_ALPHA / 2)
     nearby_segs = object_width / seg_length
     return nearby_segs
 
+def count_nearby_bins(object_width):
+    return object_width / BIN_SIZE
+
 def object_reconstruction_4(cluster_centers, segments_bins):
-    cone_width = 0.14
+    cone_radius = 0.14 / 2
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
+    bins_to_check = math.ceil(count_nearby_bins(cone_radius) / 2)
     for i in range(len(cluster_centers)):
+        bad_boys = []
+        good_boys = []
         cluster = cluster_centers[i]
         seg_idx = get_segment(cluster[0], cluster[1])
         bin_idx = get_bin(cluster[0], cluster[1])
-        segs_to_check = get_nearby_segs()
-        for j in range(seg_idx-1, (seg_idx+2) % NUM_SEGMENTS):
-            for k in range(bin_idx-1, (bin_idx+2) % NUM_BINS):
+        segs_to_check = math.ceil(count_nearby_segs(bin_idx, cone_radius) / 2)
+        print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
+        min_seg = seg_idx - segs_to_check
+        if min_seg < 0:
+            min_seg = NUM_SEGMENTS + min_seg
+        max_seg = (seg_idx + segs_to_check + 1) % NUM_SEGMENTS
+        if min_seg > max_seg:
+            temp_min = min_seg
+            min_seg = max_seg
+            max_seg = temp_min
+        for j in range(min_seg, max_seg):
+            min_bin = bin_idx - bins_to_check
+            if min_bin < 0:
+                min_bin = 0
+            max_bin = bin_idx + bins_to_check + 1
+            if max_bin > NUM_BINS:
+                max_bin = NUM_BINS
+            for k in range(min_bin, max_bin):
                 for m in range(len(segments_bins[j][k])):
                     point = segments_bins[j][k][m]
-                    if get_distance(cluster, point) <= cone_width:
+                    if get_distance(cluster, point) <= cone_radius:
                         reconstructed_clusters[i].append(point)
-                        break
-                    
+                        good_boys.append(point)
+                    else:
+                        bad_boys.append(point)
+        vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
+
     return reconstructed_clusters
     
 
@@ -260,7 +286,9 @@ def cone_filter_old_2(distance):
 	return -1.5 * distance + 11.5
 	
 def cone_filter(distance):
-	return (1/2) * (CONE_HEIGHT / (2*distance*math.tan(VERTICAL_RES/2))) * (CONE_WIDTH / (2*distance*math.tan(HORIZONTAL_RES/2)))
+    #if distance < BIN_SIZE:
+    #    distance = BIN_SIZE
+    return (1/2) * (CONE_HEIGHT / (2*distance*math.tan(VERTICAL_RES/2))) * (CONE_WIDTH / (2*distance*math.tan(HORIZONTAL_RES/2)))
 
 FAR_X = 6 #m
 
@@ -463,3 +491,6 @@ def lidar_main(point_cloud: List):
 # Need to create a mathematical relationship between how many segments to check for points
 # that may belong to a cluster vs. how far away the cluster is from the origin. Need to 
 # consider the diameter of a cone. and mathy the bin sizs w.r.t. cone size
+
+# bin_idx + 1 or j+1 since if a point is near the origin and in bin 0, you want it to have
+# a norm from origin of at least BIN_SIZE, not 0.
