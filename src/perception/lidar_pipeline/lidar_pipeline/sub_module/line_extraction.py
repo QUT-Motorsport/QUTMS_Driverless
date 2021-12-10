@@ -3,7 +3,11 @@ import math
 import copy
 from typing import List
 
-import total_least_squares
+RUN_ROS = True
+if RUN_ROS:
+    from . import total_least_squares
+else:
+    import total_least_squares
 
 
 # Constants

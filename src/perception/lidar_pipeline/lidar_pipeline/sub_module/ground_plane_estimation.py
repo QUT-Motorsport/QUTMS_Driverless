@@ -5,12 +5,22 @@ from typing import List, NamedTuple
 # Plotting Data
 import matplotlib.pyplot as plt
 
-# Line Fitting
-import line_extraction
-# Point Cloud Clustering
-import DBSCAN
-# Visualiser
-import visualiser as vis
+RUN_ROS = True
+if RUN_ROS:
+    # Line Fitting
+    from . import line_extraction
+    # Point Cloud Clustering
+    from . import DBSCAN
+    # Visualiser
+    from . import visualiser as vis
+else:
+    # Line Fitting
+    import line_extraction
+    # Point Cloud Clustering
+    import DBSCAN
+    # Visualiser
+    import visualiser as vis
+
 
 X = 0
 Y = 1
@@ -23,11 +33,10 @@ def get_bin(x: float, y: float) -> int:
     norm = math.sqrt((x**2)+(y**2))
     # which bin this distance falls in
     bin_index = math.floor(norm / BIN_SIZE)
-    if norm % BIN_SIZE != 0: 
+    if norm % BIN_SIZE != 0: # <----- idk why this is here
         bin_index += 1
-    if bin_index >= NUM_BINS:
+    if bin_index >= NUM_BINS: # out of range of LiDAR
         bin_index = -1
-        #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
 
@@ -42,8 +51,7 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)): # iterate through each point
         point = point_cloud[i] # current point
-        #if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
-        if point.z <= 100 and point.x > 0: # only take points in front 180 degrees
+        if point[Z] <= 100 and point[X] > 0: # only take points in front 180 degrees
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
@@ -59,12 +67,13 @@ def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
     segments_approx: List[list] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(NUM_SEGMENTS):
         for j in range(NUM_BINS):
+            # find prototype points
             for k in range(len(segments_bins[i][j])):
                 point: list = segments_bins[i][j][k] # [x, y, z]
                 point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z] ]
                 segments_approx[i][j].append(point_prime)
             segments_approx[i][j].sort(reverse=True)
-            # Prototype points
+            # if more than 1 prototype point, take the first in the sorted array
             if len(segments_approx[i][j]) > 0:
                 segments_approx[i][j] = segments_approx[i][j][0]
     return segments_approx
@@ -93,7 +102,7 @@ def dist_points_3D(x_0: list, p_1: list, p_2: list) -> float:
 
 
 # Returns the start and end points (x, y, z) of a line
-def line_to_end_points(line, segment_idx):
+def line_to_end_points(line: List[List], segment_idx: int):
     start = line[2] # First point in line
     end = line[3] # Last point in line
     
@@ -111,7 +120,7 @@ def line_to_end_points(line, segment_idx):
 
 # Modifies input
 # Conservative approach implemented using T_D_MAX parameter
-def label_points_5(segments_bins, ground_lines):
+def label_points_5(segments_bins: List[List[List]], ground_lines):
     for i in range(NUM_SEGMENTS):
         num_lines = len(ground_lines[i])
         seg_idx = i

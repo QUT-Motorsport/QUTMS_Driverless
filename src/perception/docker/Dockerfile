@@ -8,8 +8,8 @@ ARG HOST_GROUP=dialout
 
 RUN pip3 install opencv-python==4.5.4.60
 # copy in perception files and install Python Dependencies
-# COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/perception /home/${USERNAME}/driverless_ws/src/perception
-# RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_lidar.txt
+COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/perception /home/${USERNAME}/driverless_ws/src/perception
+RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_lidar.txt
 # RUN pip install -r /home/${USERNAME}/driverless_ws/src/perception/docker/requirements_vision.txt
 # # remove files
-# RUN rm -r /home/${USERNAME}/driverless_ws/src/*
+RUN rm -r /home/${USERNAME}/driverless_ws/src/*
