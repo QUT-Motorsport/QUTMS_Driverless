@@ -342,12 +342,12 @@ def plot_clusters(clusters, noise):
 def plot_cones(cones):
     init_plot_2D("Identified Cones", "x", "y")
 
-    plt.plot(X_RAW, Y_RAW, '.', color='green')
+    plt.plot(X_RAW, Y_RAW, '.', color='black')
 
     x_centers = [coords[0] for coords in cones]
     y_centers = [coords[1] for coords in cones]
 
-    plt.plot(x_centers, y_centers, 'x', color='blue')
+    plt.plot(x_centers, y_centers, 'o', color='blue')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
 

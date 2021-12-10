@@ -43,7 +43,7 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     for i in range(len(point_cloud)): # iterate through each point
         point = point_cloud[i] # current point
         #if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
-        if point.z <= 0.25 and point.x > 0: # only take points in front 180 degrees
+        if point.z <= 100 and point.x > 0: # only take points in front 180 degrees
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
@@ -150,7 +150,7 @@ def label_points_5(segments_bins, ground_lines):
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 1.8*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2)# Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + BIN_SIZE # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 if is_ground == False:
@@ -265,14 +265,15 @@ def object_reconstruction_4(cluster_centers, segments_bins):
                         good_boys.append(point)
                     else:
                         bad_boys.append(point)
-        vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
+        #vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
 
     return reconstructed_clusters
     
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
-HORIZONTAL_RES = 0.384 * (math.pi / 180) # 0.384 degrees in between each point
+#HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
+HORIZONTAL_RES = 0.3 * (math.pi / 180) # 0.384 degrees in between each point
 VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
 CONE_HEIGHT = 0.29 #m
@@ -294,7 +295,7 @@ FAR_X = 6 #m
 
 def get_cones(reconstructed_clusters):
     cones = []
-    ERROR_MARGIN = 0.45 # Constant
+    ERROR_MARGIN = 0.85 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
         if point_count >= 1:
@@ -312,8 +313,9 @@ def get_cones(reconstructed_clusters):
             if abs(x_mean) < FAR_X: # only checks centre of scan for cones (noise filter)
                 if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
                     cones.append([x_mean, y_mean])
+                    print(x_mean, y_mean, exp_point_count, point_count, distance)
                 else:
-                    print(x_mean, y_mean, exp_point_count, point_count)
+                    print(x_mean, y_mean, exp_point_count, point_count, distance)
                     #cones.append([x_mean, y_mean]) # Remove when real-er data
                     pass
     return cones
