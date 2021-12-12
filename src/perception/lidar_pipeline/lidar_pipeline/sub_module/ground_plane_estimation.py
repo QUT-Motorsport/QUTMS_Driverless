@@ -5,7 +5,7 @@ from typing import List, NamedTuple
 # Plotting Data
 import matplotlib.pyplot as plt
 
-RUN_ROS = True
+RUN_ROS = False
 if RUN_ROS:
     # Line Fitting
     from . import line_extraction
@@ -236,6 +236,9 @@ def count_nearby_segs(bin_idx: int, object_width: float) -> float:
     seg_length: float = norm * math.tan(DELTA_ALPHA / 2)
     return object_width / seg_length # nearby segments
 
+def count_nearby_bins(object_width):
+    return object_width / BIN_SIZE
+
 
 def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
     cone_radius = 0.28 / 2
@@ -247,7 +250,7 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
         cluster = cluster_centers[i]
         seg_idx = get_segment(cluster[0], cluster[1])
         bin_idx = get_bin(cluster[0], cluster[1])
-        segs_to_check = math.ceil(count_nearby_segs(bin_idx, CONE_RADIUS) / 2)
+        segs_to_check = math.ceil(count_nearby_segs(bin_idx, cone_radius) / 2)
         print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
         min_seg = seg_idx - segs_to_check
         if min_seg < 0:
@@ -267,7 +270,7 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
             for k in range(min_bin, max_bin):
                 for m in range(len(segments_bins[j][k])):
                     point = segments_bins[j][k][m]
-                    if get_distance(cluster, point) <= CONE_RADIUS:
+                    if get_distance(cluster, point) <= cone_radius:
                         reconstructed_clusters[i].append(point)
                         good_boys.append(point)
                     else:
@@ -343,7 +346,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     segments_bins: List[List[List]] = points_to_seg_bin(point_cloud)
     print("points_to_seg_bin", time.time() - now)
     
-    # if VISUALISE: vis.plot_segments_bins(segments_bins, False)
+    if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     now = time.time()
     segments_bins_prototype: List[List[List]] = approximate_2D(segments_bins)
@@ -353,21 +356,21 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
-    # if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
-    # if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
+    if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
+    #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     now = time.time()
     labelled_points: List[List[List]] = label_points_5(segments_bins, ground_plane)
     print("label_points", time.time() - now)
 
-    # if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
+    if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
     now = time.time()
     object_points: List[List[List]] = non_ground_points(labelled_points)
     print("object points", len(object_points))
     print("non_ground_points", time.time() - now)
 
-    # if VISUALISE: vis.plot_grid_2D(object_points)
+    if VISUALISE: vis.plot_grid_2D(object_points)
 
     cones: List = []
     if len(object_points) > 0:
@@ -385,7 +388,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
         cones: List[List] = get_cones(reconstructed_clusters, count)
         print("get_cones", time.time() - now)
 
-        # if VISUALISE: vis.plot_cones(cones)
+        if VISUALISE: vis.plot_cones(cones)
 
     print("Algorithm Time:", time.time() - start_time)
 

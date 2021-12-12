@@ -20,5 +20,5 @@ MAX_RANGE: int = 6
 start_time = time.time()
 gpe.lidar_init(DISPLAY, VISUALISE, "./datasets/figures", MAX_RANGE)
 print("test")
-gpe.lidar_main(point_cloud)
+gpe.lidar_main(point_cloud, len(point_cloud))
 print("\nTotal Time:", time.time() - start_time)

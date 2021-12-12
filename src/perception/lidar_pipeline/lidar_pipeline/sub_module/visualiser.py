@@ -311,7 +311,8 @@ def plot_reconstruction(reconstructed_clusters: List[List], count: int):
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
 
-    plt.savefig("/home/developer/datasets/reconstruction/" + str(count) + "_Reconstructed_Clusters")
+    #plt.savefig("/home/developer/datasets/reconstruction/" + str(count) + "_Reconstructed_Clusters")
+    plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
     if SAVE_FIGURES:
          plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
