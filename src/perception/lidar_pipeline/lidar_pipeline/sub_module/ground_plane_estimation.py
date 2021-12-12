@@ -304,7 +304,7 @@ def cone_filter(distance: float) -> float:
 FAR_X = 6 #m
 def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
     cones: List[List] = []
-    ERROR_MARGIN = 0.75 # Constant
+    ERROR_MARGIN = 0.85 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
         if point_count >= 1:
@@ -356,7 +356,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
-    if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
+    #if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
     #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     now = time.time()
