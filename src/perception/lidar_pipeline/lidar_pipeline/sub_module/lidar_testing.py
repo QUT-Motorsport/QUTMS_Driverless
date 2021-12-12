@@ -15,7 +15,7 @@ point_cloud: List[namedtuple] = [Point(x=0.0, y=0.0, z=0.0, intensity=0.0, ring=
 
 DISPLAY: bool = True
 VISUALISE: bool = True
-MAX_RANGE: int = 4
+MAX_RANGE: int = 6
 
 start_time = time.time()
 gpe.lidar_init(DISPLAY, VISUALISE, "./datasets/figures", MAX_RANGE)

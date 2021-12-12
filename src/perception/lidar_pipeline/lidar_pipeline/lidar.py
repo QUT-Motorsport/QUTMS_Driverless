@@ -30,7 +30,7 @@ LIDAR_NODE = '/velodyne_points'
 
 DISPLAY = False
 VISUALISE = False
-MAX_RANGE = 7.5 #m
+MAX_RANGE = 5 #m
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}

@@ -4,7 +4,7 @@ from sklearn.cluster import DBSCAN
 
 # Density-Based Spatial Clustering of Applications with Noise (DBSCAN)
 def get_objects(object_points):
-    EPSILON = 0.15  # Neighbourhood Scan Size
+    EPSILON = 0.56  # Neighbourhood Scan Size
     MIN_POINTS = 3 # Number of points required to form a neighbourhood
 
     clustering = DBSCAN(eps = EPSILON, min_samples = MIN_POINTS).fit(np.array(object_points))

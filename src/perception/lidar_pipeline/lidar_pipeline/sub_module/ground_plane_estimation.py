@@ -231,7 +231,7 @@ def count_nearby_bins(object_width):
     return object_width / BIN_SIZE
 
 def object_reconstruction_4(cluster_centers, segments_bins):
-    cone_radius = 0.14 / 2
+    cone_radius = 0.28 / 2
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
     bins_to_check = math.ceil(count_nearby_bins(cone_radius) / 2)
     for i in range(len(cluster_centers)):
@@ -273,7 +273,7 @@ def object_reconstruction_4(cluster_centers, segments_bins):
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 #HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
-HORIZONTAL_RES = 0.3 * (math.pi / 180) # 0.384 degrees in between each point
+HORIZONTAL_RES = 0.65 * (math.pi / 180) # 0.384 degrees in between each point
 VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
 CONE_HEIGHT = 0.29 #m
@@ -295,7 +295,7 @@ FAR_X = 6 #m
 
 def get_cones(reconstructed_clusters):
     cones = []
-    ERROR_MARGIN = 0.85 # Constant
+    ERROR_MARGIN = 0.75 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
         if point_count >= 1:
@@ -309,7 +309,6 @@ def get_cones(reconstructed_clusters):
             distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
             # Rule based filter
             exp_point_count = cone_filter(distance)
-            
             if abs(x_mean) < FAR_X: # only checks centre of scan for cones (noise filter)
                 if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
                     cones.append([x_mean, y_mean])
