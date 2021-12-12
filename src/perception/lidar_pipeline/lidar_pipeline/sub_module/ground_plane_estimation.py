@@ -5,12 +5,22 @@ from typing import List, NamedTuple
 # Plotting Data
 import matplotlib.pyplot as plt
 
-# Line Fitting
-import line_extraction
-# Point Cloud Clustering
-import DBSCAN
-# Visualiser
-import visualiser as vis
+RUN_ROS = True
+if RUN_ROS:
+    # Line Fitting
+    from . import line_extraction
+    # Point Cloud Clustering
+    from . import DBSCAN
+    # Visualiser
+    from . import visualiser as vis
+else:
+    # Line Fitting
+    import line_extraction
+    # Point Cloud Clustering
+    import DBSCAN
+    # Visualiser
+    import visualiser as vis
+
 
 X = 0
 Y = 1
@@ -23,11 +33,10 @@ def get_bin(x: float, y: float) -> int:
     norm = math.sqrt((x**2)+(y**2))
     # which bin this distance falls in
     bin_index = math.floor(norm / BIN_SIZE)
-    if norm % BIN_SIZE != 0: 
+    if norm % BIN_SIZE != 0: # <----- idk why this is here
         bin_index += 1
-    if bin_index >= NUM_BINS:
+    if bin_index >= NUM_BINS: # out of range of LiDAR
         bin_index = -1
-        #print("Point exceeds expected max range of LIDAR. bin_index:", bin_index)
     return math.floor(bin_index)
 
 
@@ -42,8 +51,8 @@ def points_to_seg_bin(point_cloud: List[NamedTuple]) -> List[List[List]]:
     segments_bins: List[List[List]] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(len(point_cloud)): # iterate through each point
         point = point_cloud[i] # current point
-        #if point.x > 0 and point.z <= 0.25: # only take points in front 180 degrees
-        if point.z <= 100 and point.x > 0: # only take points in front 180 degrees
+        if point[Z] <= 100 and point[X] > 0: # only take points in front 180 degrees
+
             bin_idx = get_bin(point[X], point[Y])
             if bin_idx != -1: # 
                 seg_idx: int = get_segment(point[X], point[Y])
@@ -59,12 +68,13 @@ def approximate_2D(segments_bins: List[List[List]]) -> List[List[List]]:
     segments_approx: List[list] = [[[] for j in range(NUM_BINS)] for i in range(NUM_SEGMENTS)]
     for i in range(NUM_SEGMENTS):
         for j in range(NUM_BINS):
+            # find prototype points
             for k in range(len(segments_bins[i][j])):
                 point: list = segments_bins[i][j][k] # [x, y, z]
                 point_prime: list = [ (math.sqrt(point[X]**2 + point[Y]**2)), point[Z] ]
                 segments_approx[i][j].append(point_prime)
             segments_approx[i][j].sort(reverse=True)
-            # Prototype points
+            # if more than 1 prototype point, take the first in the sorted array
             if len(segments_approx[i][j]) > 0:
                 segments_approx[i][j] = segments_approx[i][j][0]
     return segments_approx
@@ -93,7 +103,7 @@ def dist_points_3D(x_0: list, p_1: list, p_2: list) -> float:
 
 
 # Returns the start and end points (x, y, z) of a line
-def line_to_end_points(line, segment_idx):
+def line_to_end_points(line: List[List], segment_idx: int):
     start = line[2] # First point in line
     end = line[3] # Last point in line
     
@@ -111,7 +121,7 @@ def line_to_end_points(line, segment_idx):
 
 # Modifies input
 # Conservative approach implemented using T_D_MAX parameter
-def label_points_5(segments_bins, ground_lines):
+def label_points_5(segments_bins: List[List[List]], ground_lines: List[List[List]]):
     for i in range(NUM_SEGMENTS):
         num_lines = len(ground_lines[i])
         seg_idx = i
@@ -206,7 +216,7 @@ def label_points_6(segments_bins, ground_lines):
     return segments_bins
 
 
-def non_ground_points(labelled_points):
+def non_ground_points(labelled_points: List[List[List]]) -> List[List[List]]:
     # Flatten parent array (remove bins)
     labelled_points = [points for sublist in labelled_points for points in sublist]
     # Flatten parent array (remove segements)
@@ -216,31 +226,28 @@ def non_ground_points(labelled_points):
 
 
 # Ignoring height
-def get_distance(point_a, point_b):
+def get_distance(point_a: List, point_b: List) -> float:
     # Distance
     return math.sqrt((point_b[X] - point_a[X])**2 + (point_b[Y]-point_a[Y])**2)
 
 
-def count_nearby_segs(bin_idx, object_width):
-    norm = (bin_idx + 1) * BIN_SIZE
-    seg_length = norm * math.tan(DELTA_ALPHA / 2)
-    nearby_segs = object_width / seg_length
-    return nearby_segs
+def count_nearby_segs(bin_idx: int, object_width: float) -> float:
+    norm: float = (bin_idx + 1) * BIN_SIZE
+    seg_length: float = norm * math.tan(DELTA_ALPHA / 2)
+    return object_width / seg_length # nearby segments
 
-def count_nearby_bins(object_width):
-    return object_width / BIN_SIZE
 
-def object_reconstruction_4(cluster_centers, segments_bins):
+def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
     cone_radius = 0.28 / 2
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
     bins_to_check = math.ceil(count_nearby_bins(cone_radius) / 2)
     for i in range(len(cluster_centers)):
-        bad_boys = []
-        good_boys = []
+        bad_boys: List = [] # questionable naming
+        good_boys: List = []
         cluster = cluster_centers[i]
         seg_idx = get_segment(cluster[0], cluster[1])
         bin_idx = get_bin(cluster[0], cluster[1])
-        segs_to_check = math.ceil(count_nearby_segs(bin_idx, cone_radius) / 2)
+        segs_to_check = math.ceil(count_nearby_segs(bin_idx, CONE_RADIUS) / 2)
         print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
         min_seg = seg_idx - segs_to_check
         if min_seg < 0:
@@ -260,7 +267,7 @@ def object_reconstruction_4(cluster_centers, segments_bins):
             for k in range(min_bin, max_bin):
                 for m in range(len(segments_bins[j][k])):
                     point = segments_bins[j][k][m]
-                    if get_distance(cluster, point) <= cone_radius:
+                    if get_distance(cluster, point) <= CONE_RADIUS:
                         reconstructed_clusters[i].append(point)
                         good_boys.append(point)
                     else:
@@ -279,22 +286,21 @@ VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 CONE_HEIGHT = 0.29 #m
 CONE_WIDTH = 0.14 #m
 
-def cone_filter_old(distance):
-    if distance < 0.01: distance = 0.01
-    return (1/2) * (CONE_HEIGHT / (2 * distance * math.tan(VERTICAL_RES / 2))) * (CONE_WIDTH / (2 * distance * math.tan(HORIZONTAL_RES / 2)))
+# def cone_filter_old(distance):
+#     if distance < 0.01: distance = 0.01
+#     return (1/2) * (CONE_HEIGHT / (2 * distance * math.tan(VERTICAL_RES / 2))) * (CONE_WIDTH / (2 * distance * math.tan(HORIZONTAL_RES / 2)))
 
-def cone_filter_old_2(distance):
-	return -1.5 * distance + 11.5
+# def cone_filter_old_2(distance):
+# 	return -1.5 * distance + 11.5
 	
-def cone_filter(distance):
+def cone_filter(distance: float) -> float:
     #if distance < BIN_SIZE:
     #    distance = BIN_SIZE
     return (1/2) * (CONE_HEIGHT / (2*distance*math.tan(VERTICAL_RES/2))) * (CONE_WIDTH / (2*distance*math.tan(HORIZONTAL_RES/2)))
 
 FAR_X = 6 #m
-
-def get_cones(reconstructed_clusters):
-    cones = []
+def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
+    cones: List[List] = []
     ERROR_MARGIN = 0.75 # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
@@ -309,7 +315,16 @@ def get_cones(reconstructed_clusters):
             distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
             # Rule based filter
             exp_point_count = cone_filter(distance)
-            if abs(x_mean) < FAR_X: # only checks centre of scan for cones (noise filter)
+
+            if RUN_ROS:
+                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
+                    f.write("cluster: " + str(i) + ", frame: " + str(count) + \
+                        ", point count: " + str(point_count) + ", x mean: " + \
+                        str(x_mean) + ", y mean: " + str(y_mean) + \
+                        ", exp point count: " + str(exp_point_count) + "\n")
+            
+            # # only checks centre of scan for cones - noise filter (delete if needed)
+            if abs(x_mean) < FAR_X:
                 if (exp_point_count*(1 - ERROR_MARGIN) <= point_count <= exp_point_count*(1 + ERROR_MARGIN)):
                     cones.append([x_mean, y_mean])
                     print(x_mean, y_mean, exp_point_count, point_count, distance)
@@ -320,7 +335,7 @@ def get_cones(reconstructed_clusters):
     return cones
 
 
-def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
+def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
     # might be able to modifiy segments directly if label points doesn't need it
     # print(len(point_cloud))
     start_time: float = time.time()
@@ -328,7 +343,7 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     segments_bins: List[List[List]] = points_to_seg_bin(point_cloud)
     print("points_to_seg_bin", time.time() - now)
     
-    if VISUALISE: vis.plot_segments_bins(segments_bins, False)
+    # if VISUALISE: vis.plot_segments_bins(segments_bins, False)
 
     now = time.time()
     segments_bins_prototype: List[List[List]] = approximate_2D(segments_bins)
@@ -338,39 +353,39 @@ def get_ground_plane(point_cloud: List[NamedTuple]) -> List[list]:
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
-    #if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
-    #if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
+    # if VISUALISE: vis.plot_ground_lines_3D(segments_bins_prototype, ground_plane, False)
+    # if VISUALISE: vis.plot_segments_fitted(segments_bins_prototype, ground_plane)
 
     now = time.time()
-    labelled_points = label_points_5(segments_bins, ground_plane)
+    labelled_points: List[List[List]] = label_points_5(segments_bins, ground_plane)
     print("label_points", time.time() - now)
 
-    if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
+    # if VISUALISE: vis.plot_labelled_points(labelled_points, ground_plane)
 
     now = time.time()
-    object_points = non_ground_points(labelled_points)
+    object_points: List[List[List]] = non_ground_points(labelled_points)
     print("object points", len(object_points))
     print("non_ground_points", time.time() - now)
 
-    if VISUALISE: vis.plot_grid_2D(object_points)
+    # if VISUALISE: vis.plot_grid_2D(object_points)
 
-    cones = []
+    cones: List = []
     if len(object_points) > 0:
         now = time.time()
         cluster_centers = DBSCAN.get_objects(object_points)
         print("get_objects", time.time() - now)
 
         now = time.time()
-        reconstructed_clusters = object_reconstruction_4(cluster_centers, segments_bins)
+        reconstructed_clusters: List[List] = object_reconstruction_4(cluster_centers, segments_bins)
         print("object_reconstruction", time.time() - now)
 
-        if VISUALISE: vis.plot_reconstruction(reconstructed_clusters)
+        if VISUALISE: vis.plot_reconstruction(reconstructed_clusters, count)
 
         now = time.time()
-        cones = get_cones(reconstructed_clusters)
+        cones: List[List] = get_cones(reconstructed_clusters, count)
         print("get_cones", time.time() - now)
 
-        if VISUALISE: vis.plot_cones(cones)
+        # if VISUALISE: vis.plot_cones(cones)
 
     print("Algorithm Time:", time.time() - start_time)
 
@@ -414,12 +429,11 @@ def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: 
     FIGURES_DIR = _figures_dir
 
 
-def lidar_main(point_cloud: List):
-    # init_constants(_max_range) # move to be a one-time call in lidar init
+def lidar_main(point_cloud: List, count: int):
     if VISUALISE:
         vis.init_constants(point_cloud, DELTA_ALPHA, LIDAR_RANGE, BIN_SIZE, VISUALISE, FIGURES_DIR)
 
-    return get_ground_plane(point_cloud)
+    return get_ground_plane(point_cloud, count)
 
 # Notes
 #   - Explore Python threading for this entire process

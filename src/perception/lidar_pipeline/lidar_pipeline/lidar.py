@@ -92,7 +92,7 @@ class LidarDetection(Node):
             self.pcl_callback,
             10)
         self.pcl_subscription  # prevent unused variable warning
-        lidar_init(DISPLAY, VISUALISE, "/home/developer/datasets/figures", MAX_RANGE)
+        lidar_init(VISUALISE, DISPLAY, "/home/developer/datasets/figures/", MAX_RANGE)
 
         self.detection_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, 
@@ -103,6 +103,8 @@ class LidarDetection(Node):
             MarkerArray, 
             "lidar_detector/debug_cones_array", 
             1)
+
+        self.count: int = 0
 
 
     ## callback for lidar data to be sent to. used to call funtion to find cone coords
@@ -117,16 +119,14 @@ class LidarDetection(Node):
 
         point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
 
-        # Dumping point_cloud
-        #with open(f"/home/developer/driverless_ws/src/perception/lidar_pipeline/lidar_pipeline/points_dump/{dt.datetime.now().strftime('%m-%d-%Y_%H-%M-%S')}", "wb") as f:
-        #    pickle.dump(point_array, f)
-
-        with open(f"/home/developer/datasets/{dt.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.txt", 'w') as f:
+        with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
             f.write(str(point_array))
-        #logger.info("wrote points")
+        # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
-        cones: List[list] = lidar_main(point_array) 
+        cones: List[list] = lidar_main(point_array, self.count) 
+        
+        self.count += 1
 
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
