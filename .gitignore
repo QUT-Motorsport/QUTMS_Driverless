@@ -1,5 +1,10 @@
 .env
 
+# colcon build
+build/
+install/
+log/
+
 # datasets
 datasets/*
 data/*
