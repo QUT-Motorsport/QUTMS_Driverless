@@ -1,0 +1,5 @@
+# based on https://robostack.github.io/GettingStarted.html
+- install mambaforge (https://github.com/conda-forge/miniforge#install)
+- mamba env create -f dev_environment.yml
+- conda activate driverless_env
+- ROS2 galactic is now installed and active
