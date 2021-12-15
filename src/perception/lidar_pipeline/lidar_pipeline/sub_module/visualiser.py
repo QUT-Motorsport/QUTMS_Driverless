@@ -344,14 +344,14 @@ def plot_clusters(clusters, noise):
         plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
 
 def plot_cones(cones: List[List]):
-    init_plot_2D("Identified Cones", "x", "y")
+    init_plot_2D("All Points with Identified Cones (Yellow)", "x", "y")
 
     plt.plot(X_RAW, Y_RAW, '.', color='black')
 
     x_centers = [coords[0] for coords in cones]
     y_centers = [coords[1] for coords in cones]
 
-    plt.plot(x_centers, y_centers, 'o', color='blue')
+    plt.plot(x_centers, y_centers, 'o', color='red')
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
 
