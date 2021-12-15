@@ -30,7 +30,7 @@ LIDAR_NODE = '/velodyne_points'
 
 DISPLAY = False
 VISUALISE = False
-MAX_RANGE = 5 #m
+MAX_RANGE = 6 #m
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
@@ -119,8 +119,8 @@ class LidarDetection(Node):
 
         point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
 
-        with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
-            f.write(str(point_array))
+        #with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
+        #    f.write(str(point_array))
         # logger.info("wrote points")
 
         # calls main module from ground estimation algorithm
