@@ -16,3 +16,9 @@ dependencies:
   - colcon-common-extensions
   # ROS package deps
   - ros-galactic-ackermann-msgs
+  - pip
+  - pip:
+    # colcon shell support
+    - colcon-argcomplete
+    - colcon-bash
+    - colcon-zsh
