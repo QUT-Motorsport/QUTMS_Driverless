@@ -280,12 +280,54 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
         #vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
 
     return reconstructed_clusters
-    
+
+def object_reconstruction_5(cluster_centers, segments_bins) -> List[List]:
+    ERROR_MARGIN = 1.2
+    object_check_radius = 0.3 / 2
+    cone_radius = 0.15 / 2 * ERROR_MARGIN
+    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
+    bins_to_check = math.ceil(count_nearby_bins(object_check_radius) / 2)
+    for i in range(len(cluster_centers)):
+        bad_boys: List = [] # questionable naming
+        good_boys: List = []
+        cluster = cluster_centers[i]
+        seg_idx = get_segment(cluster[0], cluster[1])
+        bin_idx = get_bin(cluster[0], cluster[1])
+        segs_to_check = math.ceil(count_nearby_segs(bin_idx, object_check_radius) / 2)
+        print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
+        min_seg = seg_idx - segs_to_check
+        if min_seg < 0:
+            min_seg = NUM_SEGMENTS + min_seg
+        max_seg = (seg_idx + segs_to_check + 1) % NUM_SEGMENTS
+        if min_seg > max_seg:
+            temp_min = min_seg
+            min_seg = max_seg
+            max_seg = temp_min
+        for j in range(min_seg, max_seg):
+            min_bin = bin_idx - bins_to_check
+            if min_bin < 0:
+                min_bin = 0
+            max_bin = bin_idx + bins_to_check + 1
+            if max_bin > NUM_BINS:
+                max_bin = NUM_BINS
+            for k in range(min_bin, max_bin):
+                for m in range(len(segments_bins[j][k])):
+                    point = segments_bins[j][k][m]
+                    distance = get_distance(cluster, point)
+                    if distance <= object_check_radius:
+                        if point[3] == False or distance <= cone_radius:
+                            reconstructed_clusters[i].append(point)
+                            good_boys.append(point)
+                    else:
+                        bad_boys.append(point)
+        #vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
+
+    return reconstructed_clusters
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 #HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
-HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
+HORIZONTAL_RES = 0.05 * (math.pi / 180) # 0.384 degrees in between each point
 VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
 CONE_HEIGHT = 0.3 #m
@@ -315,27 +357,31 @@ def F_1(x):
 def F_2(x):
     return 1.05*x - 3.7
 
-A = 307.7506
+def F_3(x):
+    return 1.05*x - 7.3
+
+# A = 307.7506
+A = 1181.7633
 A_2 = A * A
 def new_cone_filter(distance: float, point_count: int) -> bool:
     
-    if point_count >= F_1(distance):
+    if point_count >= F_3(distance):
         x_0 = math.sqrt(A/point_count)
     else:
         x_0 = distance
         
     x_n = x_0
     iterations = 10
-    print(x_n)
+    #print(x_n)
     for i in range(iterations):
-        #print(x_n)
         x_n = newtons_method(x_n, distance, point_count)
-    print(x_n)
+        # NEED TO DO CHECK HERE. IF LAST ONE EQUALS NEW ONE THEN BREAK
+    #print(x_n)
         
     closest_point = cone_filter(x_n)
     dist = math.sqrt((x_n - distance)**2 + (closest_point - point_count)**2)
-    print(x_n, closest_point, distance, point_count, dist)
-    if dist <= 1.0:
+    print(distance, point_count, x_n, closest_point, dist)
+    if dist <= 1.5:
         return True
     else:
         return False
@@ -402,11 +448,12 @@ def get_cones_2(reconstructed_clusters: List[List], count: int) -> List[List]:
             
             # # only checks centre of scan for cones - noise filter (delete if needed)
             if abs(x_mean) < FAR_X:
+                print("    ", x_mean, y_mean, point_count, distance)
                 if (new_cone_filter(distance, point_count)):
                     cones.append([x_mean, y_mean])
-                    print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
+                    #print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
                 else:
-                    print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
+                    #print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
                     pass
     return cones
 
@@ -452,7 +499,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
         print("get_objects", time.time() - now)
 
         now = time.time()
-        reconstructed_clusters: List[List] = object_reconstruction_4(cluster_centers, segments_bins)
+        reconstructed_clusters: List[List] = object_reconstruction_5(cluster_centers, segments_bins)
         print("object_reconstruction", time.time() - now)
 
         if VISUALISE: vis.plot_reconstruction(reconstructed_clusters, count)
@@ -488,7 +535,7 @@ def lidar_init(_visualise: bool, _display: bool, _figures_dir: str, _max_range: 
     LIDAR_RANGE = _max_range # Max range of the LIDAR (m)
     DELTA_ALPHA = 2*math.pi / 128 # Angle of each segment # 2*pi / 64 implies 64 segments
     NUM_SEGMENTS = math.ceil(2*math.pi / DELTA_ALPHA) # Number of segments # 8
-    BIN_SIZE = 0.15 # The length of a bin (in metres) # 1
+    BIN_SIZE = 0.14 # The length of a bin (in metres) # 1
     NUM_BINS = math.ceil(LIDAR_RANGE / BIN_SIZE) # A derived constant
 
     T_D_GROUND = 0.1 # Maximum distance between point and line to be considered part of ground plane. # 2
@@ -585,3 +632,7 @@ def lidar_main(point_cloud: List, count: int):
 
 # bin_idx + 1 or j+1 since if a point is near the origin and in bin 0, you want it to have
 # a norm from origin of at least BIN_SIZE, not 0.
+
+# ADD AN OUTER BOUND to the desmos graph and any objects within this larger range can be 
+# the 'unknown' cones that AMZ shows in their demo. Perhaps if the zed camera sees a cone 
+# that matches with an unknown cone then WA-BAM NEW CONE PHASES INTO EXISTENCE
