@@ -4,7 +4,7 @@
 - conda activate driverless_env
 - ROS2 galactic is now installed and active
 - IF USING ZSH:
-   - go to {mambaforge install path}/envs/driverless_env/etc/conda/activate.d/ and create file ros-zsh-autocomplete.sh
+   - go to {mambaforge install path (usually /home/$USERNAME/mambaforge)}/envs/driverless_env/etc/conda/activate.d/ and create file ros-zsh-autocomplete.sh
    with contents:
 ```
 eval "$(register-python-argcomplete ros2)"
