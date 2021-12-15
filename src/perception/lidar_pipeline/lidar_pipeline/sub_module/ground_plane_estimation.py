@@ -281,49 +281,6 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
 
     return reconstructed_clusters
 
-def object_reconstruction_5(cluster_centers, segments_bins) -> List[List]:
-    ERROR_MARGIN = 1.2
-    object_check_radius = 0.6 / 2
-    cone_radius = 0.15 / 2 * ERROR_MARGIN
-    reconstructed_clusters = [[] for i in range(len(cluster_centers))]
-    bins_to_check = math.ceil(count_nearby_bins(object_check_radius) / 2)
-    for i in range(len(cluster_centers)):
-        bad_boys: List = [] # questionable naming
-        good_boys: List = []
-        cluster = cluster_centers[i]
-        seg_idx = get_segment(cluster[0], cluster[1])
-        bin_idx = get_bin(cluster[0], cluster[1])
-        segs_to_check = math.ceil(count_nearby_segs(bin_idx, object_check_radius) / 2)
-        print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
-        min_seg = seg_idx - segs_to_check
-        if min_seg < 0:
-            min_seg = NUM_SEGMENTS + min_seg
-        max_seg = (seg_idx + segs_to_check + 1) % NUM_SEGMENTS
-        if min_seg > max_seg:
-            temp_min = min_seg
-            min_seg = max_seg
-            max_seg = temp_min
-        for j in range(min_seg, max_seg):
-            min_bin = bin_idx - bins_to_check
-            if min_bin < 0:
-                min_bin = 0
-            max_bin = bin_idx + bins_to_check + 1
-            if max_bin > NUM_BINS:
-                max_bin = NUM_BINS
-            for k in range(min_bin, max_bin):
-                for m in range(len(segments_bins[j][k])):
-                    point = segments_bins[j][k][m]
-                    distance = get_distance(cluster, point)
-                    if distance <= object_check_radius:
-                        if point[3] == False or distance <= cone_radius:
-                            reconstructed_clusters[i].append(point)
-                            good_boys.append(point)
-                    else:
-                        bad_boys.append(point)
-        #vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
-
-    return reconstructed_clusters
-
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 #HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
@@ -332,6 +289,84 @@ VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
 CONE_HEIGHT = 0.3 #m
 CONE_WIDTH = 0.15 #m
+
+def object_reconstruction_5(cluster_centers, segments_bins, ground_lines) -> List[List]:
+    ERROR_MARGIN = 1.2
+    object_check_radius = 0.6 / 2
+    cone_radius = 0.15 / 2 * ERROR_MARGIN
+    reconstructed_clusters = []
+    bins_to_check = math.ceil(count_nearby_bins(object_check_radius) / 2)
+    for i in range(len(cluster_centers)):
+        bad_boys: List = [] # questionable naming
+        good_boys: List = []
+        cluster = cluster_centers[i]
+        
+        # Find matching ground line
+        # If z_mean of cluster is too close to the ground, skip to next cluster
+        seg = get_segment(cluster[X], cluster[Y])
+        
+        # reused some code from above
+        num_lines = len(ground_lines[seg])
+        seg_idx = seg
+        if num_lines == 0:
+            left_counter = seg-1
+            right_counter = seg+1
+            left_idx = (left_counter) % NUM_SEGMENTS
+            right_idx = (right_counter) % NUM_SEGMENTS
+            while left_idx != right_idx:
+                #print("i:", i, "left:", left_idx, "right:", right_idx)
+                if len(ground_lines[left_idx]) > 0:
+                    seg_idx = left_idx
+                    break
+                elif len(ground_lines[right_idx]) > 0:
+                    seg_idx = right_idx
+                    break
+                left_counter -= 1
+                right_counter += 1
+                left_idx = (left_counter) % NUM_SEGMENTS
+                right_idx = (right_counter) % NUM_SEGMENTS
+            if left_idx == right_idx:
+                raise AssertionError("No ground lines found")
+        ground_line = ground_lines[seg_idx][0]
+        
+        bin = get_bin(cluster[X], cluster[Y])
+        
+        line_height = ground_line[0] * (bin * BIN_SIZE) + ground_line[1]
+        if cluster[Z] >= line_height + (CONE_HEIGHT / 2) * 1.0: # Make this a constant
+            reconstructed_clusters.append([])
+            seg_idx = seg
+            bin_idx = bin
+            segs_to_check = math.ceil(count_nearby_segs(bin_idx, object_check_radius) / 2)
+            print("for loop", seg_idx - segs_to_check, (seg_idx + segs_to_check + 1) % NUM_SEGMENTS)
+            min_seg = seg_idx - segs_to_check
+            if min_seg < 0:
+                min_seg = NUM_SEGMENTS + min_seg
+            max_seg = (seg_idx + segs_to_check + 1) % NUM_SEGMENTS
+            if min_seg > max_seg:
+                temp_min = min_seg
+                min_seg = max_seg
+                max_seg = temp_min
+            for j in range(min_seg, max_seg):
+                min_bin = bin_idx - bins_to_check
+                if min_bin < 0:
+                    min_bin = 0
+                max_bin = bin_idx + bins_to_check + 1
+                if max_bin > NUM_BINS:
+                    max_bin = NUM_BINS
+                for k in range(min_bin, max_bin):
+                    for m in range(len(segments_bins[j][k])):
+                        point = segments_bins[j][k][m]
+                        distance = get_distance(cluster, point)
+                        if distance <= object_check_radius:
+                            if point[3] == False or distance <= cone_radius:
+                                # Fix this, increment a counter to keep track of length
+                                reconstructed_clusters[len(reconstructed_clusters)-1].append(point)
+                                good_boys.append(point)
+                        else:
+                            bad_boys.append(point)
+        #vis.plot_bad_boys(cluster, bad_boys, good_boys, segs_to_check)
+
+    return reconstructed_clusters
 
 # def cone_filter_old(distance):
 #     if distance < 0.01: distance = 0.01
@@ -500,7 +535,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
         print("get_objects", time.time() - now)
 
         now = time.time()
-        reconstructed_clusters: List[List] = object_reconstruction_5(cluster_centers, segments_bins)
+        reconstructed_clusters: List[List] = object_reconstruction_5(cluster_centers, segments_bins, ground_plane)
         print("object_reconstruction", time.time() - now)
 
         if VISUALISE: vis.plot_reconstruction(reconstructed_clusters, count)
@@ -637,3 +672,11 @@ def lidar_main(point_cloud: List, count: int):
 # ADD AN OUTER BOUND to the desmos graph and any objects within this larger range can be 
 # the 'unknown' cones that AMZ shows in their demo. Perhaps if the zed camera sees a cone 
 # that matches with an unknown cone then WA-BAM NEW CONE PHASES INTO EXISTENCE
+
+# Figure out the angle of the point cloud you've been working with and compare it to how
+# how much you needed to change the max anlgle by. Create a linear line and using the
+# angle of the car from the IMU you should be able to dynamically set this max angle for
+# ground lines value.
+
+# I wouldn't mind making the ground plane an object. It would be much MUCH easier and 
+# nicer to work with.

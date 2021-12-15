@@ -21,11 +21,11 @@ def get_objects(object_points: List[List[List]]) -> List[List]:
     for i in range(len(clusters)):
         x_cluster: List = [coords[0] for coords in clusters[i]]
         y_cluster: List = [coords[1] for coords in clusters[i]]
-        #z_cluster = [coords[2] for coords in clusters[i]]
+        z_cluster: List = [coords[2] for coords in clusters[i]]
         x_mean: float = sum(x_cluster) / len(x_cluster)
         y_mean: float = sum(y_cluster) / len(y_cluster)
-        #z_mean = sum(z_cluster) / len(z_cluster)
-        clusters[i] = [x_mean, y_mean] # [..., z_mean]
+        z_mean: float = sum(z_cluster) / len(z_cluster)
+        clusters[i] = [x_mean, y_mean, z_mean]
 
     return clusters
 
