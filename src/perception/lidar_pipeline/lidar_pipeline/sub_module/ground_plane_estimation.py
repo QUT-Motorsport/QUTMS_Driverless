@@ -4,6 +4,7 @@ import math
 from typing import List, NamedTuple
 # Plotting Data
 import matplotlib.pyplot as plt
+from numpy import true_divide
 
 RUN_ROS = False
 if RUN_ROS:
@@ -241,7 +242,8 @@ def count_nearby_bins(object_width):
 
 
 def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
-    cone_radius = 0.28 / 2
+    ERROR_MARGIN = 1.2
+    cone_radius = 0.15 / 2 * ERROR_MARGIN
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
     bins_to_check = math.ceil(count_nearby_bins(cone_radius) / 2)
     for i in range(len(cluster_centers)):
@@ -283,11 +285,11 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 #HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
-HORIZONTAL_RES = 0.65 * (math.pi / 180) # 0.384 degrees in between each point
+HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
 VERTICAL_RES = 1.25 * (math.pi / 180) # 1.25 degrees in between each point
 
-CONE_HEIGHT = 0.29 #m
-CONE_WIDTH = 0.14 #m
+CONE_HEIGHT = 0.3 #m
+CONE_WIDTH = 0.15 #m
 
 # def cone_filter_old(distance):
 #     if distance < 0.01: distance = 0.01
@@ -300,6 +302,44 @@ def cone_filter(distance: float) -> float:
     #if distance < BIN_SIZE:
     #    distance = BIN_SIZE
     return (1/2) * (CONE_HEIGHT / (2*distance*math.tan(VERTICAL_RES/2))) * (CONE_WIDTH / (2*distance*math.tan(HORIZONTAL_RES/2)))
+
+def newtons_method(x, x1, y1):
+    x_2 = x * x
+    x_5 = x_2 * x_2 * x
+    x_6 = x_5 * x
+    return (x * (12*A_2 - 8*A*x_2*y1 + x_5*x1)) / (10*A_2 - 6*A*x_2*y1 + x_6)
+
+def F_1(x):
+    return 1.05*x - 4.675
+
+def F_2(x):
+    return 1.05*x - 3.7
+
+A = 307.7506
+A_2 = A * A
+def new_cone_filter(distance: float, point_count: int) -> bool:
+    
+    if point_count >= F_1(distance):
+        x_0 = math.sqrt(A/point_count)
+    else:
+        x_0 = distance
+        
+    x_n = x_0
+    iterations = 10
+    print(x_n)
+    for i in range(iterations):
+        #print(x_n)
+        x_n = newtons_method(x_n, distance, point_count)
+    print(x_n)
+        
+    closest_point = cone_filter(x_n)
+    dist = math.sqrt((x_n - distance)**2 + (closest_point - point_count)**2)
+    print(x_n, closest_point, distance, point_count, dist)
+    if dist <= 1.0:
+        return True
+    else:
+        return False
+    
 
 FAR_X = 6 #m
 def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
@@ -334,6 +374,39 @@ def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
                 else:
                     print(x_mean, y_mean, exp_point_count, point_count, distance)
                     #cones.append([x_mean, y_mean]) # Remove when real-er data
+                    pass
+    return cones
+
+FAR_X = 6 #m
+def get_cones_2(reconstructed_clusters: List[List], count: int) -> List[List]:
+    cones: List[List] = []
+    ERROR_MARGIN = 0.20 # Constant
+    for i in range(len(reconstructed_clusters)):
+        point_count = len(reconstructed_clusters[i])
+        if point_count >= 1:
+            x_cluster = [coords[X] for coords in reconstructed_clusters[i]]
+            y_cluster = [coords[Y] for coords in reconstructed_clusters[i]]
+            # Univserity of melbourne used z as well
+            #z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            x_mean  = sum(x_cluster) / len(x_cluster)
+            y_mean  = sum(y_cluster) / len(y_cluster)
+            #z_mean  = sum(y_cluster) / len(y_cluster)
+            distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
+
+            if RUN_ROS:
+                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
+                    f.write("cluster: " + str(i) + ", frame: " + str(count) + \
+                        ", point count: " + str(point_count) + ", x mean: " + \
+                        str(x_mean) + ", y mean: " + str(y_mean) + \
+                        ", exp point count: " + str(new_cone_filter(distance, point_count)) + "\n")
+            
+            # # only checks centre of scan for cones - noise filter (delete if needed)
+            if abs(x_mean) < FAR_X:
+                if (new_cone_filter(distance, point_count)):
+                    cones.append([x_mean, y_mean])
+                    print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
+                else:
+                    print(x_mean, y_mean, new_cone_filter(distance, point_count), point_count, distance)
                     pass
     return cones
 
@@ -385,7 +458,7 @@ def get_ground_plane(point_cloud: List[NamedTuple], count: int) -> List[list]:
         if VISUALISE: vis.plot_reconstruction(reconstructed_clusters, count)
 
         now = time.time()
-        cones: List[List] = get_cones(reconstructed_clusters, count)
+        cones: List[List] = get_cones_2(reconstructed_clusters, count)
         print("get_cones", time.time() - now)
 
         if VISUALISE: vis.plot_cones(cones)
