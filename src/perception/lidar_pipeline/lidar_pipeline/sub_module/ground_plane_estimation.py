@@ -283,7 +283,7 @@ def object_reconstruction_4(cluster_centers, segments_bins) -> List[List]:
 
 def object_reconstruction_5(cluster_centers, segments_bins) -> List[List]:
     ERROR_MARGIN = 1.2
-    object_check_radius = 0.3 / 2
+    object_check_radius = 0.6 / 2
     cone_radius = 0.15 / 2 * ERROR_MARGIN
     reconstructed_clusters = [[] for i in range(len(cluster_centers))]
     bins_to_check = math.ceil(count_nearby_bins(object_check_radius) / 2)
@@ -364,6 +364,7 @@ def F_3(x):
 A = 1181.7633
 A_2 = A * A
 def new_cone_filter(distance: float, point_count: int) -> bool:
+    ERROR_MARGIN = 0.95
     
     if point_count >= F_3(distance):
         x_0 = math.sqrt(A/point_count)
@@ -381,7 +382,7 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
     closest_point = cone_filter(x_n)
     dist = math.sqrt((x_n - distance)**2 + (closest_point - point_count)**2)
     print(distance, point_count, x_n, closest_point, dist)
-    if dist <= 1.5:
+    if dist <= 2.5 and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count:
         return True
     else:
         return False
