@@ -344,7 +344,7 @@ def plot_clusters(clusters, noise):
         plt.savefig(FIGURES_DIR + "12_Clustered_Objects")
 
 def plot_cones(cones: List[List]):
-    init_plot_2D("All Points with Identified Cones (Yellow)", "x", "y")
+    init_plot_2D("All Points with Identified Cones (Red)", "x", "y")
 
     plt.plot(X_RAW, Y_RAW, '.', color='black')
 
