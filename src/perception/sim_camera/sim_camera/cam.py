@@ -13,9 +13,9 @@ import cv2
 import time
 
 # import helper image processing module
-from .sub_module.img_processing import *
+from .img_processing_KP import *
 # import helper cone location processing module
-from .sub_module.loc_processing import *
+from .depth_proc import *
 import os
 
 
@@ -53,7 +53,7 @@ class CamProcessing(Node):
         cones = cam_main(raw_frame, False)
 
         # call return_locations to return xyzc for every cone
-        self.cone_coords = return_locations(w/2, cones) # send cones for distance calculation
+        # self.cone_coords = return_locations(w/2, cones) # send cones for distance calculation
         
         # print("*"*20)
         # print(cones)
