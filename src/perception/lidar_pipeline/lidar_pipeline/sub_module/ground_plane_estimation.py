@@ -161,7 +161,7 @@ def label_points_5(segments_bins: List[List[List]], ground_lines: List[List[List
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + BIN_SIZE # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + BIN_SIZE * 1.2 # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 if is_ground == False:
@@ -332,7 +332,8 @@ def object_reconstruction_5(cluster_centers, segments_bins, ground_lines) -> Lis
         bin = get_bin(cluster[X], cluster[Y])
         
         line_height = ground_line[0] * (bin * BIN_SIZE) + ground_line[1]
-        if cluster[Z] >= line_height + (CONE_HEIGHT / 2) * 1.0: # Make this a constant
+        # make sure the height of each cluster is near the height of a cone
+        if cluster[Z] >= line_height + (CONE_HEIGHT / 2) * 0.8 and cluster[Z] <= line_height + (CONE_HEIGHT / 2) * 1.2: # Make this a constant
             reconstructed_clusters.append([])
             seg_idx = seg
             bin_idx = bin
@@ -417,7 +418,9 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
     closest_point = cone_filter(x_n)
     dist = math.sqrt((x_n - distance)**2 + (closest_point - point_count)**2)
     print(distance, point_count, x_n, closest_point, dist)
-    if dist <= 2.5 and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count:
+    # and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count
+    # and closest_point <= point_count * 1.5
+    if dist <= 2.5 and x_n >= distance * 0.85:
         return True
     else:
         return False
@@ -680,3 +683,9 @@ def lidar_main(point_cloud: List, count: int):
 
 # I wouldn't mind making the ground plane an object. It would be much MUCH easier and 
 # nicer to work with.
+
+# I need to do something about the newton's method estimation thing. Cause although distance
+# might be close, on the left side of the line filter line moving a tiny distance makes points
+# increase exponentially so distance is less of an important measure. Perhaps the distance could
+# be dynamic and scale with the left side and right side of the graph. As it approaches the left
+# side it needs to be closer and closer?
