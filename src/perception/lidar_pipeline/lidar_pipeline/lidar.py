@@ -1,8 +1,4 @@
-import pickle
-import datetime as dt
-
 # import ROS2 libraries
-from math import fabs
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -17,7 +13,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
 import time
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
