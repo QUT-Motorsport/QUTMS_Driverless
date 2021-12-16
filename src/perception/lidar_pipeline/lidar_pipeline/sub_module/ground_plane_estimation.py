@@ -152,7 +152,7 @@ def label_points_5(segments_bins: List[List[List]], ground_lines: List[List[List
                 point = segments_bins[i][j][k]
                 is_ground = False
                 line_height = ground_line[0] * (j * BIN_SIZE) + ground_line[1]
-                if point[2] < line_height + 0.08: # Make this a constant
+                if point[2] < line_height + 0.10: # Make this a constant
                     line = line_to_end_points(ground_line, seg_idx)
                     closest_dist = dist_points_3D(point, line[0], line[1])
                     for m in range(1, num_lines):
@@ -161,7 +161,7 @@ def label_points_5(segments_bins: List[List[List]], ground_lines: List[List[List
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + BIN_SIZE * 1.2 # Solved for gradient of segment wrt points and distance
+                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_SIZE)*math.tan(DELTA_ALPHA/2) + BIN_SIZE * 1.3 # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 if is_ground == False:
@@ -462,7 +462,7 @@ def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
                     pass
     return cones
 
-FAR_X = 6 #m
+FAR_X = 60 #m
 def get_cones_2(reconstructed_clusters: List[List], count: int) -> List[List]:
     cones: List[List] = []
     ERROR_MARGIN = 0.20 # Constant

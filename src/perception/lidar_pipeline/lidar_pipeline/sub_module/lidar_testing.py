@@ -13,13 +13,13 @@ Point = namedtuple('Point', ['x', 'y', 'z', 'intensity', 'ring'])
 
 path: str = "C:/Users/liamf/OneDrive/QUT/QUTMS/QUTMS_Driverless/datasets/"
 # 24 
-with open(path + "08-12-2021_01-55-16.txt", 'rb') as f:
+with open(path + "08-12-2021_01-55-30.txt", 'rb') as f:
     line: str = f.readline()
     point_cloud: List[namedtuple] = eval(line)
 
 DISPLAY: bool = True
 VISUALISE: bool = True
-MAX_RANGE: int = 6
+MAX_RANGE: int = 7
 
 start_time = time.time()
 gpe.lidar_init(DISPLAY, VISUALISE, "./datasets/figures", MAX_RANGE)
