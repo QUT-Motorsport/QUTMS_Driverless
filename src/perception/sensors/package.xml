@@ -1,3 +1,4 @@
+<!-- TODO - probably delete this package -->
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
@@ -9,9 +10,10 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <depend>sbg_driver</depend>
-    <depend>velodyne</depend>
-    <!-- ZED Dep disabled as is compiled from source on Jetson ONLY -->
+    <!-- TODO: need to vendor these OR get them get on robostack -->
+    <!-- <depend>sbg_driver</depend> -->
+    <!-- <depend>velodyne</depend> -->
+    <!-- ZED wrapper is potentially still built from source on Jetson only -->
     <!-- <depend>zed_wrapper</depend> -->
 
     <exec_depend>ros2launch</exec_depend>

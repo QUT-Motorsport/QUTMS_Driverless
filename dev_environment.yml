@@ -1,9 +1,10 @@
-name: driverless_env
 channels:
   - robostack-experimental
   - conda-forge
 dependencies:
-  # ROS Env deps
+  # ---------------------------------------------------------------------------
+  # ROS Base Env deps
+  # ---------------------------------------------------------------------------
   - python=3.8
   - ros-galactic-desktop
   - ca-certificates
@@ -14,8 +15,6 @@ dependencies:
   - make
   - ninja
   - colcon-common-extensions
-  # ROS package deps
-  - ros-galactic-ackermann-msgs
   - pip
   - pip:
     # colcon shell support
