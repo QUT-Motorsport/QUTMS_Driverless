@@ -1,5 +1,4 @@
 import torch
-import cv2
 
 # initialising function for the YOLOv5 model with confidence threshold
 def yolov5_init(conf_thresh, model_path):

@@ -30,7 +30,7 @@ ConeMsgColour = int
 cv_bridge = CvBridge()
 
 CONFIDENCE = 0.30
-MODEL_PATH = "/home/developer/driverless_ws/src/perception/zed_camera/models/YBV2.pt"
+MODEL_PATH = "/home/{USERNAME}/models/YBV2.pt" # might be a way to format / env var this?
 model = yolov5_init(CONFIDENCE, MODEL_PATH)
 
 
@@ -68,7 +68,7 @@ HSV_CONE_DETECTION_PARAMETERS = [
 YOLO_CONE_DETECTION_PARAMETERS = [
     (Cone.BLUE, BLUE_DISP_COLOUR),
     (Cone.YELLOW, YELLOW_DISP_COLOUR),
-    (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+    # (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
 
 
