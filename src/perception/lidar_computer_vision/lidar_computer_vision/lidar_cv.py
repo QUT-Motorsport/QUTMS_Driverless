@@ -1,5 +1,5 @@
 def main():
-    print('Hi from lidar_pipeline_2.')
+    print('Hi from lidar_computer_vision.')
 
 
 if __name__ == '__main__':
