@@ -21,3 +21,9 @@ dependencies:
     - colcon-argcomplete
     - colcon-bash
     - colcon-zsh
+
+  # for some reason, not installed in base python?
+  - typing-extensions
+  
+  # YOLOv5 stuff
+  - requests
