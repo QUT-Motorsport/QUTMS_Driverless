@@ -14,11 +14,11 @@ dependencies:
   - pkg-config
   - make
   - ninja
-  - colcon-common-extensions
   # for some reason, not installed in base python?
   - typing-extensions
   - pip
   - pip:
+    - colcon-common-extensions
     # colcon shell support
     - colcon-argcomplete
     - colcon-bash
