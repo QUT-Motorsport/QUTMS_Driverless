@@ -28,6 +28,7 @@ DISPLAY = False
 VISUALISE = False
 MAX_RANGE = 6 #m
 
+
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location = Point(
@@ -72,6 +73,7 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
 
     return marker
 
+
 class LidarDetection(Node):
     def __init__(self):
         super().__init__('lidar_detector')
@@ -113,7 +115,9 @@ class LidarDetection(Node):
         start: float = time.time()
         # Convert the list of floats into a list of xyz coordinates
 
-        point_array: List[NamedTuple] = read_points_list(pcl_msg, skip_nans=True)
+        point_array: List[List] = read_points_list(pcl_msg)
+
+        logger.info("Msg Time:" + str(time.time()-start))
 
         #with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
         #    f.write(str(point_array))

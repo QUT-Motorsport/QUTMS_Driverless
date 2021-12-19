@@ -6,7 +6,7 @@ from typing import List, NamedTuple
 import matplotlib.pyplot as plt
 from numpy import true_divide
 
-RUN_ROS = False
+RUN_ROS = True
 if RUN_ROS:
     # Line Fitting
     from . import line_extraction
@@ -444,12 +444,12 @@ def get_cones(reconstructed_clusters: List[List], count: int) -> List[List]:
             # Rule based filter
             exp_point_count = cone_filter(distance)
 
-            if RUN_ROS:
-                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
-                    f.write("cluster: " + str(i) + ", frame: " + str(count) + \
-                        ", point count: " + str(point_count) + ", x mean: " + \
-                        str(x_mean) + ", y mean: " + str(y_mean) + \
-                        ", exp point count: " + str(exp_point_count) + "\n")
+            # if RUN_ROS:
+            #     with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
+            #         f.write("cluster: " + str(i) + ", frame: " + str(count) + \
+            #             ", point count: " + str(point_count) + ", x mean: " + \
+            #             str(x_mean) + ", y mean: " + str(y_mean) + \
+            #             ", exp point count: " + str(exp_point_count) + "\n")
             
             # # only checks centre of scan for cones - noise filter (delete if needed)
             if abs(x_mean) < FAR_X:
@@ -478,12 +478,12 @@ def get_cones_2(reconstructed_clusters: List[List], count: int) -> List[List]:
             #z_mean  = sum(y_cluster) / len(y_cluster)
             distance = math.sqrt(x_mean ** 2 + y_mean ** 2)
 
-            if RUN_ROS:
-                with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
-                    f.write("cluster: " + str(i) + ", frame: " + str(count) + \
-                        ", point count: " + str(point_count) + ", x mean: " + \
-                        str(x_mean) + ", y mean: " + str(y_mean) + \
-                        ", exp point count: " + str(new_cone_filter(distance, point_count)) + "\n")
+            # if RUN_ROS:
+            #     with open(f"/home/developer/datasets/reconstruction/{count}_reconstructed.txt", 'a') as f:
+            #         f.write("cluster: " + str(i) + ", frame: " + str(count) + \
+            #             ", point count: " + str(point_count) + ", x mean: " + \
+            #             str(x_mean) + ", y mean: " + str(y_mean) + \
+            #             ", exp point count: " + str(new_cone_filter(distance, point_count)) + "\n")
             
             # # only checks centre of scan for cones - noise filter (delete if needed)
             if abs(x_mean) < FAR_X:

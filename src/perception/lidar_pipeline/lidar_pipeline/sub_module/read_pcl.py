@@ -1,7 +1,6 @@
 ## The code below is adapted from 
 # https://github.com/ros/common_msgs/tree/noetic-devel/sensor_msgs/src/sensor_msgs
 # https://github.com/ros2/common_interfaces/blob/master/sensor_msgs_py/sensor_msgs_py/point_cloud2.py
-from collections import namedtuple
 import math
 import struct
 import sys
@@ -97,7 +96,7 @@ def read_points(cloud, field_names=None, skip_nans=False, uvs=[]):
                     offset += point_step
 
 
-def read_points_list(cloud, field_names=None, skip_nans=False, uvs=[]):
+def read_points_list(cloud, field_names=None, skip_nans=True, uvs=[]):
     """
     Read points from a sensor_msgs.PointCloud2 message.
     This function returns a list of namedtuples. It operates on top of the
@@ -117,6 +116,4 @@ def read_points_list(cloud, field_names=None, skip_nans=False, uvs=[]):
     if field_names is None:
         field_names = [f.name for f in cloud.fields]
 
-    Point = namedtuple('Point', field_names)
-
-    return [Point._make(p) for p in read_points(cloud, field_names, skip_nans, uvs)]
+    return [p for p in read_points(cloud, field_names, skip_nans, uvs)]
