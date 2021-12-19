@@ -44,12 +44,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #                              Conda setup
 # ==============================================================================
 WORKDIR /tmp
-RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh \
-        -o mambaforge.sh \
-        -p /home/${USERNAME} && \
+RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh -o mambaforge.sh && \
     chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
-    ./Mambaforge-$(uname)-$(uname -m).sh -b && \
-    ls /home/${USERNAME}
+    ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
 # install conda
 # create environment
 
