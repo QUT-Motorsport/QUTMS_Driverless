@@ -33,7 +33,7 @@ x-devices: &devices
 
 x-env-file: &env-file
     env_file:
-        - ../.env
+        - .env
 
 x-network: &network
     network_mode: "host"
