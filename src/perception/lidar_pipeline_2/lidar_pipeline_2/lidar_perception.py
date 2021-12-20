@@ -7,7 +7,7 @@ from sensor_msgs.msg import PointCloud2
 from visualization_msgs.msg import MarkerArray
 
 # Import ROS2 Helper Modules
-import ros2_numpy as rnp
+from .library import ros2_numpy as rnp
 
 # Import Custom Message Modules
 from driverless_msgs.msg import ConeDetectionStamped

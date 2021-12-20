@@ -6,13 +6,13 @@
   <description>Real-time LiDAR perception pipeline for autonomous formula student racecar.</description>
   <maintainer email="qutmotorsport.team@gmail.com">Liam Ferrante</maintainer>
   <license>TODO: License declaration</license>
+  
+  <depend>ros2_numpy</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
-
-  <depend>ros2_numpy</depend>
 
   <export>
     <build_type>ament_python</build_type>
