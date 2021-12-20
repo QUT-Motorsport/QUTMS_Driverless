@@ -11,9 +11,15 @@ from builtin_interfaces.msg import Duration
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
-# other python libraries
+# other python modules
 import time
 from typing import List
+import sys
+import os
+import getopt
+import logging
+import datetime
+import pathlib
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
@@ -21,17 +27,13 @@ from .scripts.read_pcl import read_points_list
 # lidar cone detection algorithm
 from .scripts.ground_plane_estimation import lidar_main, lidar_init
 
-# LIDAR_NODE = '/fsds/lidar/Lidar1'
-LIDAR_NODE = '/velodyne_points'
 
-DISPLAY = False
-VISUALISE = False
-MAX_RANGE = 6 #m
+LOGGER = logging.getLogger(__name__)
 
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
-    location = Point(
+    location: Point = Point(
         x=x_coord,
         y=y_coord,
         z=0.0,
@@ -74,60 +76,48 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
     return marker
 
 
-class LidarDetection(Node):
-    def __init__(self):
-        super().__init__('lidar_detector')
-        logger = self.get_logger()
-
-        if LIDAR_NODE == '/fsds/lidar/Lidar1':
-            logger.info("LiDAR Processing for FSDS")
-        elif LIDAR_NODE == '/velodyne_points':
-            logger.info("LiDAR Processing for Velodyne")
+class LidarProcessing(Node):
+    def __init__(self, pc2_topic: str, visualise: bool, display: bool, max_range: int):
+        super().__init__('lidar_processor')
 
         self.pcl_subscription = self.create_subscription(
             PointCloud2,
-            LIDAR_NODE,
-            self.pcl_callback,
+            pc2_topic,
+            self.callback,
             10)
-        self.pcl_subscription  # prevent unused variable warning
-        lidar_init(VISUALISE, DISPLAY, "/home/developer/datasets/figures/", MAX_RANGE)
+
+        lidar_init(visualise, display, "/home/developer/datasets/figures/", max_range)
 
         self.detection_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, 
-            "lidar_detector/cone_detection", 
+            "lidar/cone_detection", 
             1)
 
         self.marker_publisher: Publisher = self.create_publisher(
             MarkerArray, 
-            "lidar_detector/debug_cones_array", 
+            "lidar/debug_cones_array", 
             1)
 
-        self.count: int = 0
+        LOGGER.info('---LiDAR processing node initialised---')
 
 
-    ## callback for lidar data to be sent to. used to call funtion to find cone coords
-    def pcl_callback(self, pcl_msg: PointCloud2):
-        """ In here, we will call calculations to get the xyz location 
-        and reflectivity of the cones"""
-
-        logger = self.get_logger()
+    def callback(self, pc2_msg: PointCloud2):
+        """ 
+        lidar point cloud message sent here. 
+        used to call funtions to find cone coords.
+        to get the xyz location and colour of cones.
+        """
         
         start: float = time.time()
         # Convert the list of floats into a list of xyz coordinates
 
-        point_array: List[List] = read_points_list(pcl_msg)
+        point_array: List(List) = read_points_list(pc2_msg)
 
-        logger.info("Msg Time:" + str(time.time()-start))
-
-        #with open(f"/home/developer/datasets/reconstruction/{self.count}_pointcloud.txt", 'w') as f:
-        #    f.write(str(point_array))
-        # logger.info("wrote points")
+        LOGGER.info("\nMsg Time:" + str(time.time()-start))
 
         # calls main module from ground estimation algorithm
-        cones: List[list] = lidar_main(point_array, self.count) 
+        cones: List[List] = lidar_main(point_array) 
         
-        self.count += 1
-
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
         markers_list: List[Marker] = []
@@ -141,11 +131,11 @@ class LidarDetection(Node):
                 cones[i][0], 
                 cones[i][1], 
                 i, 
-                pcl_msg.header,
+                pc2_msg.header,
             ))
 
         detection_msg = ConeDetectionStamped(
-            header=pcl_msg.header,
+            header=pc2_msg.header,
             cones=detected_cones
         )
 
@@ -154,20 +144,78 @@ class LidarDetection(Node):
         self.detection_publisher.publish(detection_msg) # publish cone data
         self.marker_publisher.publish(markers_msg) # publish marker points data
 
-        logger.info("Total Time:" + str(time.time()-start))
+        LOGGER.info("Total Time:" + str(time.time()-start))
 
 
-## main call
-def main(args=None):
+def main(args=sys.argv[1:]):
+    # defaults args
+    pc2_topic = '/velodyne_points'
+    loglevel = 'info'
+    print_logs = False
+    display = False
+    visualise = False
+    max_range = 6 #m
+
+    # processing args
+    opts, arg = getopt.getopt(args, str(), ['topic=', 'log=', 'print_logs', 'display', 'visualise', 'range='])
+
+    # TODO: provide documentation for different options
+    for opt, arg in opts:
+        if opt == '--node':
+            pc2_topic = arg
+        elif opt == '--log':
+            loglevel = arg
+        elif opt == '--print_logs':
+            print_logs = True
+        elif opt == '--display':
+            display = True
+        elif opt == '--display':
+            visualise = True
+        elif opt == '--range':
+            max_range = arg
+
+    # validating args
+    numeric_level = getattr(logging, loglevel.upper(), None)
+
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+
+    if not isinstance(max_range, int):
+        raise ValueError('Invalid range: %s. Must be int' % max_range)
+
+    # setting up logging
+    path = str(pathlib.Path(__file__).parent.resolve())
+    if not os.path.isdir(path + '/logs'):
+        os.mkdir(path + '/logs')
+
+    date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
+    logging.basicConfig(
+        filename=f'{path}/logs/{date}.log',
+        filemode='w',
+        format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
+        datefmt='%I:%M:%S %p',
+        # encoding='utf-8',
+        level=numeric_level,
+    )
+
+    # terminal stream
+    if print_logs:
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        LOGGER.addHandler(stdout_handler)
+
+    LOGGER.info(f'args = {args}')
+    LOGGER.info(f'pc_node = {pc2_topic}')
+
+    # begin ros node
     rclpy.init(args=args)
 
-    detection_node = LidarDetection()
-    rclpy.spin(detection_node)
+    node = LidarProcessing(pc2_topic, display, visualise, int(max_range))
+    rclpy.spin(node)
     
-    detection_node.destroy_node()
+    node.destroy_node()
 
     rclpy.shutdown()
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

@@ -213,11 +213,8 @@ def plot_ground_lines_3D(segments_bins_prototype: List[List[List]], ground_lines
         plt.savefig(FIGURES_DIR + "8_Ground-Plane-Estimation")
 
 def plot_segments_fitted(segments_bins_prototype: List[List[List]], ground_lines: List[List[List]]):
-    # print("SP", segments_bins_prototype)
-    # print("--- Prototype Points ---")
     for i in range(len(segments_bins_prototype)):
         if len(ground_lines[i]) > 0:
-            # print("Segment:", i + 1, "Count:", ground_lines[i][0][4])
             color_1 = get_colour(i)
             init_plot_2D("Segment " + str(i + 1) + " | Degrees: " + str(round((i * DELTA_ALPHA) * 180/math.pi, 2)) + " to " + str(round((i + 1) * DELTA_ALPHA * 180/math.pi, 2)) + " | Points: " + str(ground_lines[i][0][4]), "Distance from origin", "Height")
             plt.ylim(-2, 2)
@@ -228,7 +225,6 @@ def plot_segments_fitted(segments_bins_prototype: List[List[List]], ground_lines
                 if len(segments_bins_prototype[i][j]) != 0:
                     x.append(segments_bins_prototype[i][j][0])
                     y.append(segments_bins_prototype[i][j][1])
-                    # print("     Bin:", j, "Point:", segments_bins_prototype[i][j][0], segments_bins_prototype[i][j][1])
                     
                     for k in range(len(ground_lines[i])):
                         origin = ground_lines[i][k][2][0]
@@ -291,7 +287,7 @@ def plot_grid_2D(object_points: List[List[List]]):
     #if SAVE_FIGURES: 
     #    plt.savefig(FIGURES_DIR + "11_Non-Ground_Points")
 
-def plot_reconstruction(reconstructed_clusters: List[List], count: int):
+def plot_reconstruction(reconstructed_clusters: List[List]):
     init_plot_2D("Reconstructed Clusters", "x", "y")
 
     colours = ['g', 'grey', 'm', 'orange']
@@ -310,9 +306,6 @@ def plot_reconstruction(reconstructed_clusters: List[List], count: int):
     plt.plot(0, 0, '>', color="blue")
     plt.xlim([-1, LIDAR_RANGE])
     plt.ylim([-LIDAR_RANGE, LIDAR_RANGE])
-
-    #plt.savefig("/home/developer/datasets/reconstruction/" + str(count) + "_Reconstructed_Clusters")
-    #plt.savefig(FIGURES_DIR + "13_Identified_Cones")
 
     #if SAVE_FIGURES:
     #     plt.savefig(FIGURES_DIR + "11_Reconstructed_Clusters")
@@ -397,7 +390,6 @@ def init_constants(point_cloud, _delta_alpha, _lidar_range, _bin_size, _save_fig
     global SAVE_FIGURES
     global FIGURES_DIR
     
-    print(len(point_cloud))
     for i in range(len(point_cloud) - 1, -1, -1):
         point = point_cloud[i]
         if math.sqrt(point[0]**2 + point[1]**2 + point[2]**2) >= _lidar_range:

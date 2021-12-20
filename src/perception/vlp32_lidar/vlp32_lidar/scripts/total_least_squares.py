@@ -121,7 +121,6 @@ def get_b(points, num_points, r, alpha, m):
 
 # Total Least Squares Fitting Method
 def fit_line(points):
-    #print("Fitting line!")
     num_points = len(points)
 
     x_mean = sum([point[0] for point in points]) / num_points
