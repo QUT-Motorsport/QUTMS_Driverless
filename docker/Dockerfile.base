@@ -8,6 +8,19 @@ SHELL ["/bin/bash", "-c"]
 
 
 # ==============================================================================
+#                          Install apt packages
+# ==============================================================================
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sudo \
+    curl \
+    nano \
+    ca-certificates \
+    # add more stuff here if needed
+    && rm -rf /var/lib/apt/lists/
+
+
+# ==============================================================================
 #                           Set up a user using host UID
 #    (this helps with file permissions when mounting folders into a container)
 # ==============================================================================
@@ -29,17 +42,6 @@ RUN useradd \
     echo ${USERNAME}:${USERNAME} | chpasswd && \
     echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
 
-
-# ==============================================================================
-#                          Install apt packages
-# ==============================================================================
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    nano \
-    ca-certificates \
-    # add more stuff here if needed
-    && rm -rf /var/lib/apt/lists/
 
 # ==============================================================================
 #                              Conda setup
