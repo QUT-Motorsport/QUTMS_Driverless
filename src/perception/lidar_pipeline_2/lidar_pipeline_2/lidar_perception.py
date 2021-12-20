@@ -18,6 +18,7 @@ import pathlib
 import os
 import getopt
 import sys
+import time
 
 # Import Logging
 import logging
@@ -51,10 +52,28 @@ class ConeSensingNode(Node):
         LOGGER.info('Waiting for PointCloud2 data ...')
 
     def pc_callback(self, pc_msg):
-        pc_matrix = rnp.pot
-        pc_matrix = pcl_helper.pointcloud2_to_array(pc_msg)
+        LOGGER.info('PointCloud2 message received')
+
+        # Convert PointCloud2 message from LiDAR sensor to numpy array
+        start_time = time.time()
+        pc_matrix = rnp.point_cloud2.pointcloud2_to_array(pc_msg)
+        end_time = time.time()
+
+        LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
-        pass
+
+        # Identify cones within the received point cloud
+        pc_cones = []
+
+        self.count += 1
+
+        # Publish identified cones
+        cones_msg = ConeDetectionStamped(
+            header=pc_msg.header,
+            cones=pc_cones
+        )
+
+        self.cone_publisher.publish(cones_msg)
 
 
 def main(args=sys.argv[1:]):
