@@ -7,7 +7,7 @@ from sensor_msgs.msg import PointCloud2
 from visualization_msgs.msg import MarkerArray
 
 # Import ROS2 Helper Modules
-from .library import ros2_numpy as rnp
+import ros2_numpy as rnp
 
 # Import Custom Message Modules
 from driverless_msgs.msg import ConeDetectionStamped
@@ -27,6 +27,7 @@ LOGGER = logging.getLogger(__name__)
 class ConeSensingNode(Node):
     def __init__(self, pc_node):
         super().__init__('cone_sensing')
+        LOGGER.info('Initialising ConeSensingNode')
 
         self.pc_subscription = self.create_subscription(
             PointCloud2,
@@ -47,20 +48,23 @@ class ConeSensingNode(Node):
 
         self.count = 0
 
+        LOGGER.info('Waiting for PointCloud2 data ...')
+
     def pc_callback(self, pc_msg):
+        pc_matrix = rnp.pot
         pc_matrix = pcl_helper.pointcloud2_to_array(pc_msg)
         LOGGER.debug(pc_matrix)
         pass
 
 
-def main(args=None):
+def main(args=sys.argv[1:]):
     # Defaults
     pc_node = '/velodyne_points'
     loglevel = 'info'
     print_logs = False
 
     # Processing args
-    opts, arg = getopt.getopt(args, str(), ['--pc_node=', '--log=', '--print_logs'])
+    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'print_logs'])
 
     for opt, arg in opts:
         if opt == '--pc_node':
@@ -86,8 +90,8 @@ def main(args=None):
                         filemode='w',
                         format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
                         datefmt='%I:%M:%S %p',
-                        encoding='utf-8',
-                        level=logging.numeric_level)
+                        # encoding='utf-8',
+                        level=numeric_level)
 
     # Printing logs to terminal
     if print_logs:
