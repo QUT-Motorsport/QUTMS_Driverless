@@ -4,17 +4,21 @@ from rclpy.node import Node
 
 # Import ROS2 Message Modules
 from sensor_msgs.msg import PointCloud2
+from visualization_msgs.msg import MarkerArray
 
-# Import Modules
+# Import Custom Message Modules
+from driverless_msgs.msg import LidarCones
+
+# Import Python Modules
 import datetime
 import pathlib
 import os
+import getopt
+import sys
 
 # Import Logging
 import logging
 LOGGER = logging.getLogger(__name__)
-
-LIDAR_NODE = '/velodyne_points'
 
 
 class ConeSensingNode(Node):
@@ -31,22 +35,41 @@ class ConeSensingNode(Node):
         self.pc_subscription  # Prevent unused variable warning
 
         self.cone_publisher = self.create_publisher(
-            String,
+            LidarCones,
             'cone_sensing/cones',
-            10)
+            5)
 
         self.marker_publisher = self.create_publisher(
-            String,
+            MarkerArray,
             'cone_sensing/cone_markers',
-            10)
+            5)
 
         self.count = 0
 
-    def pc_callback(self, pc_msg: PointCloud2):
+    def pc_callback(self, pc_msg):
         pass
 
 
 def main(args=None):
+    # Defaults
+    pc_node = '/velodyne_points'
+    loglevel = 'info'
+
+    # Processing args
+    opts, arg = getopt.getopt(args, str(), ['--pc_node=', '--log='])
+
+    for opt, arg in opts:
+        if opt == '--pc_node':
+            pc_node = arg
+        elif opt == '--log':
+            loglevel = arg
+
+    # Validating args
+    numeric_level = getattr(logging, loglevel.upper(), None)
+
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+
     # Setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
     if not os.path.isdir(path + '/logs'):
@@ -58,11 +81,11 @@ def main(args=None):
                         format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
                         datefmt='%I:%M:%S %p',
                         encoding='utf-8',
-                        level=logging.INFO)
+                        level=logging.numeric_level)
 
     LOGGER.info('Hi from lidar_pipeline_2.')
 
-    # Publisher Node
+    # Setting up node
     rclpy.init(args=args)
 
     cone_sensing_node = ConeSensingNode()
@@ -75,4 +98,4 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
