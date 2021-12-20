@@ -6,11 +6,11 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from visualization_msgs.msg import MarkerArray
 
-# Import Custom Message Modules
-from driverless_msgs.msg import LidarCones
-
 # Import ROS2 Helper Modules
-from .lib import pcl_helper
+import ros2_numpy as rnp
+
+# Import Custom Message Modules
+from driverless_msgs.msg import ConeDetectionStamped
 
 # Import Python Modules
 import datetime
@@ -36,7 +36,7 @@ class ConeSensingNode(Node):
         self.pc_subscription  # Prevent unused variable warning
 
         self.cone_publisher = self.create_publisher(
-            LidarCones,
+            ConeDetectionStamped,
             'cone_sensing/cones',
             5)
 
