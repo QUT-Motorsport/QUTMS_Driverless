@@ -1,7 +1,7 @@
 from setuptools import setup
 
-package_name = 'lidar_pipeline'
-submodule_name = 'lidar_pipeline/sub_module'
+package_name = 'vlp32_lidar'
+submodule_name = 'vlp32_lidar/scripts'
 
 setup(
     name=package_name,
@@ -21,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lidar = lidar_pipeline.lidar:main'
+            'lidar_perception = vlp32_lidar.node_processing:main'
         ],
     },
 )
