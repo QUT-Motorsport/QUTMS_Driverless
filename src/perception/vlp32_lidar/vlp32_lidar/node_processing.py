@@ -7,19 +7,19 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
-from builtin_interfaces.msg import Duration, Time
+from builtin_interfaces.msg import Duration
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
 import time
-from typing import List, NamedTuple
+from typing import List
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
-from .sub_module.read_pcl import read_points_list
+from .scripts.read_pcl import read_points_list
 # lidar cone detection algorithm
-from .sub_module.ground_plane_estimation import lidar_main, lidar_init
+from .scripts.ground_plane_estimation import lidar_main, lidar_init
 
 # LIDAR_NODE = '/fsds/lidar/Lidar1'
 LIDAR_NODE = '/velodyne_points'
