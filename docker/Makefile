@@ -47,7 +47,7 @@ build_docker_base_1804:
 	..
 
 build_docker_base_l4t:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t \
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-r32.6.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-base:r32.6.1 \

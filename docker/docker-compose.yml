@@ -51,88 +51,10 @@ x-jetson-extras: &jetson-extras
 
 
 # ==============================================================================
-#                             Build Environments
-# ==============================================================================
-
-x-perception-build: &perception-build
-    build:
-        context: ../
-        dockerfile: ./src/perception/docker/Dockerfile
-        args:
-            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-
-x-navigation-build: &navigation-build
-    build:
-        context: ../
-        dockerfile: ./src/navigation/Dockerfile
-        args:
-            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-
-x-hardware-build: &hardware-build
-    build:
-        context: ../
-        dockerfile: ./src/hardware/Dockerfile
-        args:
-            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-
-x-jetson-build: &jetson-build
-    build:
-        context: ../
-        dockerfile: ./src/perception/docker/Dockerfile.Jetson
-        target: jetson_ros
-        args:
-            USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-            HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-
-
-# ==============================================================================
 #                       Services (Targets in the Makefile)
 # ==============================================================================
 
 services:
-    perception:
-        <<: *perception-build
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
-    
-    velodyne:
-        <<: *perception-build
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: ros2 launch velodyne velodyne-all-nodes-VLP32C-launch.py
-    
-    navigation:
-        <<: *navigation-build
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
-    
-    hardware:
-        <<: *hardware-build
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
-
     unreal_sim:
         build:
             context: ../
@@ -150,49 +72,13 @@ services:
         <<: *visible
         command: /home/${USERNAME}/start.sh
     
-    rosboard:
-        image: qutms_driverless_base
-        <<: *env-file
-        <<: *user
-        <<: *volumes_local
-        <<: *devices
-        <<: *network
-        command: /home/${USERNAME}/rosboard/run
-
-    jetson_zed:
+    jetson:
         build:
             context: ../
-            dockerfile: ./src/perception/docker/Dockerfile.Jetson
-            target: jetson_ros_zed
+            dockerfile: ./src/machines/jetson_machine/Dockerfile
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
-        volumes:
-            # see x-volumes_local above for explanation of this
-            - /dev/shm:/dev/shm
-            # mount in X11 stuff for display
-            - /tmp/.X11-unix:/tmp/.X11-unix
-            - ../src:/driverless_ws/src
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        <<: *jetson-extras
-        command: ros2 launch sensors zed2i.launch.py
-
-    zed_detection:
-        <<: *jetson-build
-        <<: *env-file
-        <<: *volumes-jetson
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        <<: *jetson-extras
-        command: ros2 run zed_camera detector
-    
-    jetson:
-        <<: *jetson-build
         <<: *env-file
         <<: *volumes-jetson
         <<: *user

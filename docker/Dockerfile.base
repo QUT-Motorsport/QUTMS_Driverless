@@ -64,4 +64,4 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 # ==============================================================================
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
-# WORKDIR /home/$USERNAME/driverless_ws
+WORKDIR /home/$USERNAME/driverless_ws
