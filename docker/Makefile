@@ -56,8 +56,8 @@ build_docker_base_l4t:
 # use make build target=<value>
 build:
 	@echo "ensure make build_docker_base_1804 or make build_docker_base_l4t is run before running a build"
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless build $(target)
+	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless build $(target)
 
 # use make build target=<value>
 run:
-	docker-compose -f ./docker/docker-compose.yml -p QUTMS_Driverless run --rm $(target)
+	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
