@@ -9,6 +9,9 @@ from visualization_msgs.msg import MarkerArray
 # Import Custom Message Modules
 from driverless_msgs.msg import LidarCones
 
+# Import ROS2 Helper Modules
+from .lib import pcl_helper
+
 # Import Python Modules
 import datetime
 import pathlib
@@ -22,14 +25,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ConeSensingNode(Node):
-    def __init__(self):
+    def __init__(self, pc_node):
         super().__init__('cone_sensing')
-
-        LOGGER.info(f'LIDAR_NODE = {LIDAR_NODE}')
 
         self.pc_subscription = self.create_subscription(
             PointCloud2,
-            LIDAR_NODE,
+            pc_node,
             self.pc_callback,
             2)
         self.pc_subscription  # Prevent unused variable warning
@@ -47,6 +48,8 @@ class ConeSensingNode(Node):
         self.count = 0
 
     def pc_callback(self, pc_msg):
+        pc_matrix = pcl_helper.pointcloud2_to_array(pc_msg)
+        LOGGER.debug(pc_matrix)
         pass
 
 
@@ -54,15 +57,18 @@ def main(args=None):
     # Defaults
     pc_node = '/velodyne_points'
     loglevel = 'info'
+    print_logs = False
 
     # Processing args
-    opts, arg = getopt.getopt(args, str(), ['--pc_node=', '--log='])
+    opts, arg = getopt.getopt(args, str(), ['--pc_node=', '--log=', '--print_logs'])
 
     for opt, arg in opts:
         if opt == '--pc_node':
             pc_node = arg
         elif opt == '--log':
             loglevel = arg
+        elif opt == '--print_logs':
+            print_logs = True
 
     # Validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
@@ -83,12 +89,19 @@ def main(args=None):
                         encoding='utf-8',
                         level=logging.numeric_level)
 
+    # Printing logs to terminal
+    if print_logs:
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        LOGGER.addHandler(stdout_handler)
+
     LOGGER.info('Hi from lidar_pipeline_2.')
+    LOGGER.info(f'args = {args}')
+    LOGGER.info(f'pc_node = {pc_node}')
 
     # Setting up node
     rclpy.init(args=args)
 
-    cone_sensing_node = ConeSensingNode()
+    cone_sensing_node = ConeSensingNode(pc_node)
 
     rclpy.spin(cone_sensing_node)
 
