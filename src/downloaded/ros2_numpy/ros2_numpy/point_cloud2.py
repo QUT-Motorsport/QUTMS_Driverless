@@ -247,7 +247,8 @@ def get_xyz_points(cloud_array, remove_nans=True, dtype=np.float):
     if remove_nans:
         mask = np.isfinite(cloud_array['x']) & \
                np.isfinite(cloud_array['y']) & \
-               np.isfinite(cloud_array['z'])
+               np.isfinite(cloud_array['z']) & \
+               np.isfinite(cloud_array['i'])
         cloud_array = cloud_array[mask]
 
     # pull out x, y, and z values
@@ -255,6 +256,7 @@ def get_xyz_points(cloud_array, remove_nans=True, dtype=np.float):
     points[...,0] = cloud_array['x']
     points[...,1] = cloud_array['y']
     points[...,2] = cloud_array['z']
+    points[...,3] = cloud_array['i']
 
     return points
 
