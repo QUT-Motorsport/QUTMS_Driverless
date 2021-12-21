@@ -22,7 +22,7 @@ def get_prototype_points(seg_bin_nrm, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
     # Sorting norms in descending order by segment idx then bin idx
     seg_bin_nrm = seg_bin_nrm[np.lexsort((seg_bin_nrm[:, 1], seg_bin_nrm[:, 0]))]
 
-    # Split seg_bin_nrm into sub arrays for each segment
+    # Split seg_bin_nrm into sub arrays for each unique segment
     split_bin_nrm = np.split(seg_bin_nrm, np.where(np.diff(seg_bin_nrm[:, 0]))[0] + 1)
 
     segments_approx = [[[] for j in range(BIN_COUNT)] for i in range(SEGMENT_COUNT)]
