@@ -4,13 +4,18 @@ from rclpy.node import Node
 
 # Import ROS2 Message Modules
 from sensor_msgs.msg import PointCloud2
-from visualization_msgs.msg import MarkerArray
 
 # Import ROS2 Helper Modules
 import ros2_numpy as rnp
 
 # Import Custom Message Modules
 from driverless_msgs.msg import ConeDetectionStamped
+
+# Import Custom Modules
+from .library import lidar_manager
+
+# Import Helper Modules
+import numpy as np
 
 # Import Python Modules
 import datetime
@@ -19,6 +24,7 @@ import os
 import getopt
 import sys
 import time
+import math
 
 # Import Logging
 import logging
@@ -42,11 +48,6 @@ class ConeSensingNode(Node):
             'cone_sensing/cones',
             5)
 
-        self.marker_publisher = self.create_publisher(
-            MarkerArray,
-            'cone_sensing/cone_markers',
-            5)
-
         self.count = 0
 
         LOGGER.info('Waiting for PointCloud2 data ...')
@@ -54,16 +55,33 @@ class ConeSensingNode(Node):
     def pc_callback(self, pc_msg):
         LOGGER.info('PointCloud2 message received')
 
+        # pc_matrix = rnp.point_cloud2.pointcloud2_to_array(pc_msg) old
+
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
-        pc_matrix = rnp.point_cloud2.pointcloud2_to_array(pc_msg)
+        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
+        pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
 
+        # # Round Numpy PointCloud to 4 decimal places
+        # start_time = time.time()
+        # np.round(pc_matrix['x'], decimals=4, out=pc_matrix['x'])
+        # np.round(pc_matrix['y'], decimals=4, out=pc_matrix['y'])
+        # np.round(pc_matrix['z'], decimals=4, out=pc_matrix['z'])
+        # end_time = time.time()
+
+        # LOGGER.info(f'Numpy PointCloud rounded in {end_time - start_time}s')
+        # LOGGER.debug(pc_matrix)
+
+        # Pass logging globals to lidar_manager
+        global print_logs
+        global stdout_handler
+
         # Identify cones within the received point cloud
-        pc_cones = []
+        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, stdout_handler)
 
         self.count += 1
 
@@ -75,15 +93,23 @@ class ConeSensingNode(Node):
 
         self.cone_publisher.publish(cones_msg)
 
+        total_time = time.time() - start_time
+        LOGGER.info(f'Total Time: {total_time}s | Est. Hz: {1 / total_time}')
+
 
 def main(args=sys.argv[1:]):
     # Defaults
     pc_node = '/velodyne_points'
     loglevel = 'info'
+    lidar_range = 20
+    delta_alpha = 2 * math.pi / 128  # Delta angle of segments
+    bin_size = 0.14  # Size of bins
+
+    global print_logs
     print_logs = False
 
     # Processing args
-    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'print_logs'])
+    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'lidar_range=', 'delta_alpha=', 'bin_size', 'print_logs'])
 
     for opt, arg in opts:
         if opt == '--pc_node':
@@ -92,6 +118,12 @@ def main(args=sys.argv[1:]):
             loglevel = arg
         elif opt == '--print_logs':
             print_logs = True
+        elif opt == '--lidar_range':
+            lidar_range = arg
+        elif opt == '--delta_alpha':
+            delta_alpha = arg
+        elif opt == '--bin_size':
+            bin_size = arg
 
     # Validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
@@ -114,6 +146,7 @@ def main(args=sys.argv[1:]):
 
     # Printing logs to terminal
     if print_logs:
+        global stdout_handler
         stdout_handler = logging.StreamHandler(sys.stdout)
         LOGGER.addHandler(stdout_handler)
 
@@ -135,3 +168,8 @@ def main(args=sys.argv[1:]):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+# Notes
+# 1. Intead of rounding the point cloud, see if setting the dtype to
+#    16 bit float does the same thing / is faster. Rouding might still
+#    leave the numbers as float32s
