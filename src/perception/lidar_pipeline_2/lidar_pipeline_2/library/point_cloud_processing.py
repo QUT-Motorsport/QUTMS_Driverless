@@ -16,6 +16,6 @@ def discretise_point_cloud(point_cloud, DELTA_ALPHA, BIN_SIZE, SEGMENT_COUNT, BI
     # Calculating the bin index for each point
     bins_idx = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0) // BIN_SIZE
 
-    segments_bins = 
+    segments_bins = np.empty((SEGMENT_COUNT, BIN_COUNT, ))
 
     return segments_idx
