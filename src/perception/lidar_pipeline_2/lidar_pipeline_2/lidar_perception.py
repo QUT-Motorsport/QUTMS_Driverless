@@ -57,9 +57,11 @@ class ConeSensingNode(Node):
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
-        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
-        pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
+        # dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
+        # pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
+        pc_matrix = rnp.point_cloud2.pointcloud2_to_xyz_array(pc_msg, remove_nans=True)
         end_time = time.time()
+        print(pc_matrix)
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
