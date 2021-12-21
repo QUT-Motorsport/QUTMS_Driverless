@@ -57,9 +57,8 @@ class ConeSensingNode(Node):
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
-        # dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
-        # pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
-        pc_matrix = rnp.point_cloud2.pointcloud2_to_xyz_array(pc_msg, remove_nans=True)
+        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
+        pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
         print(pc_matrix)
 
@@ -102,7 +101,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     global lidar_range
-    lidar_range = 90
+    lidar_range = 110
 
     global delta_alpha
     delta_alpha = 2 * math.pi / 128  # Delta angle of segments

@@ -4,18 +4,18 @@ import numpy as np
 
 def get_discretised_positions(point_cloud, DELTA_ALPHA, BIN_SIZE):
     # Calculating the segment index for each point
-    segments_idx = np.arctan(point_cloud[:, 1] / point_cloud[:, 0]) / DELTA_ALPHA
+    segments_idx = np.arctan(point_cloud['y'] / point_cloud['x']) / DELTA_ALPHA
     np.nan_to_num(segments_idx, copy=False, nan=((np.pi / 2) / DELTA_ALPHA))  # Limit arctan x->inf = pi/2
 
     # Calculating the normal of each point
-    point_norms = np.linalg.norm([point_cloud[:, 0], point_cloud[:, 1]], axis=0)
+    point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
     np.nan_to_num(point_norms, copy=False, nan=0)
 
     # Calculating the bin index for each point
     bins_idx = point_norms / BIN_SIZE
 
     # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
-    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud[:, 2]))
+    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
 
 
 def get_prototype_points(seg_bin_nrm, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
