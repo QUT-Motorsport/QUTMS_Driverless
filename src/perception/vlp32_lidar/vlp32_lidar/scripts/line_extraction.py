@@ -67,15 +67,13 @@ def get_ground_lines(segment, num_bins) -> List[List]:
                         lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
                         lines_created += 1
 
-                    #print("Adding line to segment")
                     new_line_points = []
                     i = i - 2
             else:
                 if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
                     new_line_points.append(new_point)
                 else:
-                    # i = i + 1
-                    print("no", new_point, i)
+                    # print("no", new_point, i) # whats this for?
                     pass
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             # This case should not be possible
@@ -96,7 +94,6 @@ def get_ground_lines(segment, num_bins) -> List[List]:
 def get_ground_plane(segments_bins_prototype: List[List[List]], num_segments: int, num_bins: int) -> List[List[List]]:
     ground_plane: List[List[List]] = []
     for i in range(num_segments):
-        #print("Extracting lines from Segment:", i+1)
         ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
 
     return ground_plane
