@@ -1,4 +1,5 @@
 # Import ROS2 Modules
+from numpy.core.numeric import binary_repr
 import rclpy
 from rclpy.node import Node
 
@@ -66,22 +67,15 @@ class ConeSensingNode(Node):
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
 
-        # # Round Numpy PointCloud to 4 decimal places
-        # start_time = time.time()
-        # np.round(pc_matrix['x'], decimals=4, out=pc_matrix['x'])
-        # np.round(pc_matrix['y'], decimals=4, out=pc_matrix['y'])
-        # np.round(pc_matrix['z'], decimals=4, out=pc_matrix['z'])
-        # end_time = time.time()
-
-        # LOGGER.info(f'Numpy PointCloud rounded in {end_time - start_time}s')
-        # LOGGER.debug(pc_matrix)
-
-        # Pass logging globals to lidar_manager
+        # Globals to pass to lidar_manager
         global print_logs
         global stdout_handler
+        global lidar_range
+        global delta_alpha
+        global bin_size
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, lidar_range, delta_alpha, bin_size, stdout_handler)
 
         self.count += 1
 
@@ -101,29 +95,35 @@ def main(args=sys.argv[1:]):
     # Defaults
     pc_node = '/velodyne_points'
     loglevel = 'info'
-    lidar_range = 20
-    delta_alpha = 2 * math.pi / 128  # Delta angle of segments
-    bin_size = 0.14  # Size of bins
 
     global print_logs
     print_logs = False
 
+    global lidar_range
+    lidar_range = 20
+
+    global delta_alpha
+    delta_alpha = 2 * math.pi / 128  # Delta angle of segments
+
+    global bin_size
+    bin_size = 0.14  # Size of bins
+
     # Processing args
-    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'lidar_range=', 'delta_alpha=', 'bin_size', 'print_logs'])
+    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'lidar_range=', 'delta_alpha=', 'bin_size=', 'print_logs'])
 
     for opt, arg in opts:
         if opt == '--pc_node':
             pc_node = arg
         elif opt == '--log':
             loglevel = arg
-        elif opt == '--print_logs':
-            print_logs = True
         elif opt == '--lidar_range':
             lidar_range = arg
         elif opt == '--delta_alpha':
             delta_alpha = arg
         elif opt == '--bin_size':
             bin_size = arg
+        elif opt == '--print_logs':
+            print_logs = True
 
     # Validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
