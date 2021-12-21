@@ -13,7 +13,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-def detect_cones(point_cloud, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, stdout_handler=None):
+def detect_cones(point_cloud, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, stdout_handler=None):
     # Printing logs to terminal
     if print_logs:
         LOGGER.addHandler(stdout_handler)
@@ -25,10 +25,8 @@ def detect_cones(point_cloud, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, st
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     start_time = time.time()
-    pc_discretised = pcp.discretise_point_cloud(point_cloud, DELTA_ALPHA, BIN_SIZE, SEGMENT_COUNT, BIN_COUNT)
+    [segments_idx, bins_idx] = pcp.discretise_point_cloud(point_cloud, DELTA_ALPHA, BIN_SIZE)
     end_time = time.time()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
-    LOGGER.info(pc_discretised)
-
     return []
