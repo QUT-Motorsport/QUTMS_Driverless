@@ -40,6 +40,10 @@ def get_prototype_points(seg_bin_nrm, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
 
             # For the prototype points nested index location current segment
             # and bin, set value to be [norm, height] of point at index above
+            print(len(prototype_points), len(prototype_points[0]))
+            print(i, j, int(split_split_nrm[j][0, 0]), int(split_split_nrm[j][0, 1]))
+            print(split_split_nrm[j])
+            print(prototype_points[int(split_split_nrm[j][0, 0])][int(split_split_nrm[j][0, 1])])
             prototype_points[int(split_split_nrm[j][0, 0])][int(split_split_nrm[j][0, 1])] = [split_split_nrm[j][min_height_idx, 2], split_split_nrm[j][min_height_idx, 3]]
 
     return prototype_points

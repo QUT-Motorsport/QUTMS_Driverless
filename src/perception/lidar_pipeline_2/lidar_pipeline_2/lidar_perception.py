@@ -60,13 +60,9 @@ class ConeSensingNode(Node):
         dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
         pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
-        print(pc_matrix)
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
-
-        # Number of points in point cloud
-        POINT_COUNT = pc_matrix.shape[0]
 
         # Globals to pass to lidar_manager
         global print_logs
@@ -74,6 +70,17 @@ class ConeSensingNode(Node):
         global lidar_range
         global delta_alpha
         global bin_size
+
+        # Removing points outside of specified lidar range
+        start_time = time.time()
+        pc_matrix = pc_matrix[np.array(pc_matrix['x'] <= lidar_range**2) * np.array(pc_matrix['y'] <= lidar_range**2)]
+        end_time = time.time()
+
+        LOGGER.info(f'Out of bounds points removed in {end_time - start_time}s')
+
+        # Number of points in point cloud
+        POINT_COUNT = pc_matrix.shape[0]
+        LOGGER.info(f'POINT_COUNT = {POINT_COUNT}')
 
         # Identify cones within the received point cloud
         pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, lidar_range, delta_alpha, bin_size, POINT_COUNT, stdout_handler)
@@ -101,7 +108,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     global lidar_range
-    lidar_range = 110
+    lidar_range = 20
 
     global delta_alpha
     delta_alpha = 2 * math.pi / 128  # Delta angle of segments
