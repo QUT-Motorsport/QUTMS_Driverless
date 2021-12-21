@@ -78,6 +78,7 @@ RUN source /opt/ros/foxy/setup.bash; \
     colcon build --symlink-install --packages-up-to \
         driverless_msgs \
         can_driver \
+        ros2_numpy \
     && rm -r src \
     && chown -R ${USERNAME}:${HOST_GROUP} ./*
 
