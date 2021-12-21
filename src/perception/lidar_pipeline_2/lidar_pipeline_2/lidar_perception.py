@@ -1,5 +1,4 @@
 # Import ROS2 Modules
-from numpy.core.numeric import binary_repr
 import rclpy
 from rclpy.node import Node
 
