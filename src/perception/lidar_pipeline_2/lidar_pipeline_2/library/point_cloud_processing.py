@@ -25,18 +25,20 @@ def get_prototype_points(seg_bin_nrm, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
     split_bin_nrm = np.split(seg_bin_nrm, np.where(np.diff(seg_bin_nrm[:, 0]))[0] + 1)
 
     segments_approx = [[[] for j in range(BIN_COUNT)] for i in range(SEGMENT_COUNT)]
-    # segments_approx = np.empty((SEGMENT_COUNT, BIN_COUNT, 2))
+    
     for i in range(len(split_bin_nrm)):
         split_split_nrm = np.split(split_bin_nrm[i], np.where(np.diff(split_bin_nrm[i][:, 1]))[0] + 1)
         # print(split_bin_nrm[i])
         for j in range(len(split_split_nrm)):
             min_height_idx = np.argsort(split_split_nrm[j][:, 3])[0]
-            # print('yesssssssssssssss')
-            # print([split_split_nrm[j][0, 0]])
-            # print([split_split_nrm[j][0, 1]])
-            # print(segments_approx[int(split_split_nrm[j][0, 0])][int(split_split_nrm[j][0, 1])])
             segments_approx[int(split_split_nrm[j][0, 0])][int(split_split_nrm[j][0, 1])] = [split_split_nrm[j][min_height_idx, 2], split_split_nrm[j][min_height_idx, 3]]
-            
-    # segments_approx.tolist()
 
     return segments_approx
+
+# Notes
+# 1. For get_prototype_points() if needed you can revert back to using a numpy
+#    array and then converting to a python list. It's quicker for operations 
+#    but slower overall for conversion. Might still be useful.
+#    # segments_approx = np.empty((SEGMENT_COUNT, BIN_COUNT, 2))
+#    the segments_approx[...][...] = ... 
+#    remains the same for both python and numpy lists / arrays
