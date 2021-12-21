@@ -14,3 +14,13 @@ def test():
     print(yedst)
 
 test()
+
+# # Round Numpy PointCloud to 4 decimal places
+        # start_time = time.time()
+        # np.round(pc_matrix['x'], decimals=4, out=pc_matrix['x'])
+        # np.round(pc_matrix['y'], decimals=4, out=pc_matrix['y'])
+        # np.round(pc_matrix['z'], decimals=4, out=pc_matrix['z'])
+        # end_time = time.time()
+
+        # LOGGER.info(f'Numpy PointCloud rounded in {end_time - start_time}s')
+        # LOGGER.debug(pc_matrix)
