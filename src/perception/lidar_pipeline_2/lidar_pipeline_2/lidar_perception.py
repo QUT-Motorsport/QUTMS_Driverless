@@ -56,8 +56,6 @@ class ConeSensingNode(Node):
     def pc_callback(self, pc_msg):
         LOGGER.info('PointCloud2 message received')
 
-        # pc_matrix = rnp.point_cloud2.pointcloud2_to_array(pc_msg) old
-
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
         dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
@@ -67,6 +65,9 @@ class ConeSensingNode(Node):
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(pc_matrix)
 
+        # Number of points in point cloud
+        POINT_COUNT = pc_matrix.shape[0]
+
         # Globals to pass to lidar_manager
         global print_logs
         global stdout_handler
@@ -75,7 +76,7 @@ class ConeSensingNode(Node):
         global bin_size
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, lidar_range, delta_alpha, bin_size, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, lidar_range, delta_alpha, bin_size, POINT_COUNT, stdout_handler)
 
         self.count += 1
 
@@ -100,7 +101,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     global lidar_range
-    lidar_range = 20
+    lidar_range = 60
 
     global delta_alpha
     delta_alpha = 2 * math.pi / 128  # Delta angle of segments
