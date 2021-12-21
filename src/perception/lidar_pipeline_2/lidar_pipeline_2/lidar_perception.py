@@ -100,7 +100,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     global lidar_range
-    lidar_range = 60
+    lidar_range = 90
 
     global delta_alpha
     delta_alpha = 2 * math.pi / 128  # Delta angle of segments
