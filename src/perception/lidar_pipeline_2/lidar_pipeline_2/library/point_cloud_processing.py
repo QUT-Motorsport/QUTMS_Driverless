@@ -15,7 +15,7 @@ def get_discretised_positions(point_cloud, DELTA_ALPHA, BIN_SIZE):
     bins_idx = point_norms / BIN_SIZE
 
     # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
-    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
+    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud[:, 2]))
 
 
 def get_prototype_points(seg_bin_nrm, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
