@@ -1,6 +1,7 @@
 # Import Custom Modules
 from . import point_cloud_processing as pcp
 from . import ground_plane_estimation as gpe
+from . import line_extraction
 
 # Import Python Modules
 import time
@@ -37,7 +38,12 @@ def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA,
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    ground_surface = gpe.get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    # ground_surface = gpe.get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    
+    # Old LiDAR 1.0 code
+    ground_plane = line_extraction.get_ground_plane(prototype_points, SEGMENT_COUNT, BIN_COUNT)
     end_time = time.time()
+
+    LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     return []
