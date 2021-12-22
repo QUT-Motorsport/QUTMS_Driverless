@@ -83,7 +83,7 @@ class ConeSensingNode(Node):
         point_cloud = point_cloud[mask]
         end_time = time.time()
 
-        LOGGER.info(f'Norm computed and out of bounds points removed in {end_time - start_time}s')
+        LOGGER.info(f'Norm computed and out of range points removed in {end_time - start_time}s')
 
         # Number of points in point cloud
         POINT_COUNT = point_cloud.shape[0]
