@@ -11,7 +11,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, stdout_handler=None):
+def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler):
     # Printing logs to terminal
     if print_logs:
         LOGGER.addHandler(stdout_handler)
@@ -37,7 +37,7 @@ def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA,
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    ground_surface = gpe.get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT)
+    ground_surface = gpe.get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
 
     return []

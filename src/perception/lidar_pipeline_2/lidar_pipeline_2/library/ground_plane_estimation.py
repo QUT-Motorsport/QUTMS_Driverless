@@ -5,12 +5,6 @@ from . import total_least_squares as tls
 import math
 import copy
 
-# Constants
-T_M = 2*math.pi / 152  # Max angle that will be considered for ground lines
-T_M_SMALL = 0          # Angle considered to be a small slope
-T_B = 0.1              # Max y-intercept for a ground plane line
-T_RMSE = 0.2           # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
-
 
 def fit_error(m, b, points):
     num_points = len(points)
@@ -28,7 +22,7 @@ def fit_error(m, b, points):
 
 
 # The Incremental Algorithm
-def get_ground_lines(prototype_points, BIN_COUNT, regress_between_bins=True):
+def get_ground_lines(prototype_points, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     estimated_lines = []
     new_line_points = []
     lines_created = 0
@@ -61,7 +55,7 @@ def get_ground_lines(prototype_points, BIN_COUNT, regress_between_bins=True):
 
                 new_line_points = []
 
-                if regress_between_bins:
+                if REGRESS_BETWEEN_BINS:
                     idx -= 2
                 else:
                     idx -= 1
@@ -78,14 +72,14 @@ def get_ground_lines(prototype_points, BIN_COUNT, regress_between_bins=True):
     return estimated_lines
 
 
-def get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT):
+def get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A list of lists that contain ground lines for each segment
     ground_surface = []
 
     # For every segment
     for i in range(SEGMENT_COUNT):
         # Get list of ground lines that estimate ground surface in segment
-        ground_surface.append(get_ground_lines(prototype_points[i], BIN_COUNT))
+        ground_surface.append(get_ground_lines(prototype_points[i], BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS))
 
     return ground_surface
 

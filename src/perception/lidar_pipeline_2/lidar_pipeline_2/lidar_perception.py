@@ -76,6 +76,7 @@ class ConeSensingNode(Node):
         global T_M_SMALL
         global T_B
         global T_RMSE
+        global REGRESS_BETWEEN_BINS
 
         # Calculating the normal of each point
         start_time = time.time()
@@ -96,7 +97,7 @@ class ConeSensingNode(Node):
         LOGGER.info(f'POINT_COUNT = {POINT_COUNT}')
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler)
 
         self.count += 1
 
