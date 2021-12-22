@@ -14,7 +14,7 @@ def get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE):
     return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
 
 
-def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT, POINT_COUNT):
+def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
     # Sorting norms in descending order by segment idx then bin idx
     seg_bin_nrm_z = seg_bin_nrm_z[np.lexsort((seg_bin_nrm_z[:, 1], seg_bin_nrm_z[:, 0]))]
 
