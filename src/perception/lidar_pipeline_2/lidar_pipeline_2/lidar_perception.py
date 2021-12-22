@@ -123,7 +123,7 @@ def main(args=sys.argv[1:]):
 
     # Max range of points to process (metres)
     global LIDAR_RANGE
-    LIDAR_RANGE = 20
+    LIDAR_RANGE = 6
 
     # Delta angle of segments
     global DELTA_ALPHA
