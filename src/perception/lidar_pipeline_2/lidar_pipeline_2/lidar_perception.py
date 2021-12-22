@@ -58,11 +58,11 @@ class ConeSensingNode(Node):
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
         dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
-        pc_matrix = np.frombuffer(pc_msg.data, dtype_list)
+        point_cloud = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
-        LOGGER.debug(pc_matrix)
+        LOGGER.debug(point_cloud)
 
         # Globals to pass to lidar_manager
         global print_logs
@@ -71,19 +71,26 @@ class ConeSensingNode(Node):
         global delta_alpha
         global bin_size
 
-        # Removing points outside of specified lidar range
+        # Calculating the normal of each point
         start_time = time.time()
-        pc_matrix = pc_matrix[np.array(pc_matrix['x'] <= lidar_range**2) * np.array(pc_matrix['y'] <= lidar_range**2)]
+        point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
+
+        # Creating mask to remove points outside of range
+        mask = point_norms <= lidar_range
+
+        # Applying mask
+        point_norms = point_norms[mask]
+        point_cloud = point_cloud[mask]
         end_time = time.time()
 
-        LOGGER.info(f'Out of bounds points removed in {end_time - start_time}s')
+        LOGGER.info(f'Norm computed and out of bounds points removed in {end_time - start_time}s')
 
         # Number of points in point cloud
-        POINT_COUNT = pc_matrix.shape[0]
+        POINT_COUNT = point_cloud.shape[0]
         LOGGER.info(f'POINT_COUNT = {POINT_COUNT}')
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(pc_matrix, print_logs, lidar_range, delta_alpha, bin_size, POINT_COUNT, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, lidar_range, delta_alpha, bin_size, POINT_COUNT, stdout_handler)
 
         self.count += 1
 
