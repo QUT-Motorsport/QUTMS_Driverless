@@ -123,7 +123,7 @@ def main(args=sys.argv[1:]):
 
     # Max range of points to process (metres)
     global LIDAR_RANGE
-    LIDAR_RANGE = 6
+    LIDAR_RANGE = 5
 
     # Delta angle of segments
     global DELTA_ALPHA
@@ -164,7 +164,7 @@ def main(args=sys.argv[1:]):
                                             't_m_small=',
                                             't_b=',
                                             't_rmse=',
-                                            'regress_between_bins=',
+                                            'no_regress',
                                             'print_logs'])
 
     for opt, arg in opts:
@@ -186,8 +186,8 @@ def main(args=sys.argv[1:]):
             T_B = arg
         elif opt == '--t_rmse':
             T_RMSE = arg
-        elif opt == '--regress_between_bins':
-            REGRESS_BETWEEN_BINS = arg
+        elif opt == '--no_regress':
+            REGRESS_BETWEEN_BINS = False
         elif opt == '--print_logs':
             print_logs = True
 

@@ -36,7 +36,7 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
 
             # Set pos corresponding to current segment and bin in nested array
             # to [norm, height] of point corresponding to min_height_idx above
-            prototype_points[int(split_split_nrm_z[j][0, 0])][int(split_split_nrm_z[j][0, 1])] = [split_split_nrm_z[j][min_height_idx, 2], split_split_nrm_z[j][min_height_idx, 3]]
+            prototype_points[int(split_split_nrm_z[j][0, 0])][int(split_split_nrm_z[j][0, 1])] = [float(split_split_nrm_z[j][min_height_idx, 2]), float(split_split_nrm_z[j][min_height_idx, 3])]
 
     return prototype_points
 
