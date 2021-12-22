@@ -28,7 +28,7 @@ def fit_error(m, b, points):
 
 
 # The Incremental Algorithm
-def get_ground_lines(prototype_points, BIN_COUNT, regress_between_segs=True):
+def get_ground_lines(prototype_points, BIN_COUNT, regress_between_bins=True):
     estimated_lines = []
     new_line_points = []
     lines_created = 0
@@ -61,7 +61,7 @@ def get_ground_lines(prototype_points, BIN_COUNT, regress_between_segs=True):
 
                 new_line_points = []
 
-                if regress_between_segs:
+                if regress_between_bins:
                     idx -= 2
                 else:
                     idx -= 1

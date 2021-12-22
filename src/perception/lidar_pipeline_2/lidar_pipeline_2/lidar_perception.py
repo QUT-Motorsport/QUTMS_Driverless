@@ -67,16 +67,22 @@ class ConeSensingNode(Node):
         # Globals to pass to lidar_manager
         global print_logs
         global stdout_handler
-        global lidar_range
-        global delta_alpha
-        global bin_size
+
+        global LIDAR_RANGE
+        global DELTA_ALPHA
+        global BIN_SIZE
+
+        global T_M
+        global T_M_SMALL
+        global T_B
+        global T_RMSE
 
         # Calculating the normal of each point
         start_time = time.time()
         point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
 
         # Creating mask to remove points outside of range
-        mask = point_norms <= lidar_range
+        mask = point_norms <= LIDAR_RANGE
 
         # Applying mask
         point_norms = point_norms[mask]
@@ -90,7 +96,7 @@ class ConeSensingNode(Node):
         LOGGER.info(f'POINT_COUNT = {POINT_COUNT}')
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, lidar_range, delta_alpha, bin_size, POINT_COUNT, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, stdout_handler)
 
         self.count += 1
 
@@ -114,14 +120,38 @@ def main(args=sys.argv[1:]):
     global print_logs
     print_logs = False
 
-    global lidar_range
-    lidar_range = 20
+    # Max range of points to process (metres)
+    global LIDAR_RANGE
+    LIDAR_RANGE = 20
 
-    global delta_alpha
-    delta_alpha = 2 * math.pi / 128  # Delta angle of segments
+    # Delta angle of segments
+    global DELTA_ALPHA
+    DELTA_ALPHA = (2 * math.pi) / 128
 
-    global bin_size
-    bin_size = 0.14  # Size of bins
+    # Size of bins
+    global BIN_SIZE
+    BIN_SIZE = 0.14
+
+    # Max angle that will be considered for ground lines
+    global T_M
+    T_M = (2 * math.pi) / 152
+
+    # Angle considered to be a small slope
+    global T_M_SMALL
+    T_M_SMALL = 0
+
+    # Max y-intercept for a ground plane line
+    global T_B
+    T_B = 0.1
+
+    # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
+    global T_RMSE
+    T_RMSE = 0.2
+
+    # Determines if regression for ground lines should occur between two
+    # neighbouring bins when they're described by different lines
+    global REGRESS_BETWEEN_BINS
+    REGRESS_BETWEEN_BINS = True
 
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'lidar_range=', 'delta_alpha=', 'bin_size=', 'print_logs'])
@@ -132,11 +162,11 @@ def main(args=sys.argv[1:]):
         elif opt == '--log':
             loglevel = arg
         elif opt == '--lidar_range':
-            lidar_range = arg
+            LIDAR_RANGE = arg
         elif opt == '--delta_alpha':
-            delta_alpha = arg
+            DELTA_ALPHA = arg
         elif opt == '--bin_size':
-            bin_size = arg
+            BIN_SIZE = arg
         elif opt == '--print_logs':
             print_logs = True
 
