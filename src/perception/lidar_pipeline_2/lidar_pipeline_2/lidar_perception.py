@@ -154,7 +154,17 @@ def main(args=sys.argv[1:]):
     REGRESS_BETWEEN_BINS = True
 
     # Processing args
-    opts, arg = getopt.getopt(args, str(), ['pc_node=', 'log=', 'lidar_range=', 'delta_alpha=', 'bin_size=', 'print_logs'])
+    opts, arg = getopt.getopt(args, str(), ['pc_node=',
+                                            'log=',
+                                            'lidar_range=',
+                                            'delta_alpha=',
+                                            'bin_size=',
+                                            't_m=',
+                                            't_m_small=',
+                                            't_b=',
+                                            't_rmse=',
+                                            'regress_between_bins=',
+                                            'print_logs'])
 
     for opt, arg in opts:
         if opt == '--pc_node':
@@ -167,6 +177,16 @@ def main(args=sys.argv[1:]):
             DELTA_ALPHA = arg
         elif opt == '--bin_size':
             BIN_SIZE = arg
+        elif opt == '--t_m':
+            T_M = arg
+        elif opt == '--t_m_small':
+            T_M_SMALL = arg
+        elif opt == '--t_b':
+            T_B = arg
+        elif opt == '--t_rmse':
+            T_RMSE = arg
+        elif opt == '--regress_between_bins':
+            REGRESS_BETWEEN_BINS = arg
         elif opt == '--print_logs':
             print_logs = True
 
