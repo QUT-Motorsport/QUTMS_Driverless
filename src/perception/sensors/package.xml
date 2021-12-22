@@ -9,8 +9,8 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <!-- TODO: need to vendor these OR get them get on robostack -->
-    <!-- <depend>sbg_driver</depend> -->
+    <!-- sbg driver now on RoboStack -->
+    <depend>sbg_driver</depend>
     <!-- <depend>velodyne</depend> -->
     <!-- ZED wrapper is potentially still built from source on Jetson only -->
     <!-- <depend>zed_wrapper</depend> -->
