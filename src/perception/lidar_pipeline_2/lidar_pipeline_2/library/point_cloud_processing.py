@@ -42,8 +42,8 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
-#    array and then converting to a python list. It's quicker for operations 
+#    array and then converting to a python list. It's quicker for operations
 #    but slower overall for conversion. Might still be useful.
 #    # segments_approx = np.empty((SEGMENT_COUNT, BIN_COUNT, 2))
-#    the segments_approx[...][...] = ... 
+#    the segments_approx[...][...] = ...
 #    remains the same for both python and numpy lists / arrays
