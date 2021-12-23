@@ -48,14 +48,14 @@ def generate_launch_description():
 
     # ZED Configurations to be loaded by ZED Node
     config_common_path = os.path.join(
-        get_package_share_directory("sensors"),
+        get_package_share_directory("zed_driver"),
         "config",
         "zed",
         "common.yaml"
     )
 
     config_camera_path = os.path.join(
-        get_package_share_directory("sensors"),
+        get_package_share_directory("zed_driver"),
         "config",
         "zed",
         "zed2i.yaml"
