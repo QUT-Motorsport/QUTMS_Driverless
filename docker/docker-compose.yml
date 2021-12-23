@@ -71,6 +71,24 @@ services:
         <<: *network
         <<: *visible
         command: /home/${USERNAME}/start.sh
+
+    zed_camera_driver:
+        build:
+            context: ../
+            dockerfile: ./src/perception/zed_driver/docker/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        volumes:
+            # see x-volumes_local above for explanation of this
+            - /dev/shm:/dev/shm
+            # mount in X11 stuff for display
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        <<: *env-file
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
     
     jetson:
         build:
