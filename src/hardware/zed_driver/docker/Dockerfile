@@ -259,4 +259,4 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
 # setup entrypoint
 COPY ./src/hardware/zed_driver/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
 ENTRYPOINT ["/jetson_ros_zed_entrypoint.sh"]
-CMD ["ros2 launch zed_driver zed2i.launch.py"]
+CMD ["ros2", "launch", "zed_driver", "zed2i.launch.py"]
