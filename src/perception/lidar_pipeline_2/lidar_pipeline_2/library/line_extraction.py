@@ -37,7 +37,11 @@ def fit_error(m, b, points) -> float:
 
 
 # The Incremental Algorithm
-def get_ground_lines(segment, num_bins) -> List[List]:
+def get_ground_lines(
+        segment: List[List], 
+        num_bins: int,
+    ) -> List[List]:
+
     lines: List[List] = []
     new_line_points = []
     lines_created = 0
@@ -91,7 +95,12 @@ def get_ground_lines(segment, num_bins) -> List[List]:
 
 
 # Returns the ground lines for all segments
-def get_ground_plane(segments_bins_prototype: List[List[List]], num_segments: int, num_bins: int) -> List[List[List]]:
+def get_ground_plane(
+        segments_bins_prototype: List[List[List]], 
+        num_segments: int, 
+        num_bins: int,
+    ) -> List[List[List]]:
+
     ground_plane: List[List[List]] = []
     for i in range(num_segments):
         ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
