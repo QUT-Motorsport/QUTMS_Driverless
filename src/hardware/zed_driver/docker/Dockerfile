@@ -241,6 +241,8 @@ WORKDIR /ros_zed_ws/src
 RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-v3.5.1
 
 WORKDIR /ros_zed_ws
+# symlink libusb for the build
+RUN ln -s /lib/aarch64-linux-gnu/libusb-1.0.so.0 /usr/lib/aarch64-linux-gnu/libusb-1.0.so
 # build packages, extra cuda library options come from https://github.com/stereolabs/zed-ros2-wrapper/issues/18
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
