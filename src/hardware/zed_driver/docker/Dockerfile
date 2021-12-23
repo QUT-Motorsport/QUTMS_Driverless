@@ -248,15 +248,15 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
 # copy calibration file
-COPY ./src/perception/zed_driver/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
+COPY ./src/hardware/zed_driver/docker/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
 # copy perception and run a build
 WORKDIR /driverless_ws
-COPY ./src/perception/zed_driver ./src/zed_driver
+COPY ./src/hardware/zed_driver ./src/zed_driver
 RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install
 
 # setup entrypoint
-COPY ./src/perception/zed_driver/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
+COPY ./src/hardware/zed_driver/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
 ENTRYPOINT ["/jetson_ros_zed_entrypoint.sh"]
 CMD ["ros2 launch zed_driver zed2i.launch.py"]
