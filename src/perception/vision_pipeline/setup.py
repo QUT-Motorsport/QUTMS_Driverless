@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "zed_camera"
+package_name = "vision_pipeline"
 
 setup(
     name=package_name,
@@ -14,14 +14,13 @@ setup(
     zip_safe=True,
     maintainer="Alistair English, Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="ZED2i package",
+    description="Pipeline for managing visual detection of cones.",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "controller = zed_camera.node_controller:main",
-            "cv_thresholder = zed_camera.node_cv_thresholder:main",
-            "detector = zed_camera.node_detector:main",
+            "cv_thresholder = vision_pipeline.node_cv_thresholder:main",
+            "detector = vision_pipeline.node_detector:main",
         ],
     },
 )
