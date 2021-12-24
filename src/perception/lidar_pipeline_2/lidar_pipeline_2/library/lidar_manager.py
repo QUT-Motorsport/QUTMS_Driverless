@@ -31,7 +31,8 @@ def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA,
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    prototype_points = pcp.get_prototype_points_2(segments_bins_norms_z, SEGMENT_COUNT, BIN_COUNT)
+    # prototype_points = pcp.get_prototype_points(segments_bins_norms_z, SEGMENT_COUNT, BIN_COUNT)
+    prototype_points = pcp.get_prototype_points_2(segments_bins_norms_z)
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')

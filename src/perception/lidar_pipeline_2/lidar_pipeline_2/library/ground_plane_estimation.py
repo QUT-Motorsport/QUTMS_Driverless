@@ -83,6 +83,11 @@ def get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMAL
 
     return ground_surface
 
+
+def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+    pass
+    
+
 # Notes:
 # 1. Ground surface could be a numpy array that is created to be of size
 #    SEGMENT_COUNT. Then each entry to be return of get_ground_lines. Then
