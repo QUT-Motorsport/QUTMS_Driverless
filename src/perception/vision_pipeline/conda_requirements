@@ -1,2 +1,3 @@
+# REMEMBER to update deps in jetson_install.sh as well
 opencv==4.5.2
 requests==2.26.0
