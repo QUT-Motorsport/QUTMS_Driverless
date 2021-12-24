@@ -14,7 +14,7 @@ WORKDIR /tmp
 COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
-    mamba install ./conda_requirements
+    mamba install --file ./conda_requirements
 
 # vision pipeline - uses special case jetson_install.sh instead of conda_requirements
 COPY ./src/perception/vision_pipeline/jetson_install.sh ./jetson_install.sh
