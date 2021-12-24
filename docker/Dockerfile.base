@@ -61,6 +61,11 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda config --env --set channel_priority strict && \
     mamba clean --all --yes
 
+# environment activation
+RUN echo "source /home/${USERNAME}/mambaforge/bin/activate && conda activate driverless_env" >> /home/$USERNAME/.bashrc
+COPY conda_entrypoint.sh /conda_entrypoint.sh
+ENTRYPOINT ["/conda_entrypoint.sh"]
+
 
 # ==============================================================================
 #                              Workspace setup
