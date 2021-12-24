@@ -12,7 +12,7 @@ WORKDIR /tmp
 COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
-    mamba install --file ./conda_requirements
+    mamba install -y --file ./conda_requirements
 
 # cleanup
 RUN rm -f ./conda_requirements
