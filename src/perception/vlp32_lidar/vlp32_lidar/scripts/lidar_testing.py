@@ -17,12 +17,12 @@ with open(path + "08-12-2021_01-55-30.txt", 'rb') as f:
     line: str = f.readline()
     point_cloud: List[namedtuple] = eval(line)
 
-DISPLAY: bool = True
-VISUALISE: bool = True
-MAX_RANGE: int = 7
+DISPLAY: bool = False
+VISUALISE: bool = False
+MAX_RANGE: int = 20
 
 start_time = time.time()
 gpe.lidar_init(DISPLAY, VISUALISE, "./datasets/figures", MAX_RANGE)
 print("test")
-gpe.lidar_main(point_cloud, len(point_cloud))
+gpe.lidar_main(point_cloud)
 print("\nTotal Time:", time.time() - start_time)
