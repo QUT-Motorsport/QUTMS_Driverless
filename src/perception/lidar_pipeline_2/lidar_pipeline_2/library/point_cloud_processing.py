@@ -41,10 +41,14 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
     return prototype_points
 
 
-def get_prototype_points_2(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
-    # Sorting norms in descending order by segment idx then bin idx then norm
-    seg_bin_nrm_z = seg_bin_nrm_z[np.lexsort((seg_bin_nrm_z[:, 2], seg_bin_nrm_z[:, 1], seg_bin_nrm_z[:, 0]))]
-    pass
+def get_prototype_points_2(seg_bin_nrm_z):
+    # Sorting norms in descending order by segment idx then norm
+    seg_bin_nrm_z = seg_bin_nrm_z[np.lexsort((seg_bin_nrm_z[:, 2], seg_bin_nrm_z[:, 0]))]
+
+    # Split seg_bin_nrm into sub arrays for each unique segment
+    split_bin_nrm_z = np.split(seg_bin_nrm_z, np.where(np.diff(seg_bin_nrm_z[:, 0]))[0] + 1)
+
+    return split_bin_nrm_z
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
