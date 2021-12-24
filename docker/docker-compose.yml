@@ -84,6 +84,8 @@ services:
             - /dev/shm:/dev/shm
             # mount in X11 stuff for display
             - /tmp/.X11-unix:/tmp/.X11-unix
+            # mount in the relevant source
+            - ../src/hardware/zed_driver:/driverless_ws/src/zed_driver
         <<: *env-file
         <<: *devices
         <<: *network

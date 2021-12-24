@@ -254,7 +254,8 @@ COPY ./src/hardware/zed_driver/docker/SN33580719.conf /usr/local/zed/settings/SN
 WORKDIR /driverless_ws
 COPY ./src/hardware/zed_driver ./src/zed_driver
 RUN source ${ROS_ROOT}/install/setup.bash; \
-    colcon build --symlink-install
+    colcon build --symlink-install && \
+    rm -rf ./src
 
 # setup entrypoint
 COPY ./src/hardware/zed_driver/docker/jetson_ros_zed_entrypoint.sh /jetson_ros_zed_entrypoint.sh
