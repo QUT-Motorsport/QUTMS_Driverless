@@ -50,14 +50,12 @@ def generate_launch_description():
     config_common_path = os.path.join(
         get_package_share_directory("zed_driver"),
         "config",
-        "zed",
         "common.yaml"
     )
 
     config_camera_path = os.path.join(
         get_package_share_directory("zed_driver"),
         "config",
-        "zed",
         "zed2i.yaml"
     )
 
