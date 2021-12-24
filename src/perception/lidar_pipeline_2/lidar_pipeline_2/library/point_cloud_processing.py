@@ -40,6 +40,12 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
 
     return prototype_points
 
+
+def get_prototype_points_2(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
+    # Sorting norms in descending order by segment idx then bin idx then norm
+    seg_bin_nrm_z = seg_bin_nrm_z[np.lexsort((seg_bin_nrm_z[:, 2], seg_bin_nrm_z[:, 1], seg_bin_nrm_z[:, 0]))]
+    pass
+
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
 #    array and then converting to a python list. It's quicker for operations
