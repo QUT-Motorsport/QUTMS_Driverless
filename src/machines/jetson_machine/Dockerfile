@@ -10,16 +10,10 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp
 
-# sensors
-COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install --file ./conda_requirements
-
 # vision pipeline - uses special case jetson_install.sh instead of conda_requirements
 COPY ./src/perception/vision_pipeline/jetson_install.sh ./jetson_install.sh
-RUN ./jetson_install.sh
+RUN ./jetson_install.sh && rm -f ./jetson_install
 
 # cleanup
-RUN rm -f conda_requirements
+RUN rm -f ./conda_requirements
 WORKDIR /home/$USERNAME/driverless_ws

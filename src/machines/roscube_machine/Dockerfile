@@ -5,3 +5,15 @@ ARG USERNAME
 ARG HOST_UID
 # dialout group is used for compatability with mac
 ARG HOST_GROUP=dialout
+
+WORKDIR /tmp
+
+# sensors
+COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install --file ./conda_requirements
+
+# cleanup
+RUN rm -f ./conda_requirements
+WORKDIR /home/$USERNAME/driverless_ws
