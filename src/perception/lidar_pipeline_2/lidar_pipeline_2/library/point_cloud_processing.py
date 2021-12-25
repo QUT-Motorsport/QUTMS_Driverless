@@ -41,14 +41,37 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
     return prototype_points
 
 
+def get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE):
+    # Calculating the segment index for each point
+    segments_idx = np.arctan(point_cloud['y'] / point_cloud['x']) / DELTA_ALPHA
+    np.nan_to_num(segments_idx, copy=False, nan=((np.pi / 2) / DELTA_ALPHA))  # Limit arctan x->inf = pi/2
+
+    # Calculating the bin index for each point
+    bins_idx = point_norms / BIN_SIZE
+
+    # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
+    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
+
+
 def get_prototype_points_2(seg_bin_nrm_z):
     # Sorting norms in descending order by segment idx then norm
     seg_bin_nrm_z = seg_bin_nrm_z[np.lexsort((seg_bin_nrm_z[:, 2], seg_bin_nrm_z[:, 0]))]
 
-    # Split seg_bin_nrm into sub arrays for each unique segment
+    # Splitting seg_bin_nrm_z into sub arrays for each unique segment
     split_bin_nrm_z = np.split(seg_bin_nrm_z, np.where(np.diff(seg_bin_nrm_z[:, 0]))[0] + 1)
 
-    return split_bin_nrm_z
+    seg_idx = 0
+    prototype_points = []
+    for segment_array in split_bin_nrm_z:
+        prototype_points.append([])
+        split_split_nrm_z = np.split(segment_array, np.where(np.diff(segment_array[:, 1]))[0] + 1)
+
+        for bin_array in split_split_nrm_z:
+            prototype_points[seg_idx].append([bin_array[0][2], bin_array[0][3]])
+
+        seg_idx += 1
+
+    return prototype_points
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
