@@ -24,14 +24,13 @@ def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA,
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
-    segments_bins_norms_z = pcp.get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
+    segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     end_time = time.time()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    # prototype_points = pcp.get_prototype_points(segments_bins_norms_z, SEGMENT_COUNT, BIN_COUNT)
     prototype_points = pcp.get_prototype_points_2(segments_bins_norms_z)
     end_time = time.time()
 
