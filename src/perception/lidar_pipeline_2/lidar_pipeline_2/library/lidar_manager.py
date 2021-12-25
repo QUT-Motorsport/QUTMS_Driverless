@@ -37,7 +37,7 @@ def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA,
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    # ground_surface = gpe.get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    ground_surface = gpe.get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
 
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')

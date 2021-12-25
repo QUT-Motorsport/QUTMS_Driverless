@@ -63,11 +63,11 @@ def get_prototype_points_2(seg_bin_nrm_z):
     seg_idx = 0
     prototype_points = []
     for segment_array in split_bin_nrm_z:
-        prototype_points.append([])
+        prototype_points.append([segment_array[0][0]])
         split_split_nrm_z = np.split(segment_array, np.where(np.diff(segment_array[:, 1]))[0] + 1)
 
         for bin_array in split_split_nrm_z:
-            prototype_points[seg_idx].append([bin_array[0][2], bin_array[0][3]])
+            prototype_points[seg_idx].append([float(bin_array[0][2]), float(bin_array[0][3])])
 
         seg_idx += 1
 
