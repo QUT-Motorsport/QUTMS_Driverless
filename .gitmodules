@@ -1,0 +1,3 @@
+[submodule "src/common/rosboard/rosboard"]
+	path = src/common/rosboard/rosboard
+	url = https://github.com/dheera/rosboard.git
