@@ -107,3 +107,18 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: bash
+    
+    roscube:
+        build:
+            context: ../
+            dockerfile: ./src/machines/roscube_machine/Dockerfile
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        <<: *volumes_local
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: bash
