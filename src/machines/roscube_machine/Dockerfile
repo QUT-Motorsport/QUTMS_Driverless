@@ -14,6 +14,18 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# rosboard
+COPY ./src/common/rosboard/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# controllers
+COPY ./src/navigation/controllers/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 WORKDIR /home/$USERNAME/driverless_ws
