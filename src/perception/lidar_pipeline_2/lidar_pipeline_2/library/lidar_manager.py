@@ -5,13 +5,29 @@ from . import ground_plane_estimation as gpe
 # Import Python Modules
 import time
 import math
+import numpy as np
 
 # Import Logging
 import logging
 LOGGER = logging.getLogger(__name__)
 
 
-def detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler):
+def detect_cones(
+        point_cloud: np.ndarray, 
+        point_norms: np.ndarray, 
+        print_logs: bool, 
+        LIDAR_RANGE: int, 
+        DELTA_ALPHA: float, 
+        BIN_SIZE: float, 
+        POINT_COUNT: int, 
+        T_M: float, 
+        T_M_SMALL: float, 
+        T_B: float, 
+        T_RMSE: float, 
+        REGRESS_BETWEEN_BINS: bool, 
+        stdout_handler,
+    ) -> list:
+
     # Printing logs to terminal
     if print_logs:
         LOGGER.addHandler(stdout_handler)
