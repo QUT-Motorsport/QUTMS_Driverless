@@ -30,7 +30,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ConeSensingNode(Node):
-    def __init__(self, pc_node, _LIDAR_RANGE, _DELTA_ALPHA, _BIN_SIZE, _T_M, _T_M_SMALL, _T_B, _T_RMSE, _REGRESS_BETWEEN_BINS):
+    def __init__(self,
+                 pc_node,
+                 _LIDAR_RANGE,
+                 _DELTA_ALPHA,
+                 _BIN_SIZE,
+                 _T_M,
+                 _T_M_SMALL,
+                 _T_B,
+                 _T_RMSE,
+                 _REGRESS_BETWEEN_BINS):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -65,7 +74,7 @@ class ConeSensingNode(Node):
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
-        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
+        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step)  # x y z intensity ring
         point_cloud = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
 
@@ -95,7 +104,19 @@ class ConeSensingNode(Node):
         global stdout_handler
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, self.LIDAR_RANGE, self.DELTA_ALPHA, self.BIN_SIZE, self.T_M, self.T_M_SMALL, self.T_B, self.T_RMSE, REGRESS_BETWEEN_BINS, point_count, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud,
+                                              point_norms,
+                                              print_logs,
+                                              self.LIDAR_RANGE,
+                                              self.DELTA_ALPHA,
+                                              self.BIN_SIZE,
+                                              self.T_M,
+                                              self.T_M_SMALL,
+                                              self.T_B,
+                                              self.T_RMSE,
+                                              REGRESS_BETWEEN_BINS,
+                                              point_count,
+                                              stdout_handler)
 
         self.count += 1
 
@@ -213,7 +234,15 @@ def main(args=sys.argv[1:]):
     # Setting up node
     rclpy.init(args=args)
 
-    cone_sensing_node = ConeSensingNode(pc_node, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    cone_sensing_node = ConeSensingNode(pc_node,
+                                        LIDAR_RANGE,
+                                        DELTA_ALPHA,
+                                        BIN_SIZE,
+                                        T_M,
+                                        T_M_SMALL,
+                                        T_B,
+                                        T_RMSE,
+                                        REGRESS_BETWEEN_BINS)
 
     rclpy.spin(cone_sensing_node)
 
