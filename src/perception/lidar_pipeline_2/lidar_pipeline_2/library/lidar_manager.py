@@ -1,5 +1,6 @@
 # Import Custom Modules
 from . import point_cloud_processing as pcp
+from . import ground_plane_estimation as gpe
 
 # Import Python Modules
 import time
