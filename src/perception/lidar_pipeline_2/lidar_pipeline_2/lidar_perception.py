@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ConeSensingNode(Node):
-    def __init__(self, pc_node):
+    def __init__(self, pc_node, _LIDAR_RANGE, _DELTA_ALPHA, _BIN_SIZE, _T_M, _T_M_SMALL, _T_B, _T_RMSE, _REGRESS_BETWEEN_BINS):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -48,6 +48,16 @@ class ConeSensingNode(Node):
 
         self.count = 0
 
+        # Variables for Lidar Manager
+        self.LIDAR_RANGE = _LIDAR_RANGE
+        self.DELTA_ALPHA = _DELTA_ALPHA
+        self.BIN_SIZE = _BIN_SIZE
+        self.T_M = _T_M
+        self.T_M_SMALL = _T_M_SMALL
+        self.T_B = _T_B
+        self.T_RMSE = _T_RMSE
+        self.REGRESS_BETWEEN_BINS = _REGRESS_BETWEEN_BINS
+
         LOGGER.info('Waiting for PointCloud2 data ...')
 
     def pc_callback(self, pc_msg):
@@ -62,28 +72,12 @@ class ConeSensingNode(Node):
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(point_cloud)
 
-        # Globals to pass to lidar_manager
-        global print_logs
-        global stdout_handler
-
-        # these can all be self. variables if passed into the node init()
-        # then referenced in here
-        global LIDAR_RANGE
-        global DELTA_ALPHA
-        global BIN_SIZE
-
-        global T_M
-        global T_M_SMALL
-        global T_B
-        global T_RMSE
-        global REGRESS_BETWEEN_BINS
-
         # Calculating the normal of each point
         start_time = time.time()
         point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
 
         # Creating mask to remove points outside of range
-        mask = point_norms <= LIDAR_RANGE
+        mask = point_norms <= self.LIDAR_RANGE
 
         # Applying mask
         point_norms = point_norms[mask]
@@ -96,8 +90,12 @@ class ConeSensingNode(Node):
         point_count = point_cloud.shape[0]
         LOGGER.info(f'POINT_COUNT = {point_count}')
 
+        # Globals to pass to lidar_manager
+        global print_logs
+        global stdout_handler
+
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, point_count, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, self.LIDAR_RANGE, self.DELTA_ALPHA, self.BIN_SIZE, self.T_M, self.T_M_SMALL, self.T_B, self.T_RMSE, REGRESS_BETWEEN_BINS, point_count, stdout_handler)
 
         self.count += 1
 
@@ -122,31 +120,24 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     # Max range of points to process (metres)
-    global LIDAR_RANGE
     LIDAR_RANGE = 20
 
     # Delta angle of segments
-    global DELTA_ALPHA
     DELTA_ALPHA = (2 * math.pi) / 128
 
     # Size of bins
-    global BIN_SIZE
     BIN_SIZE = 0.14
 
     # Max angle that will be considered for ground lines
-    global T_M
     T_M = (2 * math.pi) / 152
 
     # Angle considered to be a small slope
-    global T_M_SMALL
     T_M_SMALL = 0
 
     # Max y-intercept for a ground plane line
-    global T_B
     T_B = 0.1
 
     # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
-    global T_RMSE
     T_RMSE = 0.2
 
     # Determines if regression for ground lines should occur between two
@@ -218,12 +209,11 @@ def main(args=sys.argv[1:]):
 
     LOGGER.info('Hi from lidar_pipeline_2.')
     LOGGER.info(f'args = {args}')
-    LOGGER.info(f'pc_node = {pc_node}')
 
     # Setting up node
     rclpy.init(args=args)
 
-    cone_sensing_node = ConeSensingNode(pc_node)
+    cone_sensing_node = ConeSensingNode(pc_node, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     rclpy.spin(cone_sensing_node)
 

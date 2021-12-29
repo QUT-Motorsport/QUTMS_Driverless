@@ -17,14 +17,13 @@ def detect_cones(
         LIDAR_RANGE,
         DELTA_ALPHA,
         BIN_SIZE,
-        point_count,
         T_M,
         T_M_SMALL,
         T_B,
         T_RMSE,
         REGRESS_BETWEEN_BINS,
-        stdout_handler
-        ):
+        point_count,
+        stdout_handler):
 
     # Printing logs to terminal
     if print_logs:
