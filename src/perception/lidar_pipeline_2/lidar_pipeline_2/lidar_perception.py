@@ -1,10 +1,13 @@
 # Import ROS2 Modules
 import rclpy
 from rclpy.node import Node
+
 # Import ROS2 Message Modules
 from sensor_msgs.msg import PointCloud2
+
 # Import Custom Message Modules
 from driverless_msgs.msg import ConeDetectionStamped
+
 # Import ROS2 Helper Modules
 import ros2_numpy as rnp
 
@@ -20,7 +23,6 @@ import getopt
 import sys
 import time
 import math
-from typing import List
 
 # Import Logging
 import logging
@@ -53,8 +55,8 @@ class ConeSensingNode(Node):
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
-        dtype_list: List = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
-        point_cloud: np.ndarray = np.frombuffer(pc_msg.data, dtype_list)
+        dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step) # x y z intensity ring
+        point_cloud = np.frombuffer(pc_msg.data, dtype_list)
         end_time = time.time()
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
@@ -78,10 +80,10 @@ class ConeSensingNode(Node):
 
         # Calculating the normal of each point
         start_time = time.time()
-        point_norms: np.ndarray = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
+        point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
 
         # Creating mask to remove points outside of range
-        mask: np.ndarray = point_norms <= LIDAR_RANGE
+        mask = point_norms <= LIDAR_RANGE
 
         # Applying mask
         point_norms = point_norms[mask]
@@ -91,11 +93,11 @@ class ConeSensingNode(Node):
         LOGGER.info(f'Norm computed and out of range points removed in {end_time - start_time}s')
 
         # Number of points in point cloud
-        point_count: int = point_cloud.shape[0]
+        point_count = point_cloud.shape[0]
         LOGGER.info(f'POINT_COUNT = {point_count}')
 
         # Identify cones within the received point cloud
-        pc_cones: list = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, POINT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler)
+        pc_cones = lidar_manager.detect_cones(point_cloud, point_norms, print_logs, LIDAR_RANGE, DELTA_ALPHA, BIN_SIZE, point_count, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, stdout_handler)
 
         self.count += 1
 
