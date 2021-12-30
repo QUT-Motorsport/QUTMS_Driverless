@@ -10,8 +10,6 @@ mamba install -y \
     numpy \
     ninja \
     pyyaml \
-    mkl \
-    mkl-include \
     setuptools \
     cmake \
     cffi \
