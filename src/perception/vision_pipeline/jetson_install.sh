@@ -1,26 +1,32 @@
 source "/home/developer/mambaforge/bin/activate"
 conda activate driverless_env
 
-apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-numpy \
-    python3-setuptools \
-    libpython3-dev \
-    libopenblas-base \
-    libopenmpi-dev \
-    libjpeg-dev zlib1g-dev \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev
-
-git clone --recursive --branch v1.7.1 https://github.com/pytorch/pytorch
+# install pytorch
+# https://github.com/pytorch/pytorch#from-source
+git clone --recursive --branch v1.10.1 https://github.com/pytorch/pytorch
 cd pytorch
-mamba install --yes --file requirements.txt
+mamba install -y
+    astunparse \
+    numpy \
+    ninja \
+    pyyaml \
+    mkl \
+    mkl-include \
+    setuptools \
+    cmake \
+    cffi \
+    typing_extensions \
+    future \
+    six \
+    requests \
+    dataclasses
+export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
 python3 setup.py install
 
-git clone --branch v0.11.1 https://github.com/pytorch/vision torchvision
+# install torch vision
+git clone --branch v0.11.2 https://github.com/pytorch/vision torchvision
 cd torchvision
-export BUILD_VERSION=0.11.1
+export BUILD_VERSION=0.11.2
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64 ${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 python3 setup.py install
 
