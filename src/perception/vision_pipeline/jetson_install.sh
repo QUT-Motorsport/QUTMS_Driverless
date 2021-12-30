@@ -13,9 +13,9 @@ apt-get update && apt-get install -y --no-install-recommends \
     libavformat-dev \
     libswscale-dev
 
-git clone --recursive --branch v1.9.1 http://github.com/pytorch/pytorch
+git clone --recursive --branch v1.7.1 https://github.com/pytorch/pytorch
 cd pytorch
-mamba install --file requirements.txt
+mamba install --yes --file requirements.txt
 python3 setup.py install
 
 git clone --branch v0.11.1 https://github.com/pytorch/vision torchvision
