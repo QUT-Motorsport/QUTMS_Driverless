@@ -5,7 +5,7 @@ conda activate driverless_env
 # https://github.com/pytorch/pytorch#from-source
 git clone --recursive --branch v1.10.1 https://github.com/pytorch/pytorch
 cd pytorch
-mamba install -y
+mamba install -y \
     astunparse \
     numpy \
     ninja \
