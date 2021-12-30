@@ -18,6 +18,14 @@ mamba install -y \
     six \
     requests \
     dataclasses
+
+# set up gcc and g++ for CUDA 10.2 (requires gcc 8)
+# https://stackoverflow.com/a/46380601
+MAX_GCC_VERSION=8
+apt-get update && apt-get install -y gcc-$MAX_GCC_VERSION g++-$MAX_GCC_VERSION
+export CUDAHOSTCXX=/usr/bin/gcc-$MAX_GCC_VERSION
+
+# run install
 export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
 python3 setup.py install
 
