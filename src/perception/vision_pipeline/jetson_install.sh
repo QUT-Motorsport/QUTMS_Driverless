@@ -3,7 +3,7 @@ conda activate driverless_env
 
 # install pytorch
 # https://github.com/pytorch/pytorch#from-source
-git clone --recursive --branch v1.10.1 https://github.com/pytorch/pytorch
+git clone --recursive https://github.com/pytorch/pytorch
 cd pytorch
 mamba install -y \
     astunparse \
