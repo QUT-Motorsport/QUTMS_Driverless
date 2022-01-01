@@ -27,6 +27,7 @@ all:
 	@echo "        - IMAGE_TYPE options:"
 	@echo "            - 1804 (for most environments)"
 	@echo "            - l4t (for nvidia jetson)"
+	@echo "            - prebuilt (for jetson with Galactic + Pytorch)"
 	@echo "    build target=[ENVIRONMENT_TARGET]"
 	@echo "        - build a target (see ENVIRONMENT_TARGET options)"
 	@echo "    run target=[ENVIRONMENT_TARGET]"
@@ -37,6 +38,7 @@ all:
 	@echo "    jetson"
 	@echo "    unreal_sim"
 	@echo "    zed_camera_driver"
+	@echo "    prebuilt"
 	@echo
 
 help: all
@@ -53,6 +55,13 @@ build_docker_base_l4t:
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-base:r32.6.1 \
+	..
+
+build_docker_base_prebuilt:
+	docker build -f Dockerfile.ros.pytorch -t qutms_driverless:ros-pytorch \
+	--build-arg USERNAME=$(USERNAME) \
+	--build-arg HOST_UID=$(HOST_UID) \
+	--build-arg BASE_IMAGE=dustynv/jetson-inference \
 	..
 
 # use make build target=<value>

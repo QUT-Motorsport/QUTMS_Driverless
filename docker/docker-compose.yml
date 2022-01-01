@@ -122,3 +122,19 @@ services:
         <<: *network
         <<: *interactive
         command: bash
+
+    prebuilt:
+        build:
+            context: ../
+            dockerfile: ./src/machines/jetson_machine/Dockerfile.prebuilt
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *env-file
+        <<: *volumes-jetson
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        <<: *jetson-extras
+        command: bash
