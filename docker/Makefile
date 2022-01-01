@@ -61,7 +61,7 @@ build_docker_base_prebuilt:
 	docker build -f Dockerfile.ros.pytorch -t qutms_driverless:ros-pytorch \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=dustynv/jetson-inference \
+	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \
 	..
 
 # use make build target=<value>
@@ -69,6 +69,6 @@ build:
 	@echo "ensure make build_docker_base_1804 or make build_docker_base_l4t is run before running a build"
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless build $(target)
 
-# use make build target=<value>
+# use make run target=<value>
 run:
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
