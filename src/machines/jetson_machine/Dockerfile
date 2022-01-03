@@ -8,7 +8,7 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp 
 # copy in perception files and install YOLOv5 vision dependancies
-COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/perception/vision_pipeline/jetson_requirements.txt ./jetson_requirements.txt
+COPY ./src/perception/vision_pipeline/jetson_requirements.txt ./jetson_requirements.txt
 RUN pip3 install -r jetson_requirements.txt
 # remove files
 RUN rm -f ./jetson_requirements.txt
