@@ -4,11 +4,11 @@
 #
 
 # ==============================================================================
-#                      Make Prebuilt ROS Galactic + Pytorch
+#                       Make Prebuilt ROS Galactic
 # ==============================================================================
 
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE} as ros_pytorch_base
+FROM ${BASE_IMAGE} as ros_source_base
 
 ARG ROS_PKG=ros_base
 ENV ROS_DISTRO=galactic
@@ -184,7 +184,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 #                        QUTMS_Driverless_Base stuff
 # ==============================================================================
 
-FROM ros_pytorch_base
+FROM ros_source_base
 
 # Docker config setup
 ENV DEBIAN_FRONTEND=noninteractive

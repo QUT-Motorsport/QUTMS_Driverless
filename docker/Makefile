@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build run
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run
 
 include .env
 export  # export all variables from .env
@@ -27,7 +27,7 @@ all:
 	@echo "        - IMAGE_TYPE options:"
 	@echo "            - 1804 (for most environments)"
 	@echo "            - l4t (for nvidia jetson)"
-	@echo "            - prebuilt (for jetson with Galactic + Pytorch)"
+	@echo "            - jetson_pytorch (for nvidia jetson w/ pytorch built)"
 	@echo "    build target=[ENVIRONMENT_TARGET]"
 	@echo "        - build a target (see ENVIRONMENT_TARGET options)"
 	@echo "    run target=[ENVIRONMENT_TARGET]"
@@ -57,7 +57,7 @@ build_docker_base_l4t:
 	..
 
 build_docker_base_jetson_pytorch:
-	docker build -f Dockerfile.ros_source -t qutms_driverless:ros-pytorch \
+	docker build -f Dockerfile.ros_source -t qutms_driverless_ros_source:pytorch \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \

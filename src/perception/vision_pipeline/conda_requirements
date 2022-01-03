@@ -1,11 +1,15 @@
-# REMEMBER to update deps in jetson_install.sh as well
+pytorch
+torchvision
+ros-galactic-cv-bridge
+# REMEMBER to update deps in jetson_requirements.txt as well
 opencv==4.5.2
 numpy==1.21.4
-matplotlib==3.5.1
+scipy>=1.4.1
+matplotlib>=3.2.2
+Pillow>=7.1.2
+PyYAML>=5.3.1
 requests==2.26.0
 tqdm>=4.41.0
 pandas>=1.1.4
 seaborn>=0.11.0
-pytorch
-torchvision
-ros-galactic-cv-bridge
+
