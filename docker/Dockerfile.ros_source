@@ -1,14 +1,16 @@
-#
+
 # this dockerfile roughly follows the 'Install ROS From Source' procedures from:
 #   https://docs.ros.org/en/galactic/Installation/Ubuntu-Development-Setup.html
-#
+
 
 # ==============================================================================
 #                       Make Prebuilt ROS Galactic
 # ==============================================================================
+# modified from:
+#   https://github.com/dusty-nv/jetson-containers/blob/master/Dockerfile.ros.galactic
 
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE} as ros_source_base
+FROM ${BASE_IMAGE}
 
 ARG ROS_PKG=ros_base
 ENV ROS_DISTRO=galactic
@@ -183,14 +185,8 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 # ==============================================================================
 #                        QUTMS_Driverless_Base stuff
 # ==============================================================================
-
-FROM ros_source_base
-
-# Docker config setup
-ENV DEBIAN_FRONTEND=noninteractive
-ENV SHELL /bin/bash
-SHELL ["/bin/bash", "-c"]
-
+# modified from:
+#   Dockerfile.base
 
 # ==============================================================================
 #                          Install apt packages
