@@ -38,7 +38,6 @@ all:
 	@echo "    jetson"
 	@echo "    unreal_sim"
 	@echo "    zed_camera_driver"
-	@echo "    prebuilt"
 	@echo
 
 help: all
@@ -57,8 +56,8 @@ build_docker_base_l4t:
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-base:r32.6.1 \
 	..
 
-build_docker_base_prebuilt:
-	docker build -f Dockerfile.ros.pytorch -t qutms_driverless:ros-pytorch \
+build_docker_base_jetson_pytorch:
+	docker build -f Dockerfile.ros_source -t qutms_driverless:ros-pytorch \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \
