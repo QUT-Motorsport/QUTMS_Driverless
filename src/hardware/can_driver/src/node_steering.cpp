@@ -31,12 +31,12 @@ class Steering : public rclcpp::Node {
 
 		for(const auto &param : parameters) {
 			if(param.get_name() == "d_acceleration") {
-				RCLCPP_INFO(this->get_logger(), "Setting acceleration to %i.", param.as_int());
+				RCLCPP_INFO(this->get_logger(), "Setting acceleration to %li.", param.as_int());
 				this->steering->set_acceleration(std::make_pair<uint32_t, uint32_t>(param.as_int(), param.as_int()));
 				
 			}
 			else if(param.get_name() == "d_velocity") {
-				RCLCPP_INFO(this->get_logger(), "Setting velocity to %i.", param.as_int());
+				RCLCPP_INFO(this->get_logger(), "Setting velocity to %li.", param.as_int());
 				this->steering->set_velocity(param.as_int());
 			} else {
 				RCLCPP_ERROR(this->get_logger(), "Do not set current and limits on the fly. Request ignored.");

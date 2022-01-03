@@ -1,0 +1,75 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Docker config setup
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL /bin/bash
+SHELL ["/bin/bash", "-c"]
+
+
+# ==============================================================================
+#                          Install apt packages
+# ==============================================================================
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sudo \
+    curl \
+    nano \
+    ca-certificates \
+    git \
+    # add more stuff here if needed
+    && rm -rf /var/lib/apt/lists/
+
+
+# ==============================================================================
+#                           Set up a user using host UID
+#    (this helps with file permissions when mounting folders into a container)
+# ==============================================================================
+
+ARG USERNAME
+ARG HOST_UID
+# dialout group is used for compatability with mac
+ARG HOST_GROUP=dialout
+
+# create user and set no password required
+RUN useradd \
+        -r \
+        -m \
+        -d /home/${USERNAME}/ \
+        -u ${HOST_UID} \
+        -g ${HOST_GROUP} \
+        -G sudo,video,audio \
+        ${USERNAME} && \
+    echo ${USERNAME}:${USERNAME} | chpasswd && \
+    echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
+
+
+# ==============================================================================
+#                              Conda setup
+# ==============================================================================
+WORKDIR /tmp
+RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh -o mambaforge.sh && \
+    chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
+    ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
+
+COPY dev_environment.yml /tmp/dev_environment.yml
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    mamba env create --name driverless_env --file dev_environment.yml && \
+    conda activate driverless_env && \
+    conda config --env --add channels conda-forge && \
+    conda config --env --add channels robostack-experimental && \
+    conda config --env --set channel_priority strict && \
+    mamba clean --all --yes
+
+# environment activation
+RUN echo "source /home/${USERNAME}/mambaforge/bin/activate && conda activate driverless_env" >> /home/$USERNAME/.bashrc
+COPY ./docker/conda_entrypoint.sh /conda_entrypoint.sh
+ENTRYPOINT ["/conda_entrypoint.sh"]
+
+
+# ==============================================================================
+#                              Workspace setup
+# ==============================================================================
+RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
+    chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
+WORKDIR /home/$USERNAME/driverless_ws

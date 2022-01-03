@@ -1,5 +1,0 @@
-# pip install -r requirements_lidar.txt
-
-# lidar --------------------------------------
-scikit-learn
-matplotlib>=3.2.2

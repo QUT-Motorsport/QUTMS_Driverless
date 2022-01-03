@@ -1,0 +1,3 @@
+opencv==4.5.2
+numpy==1.21.4
+ros-galactic-cv-bridge
