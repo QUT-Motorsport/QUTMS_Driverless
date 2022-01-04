@@ -39,7 +39,8 @@ class ConeSensingNode(Node):
                  _T_M_SMALL,
                  _T_B,
                  _T_RMSE,
-                 _REGRESS_BETWEEN_BINS):
+                 _REGRESS_BETWEEN_BINS,
+                 T_D_MAX):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -66,6 +67,7 @@ class ConeSensingNode(Node):
         self.T_B = _T_B
         self.T_RMSE = _T_RMSE
         self.REGRESS_BETWEEN_BINS = _REGRESS_BETWEEN_BINS
+        self.T_D_MAX = T_D_MAX
 
         LOGGER.info('Waiting for PointCloud2 data ...')
 
@@ -114,7 +116,8 @@ class ConeSensingNode(Node):
                                               self.T_M_SMALL,
                                               self.T_B,
                                               self.T_RMSE,
-                                              REGRESS_BETWEEN_BINS,
+                                              self.REGRESS_BETWEEN_BINS,
+                                              self.T_D_MAX,
                                               point_count,
                                               stdout_handler)
 
@@ -163,8 +166,11 @@ def main(args=sys.argv[1:]):
 
     # Determines if regression for ground lines should occur between two
     # neighbouring bins when they're described by different lines
-    global REGRESS_BETWEEN_BINS
     REGRESS_BETWEEN_BINS = True
+
+    # Maximum distance a point can be from the origin to even be considered as
+    # a ground point. Otherwise it's labelled as a non-ground point.
+    T_D_MAX = 100
 
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
@@ -176,6 +182,7 @@ def main(args=sys.argv[1:]):
                                             't_m_small=',
                                             't_b=',
                                             't_rmse=',
+                                            't_d_max=',
                                             'no_regress',
                                             'print_logs'])
 
@@ -198,6 +205,8 @@ def main(args=sys.argv[1:]):
             T_B = arg
         elif opt == '--t_rmse':
             T_RMSE = arg
+        elif opt == '--t_d_max':
+            T_D_MAX = arg
         elif opt == '--no_regress':
             REGRESS_BETWEEN_BINS = False
         elif opt == '--print_logs':
@@ -242,7 +251,8 @@ def main(args=sys.argv[1:]):
                                         T_M_SMALL,
                                         T_B,
                                         T_RMSE,
-                                        REGRESS_BETWEEN_BINS)
+                                        REGRESS_BETWEEN_BINS,
+                                        T_D_MAX)
 
     rclpy.spin(cone_sensing_node)
 

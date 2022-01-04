@@ -1,6 +1,7 @@
 # Import Custom Modules
-from . import point_cloud_processing as pcp
-from . import ground_plane_estimation as gpe
+from . import point_cloud_processor as pcp
+from . import ground_plane_estimator as gpe
+from . import point_classifier as pc
 
 # Import Python Modules
 import time
@@ -23,6 +24,7 @@ def detect_cones(
         T_B,
         T_RMSE,
         REGRESS_BETWEEN_BINS,
+        T_D_MAX,
         point_count,
         stdout_handler):
 
