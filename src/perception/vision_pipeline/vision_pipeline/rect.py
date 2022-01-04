@@ -1,11 +1,14 @@
+# python libraries
 import cv2
 from dataclasses import dataclass
 import numpy as np
-
 from typing import Tuple, Optional
 
 @dataclass
 class Point:
+    """
+    Creates a datatype for storing a point x,y coordinate
+    """
     x: int
     y: int
 
@@ -20,6 +23,20 @@ class Point:
 
 @dataclass
 class Rect:
+    """
+    Creates a datatype for storing a rectangle (in terms of pixels)
+    - Initialised with 'top-left' pixel coord, width and length in pixels
+    
+    Available properties:
+    - bl:   Return the 'bottom-left' pixel coord
+    - br:   Return the 'bottom-right' pixel coord
+    - bc:   Return the 'bottom-centre' pixel coord
+    - centre:   Return the 'centre' pixel coord
+    - area:   Return the area in pixels
+    - aspect_ratio:   Return width:height ratio (from 0-1)
+    - as_roi:   Specify a rectangle as a region of interest on a frame.
+                Returns the region as a sub-frame Numpy array
+    """
     tl: Point
     width: int
     height: int
@@ -58,9 +75,21 @@ class Rect:
 
 
 def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
-    # draw a bounding box around the image and display it
-    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
+    """
+    Draws a box on a display image, around a given rectangle object, of the cone's colour\n
+    Also writes the distance to the cone in meters if it is a valid distance
+    """
 
+    # draw a bounding box around the cone on the display image
+    cv2.rectangle(
+        img, 
+        (box.tl.x, box.tl.y), 
+        (box.tl.x + box.width, box.tl.y + box.height), 
+        colour, 
+        thickness=2
+    )
+
+    # write text above the cone bounding box on the display image
     if distance is not None:
         cv2.putText(
             img,
