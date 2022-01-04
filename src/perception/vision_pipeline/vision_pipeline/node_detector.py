@@ -1,9 +1,12 @@
+import os
+
 # import ROS2 libraries
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from cv_bridge import CvBridge
 import message_filters
+from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
@@ -29,8 +32,8 @@ cv_bridge = CvBridge()
 CAMERA_FOV = 110  # degrees
 
 # loading Pytorch model
-MODEL_PATH = "/home/al-ubuntu20/QUTMS_Driverless/src/perception/vision_pipeline/models/model.pt"
-REPO_PATH = "/home/al-ubuntu20/QUTMS_Driverless/src/common/yolov5"
+MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "model.pt")
+REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
 CONFIDENCE = 0.40 # higher = tighter filter 
 model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
 

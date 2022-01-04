@@ -5,5 +5,5 @@
 	path = src/common/ros2_numpy/ros2_numpy
 	url = https://github.com/Box-Robotics/ros2_numpy.git
 [submodule "src/common/yolov5"]
-	path = src/common/yolov5
+	path = src/perception/vision_pipeline/yolov5
 	url = https://github.com/ultralytics/yolov5.git
