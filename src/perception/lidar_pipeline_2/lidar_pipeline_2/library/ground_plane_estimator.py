@@ -82,9 +82,8 @@ def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SM
     # For every segment
     for segment in prototype_points:
         ground_surface[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-        pass
 
-    pass
+    return ground_surface
 
 # Notes:
 # 1. Ground surface could be a numpy array that is created to be of size
