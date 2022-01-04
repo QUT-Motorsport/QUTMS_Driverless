@@ -91,3 +91,7 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
     return segments_bins
+
+
+def label_points_2(SEGMENT_COUNT):
+    pass

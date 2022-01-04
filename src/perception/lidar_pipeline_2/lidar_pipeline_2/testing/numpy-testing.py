@@ -19,7 +19,12 @@ def test():
     
     print(a)
 
-test()
+def test_2():
+    ground_lines = np.array([[], [1, 2], [3, 4], [], [5, 6], [], [], [], [7, 8], [], []])
+    
+    idx = np.argwhere(a)
+
+test_2()
 
 # # Round Numpy PointCloud to 4 decimal places
 # start_time = time.time()
