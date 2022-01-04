@@ -20,9 +20,31 @@ def test():
     print(a)
 
 def test_2():
-    ground_lines = np.array([[], [1, 2], [3, 4], [], [5, 6], [], [], [], [7, 8], [], []])
+    ground_lines = np.array([0, [1, 2], [3, 4], 0, [5, 6], 0, 0, 0, [7, 8], 0, 0], dtype=object)
     
-    idx = np.argwhere(a)
+    idx = np.argwhere(ground_lines)
+    
+    test = np.arange(0, ground_lines.size)
+    
+    test2 = test - idx
+    
+    np.absolute(test2, out=test2)
+    
+    test3 = test2.min(axis=0)
+    
+    print(idx, test)
+    
+    print(test2)
+    
+    print(test3)
+    
+    test4 = np.where(test2 == test3)
+    
+    print(test4)
+    
+    unique, u_idx = np.unique(test4[1], return_index=True)
+    
+    print(test4[0][u_idx])
 
 test_2()
 
