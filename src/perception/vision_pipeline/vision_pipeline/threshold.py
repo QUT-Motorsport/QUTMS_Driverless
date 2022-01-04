@@ -3,6 +3,9 @@ import numpy as np
 from typing import List
 
 class Threshold:
+    """
+    Creates a Numpy array object for HSV mask value pairs
+    """
     lower: np.array
     upper: np.array
 
