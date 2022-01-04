@@ -59,7 +59,9 @@ def detect_cones(
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    # labelled_points = pc.label_points()
+    labelled_points = pc.label_points_2(ground_surface)
     end_time = time.time()
+
+    LOGGER.info(f'Points labelled in {end_time - start_time}s')
 
     return []

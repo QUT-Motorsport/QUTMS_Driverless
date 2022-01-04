@@ -88,7 +88,7 @@ def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SM
 
 
 def get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
-    # A list of lists that contain ground lines for each segment
+    # A numpy array of zeros / lists that contain ground lines for each segment
     ground_surface = np.zeros(SEGMENT_COUNT, dtype=object)
 
     # For every segment
