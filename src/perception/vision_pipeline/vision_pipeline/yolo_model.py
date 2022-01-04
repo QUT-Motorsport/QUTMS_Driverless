@@ -1,12 +1,23 @@
 import torch
 
 # initialising function for the YOLOv5 model with confidence threshold
-def yolov5_init(conf_thresh: float, model_path: str):
-    torch.cuda.device(0)
+def yolov5_init(conf_thresh: float, model_path: str, repo_path: str=None):
+    """
+    Returns a YOLOv5 PyTorch model
+    """
+    # torch.cuda.device(0)
+    # model = torch.hub.load(
+    #     'ultralytics/yolov5', 
+    #     'custom', 
+    #     path=model_path,
+    #     # force_reload=True, # for fixing bad cache
+    # ) 
+
     model = torch.hub.load(
-        'ultralytics/yolov5', 
+        repo_path, # having a local path reduces the time taken to load in model
         'custom', 
-        path=model_path, # location of model in docker env
+        source='local',
+        path=model_path,
         # force_reload=True, # for fixing bad cache
     ) 
     model.conf = conf_thresh

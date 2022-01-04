@@ -15,28 +15,27 @@ from math import sin, cos, radians, isnan, isinf
 import cv2
 import numpy as np
 from typing import List, Tuple
+import time
 
-# import required sub scripts
+# import required sub modules
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
 from .yolo_model import yolov5_init
 
-
-Colour = Tuple[int, int, int]
-ConeMsgColour = int
-
+# translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
-
-
-MODEL_PATH = "/home/developer/driverless_ws/src/perception/vision_pipeline/models/model.pt"
-CONFIDENCE = 0.40 # higher = tighter filter 
-model = yolov5_init(CONFIDENCE, MODEL_PATH)
-
 
 CAMERA_FOV = 110  # degrees
 
+# loading Pytorch model
+MODEL_PATH = "/home/al-ubuntu20/QUTMS_Driverless/src/perception/vision_pipeline/models/model.pt"
+REPO_PATH = "/home/al-ubuntu20/QUTMS_Driverless/src/common/yolov5"
+CONFIDENCE = 0.40 # higher = tighter filter 
+model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
 
+
+# HSV threshold constants
 YELLOW_HSV_THRESH = Threshold(
     lower=[27, 160, 130],
     upper=[40, 255, 255],
@@ -52,7 +51,8 @@ ORANGE_HSV_THRESH = Threshold(
     upper=[15, 255, 255],
 )
 
-
+# display colour constants
+Colour = Tuple[int, int, int]
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
@@ -65,11 +65,14 @@ HSV_CONE_DETECTION_PARAMETERS = [
     # (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
 
+# cone_colour, display_colour
 YOLO_CONE_DETECTION_PARAMETERS = [
     (Cone.BLUE, BLUE_DISP_COLOUR),
     (Cone.YELLOW, YELLOW_DISP_COLOUR),
     # (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
+
+ConeMsgColour = int # define arbitrary variable type
 
 
 def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
@@ -77,7 +80,7 @@ def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsg
     
     bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
     for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
-        for bounding_box in get_coloured_bounding_boxes(hsv_frame, [thresh]):
+        for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
             bounding_boxes.append((bounding_box, cone_colour, display_colour))
     
     return bounding_boxes
@@ -109,7 +112,7 @@ def cone_distance(
     depth_frame: np.ndarray,
 ) -> float:
     # get center as roi
-    depth_roi = Rect(
+    depth_roi: np.ndarray = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
         y=colour_frame_cone_bounding_box.center.y - 3,
         width=6,
@@ -182,14 +185,16 @@ class DetectorNode(Node):
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         logger = self.get_logger()
-        logger.info("Recieved image")
+        logger.info("Received image")
+
+        start: float = time.time() # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         detected_cones: List[Cone] = []
-        # for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
-        for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+        for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
+        # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
             
             # filter by height
             if bounding_box.tl.y < colour_camera_info_msg.height/2:
@@ -220,6 +225,8 @@ class DetectorNode(Node):
 
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
+
+        logger.info("Time: " + str(time.time() - start)) # log time
 
 
 def main(args=None):
