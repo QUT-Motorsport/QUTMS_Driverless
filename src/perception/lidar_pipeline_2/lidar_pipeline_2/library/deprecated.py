@@ -1,30 +1,7 @@
-# Import Custom Modules
-from . import total_least_squares as tls
-
-# Python Modules
-import math
-import copy
-
-
-def fit_error(m, b, points):
-    num_points = len(points)
-
-    sse = 0
-    for i in range(num_points):
-        x = points[i][0]
-        best_fit = m*x + b
-
-        observed = points[i][1]
-        sse += (best_fit - observed)**2
-
-    # root mean square return
-    return math.sqrt(sse / num_points)
-
+# ----- ground_plane_estimation.py -----
 
 # The Incremental Algorithm
-def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
-    proto_count = len(seg_proto_points)
-
+def get_ground_lines(seg_proto_points, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     estimated_lines = []
     new_line_points = []
     lines_created = 0
@@ -33,8 +10,7 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
     b_new = None
 
     idx = 0
-    while idx < proto_count:
-
+    while idx < BIN_COUNT:
         new_point = seg_proto_points[idx]
         if len(new_point) == 2:
             m_new = None
@@ -75,21 +51,13 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
     return estimated_lines
 
 
-def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+def get_ground_surface(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A list of lists that contain ground lines for each segment
-    ground_surface = [[] for i in range(SEGMENT_COUNT)]
+    ground_surface = []
 
     # For every segment
-    for segment in prototype_points:
-        ground_surface[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-        pass
+    for i in range(SEGMENT_COUNT):
+        # Get list of ground lines that estimate ground surface in segment
+        ground_surface.append(get_ground_lines(prototype_points[i], BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS))
 
-    pass
-
-# Notes:
-# 1. Ground surface could be a numpy array that is created to be of size
-#    SEGMENT_COUNT. Then each entry to be return of get_ground_lines. Then
-#    this array can be used in label_points function which is currently the
-#    slowest function.
-# 2. Changed the fit error points array in the second if statement check
-#    MUST investigate this.
+    return ground_surface
