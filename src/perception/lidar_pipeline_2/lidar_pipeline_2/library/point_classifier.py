@@ -1,4 +1,5 @@
 # Import Python Modules
+import numpy as np
 import math
 
 
@@ -93,5 +94,17 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
     return segments_bins
 
 
-def label_points_2(SEGMENT_COUNT):
-    pass
+def label_points_2(ground_surface):
+    # Array of indices indicating lists of ground lines
+    surface_idx = np.argwhere(ground_surface)
+
+    # 2D matrix of distances from each segment to each list of ground lines
+    neighbour_distance = np.arange(0, ground_surface.size) - surface_idx
+    np.absolute(neighbour_distance, out=neighbour_distance)
+
+    # Array of indices indicating nearest lists of ground lines for each segment
+    nearest_idx = np.where(neighbour_distance == neighbour_distance.min(axis=0))
+
+    # If a segment is equally close to two lists of ground lines, choose the first
+    unique, u_idx = np.unique(nearest_idx[1], return_index=True)
+    nearest_surface = nearest_idx[0][u_idx]
