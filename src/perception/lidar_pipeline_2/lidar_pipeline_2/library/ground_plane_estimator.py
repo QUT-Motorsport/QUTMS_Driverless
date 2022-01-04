@@ -2,6 +2,7 @@
 from . import total_least_squares as tls
 
 # Python Modules
+import numpy as np
 import math
 import copy
 
@@ -78,6 +79,17 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A list of lists that contain ground lines for each segment
     ground_surface = [[] for i in range(SEGMENT_COUNT)]
+
+    # For every segment
+    for segment in prototype_points:
+        ground_surface[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+
+    return ground_surface
+
+
+def get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+    # A list of lists that contain ground lines for each segment
+    ground_surface = np.zeros(SEGMENT_COUNT, dtype=object)
 
     # For every segment
     for segment in prototype_points:
