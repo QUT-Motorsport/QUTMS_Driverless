@@ -32,7 +32,7 @@ cv_bridge = CvBridge()
 CAMERA_FOV = 110  # degrees
 
 # loading Pytorch model
-MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "model.pt")
+MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
 REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
 CONFIDENCE = 0.40 # higher = tighter filter 
 model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
@@ -196,8 +196,8 @@ class DetectorNode(Node):
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         detected_cones: List[Cone] = []
-        for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
-        # for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+        # for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
+        for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
             
             # filter by height
             if bounding_box.tl.y < colour_camera_info_msg.height/2:
