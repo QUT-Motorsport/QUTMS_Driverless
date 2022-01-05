@@ -231,3 +231,7 @@ RUN useradd \
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
 WORKDIR /home/$USERNAME/driverless_ws
+
+# setup entrypoint
+COPY ./docker/galactic_entrypoint.sh /galactic_entrypoint.sh
+ENTRYPOINT ["/galactic_entrypoint.sh"]
