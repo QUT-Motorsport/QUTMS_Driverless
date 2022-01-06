@@ -46,7 +46,65 @@ def test_2():
     
     print(test4[0][u_idx])
 
-test_2()
+# test_2()
+
+
+def test_3():
+    ground_lines = np.array([0, [[1, 1, [0, 1], [2, 3]], [1, 1, [0, 1], [2, 3]]], [[3, 2, [1, 2], [2, 4]], [3, 2, [1, 2], [2, 4]]], 0, [[5, 6, [1, 0], [3, 0]], [5, 6, [1, 0], [3, 0]]], 0, 0, 0, [[7, 8, [5, 6], [7,8]], [7, 8, [5, 6], [7,8]]], 0, 0], dtype=object)
+    
+    surface_idx = np.argwhere(ground_lines)
+
+    neighbour_distance = np.arange(0, ground_lines.size) - surface_idx
+
+    np.absolute(neighbour_distance, out=neighbour_distance)
+
+    nearest_idx = np.where(neighbour_distance == neighbour_distance.min(axis=0))
+    
+    print(surface_idx)
+
+    unique, u_idx = np.unique(nearest_idx[1], return_index=True)
+
+    nearest_surface = nearest_idx[0][u_idx]
+    
+    print(nearest_surface)
+
+    # New stuff
+
+    test = ground_lines[surface_idx]
+    
+    test = test.flatten()
+    
+    view = np.reshape(test.flatten(), (4, 4))
+    
+    print(view)
+    
+    
+def test4():
+    test = np.array(([1, 2], [3, 4]))
+    print(test)
+    print(test.shape)
+    test = np.vstack((test, [5, 6]))
+    print(test)
+    print(test.shape)
+    
+    print(np.zeros(4))
+
+test4()
+
+def line_to_end_points(line, segment_idx, DELTA_ALPHA):
+    start = line[2]  # First point in line
+    end = line[3]  # Last point in line
+
+    x_1 = start[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    x_2 = end[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+
+    y_1 = start[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    y_2 = end[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+
+    p_1 = [x_1, y_1, start[1]]
+    p_2 = [x_2, y_2, end[1]]
+
+    return [p_1, p_2]
 
 # # Round Numpy PointCloud to 4 decimal places
 # start_time = time.time()
