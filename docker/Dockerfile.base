@@ -63,6 +63,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 
 # environment activation
 RUN echo "source /home/${USERNAME}/mambaforge/bin/activate && conda activate driverless_env" >> /home/$USERNAME/.bashrc
+RUN echo "test -f /home/developer/driverless_ws/install/setup.bash && source /home/developer/driverless_ws/install/setup.bash" >> /home/$USERNAME/.bashrc
 COPY ./docker/conda_entrypoint.sh /conda_entrypoint.sh
 ENTRYPOINT ["/conda_entrypoint.sh"]
 
