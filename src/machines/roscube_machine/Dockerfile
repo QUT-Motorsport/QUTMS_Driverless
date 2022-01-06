@@ -32,7 +32,8 @@ WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
-RUN source /opt/ros/galactic/setup.bash; \
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
     sensors \
     rosboard \
