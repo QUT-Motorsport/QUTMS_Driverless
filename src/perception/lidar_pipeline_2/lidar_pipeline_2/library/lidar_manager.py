@@ -53,13 +53,13 @@ def detect_cones(
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    ground_surface = gpe.get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
 
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    labelled_points = pc.label_points_2(ground_surface)
+    labelled_points = pc.label_points_2(ground_plane)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')

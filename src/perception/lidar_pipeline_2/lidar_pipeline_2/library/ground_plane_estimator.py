@@ -76,18 +76,18 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
     return estimated_lines
 
 
-def get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A numpy array of zeros / lists that contain ground lines for each segment
-    ground_surface = np.zeros(SEGMENT_COUNT, dtype=object)
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
 
     # For every segment
     for segment in prototype_points:
-        ground_surface[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
-    return ground_surface
+    return ground_plane
 
 # Notes:
-# 1. Ground surface could be a numpy array that is created to be of size
+# 1. Ground plane could be a numpy array that is created to be of size
 #    SEGMENT_COUNT. Then each entry to be return of get_ground_lines. Then
 #    this array can be used in label_points function which is currently the
 #    slowest function.
