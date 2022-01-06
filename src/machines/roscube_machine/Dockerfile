@@ -32,7 +32,8 @@ WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
-RUN colcon build --symlink-install --packages-up-to \
+RUN source /opt/ros/galactic/install/setup.bash; \
+    colcon build --symlink-install --packages-up-to \
     sensors \
     rosboard \
     controllers
