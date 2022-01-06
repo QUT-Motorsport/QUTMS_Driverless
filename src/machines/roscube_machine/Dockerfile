@@ -33,7 +33,7 @@ WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
-COPY ./src/ ./src
+COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
