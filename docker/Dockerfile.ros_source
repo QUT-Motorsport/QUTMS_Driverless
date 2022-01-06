@@ -233,5 +233,6 @@ RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
 WORKDIR /home/$USERNAME/driverless_ws
 
 # setup entrypoint
+RUN echo "source /opt/ros/galactic/install/setup.bash" >> /home/$USERNAME/.bashrc
 COPY ./docker/galactic_entrypoint.sh /galactic_entrypoint.sh
 ENTRYPOINT ["/galactic_entrypoint.sh"]
