@@ -29,3 +29,10 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 # cleanup
 RUN rm -f ./conda_requirements
 WORKDIR /home/$USERNAME/driverless_ws
+USER ${USERNAME}
+
+# run a build
+RUN colcon build --symlink-install --packages-up-to \
+    sensors \
+    rosboard \
+    controllers
