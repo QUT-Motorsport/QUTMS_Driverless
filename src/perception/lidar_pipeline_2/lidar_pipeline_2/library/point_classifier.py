@@ -99,12 +99,12 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
     return segments_bins
 
 
-def get_nearest_surfaces(ground_surface):
+def get_nearest_line_set(ground_plane):
     # Array of indices indicating lists of ground lines
-    surface_idx = np.argwhere(ground_surface)
+    line_set_idx = np.argwhere(ground_plane)
 
     # 2D matrix of distances from each segment to each list of ground lines
-    neighbour_distance = np.arange(0, ground_surface.size) - surface_idx
+    neighbour_distance = np.arange(0, ground_plane.size) - line_set_idx
     np.absolute(neighbour_distance, out=neighbour_distance)
 
     # Array of indices indicating nearest lists of ground lines for each segment
@@ -112,15 +112,17 @@ def get_nearest_surfaces(ground_surface):
 
     # If a segment is equally close to two lists of ground lines, choose the first
     unique, u_idx = np.unique(nearest_idx[1], return_index=True)
-    return nearest_idx[0][u_idx]
+    return nearest_idx[0][u_idx], line_set_idx
 
 
-def label_points_2(ground_surface):
-    nearest_surfaces = get_nearest_surfaces(ground_surface)
+def label_points_2(ground_plane):
+    nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
 
     # New Stuff
+    line_end_points = np.zeros(line_set_idx.size)
 
-    # line_end_points = np.zeros(surface_idx.size, dtype=object)
+    for line_set in ground_plane[line_set_idx]:
+        np_line_set = np.asarray(line_set)
 
     return []
 
