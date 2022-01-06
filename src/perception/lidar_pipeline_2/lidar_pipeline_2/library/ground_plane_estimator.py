@@ -54,7 +54,7 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                     [m_new, b_new] = tls.fit_line(new_line_points)
 
                     if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                        estimated_lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+                        estimated_lines.append((m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)))
                         lines_created += 1
 
                     new_line_points = []
@@ -71,20 +71,9 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
         idx += 1
 
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        estimated_lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+        estimated_lines.append((m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)))
 
     return estimated_lines
-
-
-def get_ground_surface_2(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
-    # A list of lists that contain ground lines for each segment
-    ground_surface = [[] for i in range(SEGMENT_COUNT)]
-
-    # For every segment
-    for segment in prototype_points:
-        ground_surface[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-
-    return ground_surface
 
 
 def get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
@@ -104,3 +93,4 @@ def get_ground_surface_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SM
 #    slowest function.
 # 2. Changed the fit error points array in the second if statement check
 #    MUST investigate this.
+# 3. Idk if I use the len(new_line_points) in estimted lines i.e. line[4] ?

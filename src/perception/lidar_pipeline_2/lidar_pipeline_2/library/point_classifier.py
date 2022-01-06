@@ -73,6 +73,7 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
             if left_idx == right_idx:
                 raise AssertionError("No ground lines found")
         ground_line = ground_lines[seg_idx][0]
+
         for j in range(BIN_COUNT):
             for k in range(len(segments_bins[i][j])):
                 point = segments_bins[i][j][k]
@@ -81,20 +82,24 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
                 if point[2] < line_height + 0.10: # Make this a constant
                     line = line_to_end_points(ground_line, seg_idx)
                     closest_dist = dist_points_3D(point, line[0], line[1])
+
                     for m in range(1, num_lines):
                         ground_line = ground_lines[seg_idx][m]
                         line = line_to_end_points(ground_line, seg_idx)
+
                         dist_to_line = dist_points_3D(point, line[0], line[1])
                         if (dist_to_line < closest_dist):
                             closest_dist = dist_to_line
+
                     dynamic_T_D_GROUND = 2*((j + 1) * BIN_COUNT)*math.tan(DELTA_ALPHA/2) + BIN_COUNT * 1.3 # Solved for gradient of segment wrt points and distance
                     if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
+
     return segments_bins
 
 
-def label_points_2(ground_surface):
+def get_nearest_surfaces(ground_surface):
     # Array of indices indicating lists of ground lines
     surface_idx = np.argwhere(ground_surface)
 
@@ -107,4 +112,29 @@ def label_points_2(ground_surface):
 
     # If a segment is equally close to two lists of ground lines, choose the first
     unique, u_idx = np.unique(nearest_idx[1], return_index=True)
-    nearest_surface = nearest_idx[0][u_idx]
+    return nearest_idx[0][u_idx]
+
+
+def label_points_2(ground_surface):
+    nearest_surfaces = get_nearest_surfaces(ground_surface)
+
+    # New Stuff
+
+    # line_end_points = np.zeros(surface_idx.size, dtype=object)
+
+    return []
+
+def line_to_end_points(line, segment_idx, DELTA_ALPHA):
+    start = line[2]  # First point in line
+    end = line[3]  # Last point in line
+
+    x_1 = start[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    x_2 = end[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+
+    y_1 = start[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    y_2 = end[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+
+    p_1 = [x_1, y_1, start[1]]
+    p_2 = [x_2, y_2, end[1]]
+
+    return [p_1, p_2]
