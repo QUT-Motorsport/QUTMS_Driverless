@@ -7,10 +7,19 @@ ARG HOST_UID
 ARG HOST_GROUP=dialout
 
 WORKDIR /tmp 
-# copy in perception files and install YOLOv5 vision dependancies
+
+# vision_pipeline
 COPY ./src/perception/vision_pipeline/jetson_requirements.txt ./jetson_requirements.txt
 RUN pip3 install -r jetson_requirements.txt
-# remove files
 RUN rm -f ./jetson_requirements.txt
 
 WORKDIR /home/$USERNAME/driverless_ws
+USER ${USERNAME}
+
+# run a build
+COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
+RUN source /opt/ros/galactic/install/setup.bash; \
+    colcon build --symlink-install --packages-up-to \
+        jetson_machine \
+        vision_pipeline \
+    && rm -rf ./src

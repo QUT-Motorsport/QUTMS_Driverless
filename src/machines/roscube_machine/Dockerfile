@@ -37,8 +37,8 @@ COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
-    roscube_machine \
-    sensors \
-    rosboard \
-    controllers \
+        roscube_machine \
+        sensors \
+        rosboard \
+        controllers \
     && rm -rf ./src
