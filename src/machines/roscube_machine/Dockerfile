@@ -21,6 +21,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba install -y --file ./conda_requirements
 
 # controllers
+RUN apt-get update && apt-get install -y libgl1-mesa-glx
 COPY ./src/navigation/controllers/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
