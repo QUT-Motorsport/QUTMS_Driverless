@@ -33,7 +33,6 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "cv_thresholder = vision_pipeline.node_cv_thresholder:main",
             "detector = vision_pipeline.node_detector:main",
         ],
     },

@@ -35,7 +35,9 @@ all:
 	@echo
 	@echo "ENVIRONMENT_TARGET options:"
 	@echo "    roscube"
+	@echo "    roscube_terminal"
 	@echo "    jetson"
+	@echo "    jetson_terminal"
 	@echo "    unreal_sim"
 	@echo "    zed_camera_driver"
 	@echo
