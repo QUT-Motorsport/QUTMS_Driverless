@@ -1,5 +1,3 @@
-import os
-
 # import ROS2 libraries
 import rclpy
 from rclpy.node import Node
@@ -14,6 +12,7 @@ from geometry_msgs.msg import Point
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
+import os
 from math import sin, cos, radians, isnan, isinf
 import cv2
 import numpy as np

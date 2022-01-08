@@ -5,14 +5,6 @@ def yolov5_init(conf_thresh: float, model_path: str, repo_path: str=None):
     """
     Returns a YOLOv5 PyTorch model
     """
-    # torch.cuda.device(0)
-    # model = torch.hub.load(
-    #     'ultralytics/yolov5', 
-    #     'custom', 
-    #     path=model_path,
-    #     # force_reload=True, # for fixing bad cache
-    # ) 
-
     model = torch.hub.load(
         repo_path, # having a local path reduces the time taken to load in model
         'custom', 
