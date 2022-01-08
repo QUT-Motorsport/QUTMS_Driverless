@@ -34,6 +34,7 @@ setup(
     entry_points={
         "console_scripts": [
             "detector = vision_pipeline.node_detector:main",
+            "annotator = vision_pipeline.node_annotator:main",
         ],
     },
 )

@@ -182,7 +182,7 @@ class DetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("Initalised Detector Node: Vision")
+        self.get_logger().info("Initialised Detector Node: Vision")
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):

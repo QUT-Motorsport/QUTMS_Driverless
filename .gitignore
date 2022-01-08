@@ -17,9 +17,6 @@ data/*
 .devcontainer/*
 !.devcontainer/COPY_RENAME_devcontainer.json
 
-# YOLO annotations
-src/perception/vision_pipeline/annotations
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
