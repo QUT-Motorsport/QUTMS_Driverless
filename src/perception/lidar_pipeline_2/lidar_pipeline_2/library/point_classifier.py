@@ -115,14 +115,53 @@ def get_nearest_line_set(ground_plane):
     return nearest_idx[0][u_idx], line_set_idx
 
 
-def label_points_2(ground_plane):
+def label_points_2(ground_plane, DELTA_ALPHA):
     nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
 
     # New Stuff
-    line_end_points = np.zeros(line_set_idx.size)
+    line_end_points = np.empty((line_set_idx.size, 2, 3))
 
-    for line_set in ground_plane[line_set_idx]:
-        np_line_set = np.asarray(line_set)
+    # Change from 2D approx to 3D approx
+    for i in range(line_set_idx.size):
+        line_set = np.array(ground_plane[line_set_idx][i][0])
+        # change to numpy cos sin math
+        segment_idx = line_set_idx[i]
+        
+        print(line_set)
+        print(type(line_set))
+        print(line_set.shape)
+        
+        start_point_set = line_set[:, 2]
+        end_point_set = line_set[:, 3]
+        
+        print(start_point_set)
+        print(type(start_point_set))
+        print(start_point_set.shape)
+        
+        print(start_point_set[0])
+        print(type(start_point_set[0]))
+        print(start_point_set[0].shape)
+        
+        
+        print(np.array(start_point_set[:]))
+        print(type(start_point_set))
+        print(start_point_set[:, 1])
+        
+        x_start_set = start_point_set[:, 0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+        x_end_set = end_point_set[:, 0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+        
+        
+        
+        y_start_set = start_point_set[:, 0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+        y_end_set = end_point_set[:, 0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+        
+        new_start_point_set = np.array([x_start_set, y_start_set, start_point_set[:, 1]])
+        new_end_point_set = np.array([x_end_set, y_end_set, end_point_set[:, 1]])
+        
+        line_end_points[i][0] = new_start_point_set
+        line_end_points[i][1] = new_end_point_set
+        
+
 
     return []
 
