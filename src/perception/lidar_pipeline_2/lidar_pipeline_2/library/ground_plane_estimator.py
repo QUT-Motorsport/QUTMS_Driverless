@@ -85,7 +85,8 @@ def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMAL
         ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
-
+# Instead of packing the start and end points as [], unpack them and just make the overall array bigger
+# Means you can also get rid of the dtype=object and just make it floats or something - should be faster
 # Notes:
 # 1. Ground plane could be a numpy array that is created to be of size
 #    SEGMENT_COUNT. Then each entry to be return of get_ground_lines. Then

@@ -80,13 +80,12 @@ def test_3():
     
     
 def test4():
-    test = np.array(([1, 2], [3, 4]))
-    print(test)
+    test = np.array((list([1, 2]), list([3, 4])))
+    print(type(test))
+    print(type(test[0]))
+    test = np.array(test)
     print(test.shape)
-    test = np.vstack((test, [5, 6]))
     print(test)
-    print(test.shape)
-    
     print(np.zeros(4))
 
 test4()
