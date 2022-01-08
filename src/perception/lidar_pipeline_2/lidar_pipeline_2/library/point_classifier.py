@@ -124,44 +124,27 @@ def label_points_2(ground_plane, DELTA_ALPHA):
     # Change from 2D approx to 3D approx
     for i in range(line_set_idx.size):
         line_set = np.array(ground_plane[line_set_idx][i][0])
-        # change to numpy cos sin math
-        segment_idx = line_set_idx[i]
-        
-        print(line_set)
-        print(type(line_set))
-        print(line_set.shape)
-        
-        start_point_set = line_set[:, 2]
-        end_point_set = line_set[:, 3]
-        
-        print(start_point_set)
-        print(type(start_point_set))
-        print(start_point_set.shape)
-        
-        print(start_point_set[0])
-        print(type(start_point_set[0]))
-        print(start_point_set[0].shape)
-        
-        
-        print(np.array(start_point_set[:]))
-        print(type(start_point_set))
-        print(start_point_set[:, 1])
-        
-        x_start_set = start_point_set[:, 0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
-        x_end_set = end_point_set[:, 0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
-        
-        
-        
-        y_start_set = start_point_set[:, 0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
-        y_end_set = end_point_set[:, 0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
-        
-        new_start_point_set = np.array([x_start_set, y_start_set, start_point_set[:, 1]])
-        new_end_point_set = np.array([x_end_set, y_end_set, end_point_set[:, 1]])
-        
-        line_end_points[i][0] = new_start_point_set
-        line_end_points[i][1] = new_end_point_set
-        
 
+        segment_idx = line_set_idx[i]
+
+        norm_start_set = line_set[:, 2]
+        norm_end_set = line_set[:, 4]
+
+        height_start_set = line_set[:, 3]
+        height_end_set = line_set[:, 5]
+
+        # change to numpy cos sin math
+        x_start_set = norm_start_set * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+        x_end_set = norm_end_set * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+
+        y_start_set = norm_start_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+        y_end_set = norm_end_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+
+        start_point_set = np.array([x_start_set, y_start_set, height_start_set])
+        end_point_set = np.array([x_end_set, y_end_set, height_end_set])
+
+        line_end_points[i][0] = start_point_set
+        line_end_points[i][1] = end_point_set
 
     return []
 
