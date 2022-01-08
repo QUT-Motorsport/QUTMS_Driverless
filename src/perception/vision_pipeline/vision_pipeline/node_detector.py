@@ -159,7 +159,7 @@ def cone_msg(
 
 class DetectorNode(Node):
     def __init__(self):
-        super().__init__("zed_detector")
+        super().__init__("cone_detector")
 
         # subscribers
         colour_sub = message_filters.Subscriber(
@@ -182,7 +182,7 @@ class DetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("ZED Detector Node Initalised")
+        self.get_logger().info("Initalised Detector Node: Vision")
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):

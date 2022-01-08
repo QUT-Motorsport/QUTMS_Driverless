@@ -1,11 +1,12 @@
+# Docker
 .env
 
-# colcon build
+# Colcon build
 build/
 install/
 log/
 
-# datasets
+# Datasets
 datasets/*
 data/*
 
@@ -16,20 +17,8 @@ data/*
 .devcontainer/*
 !.devcontainer/COPY_RENAME_devcontainer.json
 
-# - Lidar Perception -
-# Python Virtual Environment
-development/lidar_perception/venv/*
-# pycache
-development/lidar_perception/__pycache__/*
-/src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-./src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-# Figures
-development/lidar_perception/figures/*
-development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt
-
-# Datasets
-datasets/velodyne/*
+# YOLO annotations
+src/perception/vision_pipeline/annotations
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
