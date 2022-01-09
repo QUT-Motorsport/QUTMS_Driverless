@@ -115,11 +115,8 @@ def get_nearest_line_set(ground_plane):
     return nearest_idx[0][u_idx], line_set_idx
 
 
-def label_points_2(ground_plane, DELTA_ALPHA):
-    nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
-
-    # New Stuff
-    line_end_points = np.empty((line_set_idx.size, 2, 3))
+def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
+    line_end_points = np.empty((line_set_idx.size, 2, 3), dtype=object)
 
     # Change from 2D approx to 3D approx
     for i in range(line_set_idx.size):
@@ -140,11 +137,18 @@ def label_points_2(ground_plane, DELTA_ALPHA):
         y_start_set = norm_start_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
         y_end_set = norm_end_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
 
-        start_point_set = np.array([x_start_set, y_start_set, height_start_set])
-        end_point_set = np.array([x_end_set, y_end_set, height_end_set])
+        start_point_set = [x_start_set, y_start_set, height_start_set]
+        end_point_set = [x_end_set, y_end_set, height_end_set]
 
         line_end_points[i][0] = start_point_set
         line_end_points[i][1] = end_point_set
+
+    return line_end_points
+
+
+def label_points_2(ground_plane, DELTA_ALPHA):
+    nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
+    line_end_points = get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA)
 
     return []
 
