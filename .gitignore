@@ -6,6 +6,10 @@ build/
 install/
 log/
 
+# ML training
+annotations/*
+!annotations/annotations/darknet.labels
+
 # Datasets
 datasets/*
 data/*

@@ -1,22 +1,19 @@
 # import ROS2 libraries
 import rclpy
 from rclpy.node import Node
-from rclpy.publisher import Publisher
 from cv_bridge import CvBridge
 import message_filters
 from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Point
 # import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone
 
 # other python libraries
 import os
 import cv2
 import numpy as np
 from typing import List, Tuple
-import time
 
 # import required sub modules
 from .rect import Rect, draw_box
@@ -34,6 +31,7 @@ CONFIDENCE = 0.40 # higher = tighter filter
 model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
 
 ANNOTATION_PATH = "datasets/annotations/"
+VALIDATION_PATH = "datasets/validation/"
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -77,11 +75,13 @@ class AnnotatorNode(Node):
         super().__init__("cone_annotator")
 
         # subscribers
+        CAMERA = "left" ## SWITCH CAMERAS TO INCREASE DATASET SIZE ON ADDITIONAL RUNS
+        # CAMERA = "right"
         colour_sub = message_filters.Subscriber(
-            self, Image, "/zed2i/zed_node/rgb/image_rect_color"
+            self, Image, f"/zed2i/zed_node/{CAMERA}/image_rect_color"
         )
         colour_camera_info_sub = message_filters.Subscriber(
-            self, CameraInfo, "/zed2i/zed_node/rgb/camera_info"
+            self, CameraInfo, f"/zed2i/zed_node/{CAMERA}/camera_info"
         )
 
         synchronizer = message_filters.TimeSynchronizer(
@@ -91,44 +91,55 @@ class AnnotatorNode(Node):
         synchronizer.registerCallback(self.callback)
 
         self.get_logger().info("Initialised Annotator Node")
-        self.count: int = 0
+        
+        self.count: int = 1500 ## START WHERE THE MOST RECENT ANNOTATION SET FINISHED
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo):
         logger = self.get_logger()
         logger.info("Received image")
         
-        pathstr: str = ANNOTATION_PATH + 'annotation_' + str(self.count)
+        # location of annotation files (png, txt)
+        CURR_COUNT = str(self.count)
+        PATHSTR: str = f"{ANNOTATION_PATH}annotation_{CURR_COUNT}"
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
-        cv2.imwrite(pathstr+'.png', colour_frame) 
+        # colour_frame = cv2.flip(colour_frame, 1) ## UNCOMMENT TO INCREASE DATASET SIZE ON ADDITIONAL RUNS
+        
+        # save current frame
+        cv2.imwrite(f"{PATHSTR}.png", colour_frame)
 
-        height, width, _ = colour_frame.shape
+        # open txt file for annotations to pair with current frame
+        file = open(f"{PATHSTR}.txt", 'w')
 
-        file = open(pathstr+'.txt', 'w')
-
+        # extract frame dimensions
+        h, w, _ = colour_frame.shape
         for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+            # draw box for validation image check
             draw_box(colour_frame, box=bounding_box, colour=display_colour)
-            norm_x: float = bounding_box.tl.x/width
-            norm_h: float = bounding_box.tl.y/height
-            norm_w: float = bounding_box.width/width
-            norm_h: float = bounding_box.height/height
-            print(norm_x, norm_h, norm_w, norm_h)
+            # normalise all dimensions that annotating requires
+            norm_x: float = bounding_box.center.x/w
+            norm_y: float = bounding_box.center.y/h
+            norm_w: float = bounding_box.width/w
+            norm_h: float = bounding_box.height/h
 
+            # write YOLOv5 annotation format to txt file
             file.write(
                 str(cone_colour) + " " + \
                 str(norm_x) + " " + \
-                str(norm_h) + " " + \
+                str(norm_y) + " " + \
                 str(norm_w) + " " + \
                 str(norm_h) + "\n"
             )
-
         file.close()
-        cv2.imwrite(pathstr+'val.png', colour_frame) 
+
+        # show and save validation frame (check false positives/negatives)
         cv2.imshow("debug", colour_frame)
+        cv2.imwrite(f"{VALIDATION_PATH}annotation_{self.count}val.jpeg", colour_frame) 
         cv2.waitKey(1)
 
         self.count += 1
+
 
 def main(args=None):
     rclpy.init(args=args)

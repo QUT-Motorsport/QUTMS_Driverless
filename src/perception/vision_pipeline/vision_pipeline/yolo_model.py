@@ -1,7 +1,8 @@
 import torch
+from typing import Optional
 
 # initialising function for the YOLOv5 model with confidence threshold
-def yolov5_init(conf_thresh: float, model_path: str, repo_path: str=None):
+def yolov5_init(conf_thresh: float, model_path: str, repo_path: Optional[str] = None):
     """
     Returns a YOLOv5 PyTorch model
     """
