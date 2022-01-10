@@ -146,23 +146,35 @@ def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
     return line_end_points
 
 
-def label_points_2(ground_plane, DELTA_ALPHA):
+def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA):
     nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
     line_end_points = get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA)
+    
+    
 
     return []
 
-def line_to_end_points(line, segment_idx, DELTA_ALPHA):
-    start = line[2]  # First point in line
-    end = line[3]  # Last point in line
+def dist_points_3D(x_0, p_1, p_2):
+    # get distance in each dimension from x to point 1
+    p_1_dist = [(x_0[0] - p_1[0]), (x_0[1] - p_1[1]), (x_0[2] - p_1[2])]
 
-    x_1 = start[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
-    x_2 = end[0] * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+    # get distance in each dimension from x to point 2
+    p_2_dist = [(x_0[0] - p_2[0]), (x_0[1] - p_2[1]), (x_0[2] - p_2[2])]
 
-    y_1 = start[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
-    y_2 = end[0] * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+    # cross product of dimension distances
+    dist_cross = [
+        p_1_dist[1]*p_2_dist[2] - p_2_dist[1]*p_1_dist[2], 
+        -(p_1_dist[0]*p_2_dist[2] - p_2_dist[0]*p_1_dist[2]), 
+        p_1_dist[0]*p_2_dist[1] - p_2_dist[0]*p_1_dist[1]
+    ]
 
-    p_1 = [x_1, y_1, start[1]]
-    p_2 = [x_2, y_2, end[1]]
+    # normalise (pythag) each cross
+    dist_norm: float = math.sqrt(dist_cross[0]**2 + dist_cross[1]**2 + dist_cross[2]**2)
 
-    return [p_1, p_2]
+    # normalise point 1 and 2 distances
+    p_norm: float = math.sqrt(
+        (p_2[0] - p_1[0])**2 + (p_2[1] - p_1[1])**2 + (p_2[2] - p_1[2])**2
+    )
+
+    # return distance
+    return dist_norm / p_norm
