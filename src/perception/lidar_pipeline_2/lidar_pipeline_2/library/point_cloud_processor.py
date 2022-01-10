@@ -52,7 +52,7 @@ def get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     bins_idx = point_norms / BIN_SIZE
 
     # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
-    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
+    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['x'], point_cloud['y'], point_cloud['z']))
 
 
 def get_prototype_points_2(seg_bin_nrm_z):
@@ -69,11 +69,11 @@ def get_prototype_points_2(seg_bin_nrm_z):
         split_split_nrm_z = np.split(segment_array, np.where(np.diff(segment_array[:, 1]))[0] + 1)
 
         for bin_array in split_split_nrm_z:
-            prototype_points[seg_idx].append([float(bin_array[0][2]), float(bin_array[0][3])])
+            prototype_points[seg_idx].append([float(bin_array[0][2]), float(bin_array[0][5])])
 
         seg_idx += 1
 
-    return prototype_points
+    return prototype_points, split_bin_nrm_z
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
