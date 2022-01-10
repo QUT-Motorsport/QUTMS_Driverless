@@ -118,7 +118,7 @@ def get_nearest_line_set(ground_plane):
 def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
     line_end_points = np.empty((line_set_idx.size, 2, 3), dtype=object)
 
-    # Change from 2D approx to 3D approx
+    # Changes from 2D approx to 3D approx
     for i in range(line_set_idx.size):
         line_set = np.array(ground_plane[line_set_idx][i][0])
 
@@ -131,11 +131,11 @@ def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
         height_end_set = line_set[:, 5]
 
         # change to numpy cos sin math
-        x_start_set = norm_start_set * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
-        x_end_set = norm_end_set * math.cos((segment_idx + 0.5) * DELTA_ALPHA)
+        x_start_set = norm_start_set * np.cos((segment_idx + 0.5) * DELTA_ALPHA)
+        x_end_set = norm_end_set * np.cos((segment_idx + 0.5) * DELTA_ALPHA)
 
-        y_start_set = norm_start_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
-        y_end_set = norm_end_set * math.sin((segment_idx + 0.5) * DELTA_ALPHA)
+        y_start_set = norm_start_set * np.sin((segment_idx + 0.5) * DELTA_ALPHA)
+        y_end_set = norm_end_set * np.sin((segment_idx + 0.5) * DELTA_ALPHA)
 
         start_point_set = [x_start_set, y_start_set, height_start_set]
         end_point_set = [x_end_set, y_end_set, height_end_set]
