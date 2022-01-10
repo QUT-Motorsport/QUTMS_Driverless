@@ -47,7 +47,7 @@ def detect_cones(
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    prototype_points = pcp.get_prototype_points_2(segments_bins_norms_z)
+    prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_norms_z)
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
@@ -59,7 +59,7 @@ def detect_cones(
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    labelled_points = pc.label_points_2(ground_plane, DELTA_ALPHA)
+    labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
