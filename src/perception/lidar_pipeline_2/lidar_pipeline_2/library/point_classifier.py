@@ -1,5 +1,4 @@
 # Import Python Modules
-from logging import currentframe
 import numpy as np
 import math
 
@@ -146,10 +145,7 @@ def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
     return line_end_points
 
 
-def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT):
-    nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
-    line_end_points = get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA)
-
+def get_point_line_dist(line_end_points, nearest_line_set, split_bin_nrm_z, SEGMENT_COUNT):
     # For each point, find closest line
     point_line_dist = np.empty(SEGMENT_COUNT, dtype=object)
     for point_set in split_bin_nrm_z:
@@ -168,7 +164,16 @@ def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT):
 
         point_line_dist[seg_idx] = distances
 
+    return point_line_dist
+
+
+def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT):
+    nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
+    line_end_points = get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA)
+    point_line_dist = get_point_line_dist(line_end_points, nearest_line_set, split_bin_nrm_z, SEGMENT_COUNT)
+
     return []
+
 
 def dist_points_3D(x_0, p_1, p_2):
     # get distance in each dimension from x to point 1
