@@ -1,4 +1,5 @@
 # Import Python Modules
+from logging import currentframe
 import numpy as np
 import math
 
@@ -116,7 +117,7 @@ def get_nearest_line_set(ground_plane):
 
 
 def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
-    line_end_points = np.empty((line_set_idx.size, 2, 3), dtype=object)
+    line_end_points = np.empty((line_set_idx.size, 2, 1), dtype=object)
 
     # Changes from 2D approx to 3D approx
     for i in range(line_set_idx.size):
@@ -130,15 +131,14 @@ def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
         height_start_set = line_set[:, 3]
         height_end_set = line_set[:, 5]
 
-        # change to numpy cos sin math
         x_start_set = norm_start_set * np.cos((segment_idx + 0.5) * DELTA_ALPHA)
         x_end_set = norm_end_set * np.cos((segment_idx + 0.5) * DELTA_ALPHA)
 
         y_start_set = norm_start_set * np.sin((segment_idx + 0.5) * DELTA_ALPHA)
         y_end_set = norm_end_set * np.sin((segment_idx + 0.5) * DELTA_ALPHA)
 
-        start_point_set = [x_start_set, y_start_set, height_start_set]
-        end_point_set = [x_end_set, y_end_set, height_end_set]
+        start_point_set = [np.column_stack((x_start_set, y_start_set, height_start_set))]
+        end_point_set = [np.column_stack((x_end_set, y_end_set, height_end_set))]
 
         line_end_points[i][0] = start_point_set
         line_end_points[i][1] = end_point_set
@@ -146,11 +146,27 @@ def get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA):
     return line_end_points
 
 
-def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA):
+def label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT):
     nearest_line_set, line_set_idx = get_nearest_line_set(ground_plane)
     line_end_points = get_line_end_points(ground_plane, line_set_idx, DELTA_ALPHA)
-    
-    
+
+    # For each point, find closest line
+    point_line_dist = np.empty(SEGMENT_COUNT, dtype=object)
+    for point_set in split_bin_nrm_z:
+        seg_idx = int(point_set[0, 0])
+
+        nearest_line = nearest_line_set[seg_idx]
+
+        line_start = line_end_points[nearest_line][0][0]
+        line_end = line_end_points[nearest_line][1][0]
+
+        end_minus_start = line_end - line_start
+
+        distances = []
+        for j in range(line_start.shape[0]):
+            distances.append(np.abs(np.cross(end_minus_start[j], line_start[j] - point_set[:, 3:6])) / np.linalg.norm(end_minus_start[j]))
+
+        point_line_dist[seg_idx] = distances
 
     return []
 
