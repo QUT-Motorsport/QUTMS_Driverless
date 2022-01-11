@@ -59,9 +59,12 @@ def detect_cones(
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA)
+    labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
 
     return []
+
+# Look into numpy views and see if they could be used instead of creating
+# entirely new variables
