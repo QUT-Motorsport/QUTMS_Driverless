@@ -87,6 +87,8 @@ def test4():
     print(test.shape)
     print(test)
     print(np.zeros(4))
+    
+    print(test[:, 0:2])
 
 test4()
 
