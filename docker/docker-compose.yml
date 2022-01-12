@@ -38,6 +38,7 @@ x-env-file: &env-file
 x-network: &network
     network_mode: "host"
     privileged: true
+    pid: "host"
 
 x-interactive: &interactive
     stdin_open: true
