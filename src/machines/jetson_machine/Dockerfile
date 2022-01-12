@@ -17,9 +17,14 @@ WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
-COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-RUN source /opt/ros/galactic/install/setup.bash; \
-    colcon build --symlink-install --packages-up-to \
-        jetson_machine \
-        vision_pipeline \
-    && rm -rf ./src
+# COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
+# RUN source /opt/ros/galactic/install/setup.bash; \
+#     colcon build --symlink-install --packages-up-to \
+#         jetson_machine \
+#         vision_pipeline \
+#     && rm -rf ./src
+
+ENV PATH="/usr/local/cuda-10.2/bin${PATH:+:${PATH}}"
+ENV LD_LIBRARY_PATH="/usr/local/cuda-10.2/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+RUN pip3 install pycuda

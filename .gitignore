@@ -10,9 +10,6 @@ log/
 annotations/*
 !annotations/annotations/darknet.labels
 
-# TensorRT
-!libmyplugins.so
-
 # Datasets
 datasets/*
 data/*
@@ -31,6 +28,9 @@ __pycache__/
 
 # C extensions
 *.so
+
+# TensorRT
+!libmyplugins.so
 
 # Distribution / packaging
 .Python
