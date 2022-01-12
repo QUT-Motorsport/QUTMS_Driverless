@@ -10,6 +10,9 @@ log/
 annotations/*
 !annotations/annotations/darknet.labels
 
+# TensorRT
+!libmyplugins.so
+
 # Datasets
 datasets/*
 data/*
