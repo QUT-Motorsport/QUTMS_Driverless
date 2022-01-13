@@ -25,49 +25,11 @@ ctypes.CDLL(PLUGIN_LIBRARY)
 
 categories = ["blue", "yellow"]
 
-
-def plot_one_box(x, img, color=None, label=None, line_thickness=None):
-    """
-    description: Plots one bounding box on image img,
-                 this function comes from YoLov5 project.
-    param: 
-        x:      a box likes [x1,y1,x2,y2]
-        img:    a opencv image object
-        color:  color to draw rectangle, such as (0,255,0)
-        label:  str
-        line_thickness: int
-    return:
-        no return
-
-    """
-    tl = (
-        line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1
-    )  # line/font thickness
-    color = color or [random.randint(0, 255) for _ in range(3)]
-    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(
-            img,
-            label,
-            (c1[0], c1[1] - 2),
-            0,
-            tl / 3,
-            [225, 255, 255],
-            thickness=tf,
-            lineType=cv2.LINE_AA,
-        )
-
-
 class TensorModel(object):
     """
     description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
     """
-    def __init__(self, engine_file_path):
+    def __init__(self, engine_file_path: str):
         # Create a Context on this device,
         self.ctx = cuda.Device(0).make_context()
         stream = cuda.Stream()
@@ -75,8 +37,8 @@ class TensorModel(object):
         runtime = trt.Runtime(TRT_LOGGER)
 
         # Deserialize the engine from file
-        with open(engine_file_path, "rb") as f:
-            engine = runtime.deserialize_cuda_engine(f.read())
+        f = open(engine_file_path, "rb")           
+        engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
 
         host_inputs = []
@@ -117,6 +79,9 @@ class TensorModel(object):
 
 
     def infer(self, image_raw):
+        # threading.Thread.__init__(self)
+        # Make self the active context, pushing it on top of the context stack.
+        self.ctx.push()
         # Restore
         stream = self.stream
         context = self.context
@@ -132,7 +97,6 @@ class TensorModel(object):
 
         # Copy input image to host buffer
         np.copyto(host_inputs[0], input_image.ravel())
-        print(host_inputs[0].shape)
         start = time.time()
         # Transfer input data to the GPU.
         cuda.memcpy_htod_async(cuda_inputs[0], host_inputs[0], stream)
@@ -142,26 +106,25 @@ class TensorModel(object):
         cuda.memcpy_dtoh_async(host_outputs[0], cuda_outputs[0], stream)
         # Synchronize the stream
         stream.synchronize()
-        end = time.time()
         # Remove any context from the top of the context stack, deactivating it.
         self.ctx.pop()
         # Here we use the first row of output in that batch_size = 1
         output = host_outputs[0]
-        print(output)
         # Do postprocess
         result_boxes, result_scores, result_classid = self.post_process(
             output, origin_h, origin_w
         )
+        end = time.time()
         # Draw rectangles and labels on the original image
-        for j in range(len(result_boxes)):
-            box = result_boxes[j]
-            plot_one_box(
-                box,
-                image_raw,
-                label="{}:{:.2f}".format(
-                    categories[int(result_classid[j])], result_scores[j]
-                ),
-            )
+        # for j in range(len(result_boxes)):
+        #     box = result_boxes[j]
+        #     plot_one_box(
+        #         box,
+        #         image_raw,
+        #         label="{}:{:.2f}".format(
+        #             categories[int(result_classid[j])], result_scores[j]
+        #         ),
+        #     )
         return image_raw, end - start
                 
 
@@ -196,6 +159,9 @@ class TensorModel(object):
             ty1 = ty2 = 0
         # Resize the image with long side while maintaining ratio
         image = cv2.resize(image, (tw, th))
+
+        # CHECK SIZING OF ROS MESSAGE
+        # print(tw, th, ty1, ty2, tx1, tx2)
 
         # Pad the short side with (128,128,128)
         image = cv2.copyMakeBorder(
@@ -348,16 +314,22 @@ class TensorModel(object):
         self.ctx.pop()
 
 
-
-img_path = 'samples/test1.jpg'
-img = cv2.imread(img_path)
+img_paths: list = [
+    'samples/test1.jpg', 
+    'samples/test2.jpg',
+    'samples/test3.jpg',
+    'samples/test4.jpg',
+    'samples/test5.jpg',
+    'samples/test6.jpg',
+    'samples/test7.jpg',
+    'samples/test8.jpg',
+]
 
 trt_wrapper = TensorModel(ENGINE_PATH)
 
-image_raw, use_time = trt_wrapper.infer(img)
-
-_, filename = os.path.split(img_path)
-save_name = os.path.join('output', filename)
-# Save image
-cv2.imwrite(save_name, image_raw)
-print('input->{}, time->{:.2f}ms, saving into output/'.format(img_path, use_time * 1000))
+for img_path in img_paths:
+    print("Reading image: ", img_path)
+    img: np.ndarray = cv2.imread(img_path)
+    image_raw, use_time = trt_wrapper.infer(img)
+    print('input->{}, time->{:.2f}ms, saving into output/'.format(img_path, use_time * 1000))
+trt_wrapper.destroy()

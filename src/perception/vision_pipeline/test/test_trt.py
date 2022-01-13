@@ -149,7 +149,6 @@ class YoLov5TRT(object):
 
         # Copy input image to host buffer
         np.copyto(host_inputs[0], batch_input_image.ravel())
-        print(host_inputs[0].shape)
         start = time.time()
         # Transfer input data  to the GPU.
         cuda.memcpy_htod_async(cuda_inputs[0], host_inputs[0], stream)
@@ -164,7 +163,6 @@ class YoLov5TRT(object):
         self.ctx.pop()
         # Here we use the first row of output in that batch_size = 1
         output = host_outputs[0]
-        print(output)
         # Do postprocess
         for i in range(self.batch_size):
             result_boxes, result_scores, result_classid = self.post_process(
