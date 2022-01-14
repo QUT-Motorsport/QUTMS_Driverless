@@ -21,16 +21,16 @@ data/*
 .devcontainer/*
 !.devcontainer/COPY_RENAME_devcontainer.json
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
 # C extensions
 *.so
 
 # TensorRT
-!libmyplugins.so
+!libplugins.so
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Distribution / packaging
 .Python

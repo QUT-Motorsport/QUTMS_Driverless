@@ -2,11 +2,6 @@
 # https://github.com/wang-xinyu/tensorrtx/blob/master/yolov5/yolov5_trt.py
 
 import ctypes
-import os
-import shutil
-import random
-import sys
-import threading
 import time
 import cv2
 import numpy as np
@@ -18,10 +13,8 @@ CONF_THRESH = 0.5
 IOU_THRESHOLD = 0.4
 
 # load custom plugin and engine
-PLUGIN_LIBRARY = "libmyplugins.so"
+PLUGIN_LIBRARY = "libplugins.so"
 ENGINE_PATH = "yolov5s.engine"
-
-ctypes.CDLL(PLUGIN_LIBRARY)
 
 categories = ["blue", "yellow"]
 
@@ -30,6 +23,8 @@ class TensorModel(object):
     description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
     """
     def __init__(self, engine_file_path: str):
+        # load in object pluggin file
+        ctypes.CDLL(PLUGIN_LIBRARY)
         # Create a Context on this device,
         self.ctx = cuda.Device(0).make_context()
         stream = cuda.Stream()

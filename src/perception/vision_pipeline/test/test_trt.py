@@ -402,7 +402,7 @@ class warmUpThread(threading.Thread):
 
 if __name__ == "__main__":
     # load custom plugin and engine
-    PLUGIN_LIBRARY = "libmyplugins.so"
+    PLUGIN_LIBRARY = "libplugins.so"
     engine_file_path = "yolov5s.engine"
 
     if len(sys.argv) > 1:
