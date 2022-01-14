@@ -32,7 +32,7 @@ CAMERA_FOV = 110  # degrees
 # loading Pytorch model
 ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov5s.engine")
 PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
-CONFIDENCE = 0.40 # higher = tighter filter 
+CONFIDENCE = 0.30 # higher = tighter filter 
 
 trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
 
