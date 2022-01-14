@@ -11,7 +11,7 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 
-class TensorModel(object):
+class TensorWrapper(object):
     """
     description: A YOLOv5 class that wraps TensorRT ops, preprocess and postprocess ops.
     """
@@ -42,7 +42,6 @@ class TensorModel(object):
         bindings = []
 
         for binding in engine:
-            print('binding:', binding, engine.get_binding_shape(binding))
             size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
             dtype = trt.nptype(engine.get_binding_dtype(binding))
             # Allocate host and device buffers
@@ -106,22 +105,8 @@ class TensorModel(object):
         self.ctx.pop()
         # Here we use the first row of output in that batch_size = 1
         output = host_outputs[0]
-        # Do postprocess
-        result_boxes, result_scores, result_classid = self.post_process(
-            output, origin_h, origin_w
-        )
-        end = time.time()
-        # Draw rectangles and labels on the original image
-        # for j in range(len(result_boxes)):
-        #     box = result_boxes[j]
-        #     plot_one_box(
-        #         box,
-        #         image_raw,
-        #         label="{}:{:.2f}".format(
-        #             categories[int(result_classid[j])], result_scores[j]
-        #         ),
-        #     )
-        return image_raw, end - start
+        # Do postprocess and return
+        return self.post_process(output, origin_h, origin_w)
                 
 
     def preprocess_image(self, raw_bgr_image):

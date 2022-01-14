@@ -21,9 +21,8 @@ import time
 
 # import required sub modules
 from .threshold import Threshold
-from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
-from .trt_model import TensorModel
+from .trt_inference import TensorWrapper
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
@@ -35,24 +34,8 @@ ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "mode
 PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
 CONFIDENCE = 0.40 # higher = tighter filter 
 
-trt_wrapper = TensorModel(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
+trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
 
-
-# HSV threshold constants
-YELLOW_HSV_THRESH = Threshold(
-    lower=[27, 160, 130],
-    upper=[40, 255, 255],
-)
-
-BLUE_HSV_THRESH = Threshold(
-    lower=[120, 100, 40],
-    upper=[130, 255, 255],
-)
-
-ORANGE_HSV_THRESH = Threshold(
-    lower=[0, 100, 50],
-    upper=[15, 255, 255],
-)
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -60,29 +43,32 @@ YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
-
-# thresh, cone_colour, display_colour
-HSV_CONE_DETECTION_PARAMETERS = [
-    (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
-    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
-    # (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
-]
-
 # cone_colour, display_colour
-YOLO_CONE_DETECTION_PARAMETERS = [
-    (Cone.BLUE, BLUE_DISP_COLOUR),
-    (Cone.YELLOW, YELLOW_DISP_COLOUR),
-    # (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+CONE_DISPLAY_PARAMETERS = [
+    BLUE_DISP_COLOUR,
+    YELLOW_DISP_COLOUR,
+    # ORANGE_DISP_COLOUR,
 ]
 
 ConeMsgColour = int # define arbitrary variable type
 
 
 def get_trt_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    image_raw, use_time = trt_wrapper.infer(colour_frame)
-    print('input->msg, time->{:.2f}ms, saving into output/'.format(use_time * 1000))
-    
-    bounding_boxes = []
+    bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+
+    result_boxes, result_scores, result_classid = trt_wrapper.infer(colour_frame)
+    # Draw rectangles and labels on the original image
+    for i, box in enumerate(result_boxes):
+        cone_colour = int(result_classid[i])
+        bounding_box = Rect(
+            int(box[0]),
+            int(box[1]),
+            int(box[2]-box[0]),
+            int(box[3]-box[1]),
+        )
+        print(box, cone_colour)
+        bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
+
     return bounding_boxes
 
 
@@ -159,7 +145,7 @@ class DetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("Initialised Detector Node: Vision")
+        self.get_logger().info("Initialised Detector Node: TRT Vision")
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
@@ -211,8 +197,10 @@ def main(args=None):
     rclpy.init(args=args)
 
     detector_node = DetectorNode()
-
+    # run node
     rclpy.spin(detector_node)
+    # clear TRT context memory
+    trt_wrapper.destroy()
     rclpy.shutdown()
 
 
