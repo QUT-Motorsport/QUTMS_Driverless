@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 # import required sub modules
 from .rect import Rect, draw_box
-from .yolo_model import yolov5_init
+from .torch_model import yolov5_init
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()

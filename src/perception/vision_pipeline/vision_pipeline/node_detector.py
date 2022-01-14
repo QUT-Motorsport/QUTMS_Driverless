@@ -1,4 +1,5 @@
 # import ROS2 libraries
+from ast import Call
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -16,25 +17,18 @@ import os
 from math import sin, cos, radians, isnan, isinf
 import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import time
 
 # import required sub modules
 from .threshold import Threshold
 from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
-from .yolo_model import yolov5_init
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
-
-# loading Pytorch model
-MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
-REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
-CONFIDENCE = 0.40 # higher = tighter filter 
-model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
 
 
 # HSV threshold constants
@@ -74,39 +68,14 @@ YOLO_CONE_DETECTION_PARAMETERS = [
     # (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
 ]
 
+# display_colour
+CONE_DISPLAY_PARAMETERS = [
+    BLUE_DISP_COLOUR,
+    YELLOW_DISP_COLOUR,
+    # ORANGE_DISP_COLOUR,
+]
+
 ConeMsgColour = int # define arbitrary variable type
-
-
-def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
-    
-    bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-    for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
-        for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
-            bounding_boxes.append((bounding_box, cone_colour, display_colour))
-    
-    return bounding_boxes
-
-
-def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
-
-    bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-    results = model(rgb_frame)
-    data = results.pandas().xyxy[0]
-
-    for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
-        for i in range(len(data.index)): 
-            if data.iloc[i, 5] == cone_colour: # locates object i, class ID at index 5
-                bounding_box = Rect(
-                    int(data.xmin[i]),
-                    int(data.ymin[i]),
-                    int(data.xmax[i]-data.xmin[i]),
-                    int(data.ymax[i]-data.ymin[i]),
-                )
-                bounding_boxes.append((bounding_box, cone_colour, display_colour))
-    
-    return bounding_boxes
 
 
 def cone_distance(
@@ -158,7 +127,11 @@ def cone_msg(
 
 
 class DetectorNode(Node):
-    def __init__(self):
+    def __init__(
+        self, 
+        mode: int, # mode of detection. 0==cv2, 1==torch, 2==trt
+        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]]
+    ):
         super().__init__("cone_detector")
 
         # subscribers
@@ -182,7 +155,9 @@ class DetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("Initialised Detector Node: Vision")
+        # set which cone detection this will be using
+        self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
+        self.get_bounding_boxes_callable = get_bounding_boxes_callable
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
@@ -195,8 +170,7 @@ class DetectorNode(Node):
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         detected_cones: List[Cone] = []
-        # for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
-        for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
+        for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
             
             # filter by height
             if bounding_box.tl.y < colour_camera_info_msg.height/2:
@@ -231,14 +205,100 @@ class DetectorNode(Node):
         logger.info("Time: " + str(time.time() - start)) # log time
 
 
-def main(args=None):
+## OpenCV thresholding
+def main_cv2(args=None):
+    def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
+        
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+        for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
+            for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
+                bounding_boxes.append((bounding_box, cone_colour, display_colour))
+        
+        return bounding_boxes
+
     rclpy.init(args=args)
-
-    detector_node = DetectorNode()
-
+    mode = 0
+    detector_node = DetectorNode(mode, get_hsv_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
-    main()
+## PyTorch inference
+def main_torch(args=None):
+    from .torch_model import yolov5_init
+    
+    # loading Pytorch model
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
+    REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
+    CONFIDENCE = 0.40 # higher = tighter filter 
+    model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
+
+    def get_torch_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
+
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+        results = model(rgb_frame)
+        data = results.pandas().xyxy[0]
+
+        for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
+            for i in range(len(data.index)): 
+                if data.iloc[i, 5] == cone_colour: # locates object i, class ID at index 5
+                    bounding_box = Rect(
+                        int(data.xmin[i]),
+                        int(data.ymin[i]),
+                        int(data.xmax[i]-data.xmin[i]),
+                        int(data.ymax[i]-data.ymin[i]),
+                    )
+                    bounding_boxes.append((bounding_box, cone_colour, display_colour))
+        return bounding_boxes
+
+    rclpy.init(args=args)
+    mode = 1
+    detector_node = DetectorNode(mode, get_torch_bounding_boxes)
+    rclpy.spin(detector_node)
+    rclpy.shutdown()
+
+
+## TensorRT inference
+def main_trt(args=None):
+    from .trt_inference import TensorWrapper
+
+    # loading TensorRT engine
+    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov5s.engine")
+    PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
+    CONFIDENCE = 0.30 # higher = tighter filter 
+    trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
+
+    def get_trt_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+
+        result_boxes, result_scores, result_classid = trt_wrapper.infer(colour_frame)
+        # Draw rectangles and labels on the original image
+        for i, box in enumerate(result_boxes):
+            cone_colour = int(result_classid[i])
+            bounding_box = Rect(
+                int(box[0]),
+                int(box[1]),
+                int(box[2]-box[0]),
+                int(box[3]-box[1]),
+            )
+            print(box, cone_colour)
+            bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
+        return bounding_boxes
+
+    rclpy.init(args=args)
+    mode = 2
+    detector_node = DetectorNode(mode, get_trt_bounding_boxes)
+    rclpy.spin(detector_node)
+    rclpy.shutdown()
+
+
+if __name__ == '__main_cv2__':
+    main_cv2()
+
+elif __name__ == '__main_torch__':
+    main_torch()
+
+elif __name__ == '__main_trt__':
+    main_trt()
