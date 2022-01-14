@@ -8,13 +8,14 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp 
 
-# pycuda variables
+# pycuda (TRT) env vars
 ENV PATH="/usr/local/cuda-10.2/bin${PATH:+:${PATH}}"
 ENV LD_LIBRARY_PATH="/usr/local/cuda-10.2/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
 # vision_pipeline
-COPY ./src/perception/vision_pipeline/trt_requirements.txt ./jetson_requirements.txt
-RUN pip3 install -r jetson_requirements.txt
-RUN rm -f ./jetson_requirements.txt
+COPY ./src/perception/vision_pipeline/trt_requirements.txt ./trt_requirements.txt
+RUN pip3 install -r trt_requirements.txt
+RUN rm -f ./trt_requirements.txt
 
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
