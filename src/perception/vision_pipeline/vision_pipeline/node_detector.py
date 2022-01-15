@@ -8,6 +8,8 @@ from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
+# translate ROS image messages to OpenCV
+cv_bridge = CvBridge()
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
@@ -22,11 +24,7 @@ import time
 # import required sub modules
 from .rect import Rect, draw_box
 
-# translate ROS image messages to OpenCV
-cv_bridge = CvBridge()
-
 CAMERA_FOV = 110  # degrees
-
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -95,8 +93,9 @@ def cone_msg(
 class DetectorNode(Node):
     def __init__(
         self, 
-        mode: int, # mode of detection. 0==cv2, 1==torch, 2==trt
-        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]]
+        mode: str, # mode of detection. 0==cv2, 1==torch, 2==trt
+        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
+        enable_cv_filters: bool = False
     ):
         super().__init__("cone_detector")
 
@@ -123,7 +122,7 @@ class DetectorNode(Node):
 
         # set which cone detection this will be using
         self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
-        self.mode = mode
+        self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
 
 
@@ -138,16 +137,16 @@ class DetectorNode(Node):
 
         detected_cones: List[Cone] = []
         for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
-            
-            # filter by height
-            if self.mode==0 and bounding_box.tl.y < colour_camera_info_msg.height/2:
-                continue
-            # filter on area
-            if self.mode==0 and bounding_box.area < 100 or bounding_box.area > 8000: 
-                continue
-            # filter by aspect ratio
-            if self.mode==0 and bounding_box.aspect_ratio > 1.2:
-                continue
+            if self.enable_cv_filters:
+                # filter by height
+                if bounding_box.tl.y < colour_camera_info_msg.height/2:
+                    continue
+                # filter on area
+                if bounding_box.area < 100 or bounding_box.area > 8000: 
+                    continue
+                # filter by aspect ratio
+                if bounding_box.aspect_ratio > 1.2:
+                    continue
             
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
@@ -199,8 +198,8 @@ def main_cv2(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode = 0
-    detector_node = DetectorNode(mode, get_hsv_bounding_boxes)
+    mode: str = "cv2 thresholding"
+    detector_node = DetectorNode(mode, get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(detector_node)
     rclpy.shutdown()
 
@@ -212,8 +211,10 @@ def main_torch(args=None):
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
-    CONFIDENCE = 0.40 # higher = tighter filter 
+    CONFIDENCE = 0.35 # higher = tighter filter 
+    start = time.time()
     model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
+    print(time.time() - start)
 
     def get_torch_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
         bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
@@ -231,7 +232,7 @@ def main_torch(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode = 1
+    mode: str = "torch yolo inference"
     detector_node = DetectorNode(mode, get_torch_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
@@ -244,7 +245,7 @@ def main_trt(args=None):
     # loading TensorRT engine
     ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
     PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
-    CONFIDENCE = 0.30 # higher = tighter filter 
+    CONFIDENCE = 0.35 # higher = tighter filter 
     trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
 
     def get_trt_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
@@ -265,17 +266,7 @@ def main_trt(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode = 2
+    mode: str = "tensorrt yolo inference"
     detector_node = DetectorNode(mode, get_trt_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
-
-
-if __name__ == '__main_cv2__':
-    main_cv2()
-
-elif __name__ == '__main_torch__':
-    main_torch()
-
-elif __name__ == '__main_trt__':
-    main_trt()
