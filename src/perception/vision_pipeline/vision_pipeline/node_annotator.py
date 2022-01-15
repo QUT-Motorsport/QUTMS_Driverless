@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 # import required sub modules
 from .rect import Rect, draw_box
-from .torch_model import yolov5_init
+from .torch_inference import torch_init
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
@@ -28,7 +28,7 @@ CAMERA_FOV = 110  # degrees
 MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
 REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
 CONFIDENCE = 0.40 # higher = tighter filter 
-model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
+model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
 
 ANNOTATION_PATH = "datasets/annotations/"
 VALIDATION_PATH = "datasets/validation/"

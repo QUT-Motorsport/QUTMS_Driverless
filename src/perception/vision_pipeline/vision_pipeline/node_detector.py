@@ -207,7 +207,7 @@ def main_cv2(args=None):
 
 ## PyTorch inference
 def main_torch(args=None):
-    from .torch_model import torch_init, infer
+    from .torch_inference import torch_init, infer
     
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
