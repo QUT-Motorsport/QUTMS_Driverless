@@ -20,6 +20,7 @@ import cv2
 import numpy as np
 from typing import List, Tuple, Callable
 import time
+import enum
 
 # import required sub modules
 from .rect import Rect, draw_box
@@ -90,10 +91,15 @@ def cone_msg(
     )
 
 
+class ModeEnum(enum.Enum):
+    cv_thresholding = 0
+    torch_inference = 1
+    trt_inference = 2
+
 class DetectorNode(Node):
     def __init__(
         self, 
-        mode: str, # mode of detection. 0==cv2, 1==torch, 2==trt
+        mode: ModeEnum, # mode of detection. 0==cv2, 1==torch, 2==trt
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
         enable_cv_filters: bool = False
     ):
@@ -121,6 +127,7 @@ class DetectorNode(Node):
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
         # set which cone detection this will be using
+        self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
         self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
         self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
@@ -198,8 +205,7 @@ def main_cv2(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode: str = "cv2 thresholding"
-    detector_node = DetectorNode(mode, get_hsv_bounding_boxes, enable_cv_filters=True)
+    detector_node = DetectorNode(ModeEnum.cv_thresholding, get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(detector_node)
     rclpy.shutdown()
 
@@ -232,8 +238,7 @@ def main_torch(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode: str = "torch yolo inference"
-    detector_node = DetectorNode(mode, get_torch_bounding_boxes)
+    detector_node = DetectorNode(ModeEnum.torch_inference, get_torch_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
 
@@ -266,7 +271,6 @@ def main_trt(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    mode: str = "tensorrt yolo inference"
-    detector_node = DetectorNode(mode, get_trt_bounding_boxes)
+    detector_node = DetectorNode(ModeEnum.trt_inference, get_trt_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()

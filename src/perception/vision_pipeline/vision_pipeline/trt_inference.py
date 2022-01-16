@@ -6,6 +6,7 @@ import ctypes
 import time
 import cv2
 import numpy as np
+from typing import Tuple, List
 # import TensorRT libraries
 import pycuda.autoinit
 import pycuda.driver as cuda
@@ -34,6 +35,7 @@ class TensorWrapper(object):
         f = open(engine_file_path, "rb")           
         engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
+        f.close() # might break 2nd loop of inference, hope not
 
         host_inputs = []
         cuda_inputs = []
@@ -51,8 +53,8 @@ class TensorWrapper(object):
             bindings.append(int(cuda_mem))
             # Append to the appropriate list.
             if engine.binding_is_input(binding):
-                self.input_w = engine.get_binding_shape(binding)[-1]
-                self.input_h = engine.get_binding_shape(binding)[-2]
+                self.input_w: int = engine.get_binding_shape(binding)[-1]
+                self.input_h: int = engine.get_binding_shape(binding)[-2]
                 host_inputs.append(host_mem)
                 cuda_inputs.append(cuda_mem)
             else:
@@ -73,8 +75,7 @@ class TensorWrapper(object):
         self.iou_thresh = iou_thresh
 
 
-    def infer(self, image_raw):
-        # threading.Thread.__init__(self)
+    def infer(self, image_raw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # Make self the active context, pushing it on top of the context stack.
         self.ctx.push()
         # Restore
@@ -92,7 +93,6 @@ class TensorWrapper(object):
 
         # Copy input image to host buffer
         np.copyto(host_inputs[0], input_image.ravel())
-        start = time.time()
         # Transfer input data to the GPU.
         cuda.memcpy_htod_async(cuda_inputs[0], host_inputs[0], stream)
         # Run inference.
@@ -104,28 +104,31 @@ class TensorWrapper(object):
         # Remove any context from the top of the context stack, deactivating it.
         self.ctx.pop()
         # Here we use the first row of output in that batch_size = 1
-        output = host_outputs[0]
+        output: np.ndarray = host_outputs[0]
+
         # Do postprocess and return
         return self.post_process(output, origin_h, origin_w)
                 
 
-    def preprocess_image(self, raw_bgr_image):
+    def preprocess_image(self, raw_bgr_image: np.ndarray) -> Tuple[np.ndarray, np.ndarray, int, int]:
         """
         description: Convert BGR image to RGB,
                      resize and pad it to target size, normalize to [0,1],
-                     transform to NCHW format.
+                     transform to NCHW format.\n
+        param:
+            raw_bgr_image: the original image
         return:
             image:  the processed image
             image_raw: the original image
             h: original height
             w: original width
         """
-        image_raw = raw_bgr_image
-        h, w, c = image_raw.shape
-        image = cv2.cvtColor(image_raw, cv2.COLOR_BGR2RGB)
+        image_raw: np.ndarray = raw_bgr_image
+        h, w, _ = image_raw.shape
+        image: np.ndarray = cv2.cvtColor(image_raw, cv2.COLOR_BGR2RGB)
         # Calculate widht and height and paddings
-        r_w = self.input_w / w
-        r_h = self.input_h / h
+        r_w: float = self.input_w / w
+        r_h: float = self.input_h / h
         if r_h > r_w:
             tw = self.input_w
             th = int(r_w * h)
@@ -160,9 +163,83 @@ class TensorWrapper(object):
         return image, image_raw, h, w
 
 
-    def xywh2xyxy(self, origin_h, origin_w, x):
+    def post_process(
+        self, output: np.ndarray, origin_h: int, origin_w: int
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        description:    Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        description: postprocess the prediction.\n
+        param:
+            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...] 
+            origin_h:   height of original image
+            origin_w:   width of original image
+        return:
+            result_boxes: finally boxes, a boxes numpy, each row is a box [x1, y1, x2, y2]
+            result_scores: finally scores, a numpy, each element is the score correspoing to box
+            result_classid: finally classid, a numpy, each element is the classid correspoing to box
+        """
+        # Get the num of boxes detected
+        num = int(output[0])
+        # Reshape to a two dimentional ndarray
+        pred: np.ndarray = np.reshape(output[1:], (-1, 6))[:num, :]
+        # Do nms
+        boxes: np.ndarray = self.non_max_suppression(
+            pred, origin_h, origin_w, conf_thres=self.conf_thresh, nms_thres=self.iou_thresh
+        )
+        result_boxes: np.ndarray = boxes[:, :4] if len(boxes) else np.array([])
+        result_scores: np.ndarray = boxes[:, 4] if len(boxes) else np.array([])
+        result_classid: np.ndarray = boxes[:, 5] if len(boxes) else np.array([])
+        return result_boxes, result_scores, result_classid
+
+
+    def non_max_suppression(
+        self, prediction: np.ndarray, 
+        origin_h: int, 
+        origin_w: int, 
+        conf_thres: float=0.5, 
+        nms_thres: float=0.4
+    ) -> np.ndarray:
+        """
+        description: Removes detections with lower object confidence score than 'conf_thres' and performs
+        Non-Maximum Suppression to further filter detections.\n
+        param:
+            prediction: detections, (x1, y1, x2, y2, conf, cls_id)
+            origin_h: original image height
+            origin_w: original image width
+            conf_thres: a confidence threshold to filter detections
+            nms_thres: a iou threshold to filter detections
+        return:
+            boxes: output after nms with the shape (x1, y1, x2, y2, conf, cls_id)
+        """
+        # Get the boxes that score > CONF_THRESH
+        boxes: np.ndarray = prediction[prediction[:, 4] >= conf_thres]
+        # Trandform bbox from [center_x, center_y, w, h] to [x1, y1, x2, y2]
+        boxes[:, :4] = self.xywh2xyxy(origin_h, origin_w, boxes[:, :4])
+        # clip the coordinates
+        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w -1)
+        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w -1)
+        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h -1)
+        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h -1)
+        # Object confidence
+        confs: np.ndarray = boxes[:, 4]
+        # Sort by the confs
+        boxes = boxes[np.argsort(-confs)]
+        # Perform non-maximum suppression
+        keep_boxes = []
+        while boxes.shape[0]:
+            large_overlap: bool = self.bbox_iou(np.expand_dims(boxes[0, :4], 0), boxes[:, :4]) > nms_thres
+            label_match: bool = boxes[0, -1] == boxes[:, -1]
+            # Indices of boxes with lower confidence scores, large IOUs and matching labels
+            invalid: bool = large_overlap & label_match
+            keep_boxes += [boxes[0]]
+            boxes = boxes[~invalid]
+        boxes = np.stack(keep_boxes, 0) if len(keep_boxes) else np.array([])
+        return boxes
+
+
+    def xywh2xyxy(self, origin_h: int, origin_w: int, x: int) -> np.ndarray:
+        """
+        description:    Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] 
+                        where xy1=top-left, xy2=bottom-right.\n
         param:
             origin_h:   height of original image
             origin_w:   width of original image
@@ -170,7 +247,7 @@ class TensorWrapper(object):
         return:
             y:          A boxes numpy, each row is a box [x1, y1, x2, y2]
         """
-        y = np.zeros_like(x)
+        y: np.ndarray = np.zeros_like(x)
         r_w = self.input_w / origin_w
         r_h = self.input_h / origin_h
         if r_h > r_w:
@@ -189,33 +266,9 @@ class TensorWrapper(object):
         return y
 
 
-    def post_process(self, output, origin_h, origin_w):
+    def bbox_iou(self, box1: np.ndarray, box2: np.ndarray, x1y1x2y2: bool=True) -> float:
         """
-        description: postprocess the prediction
-        param:
-            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...] 
-            origin_h:   height of original image
-            origin_w:   width of original image
-        return:
-            result_boxes: finally boxes, a boxes numpy, each row is a box [x1, y1, x2, y2]
-            result_scores: finally scores, a numpy, each element is the score correspoing to box
-            result_classid: finally classid, a numpy, each element is the classid correspoing to box
-        """
-        # Get the num of boxes detected
-        num = int(output[0])
-        # Reshape to a two dimentional ndarray
-        pred = np.reshape(output[1:], (-1, 6))[:num, :]
-        # Do nms
-        boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thres=self.conf_thresh, nms_thres=self.iou_thresh)
-        result_boxes = boxes[:, :4] if len(boxes) else np.array([])
-        result_scores = boxes[:, 4] if len(boxes) else np.array([])
-        result_classid = boxes[:, 5] if len(boxes) else np.array([])
-        return result_boxes, result_scores, result_classid
-
-
-    def bbox_iou(self, box1, box2, x1y1x2y2=True):
-        """
-        description: compute the IoU of two bounding boxes
+        description: compute the IoU of two bounding boxes.\n
         param:
             box1: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))
             box2: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))            
@@ -235,59 +288,19 @@ class TensorWrapper(object):
             b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
 
         # Get the coordinates of the intersection rectangle
-        inter_rect_x1 = np.maximum(b1_x1, b2_x1)
-        inter_rect_y1 = np.maximum(b1_y1, b2_y1)
-        inter_rect_x2 = np.minimum(b1_x2, b2_x2)
-        inter_rect_y2 = np.minimum(b1_y2, b2_y2)
+        inter_rect_x1: np.ndarray = np.maximum(b1_x1, b2_x1)
+        inter_rect_y1: np.ndarray = np.maximum(b1_y1, b2_y1)
+        inter_rect_x2: np.ndarray = np.minimum(b1_x2, b2_x2)
+        inter_rect_y2: np.ndarray = np.minimum(b1_y2, b2_y2)
         # Intersection area
-        inter_area = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * \
-                     np.clip(inter_rect_y2 - inter_rect_y1 + 1, 0, None)
+        inter_area: np.ndarray = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * \
+                                 np.clip(inter_rect_y2 - inter_rect_y1 + 1, 0, None)
         # Union Area
-        b1_area = (b1_x2 - b1_x1 + 1) * (b1_y2 - b1_y1 + 1)
-        b2_area = (b2_x2 - b2_x1 + 1) * (b2_y2 - b2_y1 + 1)
-
-        iou = inter_area / (b1_area + b2_area - inter_area + 1e-16)
+        b1_area: float = (b1_x2 - b1_x1 + 1) * (b1_y2 - b1_y1 + 1)
+        b2_area: float = (b2_x2 - b2_x1 + 1) * (b2_y2 - b2_y1 + 1)
+        iou: float = inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
         return iou
-
-
-    def non_max_suppression(self, prediction, origin_h, origin_w, conf_thres=0.5, nms_thres=0.4):
-        """
-        description: Removes detections with lower object confidence score than 'conf_thres' and performs
-        Non-Maximum Suppression to further filter detections.
-        param:
-            prediction: detections, (x1, y1, x2, y2, conf, cls_id)
-            origin_h: original image height
-            origin_w: original image width
-            conf_thres: a confidence threshold to filter detections
-            nms_thres: a iou threshold to filter detections
-        return:
-            boxes: output after nms with the shape (x1, y1, x2, y2, conf, cls_id)
-        """
-        # Get the boxes that score > CONF_THRESH
-        boxes = prediction[prediction[:, 4] >= conf_thres]
-        # Trandform bbox from [center_x, center_y, w, h] to [x1, y1, x2, y2]
-        boxes[:, :4] = self.xywh2xyxy(origin_h, origin_w, boxes[:, :4])
-        # clip the coordinates
-        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w -1)
-        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w -1)
-        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h -1)
-        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h -1)
-        # Object confidence
-        confs = boxes[:, 4]
-        # Sort by the confs
-        boxes = boxes[np.argsort(-confs)]
-        # Perform non-maximum suppression
-        keep_boxes = []
-        while boxes.shape[0]:
-            large_overlap = self.bbox_iou(np.expand_dims(boxes[0, :4], 0), boxes[:, :4]) > nms_thres
-            label_match = boxes[0, -1] == boxes[:, -1]
-            # Indices of boxes with lower confidence scores, large IOUs and matching labels
-            invalid = large_overlap & label_match
-            keep_boxes += [boxes[0]]
-            boxes = boxes[~invalid]
-        boxes = np.stack(keep_boxes, 0) if len(keep_boxes) else np.array([])
-        return boxes
 
 
     def destroy(self):
