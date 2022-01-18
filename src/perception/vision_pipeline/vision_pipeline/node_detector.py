@@ -8,6 +8,8 @@ from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
+# translate ROS image messages to OpenCV
+cv_bridge = CvBridge()
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
@@ -16,42 +18,14 @@ import os
 from math import sin, cos, radians, isnan, isinf
 import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import time
+import enum
 
 # import required sub modules
-from .threshold import Threshold
-from .hsv_cv import get_coloured_bounding_boxes
 from .rect import Rect, draw_box
-from .yolo_model import yolov5_init
-
-# translate ROS image messages to OpenCV
-cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
-
-# loading Pytorch model
-MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
-REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
-CONFIDENCE = 0.40 # higher = tighter filter 
-model = yolov5_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
-
-
-# HSV threshold constants
-YELLOW_HSV_THRESH = Threshold(
-    lower=[27, 160, 130],
-    upper=[40, 255, 255],
-)
-
-BLUE_HSV_THRESH = Threshold(
-    lower=[120, 100, 40],
-    upper=[130, 255, 255],
-)
-
-ORANGE_HSV_THRESH = Threshold(
-    lower=[0, 100, 50],
-    upper=[15, 255, 255],
-)
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -59,54 +33,14 @@ YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
-
-# thresh, cone_colour, display_colour
-HSV_CONE_DETECTION_PARAMETERS = [
-    (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
-    (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
-    # (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
-]
-
-# cone_colour, display_colour
-YOLO_CONE_DETECTION_PARAMETERS = [
-    (Cone.BLUE, BLUE_DISP_COLOUR),
-    (Cone.YELLOW, YELLOW_DISP_COLOUR),
-    # (Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+# display_colour
+CONE_DISPLAY_PARAMETERS = [
+    BLUE_DISP_COLOUR,
+    YELLOW_DISP_COLOUR,
+    # ORANGE_DISP_COLOUR,
 ]
 
 ConeMsgColour = int # define arbitrary variable type
-
-
-def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
-    
-    bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-    for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
-        for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
-            bounding_boxes.append((bounding_box, cone_colour, display_colour))
-    
-    return bounding_boxes
-
-
-def get_yolo_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-    rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
-
-    bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-    results = model(rgb_frame)
-    data = results.pandas().xyxy[0]
-
-    for cone_colour, display_colour in YOLO_CONE_DETECTION_PARAMETERS:
-        for i in range(len(data.index)): 
-            if data.iloc[i, 5] == cone_colour: # locates object i, class ID at index 5
-                bounding_box = Rect(
-                    int(data.xmin[i]),
-                    int(data.ymin[i]),
-                    int(data.xmax[i]-data.xmin[i]),
-                    int(data.ymax[i]-data.ymin[i]),
-                )
-                bounding_boxes.append((bounding_box, cone_colour, display_colour))
-    
-    return bounding_boxes
 
 
 def cone_distance(
@@ -157,8 +91,18 @@ def cone_msg(
     )
 
 
+class ModeEnum(enum.Enum):
+    cv_thresholding = 0
+    torch_inference = 1
+    trt_inference = 2
+
 class DetectorNode(Node):
-    def __init__(self):
+    def __init__(
+        self, 
+        mode: ModeEnum, # mode of detection. 0==cv2, 1==torch, 2==trt
+        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
+        enable_cv_filters: bool = False
+    ):
         super().__init__("cone_detector")
 
         # subscribers
@@ -182,7 +126,11 @@ class DetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
 
-        self.get_logger().info("Initialised Detector Node: Vision")
+        # set which cone detection this will be using
+        self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
+        self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
+        self.enable_cv_filters = enable_cv_filters
+        self.get_bounding_boxes_callable = get_bounding_boxes_callable
 
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
@@ -195,23 +143,19 @@ class DetectorNode(Node):
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         detected_cones: List[Cone] = []
-        # for bounding_box, cone_colour, display_colour in get_hsv_bounding_boxes(colour_frame):
-        for bounding_box, cone_colour, display_colour in get_yolo_bounding_boxes(colour_frame):
-            
-            # filter by height
-            if bounding_box.tl.y < colour_camera_info_msg.height/2:
-                continue
-
-            # filter on area
-            if bounding_box.area < 100 or bounding_box.area > 8000: 
-                continue
-            
-            # filter by aspect ratio
-            if bounding_box.aspect_ratio > 1.2:
-                continue
+        for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
+            if self.enable_cv_filters:
+                # filter by height
+                if bounding_box.tl.y < colour_camera_info_msg.height/2:
+                    continue
+                # filter on area
+                if bounding_box.area < 100 or bounding_box.area > 8000: 
+                    continue
+                # filter by aspect ratio
+                if bounding_box.aspect_ratio > 1.2:
+                    continue
             
             distance = cone_distance(bounding_box, depth_frame)
-
             # filter on distance
             if isnan(distance) or isinf(distance):
                 continue
@@ -230,15 +174,103 @@ class DetectorNode(Node):
 
         logger.info("Time: " + str(time.time() - start)) # log time
 
+        cv2.imshow("img", colour_frame)
+        cv2.waitKey(1)
 
-def main(args=None):
+
+## OpenCV thresholding
+def main_cv2(args=None):
+    from .threshold import Threshold
+    from .hsv_cv import get_coloured_bounding_boxes
+
+    # HSV threshold constants
+    YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
+    BLUE_HSV_THRESH = Threshold(lower=[120, 100, 40], upper=[130, 255, 255])
+    ORANGE_HSV_THRESH = Threshold(lower=[0, 100, 50], upper=[15, 255, 255])
+
+    # thresh, cone_colour, display_colour
+    HSV_CONE_DETECTION_PARAMETERS = [
+        (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
+        (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
+        (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+    ]
+
+    def get_hsv_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
+        
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+        for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
+            for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
+                bounding_boxes.append((bounding_box, cone_colour, display_colour))
+        return bounding_boxes
+
     rclpy.init(args=args)
-
-    detector_node = DetectorNode()
-
+    detector_node = DetectorNode(ModeEnum.cv_thresholding, get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(detector_node)
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
-    main()
+## PyTorch inference
+def main_torch(args=None):
+    from .torch_inference import torch_init, infer
+    
+    # loading Pytorch model
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
+    REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
+    CONFIDENCE = 0.35 # higher = tighter filter 
+    start = time.time()
+    model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
+    print(time.time() - start)
+
+    def get_torch_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+        data = infer(colour_frame, model)
+        
+        for i in range(len(data.index)): 
+            cone_colour = int(data.iloc[i, 5]) # locates object i, class ID at index 5
+            bounding_box = Rect(
+                int(data.xmin[i]),
+                int(data.ymin[i]),
+                int(data.xmax[i]-data.xmin[i]),
+                int(data.ymax[i]-data.ymin[i]),
+            )
+            bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
+        return bounding_boxes
+
+    rclpy.init(args=args)
+    detector_node = DetectorNode(ModeEnum.torch_inference, get_torch_bounding_boxes)
+    rclpy.spin(detector_node)
+    rclpy.shutdown()
+
+
+## TensorRT inference
+def main_trt(args=None):
+    from .trt_inference import TensorWrapper
+
+    # loading TensorRT engine
+    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
+    PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
+    CONFIDENCE = 0.35 # higher = tighter filter 
+    trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
+
+    def get_trt_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
+        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+
+        result_boxes, result_scores, result_classid = trt_wrapper.infer(colour_frame)
+        # Draw rectangles and labels on the original image
+        for i, box in enumerate(result_boxes):
+            cone_colour = int(result_classid[i])
+            bounding_box = Rect(
+                int(box[0]),
+                int(box[1]),
+                int(box[2]-box[0]),
+                int(box[3]-box[1]),
+            )
+            print(box, cone_colour)
+            bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
+        return bounding_boxes
+
+    rclpy.init(args=args)
+    detector_node = DetectorNode(ModeEnum.trt_inference, get_trt_bounding_boxes)
+    rclpy.spin(detector_node)
+    rclpy.shutdown()
