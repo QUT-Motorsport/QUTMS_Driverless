@@ -38,8 +38,9 @@ all:
 	@echo "    roscube_terminal"
 	@echo "    jetson"
 	@echo "    jetson_terminal"
-	@echo "    unreal_sim"
 	@echo "    zed_camera_driver"
+	@echo "    unreal_sim"
+	@echo "    sim_dev"
 	@echo
 
 help: all
@@ -65,9 +66,17 @@ build_docker_base_jetson_pytorch:
 	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \
 	..
 
+build_docker_base_galactic:
+	docker build -f Dockerfile.sim_base -t qutms_driverless_base:galactic \
+	--build-arg USERNAME=$(USERNAME) \
+	--build-arg HOST_UID=$(HOST_UID) \
+	--build-arg BASE_IMAGE=osrf/ros:galactic-desktop \
+	..
+
+
 # use make build target=<value>
 build:
-	@echo "ensure make build_docker_base_1804 or make build_docker_base_l4t is run before running a build"
+	@echo "ensure a 'make build_docker_base' is run before running a build"
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless build $(target)
 
 # use make run target=<value>
