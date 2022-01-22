@@ -66,14 +66,6 @@ build_docker_base_jetson_pytorch:
 	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \
 	..
 
-build_docker_base_galactic:
-	docker build -f Dockerfile.sim_base -t qutms_driverless_base:galactic \
-	--build-arg USERNAME=$(USERNAME) \
-	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=osrf/ros:galactic-desktop \
-	..
-
-
 # use make build target=<value>
 build:
 	@echo "ensure a 'make build_docker_base' is run before running a build"
