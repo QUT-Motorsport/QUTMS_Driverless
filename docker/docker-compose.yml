@@ -56,10 +56,10 @@ x-jetson-extras: &jetson-extras
 # ==============================================================================
 
 services:
-    unreal_sim:
+    fsds:
         build:
             context: ../
-            dockerfile: ./src/unreal_sim/Dockerfile.sim
+            dockerfile: ./src/simulators/Dockerfile.fsds
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -73,10 +73,10 @@ services:
         <<: *visible
         command: /home/${USERNAME}/start.sh
 
-    sim_dev:
+    eufs_sim:
         build:
             context: ../
-            dockerfile: ./src/unreal_sim/Dockerfile.dev
+            dockerfile: ./src/simulators/Dockerfile.eufss
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -86,7 +86,7 @@ services:
         <<: *devices
         <<: *network
         <<: *interactive
-        command: bash
+        command: bash #ros2 launch eufs_launcher eufs_launcher.launch.py
 
     zed_camera_driver:
         build:

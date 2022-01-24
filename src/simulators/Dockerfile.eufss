@@ -16,9 +16,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     ca-certificates \
     git \
+    python3-pip \
+    python3-tk \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
 
+# set python3 as python command
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # ==============================================================================
 #                           Set up a user using host UID
@@ -44,57 +48,39 @@ RUN useradd \
 
 
 # ==============================================================================
-#                          Install Dev Tools
-# ==============================================================================
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    nano \
-    # add more stuff here if needed
-    && rm -rf /var/lib/apt/lists/
-
-# set python3 as python command
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-WORKDIR /home/$USERNAME
-
-# ==============================================================================
 #                         Install src Dependencies
 # ==============================================================================
 
+WORKDIR /home/$USERNAME
+
 # make driverless workspace
-RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
+RUN mkdir -p /home/${USERNAME}/driverless_ws/src/simulators && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
 WORKDIR /home/$USERNAME/driverless_ws
 
 # copy in files and install dependencies
-COPY --chown=${HOST_UID}:${HOST_GROUP} ./src /home/${USERNAME}/driverless_ws/src
+COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/simulators /home/${USERNAME}/driverless_ws/src/simulators
 RUN rosdep update && \
     apt-get update && \
-    rosdep install -i --from-path src --skip-keys="zed_wrapper" -y --rosdistro galactic -y \
+    rosdep install -i --from-path src -y --rosdistro galactic -y \
     && rm -rf /var/lib/apt/lists/
 
 # ==============================================================================
 #                           Add ROS entrypoint
 # ==============================================================================
 # setup entrypoint
-COPY ./src/unreal_sim/galactic_entrypoint.sh /galactic_entrypoint.sh
+COPY ./src/simulators/galactic_entrypoint.sh /galactic_entrypoint.sh
 ENTRYPOINT ["/galactic_entrypoint.sh"]
 RUN echo "source /opt/ros/galactic/setup.bash" >> /home/$USERNAME/.bashrc
+RUN echo "export EUFS_MASTER=/home/developer/driverless_ws/src/simulators" >> /home/$USERNAME/.bashrc
 
-WORKDIR /tmp 
+# removes duplicate
+RUN pip3 uninstall numpy 
+RUN pip3 install tk
 
-# vision_pipeline
-COPY ./src/perception/lidar_pipeline/conda_requirements ./requirements.txt
-RUN pip3 install -r requirements.txt
-RUN rm -f ./requirements.txt
-
-WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
-# COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-# RUN source /opt/ros/galactic/install/setup.bash; \
-#     colcon build --symlink-install --packages-up-to \
-#         lidar_pipeline \
-#     && rm -rf ./src
+RUN source /opt/ros/galactic/setup.bash; \
+    colcon build \
+    && rm -rf ./src

@@ -39,8 +39,8 @@ all:
 	@echo "    jetson"
 	@echo "    jetson_terminal"
 	@echo "    zed_camera_driver"
-	@echo "    unreal_sim"
-	@echo "    sim_dev"
+	@echo "    fsds"
+	@echo "    galactic_sim"
 	@echo
 
 help: all
@@ -68,7 +68,7 @@ build_docker_base_jetson_pytorch:
 
 # use make build target=<value>
 build:
-	@echo "ensure a 'make build_docker_base' is run before running a build"
+	@echo "ensure a 'make build_docker_base_XXX' is run before running a build"
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless build $(target)
 
 # use make run target=<value>

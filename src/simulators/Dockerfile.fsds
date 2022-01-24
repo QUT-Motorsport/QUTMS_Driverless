@@ -78,7 +78,7 @@ RUN /bin/bash -c \
 # ==============================================================================
 
 WORKDIR /home/${USERNAME}/ros_2_messages_ws
-COPY src/unreal_sim/fs_msgs src/fs_msgs
+COPY src/simulators/fs_msgs src/fs_msgs
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash; colcon build --packages-select fs_msgs"
 
 
@@ -110,5 +110,5 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 #                             Copy run file
 # ==============================================================================
 
-COPY --chown=${HOST_UID} src/unreal_sim/start.sh /home/${USERNAME}/start.sh
+COPY --chown=${HOST_UID} src/simulators/start_fsds.sh /home/${USERNAME}/start.sh
 RUN chmod +x /home/${USERNAME}/start.sh
