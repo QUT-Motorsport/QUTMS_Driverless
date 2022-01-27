@@ -13,6 +13,3 @@
 [submodule "src/simulators/eufs_msgs"]
 	path = src/simulators/eufs_msgs
 	url = https://gitlab.com/eufs/eufs_msgs.git
-[submodule "src/simulators/fsds"]
-	path = src/simulators/fsds
-	url = https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
