@@ -56,7 +56,7 @@ WORKDIR /home/$USERNAME
 # make driverless workspace
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src/simulators && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}
-WORKDIR /home/$USERNAME/driverless_ws
+WORKDIR /home/${USERNAME}/driverless_ws
 
 # copy in files and install dependencies
 COPY --chown=${HOST_UID}:${HOST_GROUP} ./src/simulators /home/${USERNAME}/driverless_ws/src/simulators
