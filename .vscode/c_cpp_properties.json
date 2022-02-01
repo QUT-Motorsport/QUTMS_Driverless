@@ -3,10 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/opt/ros/foxy/include",
-                "/home/wsl/mambaforge/envs/driverless_env/include/",
-                "/home/wsl/mambaforge/envs/driverless_env/include/opencv4"
+                "${workspaceFolder}/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
