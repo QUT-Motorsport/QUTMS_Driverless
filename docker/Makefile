@@ -39,8 +39,6 @@ all:
 	@echo "    jetson"
 	@echo "    jetson_terminal"
 	@echo "    zed_camera_driver"
-	@echo "    fsds"
-	@echo "    galactic_sim"
 	@echo
 
 help: all
