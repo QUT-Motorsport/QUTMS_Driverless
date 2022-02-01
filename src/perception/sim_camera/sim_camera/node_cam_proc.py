@@ -48,8 +48,8 @@ class CamProcessing(Node):
         # subscriber
         cam_subs = self.create_subscription(
             Image,
-            # '/fsds/camera/cam1', # 785x785 (square defaults)
-            '/fsds/camera/cam2', # 1080p (like a usual camera)
+            # '/fsds/cam1', # 785x785 (square defaults)
+            '/fsds/cam2', # 1080p (like a usual camera)
             self.callback,
             10)
         cam_subs  # prevent unused variable warning
@@ -79,7 +79,7 @@ class CamProcessing(Node):
         
         detected_cones: List[Cone] = []
 
-        for i in range(len(self.cone_coords)):
+        for i in range(10):
             detected_cones.append(cone_msg())
        
         detection_msg = ConeDetectionStamped(
@@ -88,7 +88,7 @@ class CamProcessing(Node):
         )
 
         self.detection_publisher.publish(detection_msg)
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(raw_frame, encoding="bgra8"))
+        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(raw_frame))
         
         logger.info("Time: " + str(time.time() - start)) # log time
 
