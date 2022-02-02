@@ -50,7 +50,7 @@ def cone_distance(
     # get center as roi
     depth_roi: np.ndarray = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
-        y=colour_frame_cone_bounding_box.center.y - 3,
+        y=colour_frame_cone_bounding_box.center.y - 5,
         width=6,
         height=6,
     ).as_roi(depth_frame)
@@ -174,9 +174,6 @@ class DetectorNode(Node):
 
         logger.info("Time: " + str(time.time() - start)) # log time
 
-        cv2.imshow("img", colour_frame)
-        cv2.waitKey(1)
-
 
 ## OpenCV thresholding
 def main_cv2(args=None):
@@ -218,9 +215,7 @@ def main_torch(args=None):
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
     CONFIDENCE = 0.35 # higher = tighter filter 
-    start = time.time()
     model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
-    print(time.time() - start)
 
     def get_torch_bounding_boxes(colour_frame: np.ndarray) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
         bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
