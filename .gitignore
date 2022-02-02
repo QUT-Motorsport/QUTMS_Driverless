@@ -13,6 +13,7 @@ annotations/*
 # Datasets
 datasets/*
 data/*
+bags
 
 # - VSCode -
 .vscode/*
