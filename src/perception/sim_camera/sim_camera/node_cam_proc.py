@@ -1,87 +1,99 @@
 # import ROS2 libraries
 import rclpy
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 from cv_bridge import CvBridge # package to convert between ROS and OpenCV Images
+import message_filters
 # import ROS2 message libraries
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import Point
 # importcustom sim data message libraries
-from driverless_msgs.msg import ConeScan, ConeData
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # import other python libraries
 import numpy as np
-import cv2
 import time
+from typing import List, Tuple, Callable
 
 # import helper image processing module
 from .img_proc import *
 # import helper cone location processing module
 from .depth_proc import *
 
+cv_bridge = CvBridge()
+
+
+def cone_msg(
+    # distance: float,
+    # bearing: float,
+    # colour: int,  # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
+) -> Cone:
+
+    location = Point(
+        x=10.0,
+        y=5.0,
+        z=0.0,
+    )
+
+    return Cone(
+        location=location,
+        color=1,
+    )
+
 
 class CamProcessing(Node):
     def __init__(self):
         super().__init__('camera_processing')
 
-        ## creates subscriber to 'cam1' with type Image that sends data to cam_callback
-        self.cam_subscription_ = self.create_subscription(
+        # subscriber
+        cam_subs = self.create_subscription(
             Image,
-            # '/fsds/camera/cam1', # 785x785 (square defaults)
-            '/fsds/camera/cam2', # 1080p (like a usual camera)
-            self.cam_callback,
+            # '/fsds/cam1', # 785x785 (square defaults)
+            '/fsds/cam2', # 1080p (like a usual camera)
+            self.callback,
             10)
-        self.cam_subscription_  # prevent unused variable warning
-        self.br = CvBridge()
-        self.cone_coords = list()
+        cam_subs  # prevent unused variable warning
 
-        ## creates publisher to 'control_command' with type ControlCommand
-        self.scan_publisher_ = self.create_publisher(
-            ConeScan,
-            'cam_processed', 
-            10)
-        # creates timer for publishing commands
-        self.timer_period = 0.001  # seconds
-        self.timer = self.create_timer(self.timer_period, self.publisher)
+        # publishers
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "sim_camera/cone_detection", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "sim_camera/debug_img", 1)
+
+        self.get_logger().info(f"Initialised Detector Node with mode: SIMULATOR")
 
 
     # callback function for camera image processing
-    def cam_callback(self, cam_msg):
+    def callback(self, cam_msg: Image):
+        logger = self.get_logger()
+        logger.info("Received image")
+
+        start: float = time.time() # begin a timer
+
         # get image
-        raw_frame = self.br.imgmsg_to_cv2(cam_msg)
+        raw_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(cam_msg)
         h, w, _ = raw_frame.shape
 
-        cones = cam_main(raw_frame, False)
+        # cones = cam_main(raw_frame, False)
 
-        # call return_locations to return xyzc for every cone
-        self.cone_coords = return_locations(w/2, cones) # send cones for distance calculation
+        # # call return_locations to return xyzc for every cone
+        # cone_coords = return_locations(w/2, cones) # send cones for distance calculation
         
-        # print("*"*20)
-        # print(cones)
-        # cv2.imshow("1", raw_frame)
-        # cv2.waitKey(1)
-        
+        detected_cones: List[Cone] = []
 
-    ## publisher for processed cone data
-    def publisher(self):
-        cone_scan = ConeScan()
-        # head = Header()
-
-        cone_data = list()
-        for i in range(len(self.cone_coords)):
-            cone = ConeData()
-            cone.x = self.cone_coords[i][0]
-            cone.y = self.cone_coords[i][1]
-            cone.z = self.cone_coords[i][2]
-            cone.c = self.cone_coords[i][3]
-            cone_data.append(cone)
+        for i in range(10):
+            detected_cones.append(cone_msg())
        
-        # cant work out how headers work lmao, this breaks stuff
-        # head.stamp = rospy.Time.now()
-        # head.frame_id = "lidar2"
-        # cone_scan.header = head
+        detection_msg = ConeDetectionStamped(
+            header=cam_msg.header,
+            cones=detected_cones,
+        )
 
-        cone_scan.data = cone_data
+        self.detection_publisher.publish(detection_msg)
+        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(raw_frame))
+        
+        logger.info("Time: " + str(time.time() - start)) # log time
 
-        self.scan_publisher_.publish(cone_scan)
+        cv2.imshow("frame", raw_frame)
+        cv2.waitKey(1)
 
 
 ## main call

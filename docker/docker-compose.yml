@@ -56,23 +56,6 @@ x-jetson-extras: &jetson-extras
 # ==============================================================================
 
 services:
-    unreal_sim:
-        build:
-            context: ../
-            dockerfile: ./src/unreal_sim/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        volumes:
-            # see x-volumes_local above for explanation of this
-            - /dev/shm:/dev/shm
-        <<: *env-file
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *visible
-        command: /home/${USERNAME}/start.sh
-
     zed_camera_driver:
         build:
             context: ../

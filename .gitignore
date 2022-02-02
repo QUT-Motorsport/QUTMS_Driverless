@@ -16,7 +16,6 @@ data/*
 
 # - VSCode -
 .vscode/*
-!.vscode/c_cpp_properties.json
 !.vscode/launch.json
 .devcontainer/*
 !.devcontainer/COPY_RENAME_devcontainer.json
