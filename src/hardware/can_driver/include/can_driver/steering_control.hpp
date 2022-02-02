@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "can2etherenet_adapter.hpp"
+#include "can_msgs/msg/frame.hpp"
 #include "canopen.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -18,14 +19,14 @@ typedef struct c5e_config {
 
 	std::string to_string() {
 		std::stringstream ss;
-		ss << "vel: " << this->default_velocity << " acc: " << this->default_accelerations << " lims: " << this->default_limits << " curr: " << this->default_current << std::endl;
+		ss << "vel: " << this->default_velocity << " acc: " << this->default_accelerations
+		   << " lims: " << this->default_limits << " curr: " << this->default_current << std::endl;
 		return ss.str();
 	}
 } c5e_config_t;
 
 class SteeringControl {
    private:
-	std::shared_ptr<Can2Ethernet> can;
 	int32_t target;
 	int32_t velocity;
 	uint32_t current;
@@ -33,8 +34,10 @@ class SteeringControl {
 	std::pair<int32_t, int32_t> limits;
 	c5e_config_t defaults;
 
+	rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr subscription_;
+
    public:
-	SteeringControl(std::shared_ptr<Can2Ethernet> can, c5e_config_t config);
+	SteeringControl(c5e_config_t config);
 	~SteeringControl();
 
 	// Target a position with configured velocity and accelerations

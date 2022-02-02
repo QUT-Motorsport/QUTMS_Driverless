@@ -1,7 +1,6 @@
 #include "steering_control.hpp"
 
-SteeringControl::SteeringControl(std::shared_ptr<Can2Ethernet> can, c5e_config_t config) {
-	this->can = can;
+SteeringControl::SteeringControl(c5e_config_t config) {
 	this->velocity = config.default_velocity;
 	this->accelerations = std::make_pair<int32_t, int32_t>(config.default_accelerations, config.default_accelerations);
 	this->limits = std::make_pair<int32_t, int32_t>(config.default_limits, -config.default_limits);
@@ -177,8 +176,8 @@ bool SteeringControl::reached_target() {
 	this->can->tx(id, 0, out);
 
 	auto res = this->can->rx();
-	if(res != nullptr) {
-		if((res->at(res->size() - 3) & 0x04)) {
+	if (res != nullptr) {
+		if ((res->at(res->size() - 3) & 0x04)) {
 			return true;
 		}
 	}
@@ -188,7 +187,7 @@ bool SteeringControl::reached_target() {
 void SteeringControl::shutdown() {
 	uint32_t id;
 	uint8_t out[8];
-	
+
 	uint16_t control_word = 6;
 	sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t*)&control_word, 2, &id, out);	 // Shutdown
 	this->can->tx(id, 0, out);
@@ -201,8 +200,6 @@ void SteeringControl::set_c5e_config(c5e_config_t config) {
 	this->defaults.default_velocity = config.default_velocity;
 }
 
-c5e_config_t SteeringControl::get_c5e_config() {
-	return this->defaults;
-}
+c5e_config_t SteeringControl::get_c5e_config() { return this->defaults; }
 
 SteeringControl::~SteeringControl() {}

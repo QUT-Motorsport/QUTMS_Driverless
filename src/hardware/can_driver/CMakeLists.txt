@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 find_package(ackermann_msgs REQUIRED)
+find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(include/can_driver)
@@ -18,24 +19,30 @@ set (SOURCES
   src/can2ethernet_adapter.cpp
   src/tcp_client.cpp
   src/canopen.cpp
-  src/steering_control.cpp
 )
 
-add_executable(can_driver src/can_driver.cpp ${SOURCES})
-ament_target_dependencies(can_driver ackermann_msgs)
+# add_executable(can_driver src/can_driver.cpp ${SOURCES})
+# ament_target_dependencies(can_driver ackermann_msgs)
 
-target_include_directories(can_driver PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+# target_include_directories(can_driver PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
 
-add_executable(steering src/node_steering.cpp ${SOURCES})
-ament_target_dependencies(steering rclcpp ackermann_msgs)
+add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
+ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs)
 
 target_include_directories(steering PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS can_driver steering
+add_executable(canbus src/node_canbus.cpp ${SOURCES})
+ament_target_dependencies(canbus rclcpp ackermann_msgs driverless_msgs)
+
+target_include_directories(canbus PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+install(TARGETS canbus
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
