@@ -34,8 +34,8 @@ YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
-LEFT_CONE_COLOUR = Cone.YELLOW
-RIGHT_CONE_COLOUR = Cone.BLUE
+LEFT_CONE_COLOUR = Cone.BLUE
+RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
 def robot_pt_to_img_pt(x: float, y: float) -> Point:
@@ -134,12 +134,16 @@ class SimpleControllerNode(Node):
                 thickness=5
             )
 
+        ## SPLINE PLANNER CODE
+        start: float = time.time()
+
         yellow_x: List[float] = []
         yellow_y = []
         blue_x = []
         blue_y = []
+        tx = []
+        ty = []
 
-        start: float = time.time()
         if len(yellow_list) > 1 and len(blue_list) > 1:
             y_degree = len(yellow_list)-1
             b_degree = len(blue_list)-1
@@ -150,22 +154,21 @@ class SimpleControllerNode(Node):
             yellow_sort = sorted(yellow_list, key=lambda x: (x[0],x[1]))
             blue_sort = sorted(blue_list, key=lambda x: (x[0],x[1]))
             for i in yellow_sort:
-                yellow_x.append(i[0])
-                yellow_y.append(i[1])
+                yellow_x.append(-i[1])
+                yellow_y.append(i[0])
             for i in blue_sort:
-                blue_x.append(i[0])
-                blue_y.append(i[1])
+                blue_x.append(-i[1])
+                blue_y.append(i[0])
             yx, yy = approximate_b_spline_path(yellow_x, yellow_y, 100, degree=y_degree)
             bx, by = approximate_b_spline_path(blue_x, blue_y, 100, degree=b_degree)
 
-            tx = []
-            ty = []
             for i in range(100):
                 mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
                 tx.append(mid_x)
                 ty.append(mid_y)
         logger.info("Algo crunching time: " + str(time.time()-start))
 
+        ## ORIGINAL BANG-BANG CODE
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
 
@@ -204,16 +207,21 @@ class SimpleControllerNode(Node):
                 y=closest_right.location.y + 2,
             )
         
+        if tx != []:
+            target = Point(ty[50], -tx[50])
+
+
         if target is not None:
+            print(target)
             target_img_pt = robot_pt_to_img_pt(target.x, target.y)
-        #     cv2.drawMarker(
-        #         debug_img, 
-        #         target_img_pt,
-        #         (0, 0, 255),
-        #         markerType=cv2.MARKER_TILTED_CROSS,
-        #         markerSize=10,
-        #         thickness=2
-        #     )
+            cv2.drawMarker(
+                debug_img, 
+                robot_pt_to_img_pt(target.x, target.y).to_tuple(),
+                (0, 0, 255),
+                markerType=cv2.MARKER_TILTED_CROSS,
+                markerSize=10,
+                thickness=2
+            )
             target_img_angle = atan2(target_img_pt.y - IMG_ORIGIN.y, target_img_pt.x - IMG_ORIGIN.x)
             
             cv2.line(
@@ -240,6 +248,7 @@ class SimpleControllerNode(Node):
             plt.plot(yx, yy, '-y')
             plt.plot(bx, by, '-b')
             plt.plot(tx, ty, '-r')
+            plt.plot(tx[50], ty[50], 'or')
             plt.grid(True)
             plt.axis("equal")
 
