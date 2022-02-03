@@ -84,7 +84,7 @@ class KinematicBicycleModel:
 		# getting slip angle
 		self.slipAngle = np.arctan(self.lR / (self.lR + self.lF) * np.tan(self.delta))
 
-    	# getting next state
+    		# getting next state
 		self.x = self.x + self.dt * (v * np.cos(self.theta + self.slipAngle) ) 
 		self.y = self.y + self.dt * (v * np.sin(self.theta + self.slipAngle) ) 
 		self.theta = self.theta + self.dt * v / self.lF * np.sin(self.slipAngle)
