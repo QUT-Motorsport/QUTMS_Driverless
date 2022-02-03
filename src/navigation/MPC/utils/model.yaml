@@ -1,0 +1,19 @@
+# model.yaml file which contains the vehicle characteristics used in 'kinematicModels.py'
+
+
+# Vehicle characteristics
+
+  # lF: (distance from the centre of gravity point of the car to the front axle)
+  lF: 0.6
+
+  # lR: (distance from the centre of gravity point of the car to the rear axle)
+  lR: 0.6
+
+# Model Constraints
+
+  # maxV: (maximum velocity of the vehicle)
+  maxV: 0
+
+  # maxSA: (maximum steering angle of the vehicle) 
+  maxSA: 0
+
