@@ -113,10 +113,12 @@ class LidarProcessing(Node):
 
         point_array: List(List) = read_points_list(pc2_msg)
 
-        LOGGER.info("\nMsg Time:" + str(time.time()-start))
+        LOGGER.info("\nRead Time:" + str(time.time()-start))
 
         # calls main module from ground estimation algorithm
         cones: List[List] = lidar_main(point_array) 
+
+        LOGGER.info("\nDetected cones:" + str(len(cones)))
         
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
@@ -157,19 +159,19 @@ def main(args=sys.argv[1:]):
     max_range = 6 #m
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['topic=', 'log=', 'print_logs', 'display', 'visualise', 'range='])
+    opts, arg = getopt.getopt(args, str(), ['sim', 'log=', 'print_logs', 'display', 'visualise', 'range='])
 
     # TODO: provide documentation for different options
     for opt, arg in opts:
-        if opt == '--node':
-            pc2_topic = arg
+        if opt == '--sim':
+            pc2_topic = "/lidar/Lidar2"
         elif opt == '--log':
             loglevel = arg
         elif opt == '--print_logs':
             print_logs = True
         elif opt == '--display':
             display = True
-        elif opt == '--display':
+        elif opt == '--visualise':
             visualise = True
         elif opt == '--range':
             max_range = arg
