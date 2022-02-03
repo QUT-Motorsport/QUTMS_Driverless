@@ -7,3 +7,7 @@
 [submodule "src/perception/vision_pipeline/yolov5"]
 	path = src/perception/vision_pipeline/yolov5
 	url = https://github.com/ultralytics/yolov5.git
+[submodule "src/common/fs_msgs"]
+	path = src/common/fs_msgs
+	url = https://github.com/FS-Driverless/fs_msgs.git
+	branch = ros2
