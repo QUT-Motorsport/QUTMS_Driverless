@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "spline_test"
+package_name = "spline_planner"
 
 setup(
     name=package_name,
@@ -19,7 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "simple = spline_test.node_spline:main",
+            "simple = spline_planner.node_spline:main",
         ],
     },
 )
