@@ -16,8 +16,7 @@ from fs_msgs.msg import Track, Cone
 from transforms3d.euler import quat2euler
 
 # other python modules
-import time
-import math
+from math import sin, cos
 from typing import List
 import sys
 import os
@@ -109,33 +108,16 @@ class ConeLocator(Node):
         super().__init__('map_processor')
 
         # sub to track for all cone locations relative to car start point
-        self.track_subscription = self.create_subscription(
-            Track,
-            "/testing_only/track",
-            self.map_callback,
-            10)
+        self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
         # sub to odometry for car pose + velocity
-        self.odom_subscription = self.create_subscription(
-            Odometry,
-            "/testing_only/odom",
-            self.odom_callback,
-            10)
+        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishes detected cones
-        self.detection_publisher: Publisher = self.create_publisher(
-            ConeDetectionStamped, 
-            "zed_detector/cone_detection", 
-            1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/detector/cone_detection", 1)
         # publishes rviz cone markers
-        self.marker_publisher: Publisher = self.create_publisher(
-            MarkerArray, 
-            "view/debug_cones_array", 
-            1)
+        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/view/debug_cones_array", 1)
         # publishes rviz car marker
-        self.car_publisher: Publisher = self.create_publisher(
-            Marker, 
-            "view/debug_car", 
-            1)
+        self.car_publisher: Publisher = self.create_publisher(Marker, "/view/debug_car", 1)
 
         LOGGER.info('---Map processing node initialised---')
 
@@ -145,9 +127,9 @@ class ConeLocator(Node):
 
 
     def map_callback(self, track_msg: Track):
-        logger = self.get_logger()
-        logger.info("Received map")
+        LOGGER.info("Received map")
         
+        # track cone list is taken as coords relative to the initial car position
         self.track = track_msg.track
 
         markers_list: List[Marker] = []
@@ -161,14 +143,15 @@ class ConeLocator(Node):
                 self.odom_header,
             ))
 
+        # create message for all cones on the track
         markers_msg = MarkerArray(markers=markers_list)
         self.marker_publisher.publish(markers_msg) # publish marker points data
 
 
     def odom_callback(self, odom_msg: Odometry):
-        logger = self.get_logger()
-        # logger.info("Received odom")
+        LOGGER.info("Received odom")
 
+        # header used to create markers
         self.odom_header = odom_msg.header
 
         w = odom_msg.pose.pose.orientation.w
@@ -176,6 +159,7 @@ class ConeLocator(Node):
         j = odom_msg.pose.pose.orientation.y
         k = odom_msg.pose.pose.orientation.z
 
+        # i, j, k angles in rad
         ai, aj, ak = quat2euler([w, i, j, k])
 
         x = odom_msg.pose.pose.position.x
@@ -183,28 +167,32 @@ class ConeLocator(Node):
 
         ref_cones: List[QUTCone] = []
         for cone in self.track:
+            # displacement from car to cone
             x_dist = cone.location.x - x
             y_dist = cone.location.y - y
 
-
             ref_cone = QUTCone()
-            ref_cone.location.x = x_dist*math.cos(ak) + y_dist*math.sin(ak)
-            ref_cone.location.y = y_dist*math.cos(ak) - x_dist*math.sin(ak)
+            # reference frame displacement with rotation 
+            # uses k angle (z axis)
+            ref_cone.location.x = x_dist*cos(ak) + y_dist*sin(ak)
+            ref_cone.location.y = y_dist*cos(ak) - x_dist*sin(ak)
             ref_cone.location.z = 0.0
             ref_cone.color = cone.color
 
             if ref_cone.location.x > 0 and ref_cone.location.x < self.max_range \
-                and ref_cone.location.y > -10 and ref_cone.location.y < 10:
+                and ref_cone.location.y > -9 and ref_cone.location.y < 9:
                 ref_cones.append(ref_cone)
 
+        # create message with cones
         detection_msg = ConeDetectionStamped(
             header=odom_msg.header,
             cones=ref_cones
         )
         self.detection_publisher.publish(detection_msg) # publish cone data
 
+        # create marker for car
         car_marker = marker_msg(
-                3,
+                3, # not a cone colour
                 x, 
                 y, 
                 0, 
@@ -218,7 +206,7 @@ def main(args=sys.argv[1:]):
     # defaults args
     loglevel = 'info'
     print_logs = False
-    max_range = 25 #m
+    max_range = 20 #m
 
     # processing args
     opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'range='])
