@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'sim_mapper'
+package_name = 'sim_sensing'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'find_cones = sim_mapper.node_find_cones:main'
+            'find_cones = sim_sensing.node_find_cones:main'
         ],
     },
 )
