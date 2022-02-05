@@ -14,7 +14,7 @@ setup(
     zip_safe=True,
     maintainer="Alistair English",
     maintainer_email="team@qutmotorsport.com",
-    description="Driverless Controllers",
+    description="Plans a target path and waypoint to approach",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
