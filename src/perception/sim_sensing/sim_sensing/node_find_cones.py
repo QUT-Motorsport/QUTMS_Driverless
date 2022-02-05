@@ -13,8 +13,6 @@ from driverless_msgs.msg import ConeDetectionStamped
 from driverless_msgs.msg import Cone as QUTCone
 from fs_msgs.msg import Track, Cone
 
-from transforms3d.euler import quat2euler
-
 # other python modules
 from math import sin, cos
 from typing import List
@@ -25,7 +23,9 @@ import logging
 import datetime
 import pathlib
 
+from transforms3d.euler import quat2euler
 
+# initialise logger
 LOGGER = logging.getLogger(__name__)
 
 
