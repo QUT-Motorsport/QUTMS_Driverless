@@ -13,7 +13,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from cv_bridge import CvBridge
 
-from .point import Point
+from driverless_common.point import Point
 
 from typing import Tuple, List, Optional
 

@@ -1,11 +1,13 @@
+## COPIED FROM CONTROLLERS
+# TODO: figure out a way to share python code among ROS packages
 from dataclasses import dataclass
 
 from typing import Tuple
 
 @dataclass
 class Point:
-    x: int
-    y: int
+    x: float
+    y: float
 
     def __add__(self, other: "Point") -> "Point":
         return Point(self.x + other.x, self.y + other.y)
