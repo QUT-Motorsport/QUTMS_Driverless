@@ -19,7 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "simple = spline_planner.node_spline:main",
+            "control = spline_planner.node_spline:main",
         ],
     },
 )

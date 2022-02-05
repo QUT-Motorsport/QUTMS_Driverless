@@ -1,5 +1,3 @@
-# COPIED FROM ZED_CAMERA
-# TODO: figure out a way to share python code among ROS packages
 from dataclasses import dataclass
 
 from typing import Tuple

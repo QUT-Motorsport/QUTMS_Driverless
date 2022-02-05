@@ -1,4 +1,4 @@
-# COPIED FROM ZED_CAMERA
+## COPIED FROM CONTROLLERS
 # TODO: figure out a way to share python code among ROS packages
 from dataclasses import dataclass
 
