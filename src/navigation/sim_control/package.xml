@@ -7,8 +7,6 @@
     <maintainer email="qutmotorsport.team@gmail.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
-    <depend>rclpy</depend>
-    <depend>geometry_msgs</depend>
     <depend>fs_msgs</depend>
     <depend>driverless_msgs</depend>
 

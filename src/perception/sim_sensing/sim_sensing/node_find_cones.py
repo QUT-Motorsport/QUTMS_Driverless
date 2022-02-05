@@ -4,9 +4,8 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 # import ROS2 message libraries
 from std_msgs.msg import Header
-from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
-from builtin_interfaces.msg import Duration, Time
+from builtin_interfaces.msg import Duration
 from nav_msgs.msg import Odometry
 # import custom message libraries
 from driverless_msgs.msg import ConeDetectionStamped
@@ -119,11 +118,11 @@ class ConeLocator(Node):
         # publishes rviz car marker
         self.car_publisher: Publisher = self.create_publisher(Marker, "/view/debug_car", 1)
 
-        LOGGER.info('---Map processing node initialised---')
-
         self.max_range: float = max_range
         self.track: List[Cone] = []
         self.odom_header = Header()
+
+        LOGGER.info('---Map processing node initialised---')
 
 
     def map_callback(self, track_msg: Track):
