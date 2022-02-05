@@ -1,6 +1,3 @@
-# Docker
-.env
-
 # Colcon build
 build/
 install/
@@ -19,7 +16,6 @@ bags
 .vscode/*
 !.vscode/launch.json
 .devcontainer/*
-!.devcontainer/COPY_RENAME_devcontainer.json
 
 # C extensions
 *.so

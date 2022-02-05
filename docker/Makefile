@@ -1,8 +1,5 @@
 .PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run
 
-include .env
-export  # export all variables from .env
-
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
 export CURR_DIR=$(notdir $(shell pwd))
