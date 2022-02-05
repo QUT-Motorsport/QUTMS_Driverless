@@ -1,5 +1,4 @@
 # import ROS2 libraries
-import imp
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -7,10 +6,9 @@ from cv_bridge import CvBridge
 import message_filters
 # import ROS2 message libraries
 from sensor_msgs.msg import Image
-from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
-from builtin_interfaces.msg import Duration, Time
+from builtin_interfaces.msg import Duration
 from nav_msgs.msg import Odometry
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
@@ -20,7 +18,6 @@ from fs_msgs.msg import ControlCommand
 from math import sqrt, atan2, pi, sin, cos, atan
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt # plotting splines
 import scipy.interpolate as scipy_interpolate # for spline calcs
 from typing import Tuple, List, Optional
 import time
