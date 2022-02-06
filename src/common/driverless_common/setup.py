@@ -18,9 +18,4 @@ setup(
     description='QUTMS Driverless common Python modules',
     license='MIT',
     tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            'main = driverless_common.main:main'
-        ],
-    },
 )
