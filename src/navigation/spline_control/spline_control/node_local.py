@@ -31,7 +31,7 @@ import pathlib
 from transforms3d.euler import quat2euler
 
 # import required sub modules
-from .point import Point
+from driverless_common.point import Point
 
 # initialise logger
 LOGGER = logging.getLogger(__name__)

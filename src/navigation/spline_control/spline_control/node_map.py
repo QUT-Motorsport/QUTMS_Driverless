@@ -1,5 +1,4 @@
 # import ROS2 libraries
-from turtle import st
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -32,7 +31,7 @@ import pathlib
 from colour import Color
 
 # import required sub modules
-from .point import Point
+from driverless_common.point import Point
 
 # initialise logger
 LOGGER = logging.getLogger(__name__)
