@@ -28,6 +28,9 @@ import logging
 import datetime
 import pathlib
 
+# for velocity display colour
+from colour import Color
+
 # import required sub modules
 from .point import Point
 
@@ -219,7 +222,7 @@ class SplinePlanner(Node):
         path_markers: List[Marker] = []
 
         # find midpoint between splines at each point to make target path
-        for i in range(self.spline_len):
+        for i in range(self.spline_len), 10:
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)

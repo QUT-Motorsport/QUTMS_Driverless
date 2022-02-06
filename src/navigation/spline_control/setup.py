@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "spline_map"
+package_name = "spline_control"
 
 setup(
     name=package_name,
@@ -14,12 +14,13 @@ setup(
     zip_safe=True,
     maintainer="Alistair English",
     maintainer_email="team@qutmotorsport.com",
-    description="Driverless Controllers",
+    description="Plans a target path and waypoint to approach",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "plan = spline_map.node_spline:main",
+            "local_control = spline_control.node_local:main",
+            ""
         ],
     },
 )

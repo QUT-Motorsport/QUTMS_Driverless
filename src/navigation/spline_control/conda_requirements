@@ -4,3 +4,4 @@ dataclasses>=0.7
 ros-galactic-ackermann-msgs
 scipy
 transforms3d
+colour
