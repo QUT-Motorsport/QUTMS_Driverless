@@ -167,9 +167,9 @@ def marker_msg(
     return marker
 
 
-class SplinePlanner(Node):
+class LocalSpline(Node):
     def __init__(self, spline_len: int):
-        super().__init__("spline_planner")
+        super().__init__("local_spline")
 
         # subscribers
         cones_sub = message_filters.Subscriber(
@@ -178,7 +178,6 @@ class SplinePlanner(Node):
         odom_sub = message_filters.Subscriber(
             self, Odometry, "/testing_only/odom"
         )
-
         synchronizer = message_filters.TimeSynchronizer(
             fs=[cones_sub, odom_sub],
             queue_size=30,
@@ -186,11 +185,11 @@ class SplinePlanner(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/spline_planner/debug_img", 1)
-        self.path_publisher: Publisher = self.create_publisher(MarkerArray, "/spline_planner/target_array", 1)
+        self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
+        self.path_marker_publisher: Publisher = self.create_publisher(MarkerArray, "/local_spline/path_marker_array", 1)
         self.control_publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 10)
 
-        LOGGER.info("---Spline Controller Node Initalised---")
+        LOGGER.info("---Local Spline Node Initalised---")
 
         self.spline_len = spline_len
 
@@ -481,7 +480,7 @@ def main(args=sys.argv[1:]):
     # begin ros node
     rclpy.init(args=args)
 
-    node = SplinePlanner(spline_len)
+    node = LocalSpline(spline_len)
     rclpy.spin(node)
     
     node.destroy_node()

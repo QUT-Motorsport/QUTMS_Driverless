@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>spline_control</name>
+    <name>sim_planning</name>
     <version>0.0.0</version>
     <description>Plans a target path and waypoint to approach</description>
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>

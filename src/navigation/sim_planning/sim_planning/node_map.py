@@ -1,23 +1,20 @@
 # import ROS2 libraries
-from turtle import color
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from cv_bridge import CvBridge
 # import ROS2 message libraries
-from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 # import custom message libraries
 from fs_msgs.msg import Track, Cone
+from driverless_msgs.msg import SplinePoint, SplineStamped
 
 # other python modules
-from math import sqrt, atan2, pi
+from math import atan2, pi
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt # plotting splines
 import scipy.interpolate as scipy_interpolate # for spline calcs
 from typing import Tuple, List
 import time
@@ -31,59 +28,14 @@ import pathlib
 # for velocity display colour
 from colour import Color
 
-# import required sub modules
-from driverless_common.point import Point
-
 # initialise logger
 LOGGER = logging.getLogger(__name__)
 
-# translate ROS image messages to OpenCV
-cv_bridge = CvBridge()
-
-# image display geometry
-SCALE = 20
-WIDTH = 20*SCALE # 10m either side
-HEIGHT = 20*SCALE # 20m forward
-ORIGIN = Point(0, 0)
-IMG_ORIGIN = Point(int(WIDTH/2), HEIGHT)
-
-# display colour constants
-Colour = Tuple[int, int, int]
-YELLOW_DISP_COLOUR: Colour = (0, 255, 255) # bgr - yellow
-BLUE_DISP_COLOUR: Colour = (255, 0, 0) # bgr - blue
-ORANGE_DISP_COLOUR: Colour = (0, 165, 255) # bgr - orange
-
-LEFT_CONE_COLOUR = Cone.BLUE
-RIGHT_CONE_COLOUR = Cone.YELLOW
-
+# for colour gradient based on intensity
 MAX_ANGLE = 0.148353
 red = Color("red")
 blue = Color("blue")
 col_range = list(blue.range_to(red, 100))
-
-
-def robot_pt_to_img_pt(x: float, y: float) -> Point:
-    """
-    Converts a relative depth from the camera into image coords
-    * param x: x coord
-    * param y: y coord
-    * return: Point int pixel coords
-    """
-    return Point(
-        int(round(WIDTH/2 - y*SCALE)),
-        int(round(HEIGHT - x*SCALE)),
-    )
-
-
-def dist(a: Point, b: Point) -> float:
-    return sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
-
-
-def cone_to_point(cone: Cone) -> Point:
-    return Point(
-        cone.location.x,
-        cone.location.y,
-    )
 
 
 def approximate_b_spline_path(
@@ -192,9 +144,9 @@ def marker_msg(
     return marker
 
 
-class SplinePlanner(Node):
+class SplineMapper(Node):
     def __init__(self, spline_len: int):
-        super().__init__("spline_planner")
+        super().__init__("spline_mapper")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
@@ -202,15 +154,13 @@ class SplinePlanner(Node):
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishers
-        self.plot_img_publisher: Publisher = self.create_publisher(Image, "/spline_map/plot_img", 1)
-        self.path_publisher: Publisher = self.create_publisher(MarkerArray, "/spline_map/target_array", 1)
+        self.path_marker_publisher: Publisher = self.create_publisher(MarkerArray, "/spline_mapper/path_marker_array", 1)
+        self.path_publisher: Publisher = self.create_publisher(SplineStamped, "/spline_mapper/path", 1)
 
         self.spline_len: int = spline_len
         self.odom_header: Header = None
-        # instance var so plot figure isn't recreated each loop
-        self.fig = plt.figure()
 
-        LOGGER.info("---Spline Controller Node Initalised---")
+        LOGGER.info("---Spline Mapper Node Initalised---")
 
 
     def odom_callback(self, odom_msg: Odometry):
@@ -240,19 +190,20 @@ class SplinePlanner(Node):
             elif cone.color == Cone.ORANGE_BIG:
                 oranges.append(cone)
 
+        # 4 orange cones: 2 blue side, 2 yellow side
         for cone in oranges:
-            if cone.location.x > 7:
-                if cone.location.y > 0:
+            if cone.location.x > 7: # far pair of cones
+                if cone.location.y > 0: # blue side
                     blue_x.insert(0, cone.location.x)
                     blue_y.insert(0, cone.location.y)
-                else:
+                else: # yellow side
                     yellow_x.insert(0, cone.location.x)
                     yellow_y.insert(0, cone.location.y)
-            else:
-                if cone.location.y > 0:
+            else: # close pair of cones
+                if cone.location.y > 0: # blue side
                     blue_x.append(cone.location.x)
                     blue_y.append(cone.location.y)
-                else:
+                else: # yellow side
                     yellow_x.append(cone.location.x)
                     yellow_y.append(cone.location.y)
 
@@ -263,26 +214,37 @@ class SplinePlanner(Node):
         tx: List[float] = [] # target spline x coords
         ty: List[float] = [] # target spline y coords
         th: List[float] = [] # target spline angles
-        path_markers: List[Marker] = []
         # find midpoint between splines at each point to make target path
         for i in range(self.spline_len):
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)
+            # angle of tangent at midpoint
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
         VEL_ZONE = 10
+        path_markers: List[Marker] = []
+        path: list[SplinePoint] = []
         for i in range(0, self.spline_len-VEL_ZONE, VEL_ZONE):
+            # check angle between current and 10th spline point ahead
             th_change = th[i+VEL_ZONE] - th[i]
             # keep between 360
             if (th_change > pi): th_change=th_change-2*pi
             elif (th_change < -pi): th_change=th_change+2*pi
 
+            # angle relative to max angle on track
             change_pc = abs(th_change) / MAX_ANGLE * 100
-
+            # set colour proportional to angle
             col = col_range[round(change_pc)].get_rgb()
 
             for j in range(VEL_ZONE):
+                path_point = SplinePoint()
+                path_point.location.x = tx[i+j]
+                path_point.location.y = ty[i+j]
+                path_point.location.z = 0.0
+                path_point.turn_intensity = change_pc
+                path.append(path_point)
+
                 path_markers.append(marker_msg(
                     tx[i+j],
                     ty[i+j],
@@ -290,31 +252,15 @@ class SplinePlanner(Node):
                     self.odom_header,
                     colour=col,
                 ))
+                
+        path_msg = SplineStamped(path=path)
+        self.path_publisher.publish(path_msg)
 
-        LOGGER.info("Time taken: "+ str(time.time()-start))
         # create message for all cones on the track
         path_markers_msg = MarkerArray(markers=path_markers)
-        self.path_publisher.publish(path_markers_msg)
+        self.path_marker_publisher.publish(path_markers_msg)
 
-        # show results
-        plt.clf()
-        plt.plot(yellow_x, yellow_y, '-oy')
-        plt.plot(blue_x, blue_y, '-ob')
-        plt.plot(yx, yy, '-y')
-        plt.plot(bx, by, '-b')
-        plt.plot(tx, ty, '-r')
-        plt.grid(True)
-        plt.axis("equal")
-
-        self.fig.canvas.draw()
-
-        plot_img = np.fromstring(self.fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-        plot_img = plot_img.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
-        plot_img = cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR)
-
-        self.plot_img_publisher.publish(cv_bridge.cv2_to_imgmsg(plot_img, encoding="bgr8"))
-        
-        # plt.show()
+        LOGGER.info("Time taken: "+ str(time.time()-start))
 
 
 def main(args=sys.argv[1:]):
@@ -369,7 +315,7 @@ def main(args=sys.argv[1:]):
     # begin ros node
     rclpy.init(args=args)
 
-    node = SplinePlanner(spline_len)
+    node = SplineMapper(spline_len)
     rclpy.spin(node)
     
     node.destroy_node()

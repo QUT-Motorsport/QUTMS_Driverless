@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "spline_control"
+package_name = "sim_planning"
 
 setup(
     name=package_name,
@@ -12,15 +12,15 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English",
+    maintainer="Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="Plans a target path and waypoint to approach",
+    description="Plans and follows an ideal path through the track",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "local_control = spline_control.node_local:main",
-            "map_plan = spline_control.node_map:main"
+            "mapper = sim_planning.node_map:main",
+            "pursuit = sim_planning.node_pursuit:main"
         ],
     },
 )

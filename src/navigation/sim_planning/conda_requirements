@@ -1,0 +1,6 @@
+opencv==4.5.2
+numpy==1.21.4
+dataclasses>=0.7
+scipy
+transforms3d
+colour
