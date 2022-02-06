@@ -1,4 +1,5 @@
 # import ROS2 libraries
+from turtle import color
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -13,7 +14,7 @@ from builtin_interfaces.msg import Duration
 from fs_msgs.msg import Track, Cone
 
 # other python modules
-from math import sqrt, atan, atan2, pi
+from math import sqrt, atan2, pi
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt # plotting splines
@@ -228,6 +229,7 @@ class SplinePlanner(Node):
         yellow_y: List[float] = []
         blue_x: List[float] = []
         blue_y: List[float] = []
+        oranges: List[Cone] = []
         for cone in track:
             if cone.color == Cone.YELLOW:
                 yellow_x.append(cone.location.x)
@@ -235,7 +237,25 @@ class SplinePlanner(Node):
             elif cone.color == Cone.BLUE:
                 blue_x.append(cone.location.x)
                 blue_y.append(cone.location.y)
-            
+            elif cone.color == Cone.ORANGE_BIG:
+                oranges.append(cone)
+
+        for cone in oranges:
+            if cone.location.x > 7:
+                if cone.location.y > 0:
+                    blue_x.insert(0, cone.location.x)
+                    blue_y.insert(0, cone.location.y)
+                else:
+                    yellow_x.insert(0, cone.location.x)
+                    yellow_y.insert(0, cone.location.y)
+            else:
+                if cone.location.y > 0:
+                    blue_x.append(cone.location.x)
+                    blue_y.append(cone.location.y)
+                else:
+                    yellow_x.append(cone.location.x)
+                    yellow_y.append(cone.location.y)
+
         # retrieves spline lists (x,y)
         yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len)
         bx, by = approximate_b_spline_path(blue_x, blue_y, self.spline_len)
