@@ -7,6 +7,7 @@ from cv_bridge import CvBridge
 # import ROS2 message libraries
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 # import custom message libraries
@@ -159,7 +160,7 @@ def marker_msg(
     marker.color.g = 0.0
     marker.color.b = 0.0
 
-    marker.lifetime = Duration(sec=1, nanosec=0)
+    marker.lifetime = Duration(sec=10, nanosec=100000)
 
     return marker
 
@@ -170,16 +171,24 @@ class SplinePlanner(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
+        # sub to odometry for car pose + velocity
+        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishers
         self.plot_img_publisher: Publisher = self.create_publisher(Image, "/spline_map/plot_img", 1)
         self.path_publisher: Publisher = self.create_publisher(MarkerArray, "/spline_map/target_array", 1)
 
-        LOGGER.info("---Spline Controller Node Initalised---")
-
-        self.spline_len = spline_len
+        self.spline_len: int = spline_len
+        self.odom_header: Header = None
         # instance var so plot figure isn't recreated each loop
         self.fig = plt.figure()
+
+        LOGGER.info("---Spline Controller Node Initalised---")
+
+
+    def odom_callback(self, odom_msg: Odometry):
+        # header used to create markers
+        self.odom_header = odom_msg.header
 
 
     def map_callback(self, track_msg: Track):
@@ -203,16 +212,24 @@ class SplinePlanner(Node):
                 blue_x.append(cone.location.x)
                 blue_y.append(cone.location.y)
             
-
         # retrieves spline lists (x,y)
         yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len)
         bx, by = approximate_b_spline_path(blue_x, blue_y, self.spline_len)
+
+        path_markers: List[Marker] = []
 
         # find midpoint between splines at each point to make target path
         for i in range(self.spline_len):
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)
+
+            path_markers.append(marker_msg(
+                tx[i],
+                ty[i],
+                i, 
+                self.odom_header,
+            ))
 
         LOGGER.info("Time taken: "+ str(time.time()-start))
 
@@ -233,15 +250,18 @@ class SplinePlanner(Node):
         plot_img = cv2.cvtColor(plot_img, cv2.COLOR_RGB2BGR)
 
         self.plot_img_publisher.publish(cv_bridge.cv2_to_imgmsg(plot_img, encoding="bgr8"))
-
-        plt.show()
+        
+        # create message for all cones on the track
+        path_markers_msg = MarkerArray(markers=path_markers)
+        self.path_publisher.publish(path_markers_msg)
+        # plt.show()
 
 
 def main(args=sys.argv[1:]):
     # defaults args
     loglevel = 'info'
     print_logs = False
-    spline_len = 2000
+    spline_len = 4000
 
     # processing args
     opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
