@@ -123,8 +123,8 @@ class DetectorNode(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "zed_detector/cone_detection", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "zed_detector/debug_img", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/detector/cone_detection", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/detector/debug_img", 1)
 
         # set which cone detection this will be using
         self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
