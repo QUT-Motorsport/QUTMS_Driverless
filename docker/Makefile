@@ -2,7 +2,6 @@
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
-export CURR_DIR=$(notdir $(shell pwd))
 
 # UNLESS YOU ARE UPDATING THE MAKEFILE FUNCTIONALITY
 # This file should rarely need to be touched.
