@@ -13,7 +13,7 @@ from builtin_interfaces.msg import Duration
 from fs_msgs.msg import Track, Cone
 
 # other python modules
-from math import sqrt
+from math import sqrt, atan, atan2, pi
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt # plotting splines
@@ -54,6 +54,11 @@ ORANGE_DISP_COLOUR: Colour = (0, 165, 255) # bgr - orange
 
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
+
+MAX_ANGLE = 0.148353
+red = Color("red")
+blue = Color("blue")
+col_range = list(blue.range_to(red, 100))
 
 
 def robot_pt_to_img_pt(x: float, y: float) -> Point:
@@ -112,7 +117,10 @@ def approximate_b_spline_path(
     return spline_x, spline_y
 
 
-def midpoint(p1: list, p2: list):
+def midpoint(
+    p1: List[float], 
+    p2: List[float]
+) -> Tuple[float]:
     """
     Retrieve midpoint between two points 
     * param p1: [x,y] coords of point 1
@@ -122,11 +130,27 @@ def midpoint(p1: list, p2: list):
     return (p1[0]+p2[0])/2, (p1[1]+p2[1])/2
 
 
+def angle(
+    p1: List[float], 
+    p2: List[float]
+) -> float:
+    """
+    Retrieve angle between two points 
+    * param p1: [x,y] coords of point 1
+    * param p2: [x,y] coords of point 2
+    * return: angle in rads
+    """
+    x_disp = p2[0] - p1[0]
+    y_disp = p2[1] - p1[1]
+    return atan2(y_disp, x_disp)
+
+
 def marker_msg(
     x_coord: float, 
     y_coord: float, 
     ID: int, 
     header: Header,
+    colour=(1.0, 0.0, 0.0)
 ) -> Marker: 
     """
     Creates a Marker object for cones or a car.
@@ -158,9 +182,9 @@ def marker_msg(
     marker.scale.z = 0.1
 
     marker.color.a = 1.0 # alpha
-    marker.color.r = 1.0
-    marker.color.g = 0.0
-    marker.color.b = 0.0
+    marker.color.r = float(colour[0])
+    marker.color.g = float(colour[1])
+    marker.color.b = float(colour[2])
 
     marker.lifetime = Duration(sec=10, nanosec=100000)
 
@@ -200,8 +224,6 @@ class SplinePlanner(Node):
         # track cone list is taken as coords relative to the initial car position
         track = track_msg.track
         
-        tx: List[float] = []
-        ty: List[float] = []
         yellow_x: List[float] = []
         yellow_y: List[float] = []
         blue_x: List[float] = []
@@ -218,22 +240,41 @@ class SplinePlanner(Node):
         yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len)
         bx, by = approximate_b_spline_path(blue_x, blue_y, self.spline_len)
 
+        tx: List[float] = [] # target spline x coords
+        ty: List[float] = [] # target spline y coords
+        th: List[float] = [] # target spline angles
         path_markers: List[Marker] = []
-
         # find midpoint between splines at each point to make target path
-        for i in range(self.spline_len), 10:
+        for i in range(self.spline_len):
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)
+            th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
-            path_markers.append(marker_msg(
-                tx[i],
-                ty[i],
-                i, 
-                self.odom_header,
-            ))
+        VEL_ZONE = 10
+        for i in range(0, self.spline_len-VEL_ZONE, VEL_ZONE):
+            th_change = th[i+VEL_ZONE] - th[i]
+            # keep between 360
+            if (th_change > pi): th_change=th_change-2*pi
+            elif (th_change < -pi): th_change=th_change+2*pi
+
+            change_pc = abs(th_change) / MAX_ANGLE * 100
+
+            col = col_range[round(change_pc)].get_rgb()
+
+            for j in range(VEL_ZONE):
+                path_markers.append(marker_msg(
+                    tx[i+j],
+                    ty[i+j],
+                    i+j, 
+                    self.odom_header,
+                    colour=col,
+                ))
 
         LOGGER.info("Time taken: "+ str(time.time()-start))
+        # create message for all cones on the track
+        path_markers_msg = MarkerArray(markers=path_markers)
+        self.path_publisher.publish(path_markers_msg)
 
         # show results
         plt.clf()
@@ -253,9 +294,6 @@ class SplinePlanner(Node):
 
         self.plot_img_publisher.publish(cv_bridge.cv2_to_imgmsg(plot_img, encoding="bgr8"))
         
-        # create message for all cones on the track
-        path_markers_msg = MarkerArray(markers=path_markers)
-        self.path_publisher.publish(path_markers_msg)
         # plt.show()
 
 

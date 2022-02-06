@@ -20,7 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "local_control = spline_control.node_local:main",
-            ""
+            "map_plan = spline_control.node_map:main"
         ],
     },
 )
