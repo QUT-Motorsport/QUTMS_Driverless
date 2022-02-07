@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "local_pursuit = sim_pursuit.node_local_pursuit:main",
+            "detection = sim_pursuit.node_find_cones:main"
         ],
     },
 )
