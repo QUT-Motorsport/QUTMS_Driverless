@@ -6,7 +6,7 @@ from cv_bridge import CvBridge
 import message_filters
 # import ROS2 message libraries
 from sensor_msgs.msg import Image
-from std_msgs.msg import Header
+from geometry_msgs.msg import Point as ROSPoint
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 from nav_msgs.msg import Odometry
@@ -126,7 +126,6 @@ def marker_msg(
     x_coord: float, 
     y_coord: float, 
     ID: int, 
-    header: Header,
 ) -> Marker: 
     """
     Creates a Marker object for cones or a car.
@@ -138,31 +137,6 @@ def marker_msg(
     """
 
     marker = Marker()
-    marker.header = header
-    marker.ns = "current_path"
-    marker.id = ID
-    marker.type = Marker.SPHERE
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x_coord
-    marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # scale out of 1x1x1m
-    marker.scale.x = 0.1
-    marker.scale.y = 0.1
-    marker.scale.z = 0.1
-
-    marker.color.a = 1.0 # alpha
-    marker.color.r = 1.0
-    marker.color.g = 0.0
-    marker.color.b = 0.0
-
-    marker.lifetime = Duration(sec=1, nanosec=0)
 
     return marker
 
@@ -186,7 +160,7 @@ class LocalSpline(Node):
 
         # publishers
         self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
-        self.path_marker_publisher: Publisher = self.create_publisher(MarkerArray, "/local_spline/path_marker_array", 1)
+        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/local_spline/path_marker", 1)
         self.control_publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 10)
 
         LOGGER.info("---Local Spline Node Initalised---")
@@ -334,19 +308,44 @@ class LocalSpline(Node):
                 # i, j, k angles in rad
                 ai, aj, ak = quat2euler([w, i, j, k])
                 # displacement from car to target element
-                x_dist = x + (tx[t]*sin(ak) + ty[t]*cos(ak))
-                y_dist = y + (ty[t]*sin(ak) - tx[t]*cos(ak))
-                # add on each cone to published array
-                path_markers.append(marker_msg(
-                    x_dist,
-                    y_dist,
-                    t, 
-                    odom_msg.header,
-                ))
+                x_dist = (tx[t]*sin(ak) + ty[t]*cos(ak))
+                y_dist = (ty[t]*sin(ak) - tx[t]*cos(ak))
+
+                line_point = ROSPoint()
+                line_point.x = x_dist
+                line_point.y = y_dist
+                line_point.z = 0.0
+                path_markers.append(line_point)
+
+            # add on each cone to published array
+            marker = Marker()
+            marker.header.frame_id = "map"
+            marker.ns = "current_path"
+            marker.id = 0
+            marker.type = Marker.LINE_STRIP
+            marker.action = Marker.ADD
+
+            marker.pose.position = odom_msg.pose.pose.position
+            marker.pose.orientation.x = 0.0
+            marker.pose.orientation.y = 0.0
+            marker.pose.orientation.z = 0.0
+            marker.pose.orientation.w = 1.0
+            # scale out of 1x1x1m
+            marker.scale.x = 0.2
+            marker.scale.y = 0.0
+            marker.scale.z = 0.0
+
+            marker.points = path_markers
+
+            marker.color.a = 1.0 # alpha
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+
+            marker.lifetime = Duration(sec=1, nanosec=0)
 
             # create message for all cones on the track
-            path_markers_msg = MarkerArray(markers=path_markers)
-            self.path_publisher.publish(path_markers_msg) # publish marker points data
+            self.path_marker_publisher.publish(marker) # publish marker points data
 
 
         ## APPROACH TARGET
@@ -375,7 +374,7 @@ class LocalSpline(Node):
             elif throttle_scalar <= 0: calc_throttle = 0
 
             # steering control
-            Kp_ang: float = 1.4
+            Kp_ang: float = 1.25
             ang_max: float = 7.0
 
             steering_angle = -((pi/2) - atan2(target.x, target.y))*5
@@ -424,7 +423,7 @@ class LocalSpline(Node):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2
             )
 
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+        self.path_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 

@@ -33,8 +33,6 @@ def marker_msg(
     x_coord: float, 
     y_coord: float, 
     ID: int, 
-    header: Header,
-    quaternion = None
 ) -> Marker: 
     """
     Creates a Marker object for cones or a car.
@@ -43,12 +41,11 @@ def marker_msg(
     * param y_coord: y position relative to parent frame
     * param ID: Unique for markers in the same frame
     * param header: passed in because creating time is dumb
-    * param quaternion: for car orientation
     * return: Marker
     """
 
     marker = Marker()
-    marker.header = header
+    marker.header.frame_id = "map"
     marker.ns = "current_scan"
     marker.id = ID
     marker.type = Marker.CYLINDER
@@ -56,20 +53,15 @@ def marker_msg(
 
     marker.pose.position.x = x_coord
     marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
+    marker.pose.position.z = 0.16
     marker.pose.orientation.x = 0.0
     marker.pose.orientation.y = 0.0
     marker.pose.orientation.z = 0.0
     marker.pose.orientation.w = 1.0
-
     # scale out of 1x1x1m
     marker.scale.x = 0.228
     marker.scale.y = 0.228
-    marker.scale.z = 0.325
-
-    marker.color.a = 1.0 # alpha
-
-    marker.lifetime = Duration(sec=10, nanosec=100000)
+    marker.scale.z = 0.32
 
     if colour == 0: # blue cone
         marker.color.r = 0.0
@@ -83,21 +75,9 @@ def marker_msg(
         marker.color.r = 0.901
         marker.color.g = 0.309
         marker.color.b = 0.039
-    else: # not a cone colour (this is a car)
-        marker.color.r = 0.0
-        marker.color.g = 1.0
-        marker.color.b = 0.0
-        # approx car size
-        marker.scale.x = 1.8
-        marker.scale.y = 1.0
-        marker.scale.z = 0.6
-        # use orientation passed
-        marker.pose.orientation = quaternion
-
-        marker.ns = "car"
-        marker.type = Marker.CUBE
-        # update as fast as odom topic is subbed
-        marker.lifetime = Duration(sec=0, nanosec=4200)
+    marker.color.a = 1.0 # alpha
+    
+    marker.lifetime = Duration(sec=10, nanosec=100000)
 
     return marker
 
@@ -114,13 +94,12 @@ class ConeLocator(Node):
         # publishes detected cones
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/detector/cone_detection", 1)
         # publishes rviz cone markers
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/view/debug_cones_array", 1)
+        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/locator/track_cones", 1)
         # publishes rviz car marker
-        self.car_publisher: Publisher = self.create_publisher(Marker, "/view/debug_car", 1)
+        self.car_publisher: Publisher = self.create_publisher(Marker, "/locator/car_marker", 1)
 
         self.max_range: float = max_range
         self.track: List[Cone] = []
-        self.odom_header = Header()
 
         LOGGER.info('---Map processing node initialised---')
 
@@ -134,13 +113,14 @@ class ConeLocator(Node):
         markers_list: List[Marker] = []
         for i, cone in enumerate(track_msg.track):
             # add on each cone to published array
-            markers_list.append(marker_msg(
+            marker: Marker = marker_msg(
                 cone.color,
                 cone.location.x, 
                 cone.location.y, 
                 i, 
-                self.odom_header,
-            ))
+            )
+            marker.header.stamp = self.get_clock().now().to_msg()
+            markers_list.append(marker)
 
         # create message for all cones on the track
         markers_msg = MarkerArray(markers=markers_list)
@@ -149,9 +129,6 @@ class ConeLocator(Node):
 
     def odom_callback(self, odom_msg: Odometry):
         LOGGER.info("Received odom")
-
-        # header used to create markers
-        self.odom_header = odom_msg.header
 
         w = odom_msg.pose.pose.orientation.w
         i = odom_msg.pose.pose.orientation.x
@@ -190,14 +167,27 @@ class ConeLocator(Node):
         self.detection_publisher.publish(detection_msg) # publish cone data
 
         # create marker for car
-        car_marker = marker_msg(
-                3, # not a cone colour
-                x, 
-                y, 
-                0, 
-                odom_msg.header,
-                odom_msg.pose.pose.orientation,
-            )
+        car_marker = Marker()
+        car_marker.ns = "car"
+        car_marker.id = 0
+        car_marker.type = Marker.CUBE
+        car_marker.action = Marker.ADD
+        car_marker.header.frame_id = "map"
+        car_marker.header.stamp = self.get_clock().now().to_msg()
+        # colour
+        car_marker.color.a = 1.0
+        car_marker.color.r = 0.0
+        car_marker.color.g = 1.0
+        car_marker.color.b = 0.0
+        # approx car size
+        car_marker.scale.x = 1.8
+        car_marker.scale.y = 1.0
+        car_marker.scale.z = 0.6
+        # pose
+        car_marker.pose.position = odom_msg.pose.pose.position
+        car_marker.pose.orientation = odom_msg.pose.pose.orientation
+        # update as fast as odom topic is subbed
+        car_marker.lifetime = Duration(sec=0, nanosec=4200)
         self.car_publisher.publish(car_marker) # publish marker points data
 
 
@@ -208,25 +198,22 @@ def main(args=sys.argv[1:]):
     max_range = 20 #m
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'range='])
+    # opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'range='])
 
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == '--log':
-            loglevel = arg
-        elif opt == '--print_logs':
-            print_logs = True
-        elif opt == '--range':
-            max_range = arg
-
-    # validating args
+    # # TODO: provide documentation for different options
+    # for opt, arg in opts:
+    #     if opt == '--log':
+    #         loglevel = arg
+    #     elif opt == '--print_logs':
+    #         print_logs = True
+    #     elif opt == '--range':
+    #         max_range = arg
+    # # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-
-    if not isinstance(max_range, int):
-        raise ValueError('Invalid range: %s. Must be int' % max_range)
+    # if not isinstance(numeric_level, int):
+    #     raise ValueError('Invalid log level: %s' % loglevel)
+    # if not isinstance(max_range, int):
+    #     raise ValueError('Invalid range: %s. Must be int' % max_range)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())

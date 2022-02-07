@@ -3,8 +3,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 # import ROS2 message libraries
-from std_msgs.msg import Header
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Point
+from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 # import custom message libraries
@@ -98,74 +98,21 @@ def angle(
     return atan2(y_disp, x_disp)
 
 
-def marker_msg(
-    x_coord: float, 
-    y_coord: float, 
-    ID: int, 
-    header: Header,
-    colour=(1.0, 0.0, 0.0)
-) -> Marker: 
-    """
-    Creates a Marker object for cones or a car.
-    * param x_coord: x position relative to parent frame
-    * param y_coord: y position relative to parent frame
-    * param ID: Unique for markers in the same frame
-    * param header: passed in because creating time is dumb
-    * return: Marker
-    """
-
-    marker = Marker()
-    marker.header = header
-    marker.ns = "current_path"
-    marker.id = ID
-    marker.type = Marker.SPHERE
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x_coord
-    marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # scale out of 1x1x1m
-    marker.scale.x = 0.1
-    marker.scale.y = 0.1
-    marker.scale.z = 0.1
-
-    marker.color.a = 1.0 # alpha
-    marker.color.r = float(colour[0])
-    marker.color.g = float(colour[1])
-    marker.color.b = float(colour[2])
-
-    marker.lifetime = Duration(sec=10, nanosec=100000)
-
-    return marker
-
-
 class SplineMapper(Node):
     def __init__(self, spline_len: int):
         super().__init__("spline_mapper")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
-        # sub to odometry for car pose + velocity
-        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishers
-        self.path_marker_publisher: Publisher = self.create_publisher(MarkerArray, "/spline_mapper/path_marker_array", 1)
+        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/spline_mapper/path_marker_array", 1)
         self.path_publisher: Publisher = self.create_publisher(SplineStamped, "/spline_mapper/path", 1)
 
         self.spline_len: int = spline_len
-        self.odom_header: Header = None
+        self.track: List[Cone] = None
 
         LOGGER.info("---Spline Mapper Node Initalised---")
-
-
-    def odom_callback(self, odom_msg: Odometry):
-        # header used to create markers
-        self.odom_header = odom_msg.header
 
 
     def map_callback(self, track_msg: Track):
@@ -173,14 +120,16 @@ class SplineMapper(Node):
         
         start: float = time.time()
         # track cone list is taken as coords relative to the initial car position
-        track = track_msg.track
+        
+        if self.track == None: self.track=track_msg.track
+        elif len(self.track) == len(track_msg.track): self.track=track_msg.track
         
         yellow_x: List[float] = []
         yellow_y: List[float] = []
         blue_x: List[float] = []
         blue_y: List[float] = []
         oranges: List[Cone] = []
-        for cone in track:
+        for cone in self.track:
             if cone.color == Cone.YELLOW:
                 yellow_x.append(cone.location.x)
                 yellow_y.append(cone.location.y)
@@ -223,7 +172,8 @@ class SplineMapper(Node):
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
         VEL_ZONE = 10
-        path_markers: List[Marker] = []
+        path_markers: List[Point] = []
+        path_colours: List[ColorRGBA] = []
         path: list[SplinePoint] = []
         for i in range(0, self.spline_len-VEL_ZONE, VEL_ZONE):
             # check angle between current and 10th spline point ahead
@@ -245,20 +195,47 @@ class SplineMapper(Node):
                 path_point.turn_intensity = change_pc
                 path.append(path_point)
 
-                path_markers.append(marker_msg(
-                    tx[i+j],
-                    ty[i+j],
-                    i+j, 
-                    self.odom_header,
-                    colour=col,
-                ))
-                
+                line_point = Point()
+                line_point.x = tx[i+j]
+                line_point.y = ty[i+j]
+                line_point.z = 0.0
+                line_colour = ColorRGBA()
+                line_colour.a = 1.0 # alpha
+                line_colour.r = col[0]
+                line_colour.g = col[1]
+                line_colour.b = col[2]
+                path_markers.append(line_point)
+                path_colours.append(line_colour)
+
         path_msg = SplineStamped(path=path)
         self.path_publisher.publish(path_msg)
 
-        # create message for all cones on the track
-        path_markers_msg = MarkerArray(markers=path_markers)
-        self.path_marker_publisher.publish(path_markers_msg)
+        ## Visualisation marker
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.ns = "current_path"
+        marker.id = 0
+        marker.type = Marker.LINE_STRIP
+        marker.action = Marker.ADD
+
+        marker.pose.position.x = 0.0
+        marker.pose.position.y = 0.0
+        marker.pose.position.z = 0.0
+        marker.pose.orientation.x = 0.0
+        marker.pose.orientation.y = 0.0
+        marker.pose.orientation.z = 0.0
+        marker.pose.orientation.w = 1.0
+        # scale out of 1x1x1m
+        marker.scale.x = 0.2
+        marker.scale.y = 0.0
+        marker.scale.z = 0.0
+
+        marker.points = path_markers
+        marker.colors = path_colours
+
+        marker.lifetime = Duration(sec=10, nanosec=100000)
+        self.path_marker_publisher.publish(marker)
+
 
         LOGGER.info("Time taken: "+ str(time.time()-start))
 
@@ -267,28 +244,25 @@ def main(args=sys.argv[1:]):
     # defaults args
     loglevel = 'info'
     print_logs = False
-    spline_len = 4000
+    spline_len = 3999
 
-    # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
+    # # processing args
+    # opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
 
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == '--log':
-            loglevel = arg
-        elif opt == '--print_logs':
-            print_logs = True
-        elif opt == '--length':
-            spline_len = arg
-
-    # validating args
+    # # TODO: provide documentation for different options
+    # for opt, arg in opts:
+    #     if opt == '--log':
+    #         loglevel = arg
+    #     elif opt == '--print_logs':
+    #         print_logs = True
+    #     elif opt == '--length':
+    #         spline_len = arg
+    # # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-
-    if not isinstance(spline_len, int):
-        raise ValueError('Invalid range: %s. Must be int' % spline_len)
+    # if not isinstance(numeric_level, int):
+    #     raise ValueError('Invalid log level: %s' % loglevel)
+    # if not isinstance(spline_len, int):
+    #     raise ValueError('Invalid range: %s. Must be int' % spline_len)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
