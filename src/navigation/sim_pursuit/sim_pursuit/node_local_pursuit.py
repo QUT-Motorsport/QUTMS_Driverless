@@ -426,7 +426,6 @@ class LocalSpline(Node):
         self.path_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
-
 def main(args=sys.argv[1:]):
     # defaults args
     loglevel = 'info'
