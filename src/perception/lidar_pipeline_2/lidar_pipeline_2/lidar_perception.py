@@ -226,6 +226,7 @@ def main(args=sys.argv[1:]):
     date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
     logging.basicConfig(filename=f'{path}/logs/{date}.log',
                         filemode='w',
+                        # Remove levelname s ?
                         format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
                         datefmt='%I:%M:%S %p',
                         # encoding='utf-8',
