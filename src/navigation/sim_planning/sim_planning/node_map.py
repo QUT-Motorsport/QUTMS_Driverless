@@ -32,7 +32,7 @@ from colour import Color
 LOGGER = logging.getLogger(__name__)
 
 # for colour gradient based on intensity
-MAX_ANGLE = 0.148353
+MAX_ANGLE = 0.15
 red = Color("red")
 blue = Color("blue")
 col_range = list(blue.range_to(red, 100))
