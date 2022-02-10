@@ -15,7 +15,6 @@ LOGGER = logging.getLogger(__name__)
 def detect_cones(
         point_cloud,
         point_norms,
-        print_logs,
         LIDAR_RANGE,
         DELTA_ALPHA,
         BIN_SIZE,
@@ -26,6 +25,9 @@ def detect_cones(
         REGRESS_BETWEEN_BINS,
         T_D_MAX,
         point_count,
+        create_plots,
+        show_plots,
+        print_logs,
         stdout_handler):
 
     # Printing logs to terminal
@@ -40,26 +42,26 @@ def detect_cones(
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
-    segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
+    #segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     end_time = time.time()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_norms_z)
+    #prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_norms_z)
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    #ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
 
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT)
+    #labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
