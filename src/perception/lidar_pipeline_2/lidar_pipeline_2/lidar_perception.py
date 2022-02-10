@@ -40,7 +40,11 @@ class ConeSensingNode(Node):
                  _T_B,
                  _T_RMSE,
                  _REGRESS_BETWEEN_BINS,
-                 T_D_MAX):
+                 _T_D_MAX,
+                 _create_plots,
+                 _show_plots,
+                 _print_logs,
+                 _stdout_handler):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -58,7 +62,7 @@ class ConeSensingNode(Node):
 
         self.count = 0
 
-        # Variables for Lidar Manager
+        # Main variables for lidar manager
         self.LIDAR_RANGE = _LIDAR_RANGE
         self.DELTA_ALPHA = _DELTA_ALPHA
         self.BIN_SIZE = _BIN_SIZE
@@ -67,7 +71,13 @@ class ConeSensingNode(Node):
         self.T_B = _T_B
         self.T_RMSE = _T_RMSE
         self.REGRESS_BETWEEN_BINS = _REGRESS_BETWEEN_BINS
-        self.T_D_MAX = T_D_MAX
+        self.T_D_MAX = _T_D_MAX
+
+        # Misc variables for lidar manager
+        self.create_plots = _create_plots
+        self.show_plots = _show_plots
+        self.print_logs = _print_logs
+        self.stdout_handler = _stdout_handler
 
         LOGGER.info('Waiting for PointCloud2 data ...')
 
@@ -101,14 +111,9 @@ class ConeSensingNode(Node):
         point_count = point_cloud.shape[0]
         LOGGER.info(f'POINT_COUNT = {point_count}')
 
-        # Globals to pass to lidar_manager
-        global print_logs
-        global stdout_handler
-
         # Identify cones within the received point cloud
         pc_cones = lidar_manager.detect_cones(point_cloud,
                                               point_norms,
-                                              print_logs,
                                               self.LIDAR_RANGE,
                                               self.DELTA_ALPHA,
                                               self.BIN_SIZE,
@@ -119,7 +124,10 @@ class ConeSensingNode(Node):
                                               self.REGRESS_BETWEEN_BINS,
                                               self.T_D_MAX,
                                               point_count,
-                                              stdout_handler)
+                                              self.create_plots,
+                                              self.show_plots,
+                                              self.print_logs,
+                                              self.stdout_handler)
 
         self.count += 1
 
@@ -136,12 +144,15 @@ class ConeSensingNode(Node):
 
 
 def main(args=sys.argv[1:]):
-    # Defaults
+    # Point cloud source
     pc_node = '/velodyne_points'
+
+    # Detail of logs
     loglevel = 'info'
 
-    global print_logs
+    # Printing logs to terminal
     print_logs = False
+    stdout_handler = None
 
     # Max range of points to process (metres)
     LIDAR_RANGE = 20
@@ -172,6 +183,12 @@ def main(args=sys.argv[1:]):
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = 100
 
+    # Creates and saves plots
+    create_plots = False
+
+    # Creates, saves and displays plots to the screen
+    show_plots = False
+
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
                                             'log=',
@@ -184,6 +201,8 @@ def main(args=sys.argv[1:]):
                                             't_rmse=',
                                             't_d_max=',
                                             'no_regress',
+                                            'create_plots',
+                                            'show_plots',
                                             'print_logs'])
 
     for opt, arg in opts:
@@ -209,6 +228,10 @@ def main(args=sys.argv[1:]):
             T_D_MAX = arg
         elif opt == '--no_regress':
             REGRESS_BETWEEN_BINS = False
+        elif opt == 'create_plots':
+            create_plots = True
+        elif opt == 'show_plots':
+            show_plots = True
         elif opt == '--print_logs':
             print_logs = True
 
@@ -233,8 +256,6 @@ def main(args=sys.argv[1:]):
                         level=numeric_level)
 
     # Printing logs to terminal
-    global stdout_handler
-    stdout_handler = None
     if print_logs:
         stdout_handler = logging.StreamHandler(sys.stdout)
         LOGGER.addHandler(stdout_handler)
@@ -254,7 +275,11 @@ def main(args=sys.argv[1:]):
                                         T_B,
                                         T_RMSE,
                                         REGRESS_BETWEEN_BINS,
-                                        T_D_MAX)
+                                        T_D_MAX,
+                                        create_plots,
+                                        show_plots,
+                                        print_logs,
+                                        stdout_handler)
 
     rclpy.spin(cone_sensing_node)
 
