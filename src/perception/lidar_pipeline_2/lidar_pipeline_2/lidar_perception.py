@@ -233,8 +233,9 @@ def main(args=sys.argv[1:]):
                         level=numeric_level)
 
     # Printing logs to terminal
+    global stdout_handler
+    stdout_handler = None
     if print_logs:
-        global stdout_handler
         stdout_handler = logging.StreamHandler(sys.stdout)
         LOGGER.addHandler(stdout_handler)
 
