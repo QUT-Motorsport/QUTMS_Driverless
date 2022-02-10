@@ -1,43 +1,32 @@
-.env
-
-# colcon build
+# Colcon build
 build/
 install/
 log/
 
-# datasets
+# ML training
+annotations/*
+!annotations/annotations/darknet.labels
+
+# Datasets
 datasets/*
 data/*
+bags
 
 # - VSCode -
 .vscode/*
-!.vscode/c_cpp_properties.json
 !.vscode/launch.json
 .devcontainer/*
-!.devcontainer/COPY_RENAME_devcontainer.json
 
-# - Lidar Perception -
-# Python Virtual Environment
-development/lidar_perception/venv/*
-# pycache
-development/lidar_perception/__pycache__/*
-/src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-./src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-src/perception/lidar_pipeline/lidar_pipeline/sub_module/__pycache__/*
-# Figures
-development/lidar_perception/figures/*
-development/lidar_perception/inertiallycorrectthelidarscan_motion_fixing.txt
+# C extensions
+*.so
 
-# Datasets
-datasets/velodyne/*
+# TensorRT
+!libplugins.so
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
-*.so
 
 # Distribution / packaging
 .Python
