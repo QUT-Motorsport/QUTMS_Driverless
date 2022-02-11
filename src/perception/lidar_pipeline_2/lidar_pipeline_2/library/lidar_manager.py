@@ -7,6 +7,7 @@ from . import visualiser as vis
 # Import Python Modules
 import time
 import math
+import matplotlib.pyplot as plt
 
 # Import Logging
 import logging
@@ -41,7 +42,7 @@ def detect_cones(
     SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
     if create_plots:
-        vis.plot_point_cloud()
+        vis.plot_point_cloud(point_cloud)
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
@@ -70,7 +71,7 @@ def detect_cones(
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
 
     if show_plots:
-        pass
+        plt.show()
 
     return []
 
