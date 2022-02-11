@@ -228,9 +228,10 @@ def main(args=sys.argv[1:]):
             T_D_MAX = arg
         elif opt == '--no_regress':
             REGRESS_BETWEEN_BINS = False
-        elif opt == 'create_plots':
+        elif opt == '--create_plots':
             create_plots = True
-        elif opt == 'show_plots':
+        elif opt == '--show_plots':
+            create_plots = True
             show_plots = True
         elif opt == '--print_logs':
             print_logs = True
