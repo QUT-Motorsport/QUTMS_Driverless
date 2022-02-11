@@ -1,7 +1,8 @@
-# Import Custom Modules 
+# Import Custom Modules
 from . import point_cloud_processor as pcp
 from . import ground_plane_estimator as gpe
 from . import point_classifier as pc
+from . import visualiser as vis
 
 # Import Python Modules
 import time
@@ -39,6 +40,8 @@ def detect_cones(
     # Derived Constants
     SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
+    if create_plots:
+        vis.plot_point_cloud()
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
@@ -65,6 +68,9 @@ def detect_cones(
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
+
+    if show_plots:
+        pass
 
     return []
 
