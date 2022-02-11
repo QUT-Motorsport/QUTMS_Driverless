@@ -1,0 +1,28 @@
+channels:
+  - robostack-experimental
+  - conda-forge
+dependencies:
+  # ---------------------------------------------------------------------------
+  # ROS Base Env deps
+  # ---------------------------------------------------------------------------
+  - python=3.8
+  - ros-galactic-desktop
+  - ca-certificates
+  - openssl
+  - compilers
+  - cmake
+  - pkg-config
+  - make
+  - ninja
+  # for some reason, not installed in base python?
+  - typing-extensions
+  - pip
+  - pip:
+    - colcon-common-extensions
+    # colcon shell support
+    - colcon-argcomplete
+    - colcon-bash
+    - colcon-zsh
+variables:
+  # fix for WSL RVIZ2
+  LIBGL_ALWAYS_INDIRECT:

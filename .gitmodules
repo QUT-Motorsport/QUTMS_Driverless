@@ -1,0 +1,13 @@
+[submodule "src/common/rosboard/rosboard"]
+	path = src/common/rosboard/rosboard
+	url = https://github.com/dheera/rosboard.git
+[submodule "src/common/ros2_numpy/ros2_numpy"]
+	path = src/common/ros2_numpy/ros2_numpy
+	url = https://github.com/Box-Robotics/ros2_numpy.git
+[submodule "src/perception/vision_pipeline/yolov5"]
+	path = src/perception/vision_pipeline/yolov5
+	url = https://github.com/ultralytics/yolov5.git
+[submodule "src/common/fs_msgs"]
+	path = src/common/fs_msgs
+	url = https://github.com/FS-Driverless/fs_msgs.git
+	branch = ros2

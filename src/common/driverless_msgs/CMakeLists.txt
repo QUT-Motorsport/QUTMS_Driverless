@@ -20,6 +20,8 @@ find_package(geometry_msgs REQUIRED)
 set(msg_files
   "msg/Cone.msg"
   "msg/ConeDetectionStamped.msg"
+  "msg/SplinePoint.msg"
+  "msg/SplineStamped.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

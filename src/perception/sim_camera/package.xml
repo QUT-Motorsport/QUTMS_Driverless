@@ -7,10 +7,6 @@
     <maintainer email="qutmotorsport.team@gmail.com">Alastair Bradford, Harl Towne</maintainer>
     <license>MIT</license>
 
-    <depend>libopencv-dev</depend>
-    <depend>rclpy</depend>
-    <depend>sensor_msgs</depend>
-    <depend>cv_bridge</depend>
     <depend>fs_msgs</depend>
     <depend>driverless_msgs</depend>
 

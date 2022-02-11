@@ -13,7 +13,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from cv_bridge import CvBridge
 
-from .point import Point
+from driverless_common.point import Point
 
 from typing import Tuple, List, Optional
 
@@ -59,10 +59,10 @@ class SimpleControllerNode(Node):
         super().__init__("simple_controller")
 
         # subscribers
-        self.create_subscription(ConeDetectionStamped, "zed_detector/cone_detection", self.cone_detection_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/detector/cone_detection", self.cone_detection_callback, 1)
 
         # publishers
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "simple_controller/debug_img", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/simple_controller/debug_img", 1)
         self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
 
         self.get_logger().info("Simple Controller Node Initalised")
