@@ -19,7 +19,7 @@ def init_plot_3D(title,
                  label_c=normalise_rgba((48, 253, 194, 255)),
                  tick_c=normalise_rgba((48, 253, 194, 255))):
     # Initialise figure
-    fig = plt.figure(1, figsize=(5, 3), facecolor=background_c)
+    fig = plt.figure(facecolor=background_c)
     ax = fig.add_subplot(projection='3d')
 
     # Strings
@@ -47,6 +47,17 @@ def init_plot_3D(title,
 
 
 def plot_point_cloud(point_cloud):
-    colour_map = plt.cm.get_cmap('gist_rainbow')
     fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
-    ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=colour_map(point_cloud['intensity']/255), marker='s', s=(72./fig.dpi)**2)
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
+    c_bar = fig.colorbar(plot)
+    
+    c_bar.set_label('Intensity', color=normalise_rgba((48, 253, 194, 255)))
+    c_bar.ax.yaxis.set_tick_params(color=normalise_rgba((48, 253, 194, 255)))
+    c_bar.outline.set_edgecolor(normalise_rgba((31, 38, 48, 255)))
+    plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=normalise_rgba((48, 253, 194, 255)))
+    
+    #for angle in range(0, 360):
+    #    ax.view_init(34, angle)
+    #    plt.draw()
+    #    plt.pause(.00001)
+    #    plt.savefig("./test.png")
