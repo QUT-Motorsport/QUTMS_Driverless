@@ -44,7 +44,8 @@ class ConeSensingNode(Node):
                  _create_plots,
                  _show_plots,
                  _print_logs,
-                 _stdout_handler):
+                 _stdout_handler,
+                 _working_dir):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -78,6 +79,7 @@ class ConeSensingNode(Node):
         self.show_plots = _show_plots
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
+        self.working_dir = _working_dir
 
         LOGGER.info('Waiting for PointCloud2 data ...')
 
@@ -127,7 +129,8 @@ class ConeSensingNode(Node):
                                               self.create_plots,
                                               self.show_plots,
                                               self.print_logs,
-                                              self.stdout_handler)
+                                              self.stdout_handler,
+                                              self.working_dir)
 
         self.count += 1
 
@@ -235,6 +238,10 @@ def main(args=sys.argv[1:]):
             show_plots = True
         elif opt == '--print_logs':
             print_logs = True
+            
+    if not print_logs:
+        print("--print_logs flag not specified")
+        print("Launching lidar_perception without printing to terminal ...")
 
     # Validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
@@ -243,12 +250,13 @@ def main(args=sys.argv[1:]):
         raise ValueError('Invalid log level: %s' % loglevel)
 
     # Setting up logging
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + '/logs'):
-        os.mkdir(path + '/logs')
+    working_dir = str(pathlib.Path(__file__).parent.resolve())
+    logs_folder = working_dir + '/logs'
+    if not os.path.isdir(logs_folder):
+        os.mkdir(logs_folder)
 
     date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
-    logging.basicConfig(filename=f'{path}/logs/{date}.log',
+    logging.basicConfig(filename=f'{working_dir}/logs/{date}.log',
                         filemode='w',
                         # Remove levelname s ?
                         format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
@@ -280,7 +288,8 @@ def main(args=sys.argv[1:]):
                                         create_plots,
                                         show_plots,
                                         print_logs,
-                                        stdout_handler)
+                                        stdout_handler,
+                                        working_dir)
 
     rclpy.spin(cone_sensing_node)
 
