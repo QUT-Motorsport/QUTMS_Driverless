@@ -214,7 +214,7 @@ def main(args=sys.argv[1:]):
         elif opt == '--log':
             loglevel = arg
         elif opt == '--lidar_range':
-            LIDAR_RANGE = arg
+            LIDAR_RANGE = int(arg)
         elif opt == '--delta_alpha':
             DELTA_ALPHA = arg
         elif opt == '--bin_size':
