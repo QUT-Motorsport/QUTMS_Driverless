@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import os
+import subprocess
+import glob
 
 
 # Scale 255 RGBA values between 0 and 1
@@ -41,23 +44,40 @@ def init_plot_3D(title,
     ax.tick_params(axis='z', colors=tick_c)
 
     # Set view anlge
-    ax.view_init(elev=34, azim=202.5)
+    ax.view_init(elev=34, azim=202)
 
     return fig, ax
 
 
-def plot_point_cloud(point_cloud):
+def generate_video(ax, working_dir):
+    print("Hello?")
+    animations_folder = working_dir + '/animations'
+    if not os.path.isdir(animations_folder):
+        os.mkdir(animations_folder)
+    
+    for angle in range(360):
+        ax.view_init(34, (202 + angle) % 360)
+        plt.savefig(animations_folder + "/frame%02d.png" % angle, dpi=225)
+        print("Creating frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), end = "\r")
+        
+    os.chdir(animations_folder)
+    subprocess.call([
+        'ffmpeg', '-framerate', '15', '-i', 'frame%02d.png', '-r', '15', '-pix_fmt', 'yuv420p',
+        'video_name.mp4'
+    ])
+    
+    #for file_name in glob.glob("*.png"):
+    #    os.remove(file_name)
+    
+
+
+def plot_point_cloud(point_cloud, working_dir):
     fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
     c_bar = fig.colorbar(plot)
     
-    c_bar.set_label('Intensity', color=normalise_rgba((48, 253, 194, 255)))
-    c_bar.ax.yaxis.set_tick_params(color=normalise_rgba((48, 253, 194, 255)))
-    c_bar.outline.set_edgecolor(normalise_rgba((31, 38, 48, 255)))
-    plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=normalise_rgba((48, 253, 194, 255)))
+    c_bar.set_label('Point Intensity', color=normalise_rgba((156, 220, 254, 255)), labelpad=10)
+    c_bar.ax.yaxis.set_tick_params(color=normalise_rgba((156, 220, 254, 255)))
+    plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=normalise_rgba((156, 220, 254, 255)))
     
-    #for angle in range(0, 360):
-    #    ax.view_init(34, angle)
-    #    plt.draw()
-    #    plt.pause(.00001)
-    #    plt.savefig("./test.png")
+    generate_video(ax, working_dir)

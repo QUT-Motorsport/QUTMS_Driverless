@@ -30,7 +30,8 @@ def detect_cones(
         create_plots,
         show_plots,
         print_logs,
-        stdout_handler):
+        stdout_handler,
+        working_dir):
 
     # Printing logs to terminal
     if print_logs:
@@ -42,7 +43,7 @@ def detect_cones(
     SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
     if create_plots:
-        vis.plot_point_cloud(point_cloud)
+        vis.plot_point_cloud(point_cloud, working_dir)
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
