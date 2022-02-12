@@ -161,3 +161,4 @@ cython_debug/
 
 # LiDAR Pipeline
 /src/perception/lidar_pipeline_2/lidar_pipeline_2/.vscode/*
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/animations/*

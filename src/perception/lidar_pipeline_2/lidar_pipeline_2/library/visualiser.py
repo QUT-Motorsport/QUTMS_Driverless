@@ -62,12 +62,12 @@ def generate_video(ax, working_dir):
         
     os.chdir(animations_folder)
     subprocess.call([
-        'ffmpeg', '-framerate', '15', '-i', 'frame%02d.png', '-r', '15', '-pix_fmt', 'yuv420p',
+        'ffmpeg', '-framerate', '30', '-i', 'frame%02d.png', '-r', '30', '-pix_fmt', 'yuv420p',
         'video_name.mp4'
     ])
     
-    #for file_name in glob.glob("*.png"):
-    #    os.remove(file_name)
+    for file_name in glob.glob("*.png"):
+        os.remove(file_name)
     
 
 
