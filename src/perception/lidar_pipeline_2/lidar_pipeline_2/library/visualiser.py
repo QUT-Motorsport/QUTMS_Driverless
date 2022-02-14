@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import numpy as np
 import os
-import datetime
 import subprocess
 import glob
 
@@ -85,10 +83,10 @@ def animate_figure(name, ax, figure_timestamp):
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
     
-    for angle in range(20):
+    for angle in range(360):
         ax.view_init(34, (202 + angle) % 360)
         plt.savefig(animations_folder + "/frame%02d.png" % angle, dpi=225)
-        print("Creating frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), end = "\r")
+        print("Creating animation frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), end = "\r")
         
     os.chdir(animations_folder)
     subprocess.call([
@@ -100,15 +98,15 @@ def animate_figure(name, ax, figure_timestamp):
         os.remove(frames)
 
 
-def plot_point_cloud(point_cloud, working_dir, animate_figures, timestamp):
+def plot_point_cloud(point_cloud, point_count, working_dir, animate_figures, timestamp):
     # Create Figure
-    fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
+    fig, ax = init_plot_3D('Point Cloud: ' + str(point_count) + ' Points', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
     add_colourbar(fig, plot, 'Point Intensity', blue, mint)
 
     # Save Figure
-    figure_timestamp = save_figure("01-PointCloud", working_dir, timestamp)
+    figure_timestamp = save_figure("01_PointCloud", working_dir, timestamp)
     
     # Create Animation
     if animate_figures:
-        animate_figure("01-PointCloud_Animated", ax, figure_timestamp)
+        animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
