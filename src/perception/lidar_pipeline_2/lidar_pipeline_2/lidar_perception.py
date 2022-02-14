@@ -77,8 +77,8 @@ class ConeSensingNode(Node):
         self.T_D_MAX = _T_D_MAX
 
         # Misc variables for lidar manager
-        self.create_plots = _create_figures
-        self.show_plots = _show_figures
+        self.create_figures = _create_figures
+        self.show_figures = _show_figures
         self.animate_figures = _animate_figures
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
@@ -250,6 +250,7 @@ def main(args=sys.argv[1:]):
             animate_figures = True
         elif opt == '--print_logs':
             print_logs = True
+
             
     if not print_logs:
         print("--print_logs flag not specified")
