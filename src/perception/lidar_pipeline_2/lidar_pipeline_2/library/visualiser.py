@@ -18,6 +18,33 @@ def normalise_rgba(rgba):
     return tuple(value / 255 for value in rgba)
 
 
+def init_plot_2D(title,
+                 xlabel,
+                 ylabel,
+                 background_c=light_grey,
+                 title_c=blue,
+                 face_c=dark_grey,
+                 label_c=blue,
+                 tick_c=mint):
+
+    # Initialise figure
+    fig, ax = plt.subplots(facecolor=background_c)
+
+    # Strings
+    ax.set_title(title, color=title_c)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    # Colours
+    ax.set_facecolor(face_c)
+    ax.xaxis.label.set_color(label_c)
+    ax.yaxis.label.set_color(label_c)
+    ax.tick_params(axis='x', colors=tick_c)
+    ax.tick_params(axis='y', colors=tick_c)
+
+    return fig, ax
+
+
 def init_plot_3D(title,
                  xlabel,
                  ylabel,
@@ -26,7 +53,7 @@ def init_plot_3D(title,
                  title_c=blue,
                  face_c=light_grey,
                  axis_c=dark_grey,
-                 label_c=mint,
+                 label_c=blue,
                  tick_c=mint):
 
     # Initialise figure
@@ -98,7 +125,13 @@ def animate_figure(name, ax, figure_timestamp):
         os.remove(frames)
 
 
-def plot_point_cloud(point_cloud, point_count, working_dir, animate_figures, timestamp):
+def plot_point_cloud_2D(point_cloud, point_count):
+    fig, ax = init_plot_2D("Point Cloud: " + str(point_count) + " Points", "X", "Y")
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
+    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
+    pass
+
+def plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp):
     # Create Figure
     fig, ax = init_plot_3D('Point Cloud: ' + str(point_count) + ' Points', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)

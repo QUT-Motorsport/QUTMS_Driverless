@@ -46,7 +46,8 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        vis.plot_point_cloud(point_cloud, point_count, working_dir, animate_figures, timestamp)
+        vis.plot_point_cloud_2D(point_cloud, point_count)
+        vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp)
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
