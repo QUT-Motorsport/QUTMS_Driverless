@@ -70,15 +70,15 @@ def save_figure(name, working_dir, date):
     if not os.path.isdir(figures_dir):
         os.mkdir(figures_dir)
 
-    figure_date = figures_dir + date
+    figure_date = figures_dir + "/" + date
     if not os.path.isdir(figure_date):
         os.mkdir(figure_date)
 
-    plt.savefig(figure_date + name + ".png", dpi=225)
+    plt.savefig(figure_date + "/" + name + ".png", dpi=225)
 
 
 def animate_figure(ax, working_dir, date):
-    animations_folder = working_dir + default_dir + date + '/animations'
+    animations_folder = working_dir + default_dir + "/" + date + '/animations'
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
     
