@@ -6,6 +6,13 @@ import subprocess
 import glob
 
 
+# Default Colours
+light_grey = (0.145, 0.181, 0.247, 1.0)
+blue = (0.612, 0.863, 0.996, 1.0)
+dark_grey = (0.122, 0.149, 0.188, 1.0)
+mint = (0.188, 0.992, 0.761, 1.0)
+
+
 # Scale 255 RGBA values between 0 and 1
 def normalise_rgba(rgba):
     return tuple(value / 255 for value in rgba)
@@ -15,12 +22,12 @@ def init_plot_3D(title,
                  xlabel,
                  ylabel,
                  zlabel,
-                 background_c=normalise_rgba((37, 46, 63, 255)),
-                 title_c=normalise_rgba((156, 220, 254, 255)),
-                 face_c=normalise_rgba((37, 46, 63, 255)),
-                 axis_c=normalise_rgba((31, 38, 48, 255)),
-                 label_c=normalise_rgba((48, 253, 194, 255)),
-                 tick_c=normalise_rgba((48, 253, 194, 255))):
+                 background_c=light_grey,
+                 title_c=blue,
+                 face_c=light_grey,
+                 axis_c=dark_grey,
+                 label_c=mint,
+                 tick_c=mint):
     # Initialise figure
     fig = plt.figure(facecolor=background_c)
     ax = fig.add_subplot(projection='3d')
@@ -49,6 +56,13 @@ def init_plot_3D(title,
     return fig, ax
 
 
+def add_colourbar(fig, plot, title, title_c, tick_c):
+    c_bar = fig.colorbar(plot)
+    c_bar.set_label(title, color=title_c, labelpad=10)
+    c_bar.ax.yaxis.set_tick_params(color=tick_c)
+    plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=tick_c)
+
+
 def generate_video(ax, working_dir):
     print("Hello?")
     animations_folder = working_dir + '/animations'
@@ -68,16 +82,12 @@ def generate_video(ax, working_dir):
     
     for file_name in glob.glob("*.png"):
         os.remove(file_name)
-    
 
 
 def plot_point_cloud(point_cloud, working_dir):
     fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
-    c_bar = fig.colorbar(plot)
+    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
     
-    c_bar.set_label('Point Intensity', color=normalise_rgba((156, 220, 254, 255)), labelpad=10)
-    c_bar.ax.yaxis.set_tick_params(color=normalise_rgba((156, 220, 254, 255)))
-    plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=normalise_rgba((156, 220, 254, 255)))
     
-    generate_video(ax, working_dir)
+    #generate_video(ax, working_dir)
