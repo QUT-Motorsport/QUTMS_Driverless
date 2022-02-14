@@ -46,8 +46,7 @@ class ConeSensingNode(Node):
                  _animate_figures,
                  _print_logs,
                  _stdout_handler,
-                 _working_dir,
-                 _date):
+                 _working_dir):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -83,12 +82,12 @@ class ConeSensingNode(Node):
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
         self.working_dir = _working_dir
-        self.date = _date
 
         LOGGER.info('Waiting for PointCloud2 data ...')
 
     def pc_callback(self, pc_msg):
-        LOGGER.info('PointCloud2 message received')
+        timestamp = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+        LOGGER.info('PointCloud2 message received at ' + timestamp)
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time = time.time()
@@ -136,7 +135,7 @@ class ConeSensingNode(Node):
                                               self.print_logs,
                                               self.stdout_handler,
                                               self.working_dir,
-                                              self.date)
+                                              timestamp)
 
         self.count += 1
 
@@ -212,7 +211,7 @@ def main(args=sys.argv[1:]):
                                             't_b=',
                                             't_rmse=',
                                             't_d_max=',
-                                            'no_regress',
+                                            'disable_regress',
                                             'create_figures',
                                             'show_figures',
                                             'animate_figures',
@@ -239,7 +238,7 @@ def main(args=sys.argv[1:]):
             T_RMSE = arg
         elif opt == '--t_d_max':
             T_D_MAX = arg
-        elif opt == '--no_regress':
+        elif opt == '--disable_regress':
             REGRESS_BETWEEN_BINS = False
         elif opt == '--create_figures':
             create_figures = True
@@ -247,6 +246,7 @@ def main(args=sys.argv[1:]):
             create_figures = True
             show_figures = True
         elif opt == '--animate_figures':
+            create_figures = True
             animate_figures = True
         elif opt == '--print_logs':
             print_logs = True
@@ -303,8 +303,7 @@ def main(args=sys.argv[1:]):
                                         animate_figures,
                                         print_logs,
                                         stdout_handler,
-                                        working_dir,
-                                        date)
+                                        working_dir)
 
     rclpy.spin(cone_sensing_node)
 
