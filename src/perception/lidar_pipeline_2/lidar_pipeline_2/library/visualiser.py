@@ -1,8 +1,10 @@
+import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import subprocess
 import glob
+import time
 
 
 # Default Values
@@ -109,11 +111,21 @@ def animate_figure(name, ax, figure_timestamp):
     animations_folder = figure_timestamp + '/animations'
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
-    
+
+    average_time = 0
     for angle in range(360):
+        start_time = time.time()
         ax.view_init(34, (202 + angle) % 360)
         plt.savefig(animations_folder + "/frame%02d.png" % angle, dpi=225)
-        print("Creating animation frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), end = "\r")
+        total_time = time.time() - start_time
+
+        if average_time == 0:
+            average_time = total_time
+        else:
+            average_time = (average_time + total_time) / 2
+
+        m, s = divmod(average_time * (359 - angle), 60)
+        print("Creating animation frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), "|", "{:.0f}m".format(m), "{:.0f}s ".format(s), end = "\r")
         
     os.chdir(animations_folder)
     subprocess.call([
