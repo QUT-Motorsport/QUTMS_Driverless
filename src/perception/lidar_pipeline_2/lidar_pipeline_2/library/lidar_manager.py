@@ -27,11 +27,13 @@ def detect_cones(
         REGRESS_BETWEEN_BINS,
         T_D_MAX,
         point_count,
-        create_plots,
-        show_plots,
+        create_figures,
+        show_figures,
+        animate_figures,
         print_logs,
         stdout_handler,
-        working_dir):
+        working_dir,
+        date):
 
     # Printing logs to terminal
     if print_logs:
@@ -42,8 +44,9 @@ def detect_cones(
     # Derived Constants
     SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
-    if create_plots:
-        vis.plot_point_cloud(point_cloud, working_dir)
+
+    if create_figures:
+        vis.plot_point_cloud(point_cloud, working_dir, date, animate_figures)
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
@@ -71,7 +74,7 @@ def detect_cones(
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
 
-    if show_plots:
+    if show_figures:
         plt.show()
 
     return []

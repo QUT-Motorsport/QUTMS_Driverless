@@ -6,11 +6,12 @@ import subprocess
 import glob
 
 
-# Default Colours
+# Default Values
 dark_grey = (0.122, 0.149, 0.188, 1.0)
 light_grey = (0.145, 0.181, 0.247, 1.0)
 blue = (0.612, 0.863, 0.996, 1.0)
 mint = (0.188, 0.992, 0.761, 1.0)
+default_dir = "/figures"
 
 
 # Scale 255 RGBA values between 0 and 1
@@ -65,20 +66,19 @@ def add_colourbar(fig, plot, title, title_c, tick_c):
 
 
 def save_figure(name, working_dir, date):
-    figures_dir = working_dir + "/figures"
+    figures_dir = working_dir + default_dir
     if not os.path.isdir(figures_dir):
         os.mkdir(figures_dir)
 
-    figure_date = working_dir + date
+    figure_date = figures_dir + date
     if not os.path.isdir(figure_date):
         os.mkdir(figure_date)
 
     plt.savefig(figure_date + name + ".png", dpi=225)
 
 
-def generate_video(ax, working_dir):
-    print("Hello?")
-    animations_folder = working_dir + '/animations'
+def animate_figure(ax, working_dir, date):
+    animations_folder = working_dir + default_dir + date + '/animations'
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
     
@@ -93,17 +93,19 @@ def generate_video(ax, working_dir):
         'video_name.mp4'
     ])
     
-    for file_name in glob.glob("*.png"):
-        os.remove(file_name)
+    for frames in glob.glob("*.png"):
+        os.remove(frames)
 
 
-def plot_point_cloud(point_cloud, working_dir, date):
+def plot_point_cloud(point_cloud, working_dir, date, animate_figures):
     # Create Figure
     fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
     add_colourbar(fig, plot, 'Point Intensity', blue, mint)
 
     # Save Figure
+    save_figure("01-PointCloud", working_dir, date)
     
-    
-    #generate_video(ax, working_dir)
+    # Create Animation
+    if animate_figures:
+        animate_figure(ax, working_dir, date)
