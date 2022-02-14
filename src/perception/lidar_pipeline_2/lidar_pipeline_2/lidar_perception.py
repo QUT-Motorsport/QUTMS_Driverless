@@ -41,11 +41,13 @@ class ConeSensingNode(Node):
                  _T_RMSE,
                  _REGRESS_BETWEEN_BINS,
                  _T_D_MAX,
-                 _create_plots,
-                 _show_plots,
+                 _create_figures,
+                 _show_figures,
+                 _animate_figures,
                  _print_logs,
                  _stdout_handler,
-                 _working_dir):
+                 _working_dir,
+                 _date):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
@@ -75,11 +77,13 @@ class ConeSensingNode(Node):
         self.T_D_MAX = _T_D_MAX
 
         # Misc variables for lidar manager
-        self.create_plots = _create_plots
-        self.show_plots = _show_plots
+        self.create_plots = _create_figures
+        self.show_plots = _show_figures
+        self.animate_figures = _animate_figures
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
         self.working_dir = _working_dir
+        self.date = _date
 
         LOGGER.info('Waiting for PointCloud2 data ...')
 
@@ -126,11 +130,13 @@ class ConeSensingNode(Node):
                                               self.REGRESS_BETWEEN_BINS,
                                               self.T_D_MAX,
                                               point_count,
-                                              self.create_plots,
-                                              self.show_plots,
+                                              self.create_figures,
+                                              self.show_figures,
+                                              self.animate_figures,
                                               self.print_logs,
                                               self.stdout_handler,
-                                              self.working_dir)
+                                              self.working_dir,
+                                              self.date)
 
         self.count += 1
 
@@ -187,10 +193,13 @@ def main(args=sys.argv[1:]):
     T_D_MAX = 100
 
     # Creates and saves plots
-    create_plots = False
+    create_figures = False
 
     # Creates, saves and displays plots to the screen
-    show_plots = False
+    show_figures = False
+
+    # Creates animations of figures
+    animate_figures = False
 
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
@@ -204,8 +213,9 @@ def main(args=sys.argv[1:]):
                                             't_rmse=',
                                             't_d_max=',
                                             'no_regress',
-                                            'create_plots',
-                                            'show_plots',
+                                            'create_figures',
+                                            'show_figures',
+                                            'animate_figures',
                                             'print_logs'])
 
     for opt, arg in opts:
@@ -231,11 +241,13 @@ def main(args=sys.argv[1:]):
             T_D_MAX = arg
         elif opt == '--no_regress':
             REGRESS_BETWEEN_BINS = False
-        elif opt == '--create_plots':
-            create_plots = True
-        elif opt == '--show_plots':
-            create_plots = True
-            show_plots = True
+        elif opt == '--create_figures':
+            create_figures = True
+        elif opt == '--show_figures':
+            create_figures = True
+            show_figures = True
+        elif opt == '--animate_figures':
+            animate_figures = True
         elif opt == '--print_logs':
             print_logs = True
             
@@ -285,11 +297,13 @@ def main(args=sys.argv[1:]):
                                         T_RMSE,
                                         REGRESS_BETWEEN_BINS,
                                         T_D_MAX,
-                                        create_plots,
-                                        show_plots,
+                                        create_figures,
+                                        show_figures,
+                                        animate_figures,
                                         print_logs,
                                         stdout_handler,
-                                        working_dir)
+                                        working_dir,
+                                        date)
 
     rclpy.spin(cone_sensing_node)
 
