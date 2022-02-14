@@ -46,13 +46,17 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        vis.plot_point_cloud_2D(point_cloud, point_count)
+        vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
         vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp)
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
-    #segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
+    segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE) # segments_bins_norms_xyz
     end_time = time.time()
+
+    if create_figures:
+        # vis.plot_segments_2D(segments_bins_norms_z)
+        pass
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
 

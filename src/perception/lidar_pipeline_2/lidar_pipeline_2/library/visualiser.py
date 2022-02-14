@@ -125,11 +125,15 @@ def animate_figure(name, ax, figure_timestamp):
         os.remove(frames)
 
 
-def plot_point_cloud_2D(point_cloud, point_count):
+def plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp):
+    # Create Figure
     fig, ax = init_plot_2D("Point Cloud: " + str(point_count) + " Points", "X", "Y")
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
     add_colourbar(fig, plot, 'Point Intensity', blue, mint)
-    pass
+
+    # Save Figure
+    save_figure("01_PointCloud_2D", working_dir, timestamp)
+
 
 def plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp):
     # Create Figure
@@ -138,8 +142,12 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, 
     add_colourbar(fig, plot, 'Point Intensity', blue, mint)
 
     # Save Figure
-    figure_timestamp = save_figure("01_PointCloud", working_dir, timestamp)
+    figure_timestamp = save_figure("02_PointCloud_3D", working_dir, timestamp)
     
     # Create Animation
     if animate_figures:
         animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
+
+def plot_segments_2D(segments_bins_norms_z):
+    fig, ax = init_plot_2D("Point Cloud discretised into Segments", "X", "Y")
+    pass
