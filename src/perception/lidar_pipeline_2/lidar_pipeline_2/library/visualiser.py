@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import os
+import datetime
 import subprocess
 import glob
 
@@ -65,24 +66,26 @@ def add_colourbar(fig, plot, title, title_c, tick_c):
     plt.setp(plt.getp(c_bar.ax.axes, 'yticklabels'), color=tick_c)
 
 
-def save_figure(name, working_dir, date):
+def save_figure(name, working_dir, timestamp):
     figures_dir = working_dir + default_dir
     if not os.path.isdir(figures_dir):
         os.mkdir(figures_dir)
 
-    figure_date = figures_dir + "/" + date
-    if not os.path.isdir(figure_date):
-        os.mkdir(figure_date)
+    figure_timestamp = figures_dir + "/" + timestamp
+    if not os.path.isdir(figure_timestamp):
+        os.mkdir(figure_timestamp)
 
-    plt.savefig(figure_date + "/" + name + ".png", dpi=225)
+    plt.savefig(figure_timestamp + "/" + name + ".png", dpi=225)
+
+    return figure_timestamp
 
 
-def animate_figure(ax, working_dir, date):
-    animations_folder = working_dir + default_dir + "/" + date + '/animations'
+def animate_figure(name, ax, figure_timestamp):
+    animations_folder = figure_timestamp + '/animations'
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
     
-    for angle in range(360):
+    for angle in range(20):
         ax.view_init(34, (202 + angle) % 360)
         plt.savefig(animations_folder + "/frame%02d.png" % angle, dpi=225)
         print("Creating frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), end = "\r")
@@ -90,22 +93,22 @@ def animate_figure(ax, working_dir, date):
     os.chdir(animations_folder)
     subprocess.call([
         'ffmpeg', '-framerate', '30', '-i', 'frame%02d.png', '-r', '30', '-pix_fmt', 'yuv420p',
-        'video_name.mp4'
+        name + '.mp4'
     ])
     
     for frames in glob.glob("*.png"):
         os.remove(frames)
 
 
-def plot_point_cloud(point_cloud, working_dir, date, animate_figures):
+def plot_point_cloud(point_cloud, working_dir, animate_figures, timestamp):
     # Create Figure
     fig, ax = init_plot_3D('Point Cloud', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
     add_colourbar(fig, plot, 'Point Intensity', blue, mint)
 
     # Save Figure
-    save_figure("01-PointCloud", working_dir, date)
+    figure_timestamp = save_figure("01-PointCloud", working_dir, timestamp)
     
     # Create Animation
     if animate_figures:
-        animate_figure(ax, working_dir, date)
+        animate_figure("01-PointCloud_Animated", ax, figure_timestamp)
