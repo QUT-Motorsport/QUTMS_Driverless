@@ -67,6 +67,8 @@ def detect_cones(
     start_time = time.time()
     ground_plane = gpe.get_ground_plane_4(prototype_points_idx, segments, point_norms, point_cloud['z'], SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
+    
+    # print(ground_plane)
 
     LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
 
