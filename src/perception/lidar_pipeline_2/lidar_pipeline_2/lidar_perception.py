@@ -102,8 +102,8 @@ class ConeSensingNode(Node):
         start_time = time.time()
         point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
 
-        # Creating mask to remove points outside of range
-        mask = point_norms <= self.LIDAR_RANGE
+        # Creating mask to remove points outside of range and norms of 0
+        mask = (point_norms <= self.LIDAR_RANGE) & (point_norms != 0)
 
         # Applying mask
         point_norms = point_norms[mask]
