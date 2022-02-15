@@ -108,7 +108,7 @@ def get_prototype_points_3(seg_bin_nrm_xyz):
 def get_prototype_points_4(segments, bins, z):
     seg_bin_z_ind = np.lexsort((np.absolute(z), bins, segments))
     bin_diff_ind = np.where(bins[seg_bin_z_ind][:-1] != bins[seg_bin_z_ind][1:])[0] + 1
-    sorted_ind = np.empty(bin_diff_ind.size + 1)
+    sorted_ind = np.empty(bin_diff_ind.size + 1, dtype=int)
     sorted_ind[0] = seg_bin_z_ind[0]
     sorted_ind[1:] = seg_bin_z_ind[bin_diff_ind]
     return sorted_ind
