@@ -80,11 +80,6 @@ def get_prototype_points_3(seg_bin_nrm_xyz):
     # Sorting points by segment idx then height (z)
     seg_bin_nrm_xyz = seg_bin_nrm_xyz[np.lexsort((seg_bin_nrm_xyz['z'], seg_bin_nrm_xyz['seg_idx']))]
     
-    print(seg_bin_nrm_xyz)
-    print(type(seg_bin_nrm_xyz[0]))
-    print(type(seg_bin_nrm_xyz[0][0]))
-    print(type(seg_bin_nrm_xyz[0][1]))
-    
     return None, None
 
 
