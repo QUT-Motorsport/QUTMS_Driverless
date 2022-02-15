@@ -35,7 +35,7 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 
     idx = 0
     while idx < proto_count:
-
+        print(idx, proto_count)
         new_point = seg_proto_points[idx]
         if len(new_point) == 2:
             m_new = None
@@ -85,6 +85,33 @@ def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMAL
         ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
+
+
+def get_ground_plane_4(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+    norms_z = np.column_stack((norms, z))
+
+    # Where the segments change
+    seg_diff_ind = np.where(segments[prototype_points_idx][:-1] != segments[prototype_points_idx][1:])[0] + 1
+    sorted_ind = np.empty(seg_diff_ind.size + 1, dtype=int)
+    sorted_ind[0] = prototype_points_idx[0]
+    sorted_ind[1:] = prototype_points_idx[seg_diff_ind]
+
+    segments = segments[sorted_ind]
+    prototype_points = np.split(norms_z, prototype_points_idx[seg_diff_ind])
+    print(norms_z.size)
+
+    # A numpy array of zeros / lists that contain ground lines for each segment
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
+
+    seg_idx = 0
+    for segment in prototype_points:
+        segment = segment.tolist()
+        print(len(segment), seg_idx)
+        # ground_plane[segments[seg_idx]] = get_ground_lines_2(segment.tolist(), T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        seg_idx = seg_idx + 1
+    
+    return ground_plane
+
 # Instead of packing the start and end points as [], unpack them and just make the overall array bigger
 # Means you can also get rid of the dtype=object and just make it floats or something - should be faster
 # Notes:
