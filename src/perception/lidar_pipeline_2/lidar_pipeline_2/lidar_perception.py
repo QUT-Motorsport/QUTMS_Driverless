@@ -251,7 +251,6 @@ def main(args=sys.argv[1:]):
         elif opt == '--print_logs':
             print_logs = True
 
-            
     if not print_logs:
         print("--print_logs flag not specified")
         print("Launching lidar_perception without printing to terminal ...")

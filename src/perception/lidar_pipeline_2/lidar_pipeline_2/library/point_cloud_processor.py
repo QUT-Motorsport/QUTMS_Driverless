@@ -51,8 +51,8 @@ def get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     # Calculating the bin index for each point
     bins_idx = point_norms / BIN_SIZE
 
-    # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
-    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['x'], point_cloud['y'], point_cloud['z']))
+    # Stacking arrays segments_idx, bins_idx, point_norms, and xyz coords into one array
+    return np.rec.fromarrays((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['x'], point_cloud['y'], point_cloud['z']), names=('seg_idx', 'bin_idx', 'norms', 'x', 'y', 'z'))
 
 
 def get_prototype_points_2(seg_bin_nrm_z):
@@ -74,6 +74,19 @@ def get_prototype_points_2(seg_bin_nrm_z):
         seg_idx += 1
 
     return prototype_points, split_bin_nrm_z
+
+
+def get_prototype_points_3(seg_bin_nrm_xyz):
+    # Sorting points by segment idx then height (z)
+    seg_bin_nrm_xyz = seg_bin_nrm_xyz[np.lexsort((seg_bin_nrm_xyz['z'], seg_bin_nrm_xyz['seg_idx']))]
+    
+    print(seg_bin_nrm_xyz)
+    print(type(seg_bin_nrm_xyz[0]))
+    print(type(seg_bin_nrm_xyz[0][0]))
+    print(type(seg_bin_nrm_xyz[0][1]))
+    
+    return None, None
+
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy

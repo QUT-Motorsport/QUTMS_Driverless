@@ -51,7 +51,7 @@ def detect_cones(
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
-    segments_bins_norms_z = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE) # segments_bins_norms_xyz
+    segments_bins_norms_xyz = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     end_time = time.time()
 
     if create_figures:
@@ -62,7 +62,8 @@ def detect_cones(
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    #prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_norms_z)
+    # prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_norms_xyz)
+    prototype_points, split_bin_nrm_z = pcp.get_prototype_points_3(segments_bins_norms_xyz)
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
