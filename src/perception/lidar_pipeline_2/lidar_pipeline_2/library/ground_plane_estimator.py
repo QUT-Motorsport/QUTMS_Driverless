@@ -78,9 +78,11 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A numpy array of zeros / lists that contain ground lines for each segment
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
-
+    
     # For every segment
     for segment in prototype_points:
+        print(sum( [ len(listElem) for listElem in segment[1:]]))
+        print(segment[1:])
         ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
@@ -103,10 +105,35 @@ def get_ground_plane_4(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, 
     # Try creating the prototype points like you did in the other one
     # Try just including segments during the split
     seg_idx = 0
+    print("hello", sum( [ len(listElem) for listElem in prototype_points]))
     for segment in prototype_points:
-        print(seg_idx)
         segment = segment.tolist()
-        ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        # ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        seg_idx = seg_idx + 1
+    
+    return ground_plane
+
+
+def get_ground_plane_5(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+    proto_points_nrm_z = np.column_stack((norms[prototype_points_idx], z[prototype_points_idx]))
+
+    # Where the segments change
+    seg_diff_ind = np.where(segments[prototype_points_idx][:-1] != segments[prototype_points_idx][1:])[0] + 1
+    seg_sorted_ind = np.empty(seg_diff_ind.size + 1, dtype=int)
+    seg_sorted_ind[0] = prototype_points_idx[0]
+    seg_sorted_ind[1:] = prototype_points_idx[seg_diff_ind]
+
+    segments = segments[seg_sorted_ind]
+    prototype_points = np.split(proto_points_nrm_z, np.sort(prototype_points_idx[seg_diff_ind]))
+
+    # A numpy array of zeros / lists that contain ground lines for each segment
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
+    # Try creating the prototype points like you did in the other one
+    # Try just including segments during the split
+    seg_idx = 0
+    for segment in prototype_points:
+        #segment = segment.tolist()
+        #ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
         seg_idx = seg_idx + 1
     
     return ground_plane
