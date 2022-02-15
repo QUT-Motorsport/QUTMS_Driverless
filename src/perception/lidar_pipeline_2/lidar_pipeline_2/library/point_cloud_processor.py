@@ -12,7 +12,7 @@ def get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE):
     bins_idx = point_norms / BIN_SIZE
 
     # Stacking arrays segments_idx, bins_idx, point_norms, and z coords into one array
-    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['z']))
+    return np.column_stack((segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False), point_norms, point_cloud['x'], point_cloud['y'], point_cloud['z']))
 
 
 def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
@@ -108,10 +108,10 @@ def get_prototype_points_3(seg_bin_nrm_xyz):
 def get_prototype_points_4(segments, bins, z):
     seg_bin_z_ind = np.lexsort((np.absolute(z), bins, segments))
     bin_diff_ind = np.where(bins[seg_bin_z_ind][:-1] != bins[seg_bin_z_ind][1:])[0] + 1
-    sorted_ind = np.empty(bin_diff_ind.size + 1, dtype=int)
-    sorted_ind[0] = seg_bin_z_ind[0]
-    sorted_ind[1:] = seg_bin_z_ind[bin_diff_ind]
-    return sorted_ind
+    bin_sorted_ind = np.empty(bin_diff_ind.size + 1, dtype=int)
+    bin_sorted_ind[0] = seg_bin_z_ind[0]
+    bin_sorted_ind[1:] = seg_bin_z_ind[bin_diff_ind]
+    return bin_sorted_ind
 
 
 # Notes
