@@ -25,12 +25,16 @@ class CanBus : public rclcpp::Node {
 
 	void canmsg_timer_callback() {
 		auto res = this->c->rx();
-		while (res != nullptr) {
-			if (this->validate_frame(res)) {
-				std::vector<uint8_t> id_bytes = std::vector<uint8_t>(res->begin() + 1, res->begin() + 4);
-				std::vector<uint8_t> data_bytes = std::vector<uint8_t>(res->begin() + 5, res->begin() + 8);
 
-				char frame_information = res->at(0);
+		for (int i = 0; i < res->size() / 13; i++) {
+			std::vector<char> packet(FRAME_LENGTH);
+			std::copy(res->begin() + (FRAME_LENGTH * i), res->begin() + (FRAME_LENGTH * (i + 1)), packet.begin());
+
+			if (this->validate_frame(std::make_shared<std::vector<char>>(packet))) {
+				std::vector<uint8_t> id_bytes = std::vector<uint8_t>(packet.begin() + 1, packet.begin() + 4);
+				std::vector<uint8_t> data_bytes = std::vector<uint8_t>(packet.begin() + 5, packet.begin() + 8);
+
+				char frame_information = packet.at(0);
 				bool extended, remote;
 				int dlc;
 
@@ -38,12 +42,12 @@ class CanBus : public rclcpp::Node {
 
 				driverless_msgs::msg::Can msg;
 				msg.id = *((uint32_t*)(id_bytes.data()));
+				std::cout << "id: " << msg.id << std::endl;
 				msg.id_type = extended;
 				msg.dlc = dlc;
 				msg.data = data_bytes;
 				this->publisher_->publish(msg);
 			}
-			res = this->c->rx();
 		}
 	}
 
@@ -77,7 +81,7 @@ class CanBus : public rclcpp::Node {
 		RCLCPP_INFO(this->get_logger(), "done!");
 		RCLCPP_INFO(this->get_logger(), "Creating Timer...");
 		this->timer_ =
-			this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&CanBus::canmsg_timer_callback, this));
+			this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
 		RCLCPP_INFO(this->get_logger(), "done!");
 	}
 
