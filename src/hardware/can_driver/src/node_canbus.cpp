@@ -68,10 +68,15 @@ class CanBus : public rclcpp::Node {
 			rclcpp::shutdown();
 		}
 
+		RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip, _port);
+
 		this->c = std::make_shared<Can2Ethernet>(_ip, _port);
 
+		RCLCPP_INFO(this->get_logger(), "done!");
+		RCLCPP_INFO(this->get_logger(), "Creating Timer...");
 		this->timer_ =
 			this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
+		RCLCPP_INFO(this->get_logger(), "done!");
 	}
 
 	bool validate_frame(std::shared_ptr<std::vector<char>> frame) {
