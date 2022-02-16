@@ -16,6 +16,7 @@ find_package(rclcpp REQUIRED)
 include_directories(include)
 
 set (SOURCES
+  canopen.cpp
 )
 
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})

@@ -17,7 +17,6 @@ include_directories(include)
 set (SOURCES
   src/can2ethernet_adapter.cpp
   src/tcp_client.cpp
-  src/canopen.cpp
 )
 
 add_executable(canbus src/node_canbus.cpp ${SOURCES})
@@ -29,10 +28,6 @@ target_include_directories(canbus PUBLIC
 
 install(TARGETS canbus
   DESTINATION lib/${PROJECT_NAME})
-
-install(DIRECTORY include
-DESTINATION include/${PROJECT_NAME}
-)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

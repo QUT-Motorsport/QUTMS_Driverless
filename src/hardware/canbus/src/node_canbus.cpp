@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "can2etherenet_adapter.hpp"
-#include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
