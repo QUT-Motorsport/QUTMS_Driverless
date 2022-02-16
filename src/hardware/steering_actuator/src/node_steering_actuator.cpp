@@ -318,6 +318,8 @@ std::function<void(int)> handler;
 void signal_handler(int signal) { handler(signal); }
 
 int main(int argc, char *argv[]) {
+	rclcpp::init(argc, argv);
+
 	// Hack
 	auto x = std::make_shared<SteeringActuator>();
 	signal(SIGINT, signal_handler);
@@ -326,7 +328,6 @@ int main(int argc, char *argv[]) {
 		return signal;
 	};
 
-	rclcpp::init(argc, argv);
 	rclcpp::spin(x);
 	rclcpp::shutdown();
 	return 0;
