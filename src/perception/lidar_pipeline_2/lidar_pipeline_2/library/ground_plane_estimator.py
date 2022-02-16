@@ -64,8 +64,11 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                         idx -= 1
 
             else:
-                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
-                    new_line_points.append(new_point)
+                try:
+                    if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                        new_line_points.append(new_point)
+                except:
+                    pass
 
         idx += 1
 
