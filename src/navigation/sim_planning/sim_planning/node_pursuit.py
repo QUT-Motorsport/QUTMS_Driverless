@@ -231,10 +231,9 @@ def main(args=sys.argv[1:]):
     # defaults args
     loglevel = 'info'
     print_logs = False
-    spline_len = 200
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
+    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs'])
 
     # TODO: provide documentation for different options
     for opt, arg in opts:
@@ -242,17 +241,12 @@ def main(args=sys.argv[1:]):
             loglevel = arg
         elif opt == '--print_logs':
             print_logs = True
-        elif opt == '--length':
-            spline_len = arg
 
     # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
 
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % loglevel)
-
-    if not isinstance(spline_len, int):
-        raise ValueError('Invalid range: %s. Must be int' % spline_len)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
