@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
 	while (rclcpp::ok()) {
 		rclcpp::spin_some(x);
 	}
-	RCLCPP_INFO(x->get_logger(), "Pain");
+	x->shutdown();
 	rclcpp::shutdown();
 	return 0;
 }
