@@ -30,22 +30,13 @@ class CanBus : public rclcpp::Node {
 				std::vector<uint8_t> id_bytes = std::vector<uint8_t>(res->begin() + 1, res->begin() + 4);
 				std::vector<uint8_t> data_bytes = std::vector<uint8_t>(res->begin() + 5, res->begin() + 8);
 
-				std::cout << "Data: ";
-				for (auto x : *res) {
-					std::cout << x;
-				}
-				std::cout << std::endl;
-
 				char frame_information = res->at(0);
 				bool extended, remote;
 				int dlc;
 
 				this->parse_frame_information(frame_information, &extended, &remote, &dlc);
 
-				std::cout << "dlc " << dlc << std::endl;
-
 				driverless_msgs::msg::Can msg;
-				// std::cout << "got id: " << std::bitset<32>(*((uint32_t*)(id_bytes.data()))) << std::endl;
 				msg.id = *((uint32_t*)(id_bytes.data()));
 				msg.id_type = extended;
 				msg.dlc = dlc;
