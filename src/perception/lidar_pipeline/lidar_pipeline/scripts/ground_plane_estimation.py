@@ -412,6 +412,7 @@ def get_ground_plane(point_cloud: List[List]) -> List[List]:
     print("approximate_2D", time.time() - now)
 
     now = time.time()
+    print(len(point_cloud))
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 

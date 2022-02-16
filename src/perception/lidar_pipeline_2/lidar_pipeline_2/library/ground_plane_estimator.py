@@ -35,7 +35,7 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 
     idx = 0
     while idx < proto_count:
-        new_point = [float(seg_proto_points[idx][0]), float(seg_proto_points[idx][1])]
+        new_point = seg_proto_points[idx]
         if len(new_point) == 2:
             m_new = None
             b_new = None
@@ -64,11 +64,8 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                         idx -= 1
 
             else:
-                try:
-                    if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
-                        new_line_points.append(new_point)
-                except:
-                    pass
+                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                    new_line_points.append(new_point)
 
         idx += 1
 
@@ -84,8 +81,8 @@ def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMAL
     
     # For every segment
     for segment in prototype_points:
-        print(sum( [ len(listElem) for listElem in segment[1:]]))
-        print(segment[1:])
+        #print(sum( [ len(listElem) for listElem in segment[1:]]))
+        #print(segment[1:])
         ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
@@ -108,7 +105,7 @@ def get_ground_plane_4(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, 
     # Try creating the prototype points like you did in the other one
     # Try just including segments during the split
     seg_idx = 0
-    print("hello", sum( [ len(listElem) for listElem in prototype_points]))
+    #print("hello", sum( [ len(listElem) for listElem in prototype_points]))
     for segment in prototype_points:
         segment = segment.tolist()
         # ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
@@ -157,6 +154,9 @@ def get_ground_plane_6(prototype_points_idx, seg_sorted_ind, segments, norms, z,
     seg_sorted_ind = np.empty(seg_diff.size + 1, dtype=int)
     seg_sorted_ind[0] = 0
     seg_sorted_ind[1:] = seg_diff
+
+    unq, counts = np.unique(prototype_points, axis=0, return_counts=True)
+    print((counts > 2).sum())
 
     # Splitting prototype_points into subarrays for each segments
     proto_segments = np.split(prototype_points, seg_sorted_ind)
