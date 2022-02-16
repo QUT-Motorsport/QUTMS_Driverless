@@ -300,7 +300,7 @@ class SteeringActuator : public rclcpp::Node {
 		uint16_t control_word = 6;
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
 		this->can_pub->publish(_d_2_f(id, 0, out));
-		RCLCPP_INFO("Shutting down motor & Node xoxo");
+		RCLCPP_INFO(this->get_logger(), "Shutting down motor & Node xoxo");
 		rclcpp::shutdown();
 	}
 
@@ -321,7 +321,10 @@ int main(int argc, char *argv[]) {
 	// Hack
 	auto x = std::make_shared<SteeringActuator>();
 	signal(SIGINT, signal_handler);
-	handler = [x](int signal) { x->shutdown(); };
+	handler = [x](int signal) {
+		x->shutdown();
+		return signal;
+	};
 
 	rclcpp::init(argc, argv);
 	rclcpp::spin(x);
