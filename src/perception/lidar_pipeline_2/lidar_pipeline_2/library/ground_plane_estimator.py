@@ -35,11 +35,11 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 
     idx = 0
     while idx < proto_count:
-        new_point = seg_proto_points[idx]
-        if len(new_point) == 2:
+        if len(seg_proto_points[idx]) == 2:
             m_new = None
             b_new = None
 
+            new_point = seg_proto_points[idx]
             if (len(new_line_points) >= 2):
                 new_line_points_copy = copy.deepcopy(new_line_points)
                 new_line_points_copy.append(new_point)
