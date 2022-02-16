@@ -301,6 +301,7 @@ class SteeringActuator : public rclcpp::Node {
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
 		this->can_pub->publish(_d_2_f(id, 0, out));
 		RCLCPP_INFO(this->get_logger(), "Shutting down motor & Node xoxo");
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		rclcpp::shutdown();
 	}
 
