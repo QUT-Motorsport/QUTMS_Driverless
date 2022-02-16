@@ -126,15 +126,6 @@ class SteeringActuator : public rclcpp::Node {
 		this->setup();
 	}
 
-	SteeringActuator::~SteeringActuator() {
-		uint32_t id;
-		uint8_t out[8];
-
-		uint16_t control_word = 6;
-		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-		this->can_pub->publish(_d_2_f(id, 0, out));
-	}
-
 	void setup() {
 		/* To initialise the controller to a usable state, we must set the:
 		Target Position = 0
@@ -319,6 +310,8 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	c5e_config_t get_c5e_config() { return this->defaults; }
+
+	~SteeringActuator() { this->shutdown(); }
 };
 
 int main(int argc, char *argv[]) {
