@@ -15,7 +15,6 @@ class CanBus : public rclcpp::Node {
 	std::shared_ptr<Can2Ethernet> c;
 
 	void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-		RCLCPP_INFO(this->get_logger(), "CB");
 		this->c->tx(msg->id, msg->id_type, msg->data.data());
 	}
 
