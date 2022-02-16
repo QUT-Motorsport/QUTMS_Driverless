@@ -156,7 +156,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
     display = False
     visualise = False
-    max_range = 6 #m
+    max_range = 20 #m
 
     # processing args
     opts, arg = getopt.getopt(args, str(), ['sim', 'log=', 'print_logs', 'display', 'visualise', 'range='])
