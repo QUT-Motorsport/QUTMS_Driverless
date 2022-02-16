@@ -109,14 +109,14 @@ def get_prototype_points_4(segments, bins, z):
     # Indicies sorted by segments, then bins, then absolute z (height)
     seg_bin_z_ind = np.lexsort((np.absolute(z), bins, segments))
 
-    # Indicies where neighbouring bins in array change
+    # Indicies where neighbouring bins in array are different
     bin_diff_ind = np.where(bins[seg_bin_z_ind][:-1] != bins[seg_bin_z_ind][1:])[0] + 1
 
     # Indicies of prototype points
     proto_sorted_ind = np.empty(bin_diff_ind.size + 1, dtype=int)
     proto_sorted_ind[0] = seg_bin_z_ind[0]
     proto_sorted_ind[1:] = seg_bin_z_ind[bin_diff_ind]
-    return proto_sorted_ind
+    return proto_sorted_ind, seg_bin_z_ind
 
 
 # Notes
