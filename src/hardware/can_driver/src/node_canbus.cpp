@@ -23,6 +23,7 @@ class CanBus : public rclcpp::Node {
 	rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr publisher_;
 
 	void canmsg_timer_callback() {
+		RCLCPP_INFO(this->get_logger(), "CB");
 		auto res = this->c->rx();
 		while (res != nullptr) {
 			if (this->validate_frame(res)) {
