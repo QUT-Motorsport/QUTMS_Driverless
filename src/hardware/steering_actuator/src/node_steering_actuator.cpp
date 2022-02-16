@@ -300,6 +300,8 @@ class SteeringActuator : public rclcpp::Node {
 		uint16_t control_word = 6;
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
 		this->can_pub->publish(_d_2_f(id, 0, out));
+		RCLCPP_INFO("Shutting down motor & Node xoxo");
+		rclcpp::shutdown();
 	}
 
 	void set_c5e_config(c5e_config_t config) {
@@ -312,14 +314,17 @@ class SteeringActuator : public rclcpp::Node {
 	c5e_config_t get_c5e_config() { return this->defaults; }
 };
 
+std::function<void(int)> handler;
+void signal_handler(int signal) { handler(signal); }
+
 int main(int argc, char *argv[]) {
-	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<SteeringActuator>());
+	// Hack
+	auto x = std::make_shared<SteeringActuator>();
+	signal(SIGINT, signal_handler);
+	handler = [x](int signal) { x->shutdown(); };
 
 	rclcpp::init(argc, argv);
-	auto x = SteeringActuator();
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	x.shutdown();
+	rclcpp::spin(x);
 	rclcpp::shutdown();
 	return 0;
 }
