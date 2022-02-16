@@ -12,6 +12,7 @@ class SBGIMU : public rclcpp::Node {
 	rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 	void canbus_callback(const driverless_msgs::msg::Can msg) {
 		// Can MSG Callback
+		RCLCPP_INFO(this->get_logger(), "Got msg with id: %u", msg.id);
 		switch (msg.id) {
 			case SBG_ECAN_MSG_STATUS_01_ID: {
 				uint32_t id;
@@ -27,9 +28,11 @@ class SBGIMU : public rclcpp::Node {
 
    public:
 	SBGIMU() : Node("sbg") {
+		RCLCPP_INFO(this->get_logger(), "starting sbg node setup...");
 		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
 		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
 			"canbus_rosbound", 10, std::bind(&SBGIMU::canbus_callback, this, _1));
+		RCLCPP_INFO(this->get_logger(), "done");
 	}
 };
 

@@ -15,8 +15,8 @@ SBG_ECAN_MSG_STATUS_01_t Compose_SBG_ECAN_MSG_STATUS_01(uint32_t id, uint32_t ti
 	msg.data[5] = (general_status >> 8) & 0xFF;
 
 	// clock_status
-	msg.data[6] = (general_status >> 0) & 0xFF;
-	msg.data[7] = (general_status >> 8) & 0xFF;
+	msg.data[6] = (clock_status >> 0) & 0xFF;
+	msg.data[7] = (clock_status >> 8) & 0xFF;
 
 	return msg;
 }
