@@ -317,7 +317,9 @@ int main(int argc, char *argv[]) {
 	rclcpp::spin(std::make_shared<SteeringActuator>());
 
 	rclcpp::init(argc, argv);
-	SteeringActuator().shutdown();
+	auto x = SteeringActuator();
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	x.shutdown();
 	rclcpp::shutdown();
 	return 0;
 }
