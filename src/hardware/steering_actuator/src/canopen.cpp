@@ -1,7 +1,6 @@
 #include "canopen.hpp"
 
-void sdo_read(uint8_t node_id, uint16_t index, uint8_t sub_index,
-			  uint32_t* can_packet_id, uint8_t* out) {
+void sdo_read(uint8_t node_id, uint16_t index, uint8_t sub_index, uint32_t* can_packet_id, uint8_t* out) {
 	*can_packet_id = 0x600 + node_id;
 
 	out[0] = 0x40;
@@ -15,9 +14,8 @@ void sdo_read(uint8_t node_id, uint16_t index, uint8_t sub_index,
 	out[7] = 0x00;
 }
 
-void sdo_write(uint8_t node_id, uint16_t index, uint8_t sub_index,
-			   uint8_t* data, size_t data_size, uint32_t* can_packet_id,
-			   uint8_t* out) {
+void sdo_write(uint8_t node_id, uint16_t index, uint8_t sub_index, uint8_t* data, size_t data_size,
+			   uint32_t* can_packet_id, uint8_t* out) {
 	*can_packet_id = 0x600 + node_id;
 	uint8_t free = 4 - data_size;
 	out[0] = 35;
