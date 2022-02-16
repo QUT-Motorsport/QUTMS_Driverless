@@ -28,10 +28,6 @@ target_include_directories(steering PUBLIC
 install(TARGETS steering
   DESTINATION lib/${PROJECT_NAME})
 
-  # launch folder
-install(DIRECTORY include
-  DESTINATION include/${PROJECT_NAME})
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
