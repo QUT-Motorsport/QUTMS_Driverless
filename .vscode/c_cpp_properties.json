@@ -3,7 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/home/tom/mambaforge/envs/driverless_env/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
