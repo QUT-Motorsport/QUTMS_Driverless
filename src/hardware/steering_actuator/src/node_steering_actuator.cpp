@@ -1,5 +1,5 @@
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
-#include "canopen.hpp"
+#include "canbus/canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -124,6 +124,15 @@ class SteeringActuator : public rclcpp::Node {
 		this->target = 0;
 
 		this->setup();
+	}
+
+	SteeringActuator::~SteeringActuator() {
+		uint32_t id;
+		uint8_t out[8];
+
+		uint16_t control_word = 6;
+		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
+		this->can_pub->publish(_d_2_f(id, 0, out));
 	}
 
 	void setup() {
