@@ -316,7 +316,12 @@ class SteeringActuator : public rclcpp::Node {
 
 int main(int argc, char *argv[]) {
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<SteeringActuator>());
+	// rclcpp::spin(std::make_shared<SteeringActuator>());
+	auto x = std::make_shared<SteeringActuator>();
+	while (rclcpp::ok()) {
+		rclcpp::spin_some(x);
+	}
+	RCLCPP_INFO(x->get_logger(), "Pain");
 	rclcpp::shutdown();
 	return 0;
 }
