@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 include_directories(include)
 
 set (SOURCES
+  src/sbg_can.cpp
 )
 
 add_executable(sbg src/node_sbg_imu.cpp ${SOURCES})
