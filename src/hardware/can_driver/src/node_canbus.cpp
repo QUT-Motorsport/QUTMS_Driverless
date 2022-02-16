@@ -76,7 +76,7 @@ class CanBus : public rclcpp::Node {
 		RCLCPP_INFO(this->get_logger(), "done!");
 		RCLCPP_INFO(this->get_logger(), "Creating Timer...");
 		this->timer_ =
-			this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
+			this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&CanBus::canmsg_timer_callback, this));
 		RCLCPP_INFO(this->get_logger(), "done!");
 	}
 
