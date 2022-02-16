@@ -15,6 +15,7 @@ class CanBus : public rclcpp::Node {
 	std::shared_ptr<Can2Ethernet> c;
 
 	void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
+		RCLCPP_INFO(this->get_logger(), "CB");
 		this->c->tx(msg->id, msg->id_type, msg->data.data());
 	}
 
@@ -23,7 +24,6 @@ class CanBus : public rclcpp::Node {
 	rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr publisher_;
 
 	void canmsg_timer_callback() {
-		RCLCPP_INFO(this->get_logger(), "CB");
 		auto res = this->c->rx();
 		while (res != nullptr) {
 			if (this->validate_frame(res)) {
@@ -75,8 +75,8 @@ class CanBus : public rclcpp::Node {
 
 		RCLCPP_INFO(this->get_logger(), "done!");
 		RCLCPP_INFO(this->get_logger(), "Creating Timer...");
-		this->timer_ =
-			this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
+		// this->timer_ =
+		// 	this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&CanBus::canmsg_timer_callback, this));
 		RCLCPP_INFO(this->get_logger(), "done!");
 	}
 
