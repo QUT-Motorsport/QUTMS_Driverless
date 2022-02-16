@@ -135,7 +135,34 @@ def get_ground_plane_5(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, 
         #segment = segment.tolist()
         #ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
         seg_idx = seg_idx + 1
-    
+
+    return ground_plane
+
+
+def get_ground_plane_6(prototype_points_idx, seg_sorted_ind, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+    # Sorted indicies (by segment) of prototype points
+    sorted_proto_ind = seg_sorted_ind[np.sort(prototype_points_idx)]
+
+    # Sorted segments corresponding to prototype points
+    segments = segments[sorted_proto_ind]
+
+    # Sorted prototype points
+    prototype_points = np.column_stack((norms[sorted_proto_ind], z[sorted_proto_ind]))
+
+    # Indicies where neighbouring segments in array are different
+    seg_diff = np.where(segments[:-1] != segments[1:])[0] + 1
+    seg_sorted_ind = np.empty(seg_diff.size + 1, dtype=int)
+    seg_sorted_ind[0] = 0
+    seg_sorted_ind[1:] = seg_diff
+
+    # Splitting prototype_points into subarrays for each segments
+    proto_segments = np.split(prototype_points, seg_sorted_ind)
+
+    # Computing the ground plane
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
+    for segment_idx in range(len(proto_segments)):
+        ground_plane[segments[segment_idx]] = get_ground_lines_2(proto_segments[segment_idx].tolist(), T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+
     return ground_plane
 
 # Instead of packing the start and end points as [], unpack them and just make the overall array bigger
