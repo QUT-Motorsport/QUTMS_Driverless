@@ -42,7 +42,7 @@ target_include_directories(canbus PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS canbus
+install(TARGETS canbus steering
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
