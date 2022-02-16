@@ -294,6 +294,7 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	void shutdown() {
+		RCLCPP_INFO(this->get_logger(), "Shuting down controller");
 		uint32_t id;
 		uint8_t out[8];
 
