@@ -294,7 +294,6 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	void shutdown() {
-		RCLCPP_INFO(this->get_logger(), "Shuting down controller");
 		uint32_t id;
 		uint8_t out[8];
 
@@ -311,18 +310,14 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	c5e_config_t get_c5e_config() { return this->defaults; }
-
-	~SteeringActuator() { this->shutdown(); }
 };
 
 int main(int argc, char *argv[]) {
 	rclcpp::init(argc, argv);
-	// rclcpp::spin(std::make_shared<SteeringActuator>());
-	auto x = std::make_shared<SteeringActuator>();
-	while (rclcpp::ok()) {
-		rclcpp::spin_some(x);
-	}
-	x->shutdown();
+	rclcpp::spin(std::make_shared<SteeringActuator>());
+
+	rclcpp::init(argc, argv);
+	SteeringActuator().shutdown();
 	rclcpp::shutdown();
 	return 0;
 }
