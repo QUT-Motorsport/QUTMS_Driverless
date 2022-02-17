@@ -134,6 +134,7 @@ class ConeSensingNode(Node):
 
             np.savetxt(point_clouds_folder + "/point_cloud.txt", point_cloud)
             np.savetxt(point_clouds_folder + "/point_norms.txt", point_norms)
+            print(dtype_list)
 
         # Identify cones within the received point cloud
         pc_cones = lidar_manager.detect_cones(point_cloud,
@@ -266,7 +267,7 @@ def main(args=sys.argv[1:]):
         elif opt == '--t_d_max':
             T_D_MAX = arg
         elif opt == '--import_data':
-            data_path = arg
+            data_path = "./src/perception/lidar_pipeline_2/lidar_pipeline_2/exports/" + arg
         elif opt == '--disable_regress':
             REGRESS_BETWEEN_BINS = False
         elif opt == '--create_figures':
@@ -317,7 +318,7 @@ def main(args=sys.argv[1:]):
 
     # Use local data or real-time stream
     if data_path != None:
-        point_cloud = np.loadtxt(data_path + "/point_cloud.txt")
+        point_cloud = np.loadtxt(data_path + "/point_cloud.txt", dtype=np.dtype([('x', np.float32), ('y', np.float32), ('z', np.float32), ('intensity', np.float32), ('ring', np.uint16)]))
         point_norms = np.loadtxt(data_path + "/point_norms.txt")
         point_count = point_cloud.shape[0]
         timestamp = create_timestamp()
