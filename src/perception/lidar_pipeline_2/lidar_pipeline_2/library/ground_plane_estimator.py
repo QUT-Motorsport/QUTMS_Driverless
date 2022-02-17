@@ -129,6 +129,60 @@ def get_ground_lines(segment, num_bins, T_M, T_M_SMALL, T_B, T_RMSE):
     return lines
 
 
+# The Incremental Algorithm
+def get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE):
+    lines = []
+    new_line_points = []
+    lines_created = 0
+    m_new = None
+    b_new = None
+
+    i: int = 0
+    while i < len(segment):
+        if len(segment[i]) == 2:
+            m_new = None
+            b_new = None
+
+            new_point = segment[i]
+            if len(new_line_points) >= 2:
+                temp_line_points = copy.deepcopy(new_line_points)
+                temp_line_points.append(new_point)
+
+                [m_new, b_new] = tls.fit_line(temp_line_points)
+
+                if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                    new_line_points.append(new_point)
+                    temp_line_points = []
+                else:
+                    [m_new, b_new] = tls.fit_line(new_line_points)
+
+                    if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+                        lines_created += 1
+
+                    new_line_points = []
+                    i = i - 2
+            else:
+                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                    new_line_points.append(new_point)
+                else:
+                    # print("no", new_point, i) # whats this for?
+                    pass
+        elif len(segment[i]) > 2 or len(segment[i]) == 1:
+            # This case should not be possible
+            raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
+
+        i += 1
+        
+    if len(new_line_points) > 1 and m_new != None and b_new != None:
+        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+
+    if (m_new == None and b_new != None) or (m_new != None and b_new == None):
+        raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
+
+    return lines
+
+
 def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A numpy array of zeros / lists that contain ground lines for each segment
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
@@ -229,7 +283,7 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
     for segment_counter in range(len(split_prototype_segments)):
         segment = split_prototype_segments[segment_counter].tolist()
-        ground_plane[prototype_segments[segment_counter]] = get_ground_lines(segment, len(segment), T_M, T_M_SMALL, T_B, T_RMSE)
+        #ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE)
 
     return ground_plane
 
