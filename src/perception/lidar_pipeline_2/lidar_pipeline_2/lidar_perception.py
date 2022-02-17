@@ -44,6 +44,7 @@ class ConeSensingNode(Node):
                  _create_figures,
                  _show_figures,
                  _animate_figures,
+                 _export_data,
                  _print_logs,
                  _stdout_handler,
                  _working_dir):
@@ -79,6 +80,7 @@ class ConeSensingNode(Node):
         self.create_figures = _create_figures
         self.show_figures = _show_figures
         self.animate_figures = _animate_figures
+        self.export_data = _export_data
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
         self.working_dir = _working_dir
@@ -115,6 +117,18 @@ class ConeSensingNode(Node):
         # Number of points in point cloud
         point_count = point_cloud.shape[0]
         LOGGER.info(f'POINT_COUNT = {point_count}')
+        
+        if self.export_data:
+            point_clouds_folder = self.working_dir + '/exports'
+            if not os.path.isdir(point_clouds_folder):
+                os.mkdir(point_clouds_folder)
+
+            point_clouds_folder += "/" + timestamp
+            if not os.path.isdir(point_clouds_folder):
+                os.mkdir(point_clouds_folder)
+
+            np.savetxt(point_clouds_folder + "/point_cloud.txt", point_cloud)
+            np.savetxt(point_clouds_folder + "/point_norms.txt", point_norms)
 
         # Identify cones within the received point cloud
         pc_cones = lidar_manager.detect_cones(point_cloud,
@@ -190,6 +204,9 @@ def main(args=sys.argv[1:]):
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = 100
+    
+    # Path to data to import and use
+    data_path = None
 
     # Creates and saves plots
     create_figures = False
@@ -199,6 +216,9 @@ def main(args=sys.argv[1:]):
 
     # Creates animations of figures
     animate_figures = False
+
+    # Export numpy point clouds to text file
+    export_data = False
 
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
@@ -211,10 +231,12 @@ def main(args=sys.argv[1:]):
                                             't_b=',
                                             't_rmse=',
                                             't_d_max=',
+                                            'import_data=',
                                             'disable_regress',
                                             'create_figures',
                                             'show_figures',
                                             'animate_figures',
+                                            'export_data',
                                             'print_logs'])
 
     for opt, arg in opts:
@@ -238,6 +260,8 @@ def main(args=sys.argv[1:]):
             T_RMSE = arg
         elif opt == '--t_d_max':
             T_D_MAX = arg
+        elif opt == '--import_data':
+            data_path = arg
         elif opt == '--disable_regress':
             REGRESS_BETWEEN_BINS = False
         elif opt == '--create_figures':
@@ -248,6 +272,8 @@ def main(args=sys.argv[1:]):
         elif opt == '--animate_figures':
             create_figures = True
             animate_figures = True
+        elif opt == '--export_data':
+            export_data = True
         elif opt == '--print_logs':
             print_logs = True
 
@@ -284,31 +310,36 @@ def main(args=sys.argv[1:]):
     LOGGER.info('Hi from lidar_pipeline_2.')
     LOGGER.info(f'args = {args}')
 
-    # Setting up node
-    rclpy.init(args=args)
+    # Use local data or real-time stream
+    if data_path != None:
+        pass
+    else:
+        # Setting up node
+        rclpy.init(args=args)
 
-    cone_sensing_node = ConeSensingNode(pc_node,
-                                        LIDAR_RANGE,
-                                        DELTA_ALPHA,
-                                        BIN_SIZE,
-                                        T_M,
-                                        T_M_SMALL,
-                                        T_B,
-                                        T_RMSE,
-                                        REGRESS_BETWEEN_BINS,
-                                        T_D_MAX,
-                                        create_figures,
-                                        show_figures,
-                                        animate_figures,
-                                        print_logs,
-                                        stdout_handler,
-                                        working_dir)
+        cone_sensing_node = ConeSensingNode(pc_node,
+                                            LIDAR_RANGE,
+                                            DELTA_ALPHA,
+                                            BIN_SIZE,
+                                            T_M,
+                                            T_M_SMALL,
+                                            T_B,
+                                            T_RMSE,
+                                            REGRESS_BETWEEN_BINS,
+                                            T_D_MAX,
+                                            create_figures,
+                                            show_figures,
+                                            animate_figures,
+                                            export_data,
+                                            print_logs,
+                                            stdout_handler,
+                                            working_dir)
 
-    rclpy.spin(cone_sensing_node)
+        rclpy.spin(cone_sensing_node)
 
-    # Destroy the node explicitly
-    cone_sensing_node.destroy_node()
-    rclpy.shutdown()
+        # Destroy the node explicitly
+        cone_sensing_node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
