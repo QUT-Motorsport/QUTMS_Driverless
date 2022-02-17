@@ -143,8 +143,8 @@ def get_ground_lines_2(seg_proto_points):
 def get_ground_plane(segments_bins_prototype: List[List[List]], num_segments: int, num_bins: int) -> List[List[List]]:
     ground_plane: List[List[List]] = []
     for i in range(num_segments):
-        print(i, segments_bins_prototype[i])
-        # ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
+        # print(i, segments_bins_prototype[i])
+        #ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
         ground_plane.append(get_ground_lines_2(segments_bins_prototype[i]))
 
     return ground_plane
