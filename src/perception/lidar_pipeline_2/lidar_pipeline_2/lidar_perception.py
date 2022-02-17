@@ -29,6 +29,11 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
+# Creates timestamp
+def create_timestamp():
+    return datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+
+
 class ConeSensingNode(Node):
     def __init__(self,
                  pc_node,
@@ -88,7 +93,7 @@ class ConeSensingNode(Node):
         LOGGER.info('Waiting for PointCloud2 data ...')
 
     def pc_callback(self, pc_msg):
-        timestamp = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+        timestamp = create_timestamp()
         LOGGER.info('PointCloud2 message received at ' + timestamp)
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
@@ -312,7 +317,30 @@ def main(args=sys.argv[1:]):
 
     # Use local data or real-time stream
     if data_path != None:
-        pass
+        point_cloud = np.loadtxt(data_path + "/point_cloud.txt")
+        point_norms = np.loadtxt(data_path + "/point_norms.txt")
+        point_count = point_cloud.shape[0]
+        timestamp = create_timestamp()
+
+        pc_cones = lidar_manager.detect_cones(point_cloud,
+                                              point_norms,
+                                              LIDAR_RANGE,
+                                              DELTA_ALPHA,
+                                              BIN_SIZE,
+                                              T_M,
+                                              T_M_SMALL,
+                                              T_B,
+                                              T_RMSE,
+                                              REGRESS_BETWEEN_BINS,
+                                              T_D_MAX,
+                                              point_count,
+                                              create_figures,
+                                              show_figures,
+                                              animate_figures,
+                                              print_logs,
+                                              stdout_handler,
+                                              working_dir,
+                                              timestamp)
     else:
         # Setting up node
         rclpy.init(args=args)
