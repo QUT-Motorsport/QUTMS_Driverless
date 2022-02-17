@@ -14,7 +14,7 @@ bags
 
 # - VSCode -
 .vscode/*
-!.vscode/launch.json
+!.vscode/c_cpp_properties.json.TEMPLATE
 .devcontainer/*
 
 # C extensions
