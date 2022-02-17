@@ -19,7 +19,13 @@ class SBGIMU : public rclcpp::Node {
 				uint16_t clock_status;
 				Parse_SBG_ECAN_MSG_STATUS_01(const_cast<uint8_t *>(msg.data.data()), &id, &time_stamp, &general_status,
 											 &clock_status);
-				RCLCPP_INFO(this->get_logger(), "Time Stamp: %i", time_stamp);
+				// RCLCPP_INFO(this->get_logger(), "Time Stamp: %u", time_stamp);
+			} break;
+			case SBG_ECAN_MSG_IMU_ACCEL_ID: {
+				float x, y, z;
+				uint32_t id;
+				Parse_SBG_ECAN_MSG_IMU_ACCEL(const_cast<uint8_t *>(msg.data.data()), &id, &x, &y, &z);
+				RCLCPP_INFO(this->get_logger(), "XYZ: %f, %f, %f", x, y, z);
 			} break;
 		}
 	}
