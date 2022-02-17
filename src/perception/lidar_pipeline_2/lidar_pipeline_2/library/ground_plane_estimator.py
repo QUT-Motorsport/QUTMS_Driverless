@@ -132,13 +132,14 @@ def get_ground_lines(segment, num_bins, T_M, T_M_SMALL, T_B, T_RMSE):
 def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
     # A numpy array of zeros / lists that contain ground lines for each segment
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
-    
+
     # For every segment
     for segment in prototype_points:
         #print(sum( [ len(listElem) for listElem in segment[1:]]))
         #print(segment[1:])
-        ground_plane[int(segment[0])] = get_ground_lines(segment[1:], len(segment[1:]), T_M, T_M_SMALL, T_B, T_RMSE)
-        #ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        #ground_plane[int(segment[0])] = get_ground_lines(segment[1:], len(segment[1:]), T_M, T_M_SMALL, T_B, T_RMSE)
+        print(segment[1:])
+        ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
 
@@ -210,11 +211,10 @@ def get_ground_plane_6(prototype_points_idx, seg_sorted_ind, segments, norms, z,
     seg_sorted_ind[0] = 0
     seg_sorted_ind[1:] = seg_diff
 
-    unq, counts = np.unique(prototype_points, axis=0, return_counts=True)
-    print((counts > 2).sum())
-
     # Splitting prototype_points into subarrays for each segments
     proto_segments = np.split(prototype_points, seg_sorted_ind)
+    for segment in proto_segments:
+        print(segment.tolist())
 
     # Computing the ground plane
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
