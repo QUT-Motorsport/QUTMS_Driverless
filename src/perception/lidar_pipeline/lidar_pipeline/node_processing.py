@@ -71,7 +71,7 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
     marker.color.b = 0.0
     marker.color.a = 1.0
 
-    marker.lifetime = Duration(sec=1, nanosec=0)
+    marker.lifetime = Duration(sec=0, nanosec=300000000)
 
     return marker
 
@@ -80,11 +80,7 @@ class LidarProcessing(Node):
     def __init__(self, pc2_topic: str, visualise: bool, display: bool, max_range: int):
         super().__init__('lidar_processor')
 
-        self.pcl_subscription = self.create_subscription(
-            PointCloud2,
-            pc2_topic,
-            self.callback,
-            10)
+        self.create_subscription(PointCloud2, pc2_topic, self.callback, 10)
 
         lidar_init(visualise, display, "/home/developer/datasets/figures/", max_range)
 
@@ -92,7 +88,10 @@ class LidarProcessing(Node):
             ConeDetectionStamped, 
             "lidar/cone_detection", 
             1)
-
+        self.pc2_republisher: Publisher = self.create_publisher(
+            PointCloud2, 
+            "lidar/time_adj_pc2", 
+            1)
         self.marker_publisher: Publisher = self.create_publisher(
             MarkerArray, 
             "lidar/debug_cones_array", 
@@ -136,14 +135,18 @@ class LidarProcessing(Node):
                 pc2_msg.header,
             ))
 
+        stamped_header = Header()
+        stamped_header.stamp = pc2_msg.header.stamp
+        stamped_header.frame_id = "detection"
         detection_msg = ConeDetectionStamped(
-            header=pc2_msg.header,
+            header=stamped_header,
             cones=detected_cones
         )
 
         markers_msg = MarkerArray(markers=markers_list)
 
         self.detection_publisher.publish(detection_msg) # publish cone data
+        self.pc2_republisher.publish(pc2_msg)
         self.marker_publisher.publish(markers_msg) # publish marker points data
 
         LOGGER.info("Total Time:" + str(time.time()-start))
