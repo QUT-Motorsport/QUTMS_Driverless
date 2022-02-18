@@ -1,6 +1,5 @@
 import numpy as np
 
-test = np.array([1, 2, 4])
-mask = (test == 1) | (test == 4)
+test = np.array([1, 2, 4, 7, 8, 4, 56, 567])
+print(np.split(test, [0, 3, 6]))
 
-print(test[mask])
