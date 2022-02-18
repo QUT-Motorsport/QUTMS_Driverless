@@ -1,6 +1,6 @@
 # Import Custom Modules
-# from . import total_least_squares_old as tls
-from .cy_library import total_least_squares as tls
+from . import total_least_squares_old as tls
+#from .cy_library import total_least_squares as tls
 
 # Python Modules
 import numpy as np
@@ -278,6 +278,7 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
         ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
+
 
 # Instead of packing the start and end points as [], unpack them and just make the overall array bigger
 # Means you can also get rid of the dtype=object and just make it floats or something - should be faster
