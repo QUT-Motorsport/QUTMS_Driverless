@@ -65,7 +65,6 @@ def detect_cones(
     start_time = time.time()
     #prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_nrm_xyz)
     split_prototype_segments, prototype_segments = pcp.get_prototype_points_4(segments, bins, point_norms, point_cloud['z'])
-    # split_proto_nrm, split_proto_z, prototype_segments = pcp.get_prototype_points_5(segments, bins, point_norms, point_cloud['z'])
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
@@ -73,7 +72,6 @@ def detect_cones(
     start_time = time.time()
     #ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-    # ground_plane = gpe.get_ground_plane_8(split_proto_nrm, split_proto_z, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
     
     # print(ground_plane)

@@ -1,6 +1,6 @@
 # Import Custom Modules
-from . import total_least_squares_old as tls
-#from .cy_library import total_least_squares as tls
+# from . import total_least_squares_old as tls
+from .cy_library import total_least_squares as tls
 
 # Python Modules
 import numpy as np

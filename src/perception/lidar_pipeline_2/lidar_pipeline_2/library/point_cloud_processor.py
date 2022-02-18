@@ -129,31 +129,6 @@ def get_prototype_points_4(segments, bins, point_norms, z):
 
     return split_prototype_segments, prototype_segments
 
-
-def get_prototype_points_5(segments, bins, point_norms, z):
-    # Indicies sorted by segments, then bins, then absolute z (height)
-    seg_bin_z_ind = np.lexsort((np.absolute(z), bins, segments))
-
-    # Indicies where neighbouring bins in array are different
-    bin_diff_ind = np.where((bins[seg_bin_z_ind])[:-1] != (bins[seg_bin_z_ind])[1:])[0] + 1
-
-    # Indicies of prototype points
-    proto_sorted_ind = np.empty(bin_diff_ind.size + 1, dtype=int)
-    proto_sorted_ind[0] = seg_bin_z_ind[0]
-    proto_sorted_ind[1:] = seg_bin_z_ind[bin_diff_ind]
-
-    # Segment values correspinding to each prototype point
-    prototype_segments = segments[proto_sorted_ind]
-
-    # Indicies where neighbouring prototype_segments value in array are different
-    proto_seg_diff = np.where(prototype_segments[:-1] != prototype_segments[1:])[0] + 1
-    
-    # Prototype points split into subarrays for each segment
-    split_proto_nrm = np.split(point_norms[proto_sorted_ind], proto_seg_diff)
-    split_proto_z = np.split(point_norms[proto_sorted_ind], proto_seg_diff)
-
-    return split_proto_nrm, split_proto_z, prototype_segments
-
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
 #    array and then converting to a python list. It's quicker for operations
