@@ -382,3 +382,5 @@ if __name__ == '__main__':
 # 3. Add 'waiting for point cloud after each'
 # 4. Add 'have you built cython files?' and wiki
 # 5. Unify logging directories
+# 6. Fix the total time estimates
+# 7. Only import what's required
