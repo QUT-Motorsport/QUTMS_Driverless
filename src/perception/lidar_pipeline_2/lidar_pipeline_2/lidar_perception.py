@@ -379,3 +379,4 @@ if __name__ == '__main__':
 #    16 bit float does the same thing / is faster. Rouding might still
 #    leave the numbers as float32s
 # 2. Regress between bins is true by default
+# 3. Add 'waiting for point cloud after each'
