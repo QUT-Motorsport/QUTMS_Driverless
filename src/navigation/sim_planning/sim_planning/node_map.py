@@ -246,23 +246,23 @@ def main(args=sys.argv[1:]):
     print_logs = False
     spline_len = 3999
 
-    # # processing args
-    # opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
+    # processing args
+    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length=', 'ros-args'])
 
-    # # TODO: provide documentation for different options
-    # for opt, arg in opts:
-    #     if opt == '--log':
-    #         loglevel = arg
-    #     elif opt == '--print_logs':
-    #         print_logs = True
-    #     elif opt == '--length':
-    #         spline_len = arg
-    # # validating args
+    # TODO: provide documentation for different options
+    for opt, arg in opts:
+        if opt == '--log':
+            loglevel = arg
+        elif opt == '--print_logs':
+            print_logs = True
+        elif opt == '--length':
+            spline_len = arg
+    # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
-    # if not isinstance(numeric_level, int):
-    #     raise ValueError('Invalid log level: %s' % loglevel)
-    # if not isinstance(spline_len, int):
-    #     raise ValueError('Invalid range: %s. Must be int' % spline_len)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+    if not isinstance(spline_len, int):
+        raise ValueError('Invalid range: %s. Must be int' % spline_len)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())

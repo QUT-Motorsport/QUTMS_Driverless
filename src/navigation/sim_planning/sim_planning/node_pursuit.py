@@ -233,7 +233,7 @@ def main(args=sys.argv[1:]):
     print_logs = False
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs'])
+    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'ros-args'])
 
     # TODO: provide documentation for different options
     for opt, arg in opts:

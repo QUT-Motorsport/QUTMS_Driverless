@@ -95,22 +95,22 @@ def main(args=sys.argv[1:]):
     max_range = 20 #m
 
     # processing args
-    # opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'range='])
+    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'range=', 'ros-args'])
 
-    # # TODO: provide documentation for different options
-    # for opt, arg in opts:
-    #     if opt == '--log':
-    #         loglevel = arg
-    #     elif opt == '--print_logs':
-    #         print_logs = True
-    #     elif opt == '--range':
-    #         max_range = arg
-    # # validating args
+    # TODO: provide documentation for different options
+    for opt, arg in opts:
+        if opt == '--log':
+            loglevel = arg
+        elif opt == '--print_logs':
+            print_logs = True
+        elif opt == '--range':
+            max_range = arg
+    # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
-    # if not isinstance(numeric_level, int):
-    #     raise ValueError('Invalid log level: %s' % loglevel)
-    # if not isinstance(max_range, int):
-    #     raise ValueError('Invalid range: %s. Must be int' % max_range)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+    if not isinstance(max_range, int):
+        raise ValueError('Invalid range: %s. Must be int' % max_range)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
