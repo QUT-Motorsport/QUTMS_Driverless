@@ -1,6 +1,5 @@
 # Import Custom Modules
-from xxlimited import new
-from . import total_least_squares as tls
+from . import total_least_squares_old as tls
 
 # Python Modules
 import numpy as np
