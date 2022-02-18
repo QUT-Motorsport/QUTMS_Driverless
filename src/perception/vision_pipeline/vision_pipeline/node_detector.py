@@ -207,6 +207,30 @@ def init_logs() -> List[str]:
     return args
 
 
+## initialise ROS2 logging system
+def init_logs() -> List[str]:
+    args = ['--ros-args']
+
+    path = str(pathlib.Path(__file__).parent.resolve())
+    if not os.path.isdir(path + '/logs'):
+        os.mkdir(path + '/logs')
+
+    # defaults args
+    print_mode = '--disable-stdout-logs'
+    # processing args
+    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args'])
+    for opt, arg in opts:
+        if opt == '--print':
+            print_mode = '--enable-stdout-logs'
+
+    args.append(print_mode)
+
+    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
+    os.environ.get('ROS_LOG_DIR')
+
+    return args
+
+
 ## OpenCV thresholding
 def main_cv2():
     from .threshold import Threshold
