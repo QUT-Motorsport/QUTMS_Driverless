@@ -6,6 +6,7 @@ from cv_bridge import CvBridge
 import message_filters
 from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
+from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
 # translate ROS image messages to OpenCV
@@ -14,13 +15,16 @@ cv_bridge = CvBridge()
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python libraries
-import os
 from math import sin, cos, radians, isnan, isinf
 import cv2
 import numpy as np
 from typing import List, Tuple, Callable
 import time
 import enum
+import sys
+import os
+import pathlib
+import getopt
 
 # import required sub modules
 from .rect import Rect, draw_box
@@ -123,12 +127,12 @@ class DetectorNode(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/detector/cone_detection", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/detector/debug_img", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img", 1)
 
         # set which cone detection this will be using
         self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
-        self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
+        self.get_logger().info(f"Initialised Detector Node with mode: {mode.name}")
         self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
 
@@ -163,9 +167,12 @@ class DetectorNode(Node):
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
-
+        
+        stamped_header = Header()
+        stamped_header.stamp = colour_msg.header.stamp
+        stamped_header.frame_id = "detection"
         detection_msg = ConeDetectionStamped(
-            header=colour_msg.header,
+            header=stamped_header,
             cones=detected_cones,
         )
 
@@ -175,10 +182,36 @@ class DetectorNode(Node):
         logger.info("Time: " + str(time.time() - start)) # log time
 
 
+## initialise ROS2 logging system
+def init_logs() -> List[str]:
+    args = ['--ros-args']
+
+    path = str(pathlib.Path(__file__).parent.resolve())
+    if not os.path.isdir(path + '/logs'):
+        os.mkdir(path + '/logs')
+
+    # defaults args
+    print_mode = '--disable-stdout-logs'
+    # processing args
+    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args'])
+    for opt, arg in opts:
+        if opt == '--print':
+            print_mode = '--enable-stdout-logs'
+
+    args.append(print_mode)
+
+    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
+    os.environ.get('ROS_LOG_DIR')
+
+    return args
+
+
 ## OpenCV thresholding
-def main_cv2(args=None):
+def main_cv2():
     from .threshold import Threshold
     from .hsv_cv import get_coloured_bounding_boxes
+
+    args = init_logs()
 
     # HSV threshold constants
     YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
@@ -208,9 +241,11 @@ def main_cv2(args=None):
 
 
 ## PyTorch inference
-def main_torch(args=None):
+def main_torch():
     from .torch_inference import torch_init, infer
-    
+
+    args = init_logs()
+
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
@@ -239,8 +274,10 @@ def main_torch(args=None):
 
 
 ## TensorRT inference
-def main_trt(args=None):
+def main_trt():
     from .trt_inference import TensorWrapper
+
+    args = init_logs()
 
     # loading TensorRT engine
     ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
