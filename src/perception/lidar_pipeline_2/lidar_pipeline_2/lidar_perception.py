@@ -380,3 +380,4 @@ if __name__ == '__main__':
 #    leave the numbers as float32s
 # 2. Regress between bins is true by default
 # 3. Add 'waiting for point cloud after each'
+# 4. Add 'have you built cython files?'
