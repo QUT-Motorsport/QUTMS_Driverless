@@ -378,3 +378,4 @@ if __name__ == '__main__':
 # 1. Intead of rounding the point cloud, see if setting the dtype to
 #    16 bit float does the same thing / is faster. Rouding might still
 #    leave the numbers as float32s
+# 2. Regress between bins is true by default
