@@ -134,9 +134,6 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
     new_line_points = []
     lines_created = 0
 
-    m_new = None
-    b_new = None
-
     idx = 0
     while idx < len(seg_proto_points):
         m_new = None
@@ -151,6 +148,7 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
             m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
             if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
                 new_line_points.pop() # Remove the point we just added
+
                 [m_new, b_new] = tls.fit_line(new_line_points)
 
                 if (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
