@@ -1,5 +1,6 @@
 # Import Custom Modules
-from . import total_least_squares_old as tls
+# from . import total_least_squares_old as tls
+from . import total_least_squares as tls
 
 # Python Modules
 import numpy as np
@@ -142,13 +143,13 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
         if (len(new_line_points) >= 2):
             new_line_points.append(new_point)
 
-            [m_new, b_new] = tls.fit_line(new_line_points)
+            [m_new, b_new] = total_least_squares.fit_line(new_line_points)
 
             m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
             if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
                 new_line_points.pop() # Remove the point we just added
 
-                [m_new, b_new] = tls.fit_line(new_line_points)
+                [m_new, b_new] = total_least_squares.fit_line(new_line_points)
 
                 if (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
                     estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
