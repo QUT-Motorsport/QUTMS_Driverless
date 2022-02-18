@@ -123,13 +123,10 @@ def get_prototype_points_4(segments, bins, point_norms, z):
 
     # Indicies where neighbouring prototype_segments value in array are different
     proto_seg_diff = np.where(prototype_segments[:-1] != prototype_segments[1:])[0] + 1
-    proto_seg_diff_ind = np.empty(proto_seg_diff.size + 1, dtype=int)
-    proto_seg_diff_ind[0] = 0
-    proto_seg_diff_ind[1:] = proto_seg_diff
     
     # Prototype points split into subarrays for each segment
-    split_prototype_segments = np.split(prototype_points, proto_seg_diff_ind)
-    
+    split_prototype_segments = np.split(prototype_points, proto_seg_diff)
+
     return split_prototype_segments, prototype_segments
 
 
