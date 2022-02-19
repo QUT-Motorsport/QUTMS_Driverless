@@ -55,7 +55,7 @@ def detect_cones(
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
-    #segments_bins_nrm_xyz = pcp.get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
+    # segments_bins_nrm_xyz = pcp.get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     segments, bins = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     end_time = time.time()
 
@@ -63,23 +63,23 @@ def detect_cones(
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
-    #prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_nrm_xyz)
+    # prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_nrm_xyz)
     split_prototype_segments, prototype_segments = pcp.get_prototype_points_4(segments, bins, point_norms, point_cloud['z'])
     end_time = time.time()
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
-    #ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    # ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
     
     # print(ground_plane)
 
-    LOGGER.info(f'Ground Surface estimated in {end_time - start_time}s')
+    LOGGER.info(f'Ground Plane estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    #labelled_points = pc.label_points_2(ground_plane, split_bin_nrm_z, DELTA_ALPHA, SEGMENT_COUNT)
+    labelled_points = pc.label_points_3(ground_plane)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')

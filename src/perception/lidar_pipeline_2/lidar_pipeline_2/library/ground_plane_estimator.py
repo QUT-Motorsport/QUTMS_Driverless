@@ -274,8 +274,9 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
     for segment_counter in range(len(split_prototype_segments)):
         segment = split_prototype_segments[segment_counter].tolist()
-        # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        # print(get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS))
+        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
 
@@ -290,3 +291,4 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
 # 2. Changed the fit error points array in the second if statement check
 #    MUST investigate this.
 # 3. Idk if I use the len(new_line_points) in estimted lines i.e. line[4] ?
+# 4. Segments? -31 ? How do you plan to structure this
