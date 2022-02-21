@@ -18,8 +18,6 @@ from typing import List
 import sys
 import os
 import getopt
-import logging
-import datetime
 import pathlib
 
 # import ROS function that has been ported to ROS2 by
@@ -27,9 +25,6 @@ import pathlib
 from .scripts.read_pcl import read_points_list
 # lidar cone detection algorithm
 from .scripts.sim_simple import find_cones
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
@@ -77,7 +72,7 @@ def marker_msg(
     marker.color.b = 0.0
     marker.color.a = 1.0
 
-    marker.lifetime = Duration(sec=1, nanosec=0)
+    marker.lifetime = Duration(sec=0, nanosec=100000000)
 
     return marker
 
@@ -93,7 +88,7 @@ class LidarProcessing(Node):
 
         self.max_range = max_range
 
-        LOGGER.info('---LiDAR processing node initialised---')
+        self.get_logger().info('---LiDAR processing node initialised---')
 
 
     def callback(self, pc2_msg: PointCloud2):
@@ -102,18 +97,19 @@ class LidarProcessing(Node):
         used to call funtions to find cone coords.
         to get the xyz location and colour of cones.
         """
+        logger = self.get_logger()
         
         start: float = time.time()
         
         # Convert the list of floats into a list of xyz coordinates
         point_array: List[List] = read_points_list(pc2_msg)
 
-        LOGGER.info("Read Time:" + str(time.time()-start))
+        logger.info("Read Time:" + str(time.time()-start))
 
         # calls main module from ground estimation algorithm
         cones: List[List] = find_cones(point_array) 
 
-        LOGGER.info("Detected cones:" + str(len(cones)))
+        logger.info("Detected cones:" + str(len(cones)))
         
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
@@ -143,57 +139,41 @@ class LidarProcessing(Node):
         self.detection_publisher.publish(detection_msg) # publish cone data
         self.marker_publisher.publish(markers_msg) # publish marker points data
 
-        LOGGER.info("Total Time:" + str(time.time()-start))
+        logger.info("Total Time:" + str(time.time()-start) + "\n")
 
 
-def main(args=sys.argv[1:]):
-    # defaults args
-    loglevel = 'info'
-    print_logs = False
-    max_range = 15 #m
+## initialise ROS2 logging system
+def init_logs() -> List[str]:
+    args: List[str] = ['--ros-args']
+    max_range: int = 17 #m
 
-    # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print-logs', 'range='])
-
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == '--log':
-            loglevel = arg
-        elif opt == '--print-logs':
-            print_logs = True
-        elif opt == '--range':
-            max_range = arg
-
-    # validating args
-    numeric_level = getattr(logging, loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-
-    if not isinstance(max_range, int):
-        raise ValueError('Invalid range: %s. Must be int' % max_range)
-
-    # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
     if not os.path.isdir(path + '/logs'):
         os.mkdir(path + '/logs')
 
-    date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
-    logging.basicConfig(
-        filename=f'{path}/logs/{date}.log',
-        filemode='w',
-        format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
-        datefmt='%I:%M:%S %p',
-        # encoding='utf-8',
-        level=numeric_level,
-    )
+    # defaults args
+    print_mode = '--disable-stdout-logs'
+    # processing args
+    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args', 'range='])
+    for opt, arg in opts:
+        if opt == '--print':
+            print_mode = '--enable-stdout-logs'
+        elif opt == '--range':
+            max_range = arg
 
-    # terminal stream
-    if print_logs:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        LOGGER.addHandler(stdout_handler)
+    if not isinstance(max_range, int):
+        raise ValueError('Invalid range: %s. Must be int' % max_range)
 
-    LOGGER.info(f'args = {args}')
+    args.append(print_mode)
+
+    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
+    os.environ.get('ROS_LOG_DIR')
+
+    return args, max_range
+    
+
+def main(args=sys.argv[1:]):
+    args, max_range = init_logs()
 
     # begin ros node
     rclpy.init(args=args)
