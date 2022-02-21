@@ -41,42 +41,6 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
     )
 
 
-def marker_msg(
-    x_coord: float, 
-    y_coord: float, 
-    ID: int
-) -> Marker: 
-
-    marker = Marker()
-    marker.header.frame_id = "fsds/FSCar"
-    marker.ns = "current_scan"
-    marker.id = ID
-    marker.type = Marker.CYLINDER
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x_coord
-    marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # scale out of 1x1x1m
-    marker.scale.x = 0.228
-    marker.scale.y = 0.228
-    marker.scale.z = 0.325
-
-    marker.color.r = 0.0
-    marker.color.g = 1.0
-    marker.color.b = 0.0
-    marker.color.a = 1.0
-
-    marker.lifetime = Duration(sec=0, nanosec=100000000)
-
-    return marker
-
-
 class LidarProcessing(Node):
     def __init__(self, max_range: int):
         super().__init__('lidar_processor')
@@ -84,11 +48,10 @@ class LidarProcessing(Node):
         self.create_subscription(PointCloud2, "/lidar/Lidar1", self.callback, 10)
 
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "lidar/debug_cones_array", 1)
 
         self.max_range = max_range
 
-        self.get_logger().info('---LiDAR processing node initialised---')
+        self.get_logger().info('---LiDAR sim processing node initialised---')
 
 
     def callback(self, pc2_msg: PointCloud2):
@@ -113,31 +76,13 @@ class LidarProcessing(Node):
         
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
-        markers_list: List[Marker] = []
-        for i in range(len(cones)):
-            # add cone to msg list
-            detected_cones.append(cone_msg(
-                cones[i][0], 
-                cones[i][1],
-            ))
-            
-            marker = marker_msg(
-                cones[i][0], 
-                cones[i][1], 
-                i, 
-            )
-            marker.header.stamp = self.get_clock().now().to_msg()
-            markers_list.append(marker)
-
+       
         detection_msg = ConeDetectionStamped(
             header=pc2_msg.header,
             cones=detected_cones
         )
 
-        markers_msg = MarkerArray(markers=markers_list)
-
         self.detection_publisher.publish(detection_msg) # publish cone data
-        self.marker_publisher.publish(markers_msg) # publish marker points data
 
         logger.info("Total Time:" + str(time.time()-start) + "\n")
 
