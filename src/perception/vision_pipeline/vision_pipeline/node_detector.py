@@ -139,7 +139,7 @@ class DetectorNode(Node):
 
         start: float = time.time() # begin a timer
 
-        colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg)
+        colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding='bgra8')
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 
         detected_cones: List[Cone] = []
