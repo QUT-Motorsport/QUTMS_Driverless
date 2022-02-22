@@ -4,10 +4,12 @@
     <name>vision_pipeline</name>
     <version>0.0.0</version>
     <description>Pipeline for managing visual detection of cones.</description>
-    <maintainer email="qutmotorsport.team@gmail.com">Alistair English, Alastair Bradford</maintainer>
+    <maintainer email="team@qutmotorsport.com">Alistair English, Alastair Bradford</maintainer>
     <license>MIT</license>
 
     <depend>driverless_msgs</depend>
+    <depend>driverless_common</depend>
+    <depend>fs_msgs</depend>
     <depend>rclpy</depend>
     <depend>sensor_msgs</depend>
     <depend>stereo_msgs</depend>

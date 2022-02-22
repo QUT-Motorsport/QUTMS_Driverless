@@ -3,12 +3,11 @@ import rclpy
 from rclpy.node import Node
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
-from stereo_msgs.msg import DisparityImage
 from rclpy.publisher import Publisher
 
 class ZedNode(Node):
     def __init__(self):
-        super().__init__("cone_annotator")
+        super().__init__("zed_simulator")
 
         self.create_subscription(Image, "/fsds/camera/depth_registered", self.depth_callback, 10)
         self.create_subscription(Image, "/fsds/camera/image_rect_color", self.rgb_callback, 10)
@@ -18,10 +17,10 @@ class ZedNode(Node):
         self.rgb_img_info_publisher: Publisher = self.create_publisher(CameraInfo, "/zed2i/zed_node/rgb/camera_info", 1)
         
         self.camera_info = CameraInfo()
-        self.camera_info.height = 640
-        self.camera_info.width = 360
+        self.camera_info.height = 360
+        self.camera_info.width = 640
 
-        self.depth_msg = DisparityImage()
+        self.depth_msg = Image()
 
         self.get_logger().info("Initialised ZED camera simulator node")
     
