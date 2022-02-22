@@ -151,6 +151,7 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
 
                 [m_new, b_new] = tls.fit_line(new_line_points)
 
+                m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
                 if (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
                     estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
                     lines_created += 1
@@ -275,8 +276,8 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
     for segment_counter in range(len(split_prototype_segments)):
         segment = split_prototype_segments[segment_counter].tolist()
         # print(get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS))
-        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-        # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
 
     return ground_plane
 
