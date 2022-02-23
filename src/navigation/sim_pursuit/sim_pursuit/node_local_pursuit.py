@@ -41,8 +41,8 @@ cv_bridge = CvBridge()
 
 # image display geometry
 SCALE = 20
-WIDTH = 30*SCALE # 10m either side
-HEIGHT = 25*SCALE # 20m forward
+WIDTH = 30*SCALE # 15m either side
+HEIGHT = 25*SCALE # 25m forward
 ORIGIN = Point(0, 0)
 IMG_ORIGIN = Point(int(WIDTH/2), HEIGHT)
 

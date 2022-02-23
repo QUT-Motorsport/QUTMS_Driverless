@@ -1,6 +1,7 @@
-
-
-
+"""
+launch with `ros2 launch vision_pipeline sim_vision.launch.py`
+probably can tab to complete most of it
+"""
 from launch import LaunchDescription
 from launch_ros.actions import Node
 

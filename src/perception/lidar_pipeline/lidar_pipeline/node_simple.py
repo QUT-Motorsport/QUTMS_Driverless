@@ -12,13 +12,9 @@ from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python modules
-import numpy
 import time
 from typing import List
 import sys
-import os
-import getopt
-import pathlib
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
@@ -42,14 +38,12 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
 
 
 class LidarProcessing(Node):
-    def __init__(self, max_range: int):
+    def __init__(self):
         super().__init__('lidar_processor')
 
         self.create_subscription(PointCloud2, "/lidar/Lidar1", self.callback, 10)
 
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
-
-        self.max_range = max_range
 
         self.get_logger().info('---LiDAR sim processing node initialised---')
 
@@ -76,6 +70,9 @@ class LidarProcessing(Node):
         
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
+
+        for cone in cones:
+            detected_cones.append(cone_msg(cone[0], cone[1]))
        
         detection_msg = ConeDetectionStamped(
             header=pc2_msg.header,
@@ -87,43 +84,11 @@ class LidarProcessing(Node):
         logger.info("Total Time:" + str(time.time()-start) + "\n")
 
 
-## initialise ROS2 logging system
-def init_logs() -> List[str]:
-    args: List[str] = ['--ros-args']
-    max_range: int = 17 #m
-
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + '/logs'):
-        os.mkdir(path + '/logs')
-
-    # defaults args
-    print_mode = '--disable-stdout-logs'
-    # processing args
-    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args', 'range='])
-    for opt, arg in opts:
-        if opt == '--print':
-            print_mode = '--enable-stdout-logs'
-        elif opt == '--range':
-            max_range = arg
-
-    if not isinstance(max_range, int):
-        raise ValueError('Invalid range: %s. Must be int' % max_range)
-
-    args.append(print_mode)
-
-    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
-    os.environ.get('ROS_LOG_DIR')
-
-    return args, max_range
-    
-
-def main(args=sys.argv[1:]):
-    args, max_range = init_logs()
-
+def main(args=None):
     # begin ros node
     rclpy.init(args=args)
 
-    node = LidarProcessing(int(max_range))
+    node = LidarProcessing()
     rclpy.spin(node)
     
     node.destroy_node()
