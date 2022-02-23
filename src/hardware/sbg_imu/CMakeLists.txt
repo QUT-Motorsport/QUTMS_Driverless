@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 include_directories(include)
 
@@ -19,7 +20,7 @@ set (SOURCES
 )
 
 add_executable(sbg src/node_sbg_imu.cpp ${SOURCES})
-ament_target_dependencies(sbg rclcpp driverless_msgs)
+ament_target_dependencies(sbg rclcpp driverless_msgs sensor_msgs)
 
 target_include_directories(sbg PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
