@@ -182,36 +182,11 @@ class DetectorNode(Node):
         logger.info("Time: " + str(time.time() - start)) # log time
 
 
-## initialise ROS2 logging system
-def init_logs() -> List[str]:
-    args = ['--ros-args']
-
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + '/logs'):
-        os.mkdir(path + '/logs')
-
-    # defaults args
-    print_mode = '--disable-stdout-logs'
-    # processing args
-    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args'])
-    for opt, arg in opts:
-        if opt == '--print':
-            print_mode = '--enable-stdout-logs'
-
-    args.append(print_mode)
-
-    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
-    os.environ.get('ROS_LOG_DIR')
-
-    return args
-
 
 ## OpenCV thresholding
 def main_cv2():
     from .threshold import Threshold
     from .hsv_cv import get_coloured_bounding_boxes
-
-    args = init_logs()
 
     # HSV threshold constants
     YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
@@ -234,7 +209,7 @@ def main_cv2():
                 bounding_boxes.append((bounding_box, cone_colour, display_colour))
         return bounding_boxes
 
-    rclpy.init(args=args)
+    rclpy.init()
     detector_node = DetectorNode(ModeEnum.cv_thresholding, get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(detector_node)
     rclpy.shutdown()
@@ -243,8 +218,6 @@ def main_cv2():
 ## PyTorch inference
 def main_torch():
     from .torch_inference import torch_init, infer
-
-    args = init_logs()
 
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
@@ -267,7 +240,7 @@ def main_torch():
             bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
         return bounding_boxes
 
-    rclpy.init(args=args)
+    rclpy.init()
     detector_node = DetectorNode(ModeEnum.torch_inference, get_torch_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
@@ -276,8 +249,6 @@ def main_torch():
 ## TensorRT inference
 def main_trt():
     from .trt_inference import TensorWrapper
-
-    args = init_logs()
 
     # loading TensorRT engine
     ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
@@ -302,7 +273,7 @@ def main_trt():
             bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
         return bounding_boxes
 
-    rclpy.init(args=args)
+    rclpy.init()
     detector_node = DetectorNode(ModeEnum.trt_inference, get_trt_bounding_boxes)
     rclpy.spin(detector_node)
     rclpy.shutdown()
