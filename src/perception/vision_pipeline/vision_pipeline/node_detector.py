@@ -136,7 +136,7 @@ class DetectorNode(Node):
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         logger = self.get_logger()
-        logger.info("Received image")
+        logger.debug("Received image")
 
         start: float = time.time() # begin a timer
 
@@ -173,7 +173,7 @@ class DetectorNode(Node):
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
-        logger.info("Time: " + str(time.time() - start) + "\n") # log time
+        logger.debug("Time: " + str(time.time() - start) + "\n") # log time
 
 
 ## OpenCV thresholding
