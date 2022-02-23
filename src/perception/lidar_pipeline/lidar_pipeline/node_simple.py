@@ -61,12 +61,12 @@ class LidarProcessing(Node):
         # Convert the list of floats into a list of xyz coordinates
         point_array: List[List] = read_points_list(pc2_msg)
 
-        logger.info("Read Time:" + str(time.time()-start))
+        logger.debug("Read Time:" + str(time.time()-start))
 
         # calls main module from ground estimation algorithm
         cones: List[List] = find_cones(point_array) 
 
-        logger.info("Detected cones:" + str(len(cones)))
+        logger.debug("Detected cones:" + str(len(cones)))
         
         # define message component - list of Cone type messages
         detected_cones: List[Cone] = []
@@ -81,7 +81,7 @@ class LidarProcessing(Node):
 
         self.detection_publisher.publish(detection_msg) # publish cone data
 
-        logger.info("Total Time:" + str(time.time()-start) + "\n")
+        logger.debug("Total Time:" + str(time.time()-start) + "\n")
 
 
 def main(args=None):

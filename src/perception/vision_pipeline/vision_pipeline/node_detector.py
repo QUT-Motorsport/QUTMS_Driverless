@@ -8,8 +8,6 @@ from ament_index_python.packages import get_package_share_directory
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
-# translate ROS image messages to OpenCV
-cv_bridge = CvBridge()
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
@@ -24,6 +22,9 @@ import enum
 
 # import required sub modules
 from .rect import Rect, draw_box
+
+# translate ROS image messages to OpenCV
+cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
 
@@ -123,8 +124,8 @@ class DetectorNode(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/detector/cone_detection", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/detector/debug_img", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img", 1)
 
         # set which cone detection this will be using
         self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
@@ -135,7 +136,7 @@ class DetectorNode(Node):
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         logger = self.get_logger()
-        logger.info("Received image")
+        logger.debug("Received image")
 
         start: float = time.time() # begin a timer
 
@@ -172,7 +173,7 @@ class DetectorNode(Node):
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
-        logger.info("Time: " + str(time.time() - start)) # log time
+        logger.debug("Time: " + str(time.time() - start) + "\n") # log time
 
 
 ## OpenCV thresholding
