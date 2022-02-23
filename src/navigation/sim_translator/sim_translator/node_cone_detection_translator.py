@@ -3,10 +3,11 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from nav_msgs.msg import Odometry
-from visualization_msgs.msg import Marker, MarkerArray
-from builtin_interfaces.msg import Duration
+from geometry_msgs.msg import Point
+from visualization_msgs.msg import MarkerArray
 from driverless_msgs.msg import ConeDetectionStamped, Cone
 from fs_msgs.msg import Track, Cone as FSCone
+from driverless_common.marker import marker_array_from_cone_detection
 
 from transforms3d.euler import quat2euler
 
@@ -25,6 +26,7 @@ class ConeDetectonTranslator(Node):
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "cone_detection", 1)
+        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "cone_detection_markers", 1)
 
         self.get_logger().info("Node cone_detection_translator initalised")
     
@@ -50,15 +52,15 @@ class ConeDetectonTranslator(Node):
             y_dist = cone.location.y - y
             range_ = sqrt(x_dist**2 + y_dist**2)
 
-            if x_dist > 0 and range_ < MAX_CONE_RANGE:
+            if range_ < MAX_CONE_RANGE:
                 detected_cone = Cone()
-                # bradford said this transform works...
                 detected_cone.location.x = x_dist*cos(ak) + y_dist*sin(ak)
-                detected_cone.location.y = y_dist*cos(ak) - x_dist*sin(ak)
+                detected_cone.location.y = -x_dist*sin(ak) + y_dist*cos(ak)
                 detected_cone.location.z = 0.0
                 detected_cone.color = cone.color
-                detected_cones.append(detected_cone)
-
+                if detected_cone.location.x > 0:
+                    detected_cones.append(detected_cone)
+        
         # create message with cones
         detection_msg = ConeDetectionStamped(
             header=odom_msg.header,
@@ -66,8 +68,7 @@ class ConeDetectonTranslator(Node):
         )
 
         self.detection_publisher.publish(detection_msg)
-        self.get_logger().info("Published detection.")
-
+        self.marker_publisher.publish(marker_array_from_cone_detection(detection_msg))
 
 def main():
     # begin ros node
