@@ -41,8 +41,8 @@ cv_bridge = CvBridge()
 
 # image display geometry
 SCALE = 20
-WIDTH = 20*SCALE # 10m either side
-HEIGHT = 20*SCALE # 20m forward
+WIDTH = 30*SCALE # 15m either side
+HEIGHT = 25*SCALE # 25m forward
 ORIGIN = Point(0, 0)
 IMG_ORIGIN = Point(int(WIDTH/2), HEIGHT)
 
@@ -122,41 +122,12 @@ def midpoint(p1: list, p2: list):
     return (p1[0]+p2[0])/2, (p1[1]+p2[1])/2
 
 
-def marker_msg(
-    x_coord: float, 
-    y_coord: float, 
-    ID: int, 
-) -> Marker: 
-    """
-    Creates a Marker object for cones or a car.
-    * param x_coord: x position relative to parent frame
-    * param y_coord: y position relative to parent frame
-    * param ID: Unique for markers in the same frame
-    * param header: passed in because creating time is dumb
-    * return: Marker
-    """
-
-    marker = Marker()
-
-    return marker
-
-
 class LocalSpline(Node):
     def __init__(self, spline_len: int):
         super().__init__("local_spline")
 
-        # subscribers
-        cones_sub = message_filters.Subscriber(
-            self, ConeDetectionStamped, "/detector/cone_detection"
-        )
-        odom_sub = message_filters.Subscriber(
-            self, Odometry, "/testing_only/odom"
-        )
-        synchronizer = message_filters.TimeSynchronizer(
-            fs=[cones_sub, odom_sub],
-            queue_size=30,
-        )
-        synchronizer.registerCallback(self.callback)
+        self.create_subscription(ConeDetectionStamped, "/detector/cone_detection", self.callback, 10)
+        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishers
         self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
@@ -166,10 +137,17 @@ class LocalSpline(Node):
         LOGGER.info("---Local Spline Node Initalised---")
 
         self.spline_len = spline_len
+        self.odom_msg = Odometry()
+
+    
+    def odom_callback(self, odom_msg: Odometry):
+        self.odom_msg = odom_msg
 
 
-    def callback(self, cone_msg: ConeDetectionStamped, odom_msg: Odometry):
+    def callback(self, cone_msg: ConeDetectionStamped):
         LOGGER.info("Received detection")
+
+        odom_msg = self.odom_msg
 
         cones: List[Cone] = cone_msg.cones
         # create black image
