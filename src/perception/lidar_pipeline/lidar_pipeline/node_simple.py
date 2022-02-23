@@ -3,18 +3,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 # import ROS2 message libraries
-from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
-from visualization_msgs.msg import Marker, MarkerArray
-from builtin_interfaces.msg import Duration
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python modules
 import time
 from typing import List
-import sys
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
@@ -84,9 +80,9 @@ class LidarProcessing(Node):
         logger.debug("Total Time:" + str(time.time()-start) + "\n")
 
 
-def main(args=None):
+def main():
     # begin ros node
-    rclpy.init(args=args)
+    rclpy.init()
 
     node = LidarProcessing()
     rclpy.spin(node)
@@ -95,6 +91,3 @@ def main(args=None):
 
     rclpy.shutdown()
 
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
