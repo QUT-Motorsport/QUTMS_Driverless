@@ -37,7 +37,7 @@ setup(
             "cv2_detector = vision_pipeline.node_detector:main_cv2",
             "torch_detector = vision_pipeline.node_detector:main_torch",
             "trt_detector = vision_pipeline.node_detector:main_trt",
-            "zed_simulator = vision_pipeline.node_zed:main",
+            "zed_simulator = vision_pipeline.node_zed_simulator:main",
             "annotator = vision_pipeline.node_annotator:main",
         ],
     },
