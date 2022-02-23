@@ -50,8 +50,9 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
-        vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp)
+        #vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
+        #vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures)
+        pass
 
     # Discretise point cloud for real-time performance
     start_time = time.time()
@@ -60,6 +61,10 @@ def detect_cones(
     end_time = time.time()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
+    
+    if create_figures:
+        vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp)
+        plt.show()
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
