@@ -64,7 +64,9 @@ def detect_cones(
     
     if create_figures:
         vis.plot_segments_2D(point_cloud, segments, working_dir, timestamp)
+        vis.plot_bins_2D(point_cloud, bins, working_dir, timestamp)
         vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures)
+        vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
