@@ -22,6 +22,8 @@ yellow_hex = '#F4D44D'
 red_hex = '#F45060'
 blue_hex = '#636EFA'
 
+# Colour Sets
+segment_colours = [mint_hex, yellow_hex, red_hex, blue_hex]
 
 # Scale 255 RGBA values between 0 and 1
 def normalise_rgba(rgba):
@@ -120,6 +122,8 @@ def animate_figure(name, ax, figure_timestamp):
     if not os.path.isdir(animations_folder):
         os.mkdir(animations_folder)
 
+    print(f"Creating animation {name} ...")
+
     average_time = 0
     for angle in range(360):
         start_time = time.time()
@@ -133,7 +137,7 @@ def animate_figure(name, ax, figure_timestamp):
             average_time = (average_time + total_time) / 2
 
         m, s = divmod(average_time * (359 - angle), 60)
-        print("Creating animation frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), "|", "{:.0f}m".format(m), "{:.0f}s ".format(s), end = "\r")
+        print("Animating frame", str(angle), "/", "360", "|", "{:.2f}%".format(angle / 360 * 100), "|", "{:.0f}m".format(m), "{:.0f}s ".format(s), end = "\r")
         
     os.chdir(animations_folder)
     subprocess.call([
@@ -169,19 +173,29 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animat
         animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
 
 
-def plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures):
-    segment_count = (abs(segments.min()) + segments.max() + 1)
-    fig, ax = init_plot_3D(f"Point Cloud Discretised into {segment_count} Segments", "X", "Y", "Z")
+def get_segment_count(segments):
+    return (abs(segments.min()) + segments.max() + 1)
 
-    custom_colours = [mint_hex, yellow_hex, red_hex, blue_hex]
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=(segments % len(custom_colours)), cmap=mpl_colors.ListedColormap(custom_colours), marker='s', s=(72./fig.dpi)**2)
+
+def plot_segments_2D(point_cloud, segments, working_dir, timestamp):
+    fig, ax = init_plot_2D(f"Point Cloud Discretised into {get_segment_count(segments)} Segments", "X", "Y")
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=(segments % len(segment_colours)), cmap=mpl_colors.ListedColormap(segment_colours), marker='s', s=(72./fig.dpi)**2)
 
     # Save Figure
-    figure_timestamp = save_figure("02_PointCloud_3D", working_dir, timestamp)
+    save_figure("03_PointCloudSegments_2D", working_dir, timestamp)
+
+
+def plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures):
+    fig, ax = init_plot_3D(f"Point Cloud Discretised into {get_segment_count(segments)} Segments", "X", "Y", "Z")
+
+    ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=(segments % len(segment_colours)), cmap=mpl_colors.ListedColormap(segment_colours), marker='s', s=(72./fig.dpi)**2)
+
+    # Save Figure
+    figure_timestamp = save_figure("04_PointCloudSegments_3D", working_dir, timestamp)
     
     # Create Animation
     if animate_figures:
-        animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
+        animate_figure("02_PointCloudSegments_Animated", ax, figure_timestamp)
 
 # Notes
 # Use a list to store rgba and hex values for colours

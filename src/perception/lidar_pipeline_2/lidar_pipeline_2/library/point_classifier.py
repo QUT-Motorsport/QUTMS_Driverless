@@ -202,5 +202,5 @@ def dist_points_3D(x_0, p_1, p_2):
 
 
 def label_points_3(ground_plane):
-    print(ground_plane)
+    # print(ground_plane)
     pass
