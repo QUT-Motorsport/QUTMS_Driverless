@@ -1,0 +1,40 @@
+System Status 1 -> 1Hz
+System Status 2 -> 1Hz
+System Status 3 -> 1Hz
+
+UTC0 -> 10Hz
+UTC1 -> 10Hz
+
+IMU
+    Info -> 1Hz
+    Accelerometer -> 100Hz
+    Gyro -> 100Hz
+    Delta Velocity -> 100Hz
+    Delta Angle -> 100Hz
+
+Orientation
+    Info -> 1Hz
+    Quat -> 100Hz
+    Euler -> 50Hz
+    Orientation Acc -> 50Hz
+
+Navigation
+    Position -> 50Hz
+    Altitude -> 10Hz
+    Position Acc -> 10Hz
+    Velocity -> 10Hz
+    Velocity Acc -> 10Hz
+    Velocity Body -> 10Hz
+
+Automotive
+    Track, Slip, Curv -> 50Hz
+
+GPS 1
+    Velocity Info -> 1Hz
+    Velocity -> 10Hz
+    Velocity Acc -> 10Hz
+    Course -> 10Hz
+    Position Info -> 1Hz
+    Position -> 10Hz
+    Altitude -> 10Hz
+    Position Acc -> 10Hz
