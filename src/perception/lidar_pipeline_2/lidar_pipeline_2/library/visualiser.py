@@ -10,9 +10,9 @@ import time
 
 
 # Default Values
-dark_grey = (0.122, 0.149, 0.188, 1.0)
-light_grey = (0.145, 0.181, 0.247, 1.0)
-blue = (0.612, 0.863, 0.996, 1.0)
+dark_grey = (0.122, 0.149, 0.188, 1.0) #1f2630
+light_grey = (0.145, 0.181, 0.247, 1.0) #252e3f
+blue = (0.612, 0.863, 0.996, 1.0) #9cdcfe
 mint = (0.188, 0.992, 0.761, 1.0) #30fdc3
 default_dir = "/figures"
 
