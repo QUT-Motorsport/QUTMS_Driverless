@@ -19,6 +19,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "cone_detection_translator = sim_translator.node_cone_detection_translator:main",
         ],
     },
 )

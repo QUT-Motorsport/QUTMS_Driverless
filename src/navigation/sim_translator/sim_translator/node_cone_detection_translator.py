@@ -1,7 +1,10 @@
 from math import sin, cos, sqrt
+import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from nav_msgs.msg import Odometry
+from visualization_msgs.msg import Marker, MarkerArray
+from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import ConeDetectionStamped, Cone
 from fs_msgs.msg import Track, Cone as FSCone
 
@@ -63,3 +66,13 @@ class ConeDetectonTranslator(Node):
         )
 
         self.detection_publisher.publish(detection_msg)
+        self.get_logger().info("Published detection.")
+
+
+def main():
+    # begin ros node
+    rclpy.init()
+    node = ConeDetectonTranslator()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
