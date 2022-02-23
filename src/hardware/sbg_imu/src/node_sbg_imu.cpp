@@ -16,28 +16,6 @@ class SBGIMU : public rclcpp::Node {
 	rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_data;
 	rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp;
 
-	rclcpp::TimerBase::SharedPtr imu_data_timer;
-	rclcpp::TimerBase::SharedPtr imu_temp_timer;
-
-	void canbus_callback(const driverless_msgs::msg::Can msg) {
-		switch (msg.id) {
-			case SBG_ECAN_MSG_STATUS_01_ID: {
-				uint32_t id;
-				uint32_t time_stamp;
-				uint16_t general_status;
-				uint16_t clock_status;
-				Parse_SBG_ECAN_MSG_STATUS_01(const_cast<uint8_t *>(msg.data.data()), &id, &time_stamp, &general_status,
-											 &clock_status);
-			} break;
-			case SBG_ECAN_MSG_IMU_ACCEL_ID: {
-				float x, y, z;
-				uint32_t id;
-				Parse_SBG_ECAN_MSG_IMU_ACCEL(const_cast<uint8_t *>(msg.data.data()), &id, &x, &y, &z);
-				RCLCPP_INFO(this->get_logger(), "XYZ: [%f, %f, %f]", x, y, z);
-			} break;
-		}
-	}
-
 	std::map<std::string, int> param_defaults = {{"imu_info", 1},
 												 {"imu_accelerometer", 100},
 												 {"imu_gyrometer", 100},
@@ -66,18 +44,36 @@ class SBGIMU : public rclcpp::Node {
 												 {"gps_1_position", 10},
 												 {"gps_1_altitude", 10},
 												 {"gps_1_position_acc", 10}};
+	std::vector<std::string> param_keys;
+
+	void canbus_callback(const driverless_msgs::msg::Can msg) {
+		switch (msg.id) {
+			case SBG_ECAN_MSG_STATUS_01_ID: {
+				uint32_t id;
+				uint32_t time_stamp;
+				uint16_t general_status;
+				uint16_t clock_status;
+				Parse_SBG_ECAN_MSG_STATUS_01(const_cast<uint8_t *>(msg.data.data()), &id, &time_stamp, &general_status,
+											 &clock_status);
+			} break;
+			case SBG_ECAN_MSG_IMU_ACCEL_ID: {
+				float x, y, z;
+				uint32_t id;
+				Parse_SBG_ECAN_MSG_IMU_ACCEL(const_cast<uint8_t *>(msg.data.data()), &id, &x, &y, &z);
+				RCLCPP_INFO(this->get_logger(), "XYZ: [%f, %f, %f]", x, y, z);
+			} break;
+		}
+	}
 
    public:
 	SBGIMU() : Node("sbg") {
 		// declare and set all params
-		this->declare_parameters("", param_defaults);
+		this->declare_parameters("", this->param_defaults);
 
-		std::vector<std::string> param_keys;
-
-		std::transform(param_defaults.begin(), param_defaults.end(), std::back_inserter(param_keys),
+		std::transform(this->param_defaults.begin(), this->param_defaults.end(), std::back_inserter(this->param_keys),
 					   [](const std::map<std::string, int>::value_type &pair) { return pair.first; });
 
-		this->get_parameters(param_keys);
+		this->get_parameters(this->param_keys);
 
 		RCLCPP_INFO(this->get_logger(), "starting sbg node setup...");
 		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
