@@ -3,8 +3,8 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sbg_can.hpp"
-#include "sensor_msgs/msg/imu.hpp"
-#include "sensor_msgs/msg/temperature.hpp"
+// #include "sensor_msgs/msg/imu.hpp"
+// #include "sensor_msgs/msg/temperature.hpp"
 
 using std::placeholders::_1;
 
@@ -13,8 +13,8 @@ class SBGIMU : public rclcpp::Node {
 	rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
 	rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
-	rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_data;
-	rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp;
+	// rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_data;
+	// rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp;
 
 	void canbus_callback(const driverless_msgs::msg::Can msg) {
 		switch (msg.id) {
@@ -42,8 +42,8 @@ class SBGIMU : public rclcpp::Node {
 		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
 			"canbus_rosbound", 10, std::bind(&SBGIMU::canbus_callback, this, _1));
 
-		this->imu_data = this->create_publisher<sensor_msgs::msg::Imu>("/imu/data", 10);
-		this->imu_temp = this->create_publisher<sensor_msgs::msg::Temperature>("/imu/temp", 10);
+		// this->imu_data = this->create_publisher<sensor_msgs::msg::Imu>("/imu/data", 10);
+		// this->imu_temp = this->create_publisher<sensor_msgs::msg::Temperature>("/imu/temp", 10);
 
 		RCLCPP_INFO(this->get_logger(), "done");
 	}
