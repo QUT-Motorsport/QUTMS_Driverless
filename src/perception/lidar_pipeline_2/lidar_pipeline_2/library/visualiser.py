@@ -1,5 +1,7 @@
 import datetime
 import matplotlib.pyplot as plt
+import matplotlib.colors as mpl_colors
+import plotly.express.colors as pe_colors
 import numpy as np
 import os
 import subprocess
@@ -11,8 +13,14 @@ import time
 dark_grey = (0.122, 0.149, 0.188, 1.0)
 light_grey = (0.145, 0.181, 0.247, 1.0)
 blue = (0.612, 0.863, 0.996, 1.0)
-mint = (0.188, 0.992, 0.761, 1.0)
+mint = (0.188, 0.992, 0.761, 1.0) #30fdc3
 default_dir = "/figures"
+
+# Custom Colours
+mint_hex = '#30fdc3'
+yellow_hex = '#F4D44D'
+red_hex = '#F45060'
+blue_hex = '#636EFA'
 
 
 # Scale 255 RGBA values between 0 and 1
@@ -147,7 +155,7 @@ def plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp):
     save_figure("01_PointCloud_2D", working_dir, timestamp)
 
 
-def plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, timestamp):
+def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures):
     # Create Figure
     fig, ax = init_plot_3D('Point Cloud: ' + str(point_count) + ' Points', 'X', 'Y', 'Z')
     plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
@@ -160,6 +168,20 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, animate_figures, 
     if animate_figures:
         animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
 
-def plot_segments_2D(segments_bins_norms_z):
-    fig, ax = init_plot_2D("Point Cloud discretised into Segments", "X", "Y")
-    pass
+
+def plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures):
+    segment_count = (abs(segments.min()) + segments.max() + 1)
+    fig, ax = init_plot_3D(f"Point Cloud Discretised into {segment_count} Segments", "X", "Y", "Z")
+
+    custom_colours = [mint_hex, yellow_hex, red_hex, blue_hex]
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=(segments % len(custom_colours)), cmap=mpl_colors.ListedColormap(custom_colours), marker='s', s=(72./fig.dpi)**2)
+
+    # Save Figure
+    figure_timestamp = save_figure("02_PointCloud_3D", working_dir, timestamp)
+    
+    # Create Animation
+    if animate_figures:
+        animate_figure("01_PointCloud_Animated", ax, figure_timestamp)
+
+# Notes
+# Use a list to store rgba and hex values for colours
