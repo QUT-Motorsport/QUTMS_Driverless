@@ -55,7 +55,7 @@ def cone_distance(
     # get center as roi
     depth_roi: np.ndarray = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
-        y=colour_frame_cone_bounding_box.center.y - 5,
+        y=colour_frame_cone_bounding_box.center.y,
         width=6,
         height=6,
     ).as_roi(depth_frame)
@@ -93,7 +93,7 @@ def cone_msg(
 ) -> Cone:
 
     location = Point(
-        x=distance*cos(radians(bearing)),
+        x=distance*cos(radians(bearing))-0.5, # distance from cam to CoG
         y=distance*sin(radians(bearing)),
         z=0.0,
     )

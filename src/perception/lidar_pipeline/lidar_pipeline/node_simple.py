@@ -29,9 +29,8 @@ ground-truth sim cone locations with lidar cone locations
 lidar_cov = np.array([[ 0.01,  0.1, 0], [ 0.1, 0.01, 0.1], [0, 0.1,  0.01]])
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
-    # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location: Point = Point(
-        x=x_coord,
+        x=x_coord+1.2, # distance from lidar to CoG
         y=y_coord,
         z=0.0,
     )
