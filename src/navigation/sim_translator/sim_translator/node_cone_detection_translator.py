@@ -25,8 +25,8 @@ class ConeDetectonTranslator(Node):
         self.create_subscription(Track, "/testing_only/track", self.track_callback, 10)
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "cone_detection", 1)
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "cone_detection_markers", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/sim_translator/cone_detection", 1)
+        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/sim_translator/cone_detection_markers", 1)
 
         self.get_logger().info("Node cone_detection_translator initalised")
     

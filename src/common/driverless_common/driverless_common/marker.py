@@ -1,7 +1,8 @@
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import ConeDetectionStamped, Cone
-from std_msgs.msg import Header
+from std_msgs.msg import Header, ColorRGBA
+from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
 
 from typing import List
 
@@ -36,6 +37,14 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
     return MarkerArray(markers=markers)
 
 
+CONE_TO_RGB_MAP = {
+    Cone.BLUE: ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),
+    Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
+    Cone.ORANGE_BIG: ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),
+    Cone.ORANGE_SMALL: ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+}
+
+
 def marker_msg(
     x: float,
     y: float,
@@ -43,45 +52,21 @@ def marker_msg(
     header: Header,
     cone_colour: int,
     name_space: str = "current_scan",
-) -> Marker: 
-
-    marker = Marker()
-    marker.header = header
-    marker.ns = name_space
-    marker.id = id_
-    marker.type = Marker.CYLINDER
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x
-    marker.pose.position.y = y
-    marker.pose.position.z = MARKER_HEIGHT / 2
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # size of the marker
-    marker.scale.x = 0.2
-    marker.scale.y = 0.2
-    marker.scale.z = MARKER_HEIGHT
-
-    if cone_colour == Cone.BLUE:
-        r, g, b = 0, 0, 255
-    elif cone_colour == Cone.YELLOW:
-        r, g, b = 255, 255, 0
-    elif cone_colour in [Cone.ORANGE_BIG, Cone.ORANGE_SMALL]:
-        r, g, b = 255, 0, 0
-    else:
-        r, g, b = 0, 0, 0
-
-    marker.color.r = float(r)
-    marker.color.g = float(g)
-    marker.color.b = float(b)
-    marker.color.a = 1.0
-
-    marker.lifetime = Duration(sec=1, nanosec=0)
-
-    return marker
+) -> Marker:
+    return Marker(
+        header=header,
+        ns=name_space,
+        id=id_,
+        type=Marker.CYLINDER,
+        action=Marker.ADD,
+        pose=Pose(
+            position=Point(x=x, y=y, z=MARKER_HEIGHT/2),
+            orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        ),
+        scale=Vector3(x=0.2, y=0.2, z=MARKER_HEIGHT),
+        color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
+        lifetime=Duration(sec=1, nanosec=0),
+    )
 
 
 def clear_marker_msg(
