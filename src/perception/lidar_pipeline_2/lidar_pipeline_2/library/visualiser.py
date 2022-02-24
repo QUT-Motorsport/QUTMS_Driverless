@@ -7,6 +7,7 @@ import os
 import subprocess
 import glob
 import time
+import math
 
 
 # Default Values
@@ -203,7 +204,7 @@ def get_bin_count(bins):
 
 def plot_bins_2D(point_cloud, bins, working_dir, timestamp):
     fig, ax = init_plot_2D(f"Segments Sliced into a Maximum of {get_bin_count(bins)} Bins", "X", "Y")
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=(bins % len(colours_01)), cmap=mpl_colors.ListedColormap(colours_01), marker='s', s=(72./fig.dpi)**2)
+    ax.scatter(point_cloud['x'], point_cloud['y'], c=(bins % len(colours_01)), cmap=mpl_colors.ListedColormap(colours_01), marker='s', s=(72./fig.dpi)**2)
 
     # Save Figure
     save_figure("05_PointCloudBins_2D", working_dir, timestamp)
@@ -222,5 +223,39 @@ def plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures):
         animate_figure("03_PointCloudBins_Animated", ax, figure_timestamp)
 
 
+def plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp):
+    fig, ax = init_plot_2D("Prototype Points", "X", "Y")
+
+    for idx, segment in enumerate(split_prototype_segments):
+        segment_num = prototype_segments[idx]
+        x = segment[:, 0] * math.cos(DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(DELTA_ALPHA * segment_num)
+
+        ax.scatter(x, y, c=colours_01[prototype_segments[idx] % len(colours_01)], marker='s', s=(72./fig.dpi)**2)
+
+    # Save Figure
+    save_figure("07_PrototypePoints_2D", working_dir, timestamp)
+
+
+def plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures):
+    fig, ax = init_plot_3D("Prototype Points", "X", "Y", "Z")
+
+    for idx, segment in enumerate(split_prototype_segments):
+        segment_num = prototype_segments[idx]
+        x = segment[:, 0] * math.cos(DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(DELTA_ALPHA * segment_num)
+        
+        ax.scatter(x, y, segment[:, 1], c=colours_01[prototype_segments[idx] % len(colours_01)], marker='s', s=(72./fig.dpi)**2)
+
+    # Save Figure
+    figure_timestamp = save_figure("08_PrototypePoints_3D", working_dir, timestamp)
+
+    # Create Animation
+    if animate_figures:
+        animate_figure("04_PrototypePoints_Animated", ax, figure_timestamp)
+
+
 # Notes
 # Use a list to store rgba and hex values for colours
+# Colour bar legend to have same number of segments with
+# repeating colour and add to plots
