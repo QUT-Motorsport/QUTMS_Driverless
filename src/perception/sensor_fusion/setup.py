@@ -13,6 +13,8 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
+    author='Ian Rist',
+    author_email='ian@bigair.net',
     maintainer='Alastair Bradford',
     maintainer_email='team@qutmotorsport.com',
     description='Consolidates and compaires cone locations',
@@ -20,7 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'fusion = sensor_fusion.node_fusion:main'
+            'fusion = sensor_fusion.node_fusion:main',
+            'track_server = sensor_fusion.node_track_server:main',
         ],
     },
 )

@@ -4,6 +4,7 @@
     <name>sensor_fusion</name>
     <version>0.0.0</version>
     <description>Consolidates and compaires cone locations</description>
+    <author email ="ian@bigair.net">Ian Rist</author>
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
