@@ -50,8 +50,8 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
-        vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures)
+        #vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
+        #vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures)
         pass
 
     # Discretise point cloud for real-time performance
@@ -63,10 +63,11 @@ def detect_cones(
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
     
     if create_figures:
-        vis.plot_segments_2D(point_cloud, segments, working_dir, timestamp)
-        vis.plot_bins_2D(point_cloud, bins, working_dir, timestamp)
-        vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures)
-        vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
+        #vis.plot_segments_2D(point_cloud, segments, working_dir, timestamp)
+        #vis.plot_bins_2D(point_cloud, bins, working_dir, timestamp)
+        #vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures)
+        #vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
+        pass
 
     # Calculate prototype point for every bin (if one exists)
     start_time = time.time()
@@ -74,12 +75,20 @@ def detect_cones(
     split_prototype_segments, prototype_segments = pcp.get_prototype_points_4(segments, bins, point_norms, point_cloud['z'])
     end_time = time.time()
 
+    if create_figures:
+        vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
+        vis.plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        pass
+
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
     start_time = time.time()
     # ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     end_time = time.time()
+    
+    if create_figures:
+        pass
     
     # print(ground_plane)
 
