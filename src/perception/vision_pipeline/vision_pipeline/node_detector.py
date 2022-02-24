@@ -77,6 +77,14 @@ def cone_bearing(
     
     return CAMERA_FOV/2 * center_scaled
 
+"""
+covariance matrix determined by comparing
+ground-truth sim cone locations with vision cone locations
+- performed in a debug trial+error node
+- probably wont work for real life but thats ok,
+  there are better options with SLAM
+"""
+vision_cov = np.array([[ 0.4,  0.01, 0], [ 0.01, 0.1, 0], [0, 0,  0.01]])
 
 def cone_msg(
     distance: float,
@@ -92,6 +100,7 @@ def cone_msg(
 
     return Cone(
         location=location,
+        covariance=vision_cov.flatten(),
         color=colour,
     )
 

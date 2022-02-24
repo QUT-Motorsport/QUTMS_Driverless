@@ -1,4 +1,5 @@
 geometry_msgs/Point location
+float64[9] covariance
 uint8 color # use the enum below
 
 # Constants

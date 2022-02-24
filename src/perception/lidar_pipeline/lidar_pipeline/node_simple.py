@@ -10,6 +10,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 # other python modules
 import time
+import numpy as np
 from typing import List
 
 # import ROS function that has been ported to ROS2 by
@@ -18,6 +19,14 @@ from .scripts.read_pcl import read_points_list
 # lidar cone detection algorithm
 from .scripts.sim_simple import find_cones
 
+"""
+covariance matrix determined by comparing
+ground-truth sim cone locations with vision cone locations
+- performed in a debug trial+error node
+- probably wont work for real life but thats ok,
+  there are better options with SLAM
+"""
+lidar_cov = np.array([[ 0.01,  0.1, 0], [ 0.1, 0.01, 0.1], [0, 0.1,  0.01]])
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
@@ -29,6 +38,7 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
 
     return Cone(
         location=location,
+        covariance=lidar_cov.flatten(),
         color=4,
     )
 
