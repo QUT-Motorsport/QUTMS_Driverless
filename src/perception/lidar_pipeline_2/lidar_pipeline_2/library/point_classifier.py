@@ -200,7 +200,9 @@ def dist_points_3D(x_0, p_1, p_2):
     # return distance
     return dist_norm / p_norm
 
-
+# m b start_x start_y end_x end_y count
 def label_points_3(ground_plane):
-    # print(ground_plane)
+    for thing in ground_plane:
+        print(thing)
+    print(len(ground_plane))
     pass
