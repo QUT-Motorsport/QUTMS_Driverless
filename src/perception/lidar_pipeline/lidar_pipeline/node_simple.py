@@ -21,7 +21,7 @@ from .scripts.sim_simple import find_cones
 
 """
 covariance matrix determined by comparing
-ground-truth sim cone locations with vision cone locations
+ground-truth sim cone locations with lidar cone locations
 - performed in a debug trial+error node
 - probably wont work for real life but thats ok,
   there are better options with SLAM
