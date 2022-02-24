@@ -162,7 +162,7 @@ class DetectorNode(Node):
             
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
-            if isnan(distance) or isinf(distance):
+            if isnan(distance) or isinf(distance) or distance > 20:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
