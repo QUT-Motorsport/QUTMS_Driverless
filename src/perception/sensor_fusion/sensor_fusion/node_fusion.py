@@ -15,7 +15,7 @@ from driverless_msgs.msg import Cone
 from driverless_msgs.msg import ConeDetectionStamped
 
 # other python modules
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import time
 
@@ -51,7 +51,7 @@ class ConeFusion(Node):
         self.get_logger().info("---Cone Fusion Node Initalised---")
 
 
-    def getNearestOdom(self, stamp):
+    def getNearestOdom(self, stamp: Time) -> Tuple[Odometry, np.ndarray]:
         # need to switch this over to a position from a EKF with covariance
         # have to do the time stuff this way because the compating of time in the message_filters __init__.py is wack
         locodom: Odometry = self.actualodom.getElemBeforeTime(
@@ -66,7 +66,7 @@ class ConeFusion(Node):
         return locodom, cov
 
 
-    def fuseCone(self, point):
+    def fuseCone(self, point: PointWithCov):
         # find the closest cone in the cone tree
         closestcone = self.conesKDTree.search_knn(point, 1)
         # if its close enough to a actual cone than fuse it and rebalance in case it moved a bit too much 
@@ -80,7 +80,7 @@ class ConeFusion(Node):
             self.bufferCone(point)
             
 
-    def bufferCone(self, point):
+    def bufferCone(self, point: PointWithCov):
         # if we already have a list of possible cones then look through that tree for something close
         if self.bufferKDTree is not None and self.bufferKDTree.data is not None:
             # find the closest possible cone to the possible cone

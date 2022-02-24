@@ -62,7 +62,7 @@ class PointWithCov:
         # have to start with 1 so we dont get a div by zero error
         self.ncMeasurments: int = 1
     
-    def updatecolor(self, color):
+    def updatecolor(self, color: int):
         if color == 0:
             self.isblue += 1
             self.ncMeasurments += 1
@@ -91,7 +91,7 @@ class PointWithCov:
         else:
             self.color = 4
 
-    def translate(self, x, y, z, theta, g_cov):
+    def translate(self, x: float, y: float, z: float, theta: float, g_cov: float):
         s, c = sin(theta), cos(theta)
         rotation_matrix = np.array([[c, -1*s, 0],[s, c, 0], [0, 0, 1]])
         new_cov = rotation_matrix @ self.loc_cov @ rotation_matrix.T
@@ -102,7 +102,12 @@ class PointWithCov:
         self.coords = (self.global_x, self.global_y)
 
     def update(self, other:"PointWithCov"):
-        m3, c3 = multivariate_multiply([self.global_x, self.global_y, self.global_z], self.global_cov, [other.global_x, other.global_y, other.global_z], other.global_cov)
+        m3, c3 = multivariate_multiply(
+            [self.global_x, self.global_y, self.global_z], 
+            self.global_cov, 
+            [other.global_x, other.global_y, other.global_z], 
+            other.global_cov
+        )
         self.global_cov = c3
         self.global_x = m3[0]
         self.global_y = m3[1]

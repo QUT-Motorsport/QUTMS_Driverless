@@ -25,13 +25,13 @@ from .point import PointWithCov
 from . import kdtree
 
 
-class ConePipeline(Node):
+class TrackLines(Node):
     def __init__(self):
-        super().__init__("cone_pipeline")
+        super().__init__("track_lines")
 
         self.logger = self.get_logger()
 
-        self.create_subscription(ConeDetectionStamped, "/fusion/cone_detection_cov", self.mapCallback, 10) 
+        self.create_subscription(ConeDetectionStamped, "/fusion/cone_detection", self.mapCallback, 10) 
 
         self.track_markers: Publisher = self.create_publisher(MarkerArray, "/fusion/track_marker", 1)
 
@@ -47,11 +47,11 @@ class ConePipeline(Node):
 
         self.printmarkers: bool = True
 
-        self.logger.debug("---Cone Fusion Node Initalised---")
+        self.logger.info("---Track Line Markers Initalised---")
 
 
     def mapCallback(self, track_msg: ConeDetectionStamped):
-        delaunayLines = self.getDelaunayEdges(track_msg.cones)
+        delaunayLines: List = self.getDelaunayEdges(track_msg.cones, track_msg.header)
         if delaunayLines:
             self.publishDelaunayEdgesVisual(delaunayLines)
             self.getEdges(delaunayLines)
@@ -105,24 +105,23 @@ class ConePipeline(Node):
             self.qsLinesVisualPub.publish(qsEdgesMsg)
 
 
-    def getDelaunayEdges(self, frontCones):
+    def getDelaunayEdges(self, frontCones: List[Cone], header: Header) -> list:
         if len(frontCones) < 4: # no sense to calculate delaunay
             return
 
-        conePoints = np.zeros((len(frontCones), 2))
+        conePoints: np.ndarray = np.zeros((len(frontCones), 2))
         coneList: List[PointWithCov] = []
 
         for i in range(len(frontCones)):
-            cone = frontCones[i]
-            conePoints[i] = ([cone.position.x, cone.position.y])
-            coneList.append(PointWithCov(0, 0, 0, None, cone.color, cone.header, cone.position.x, cone.position.y, cone.position.z, np.array(cone.covariance).reshape((3,3))))
+            cone: Cone = frontCones[i]
+            conePoints[i] = ([cone.location.x, cone.location.y])
+            coneList.append(PointWithCov(0, 0, 0, None, cone.color, header, cone.location.x, cone.location.y, cone.location.z, np.array(cone.covariance).reshape((3,3))))
 
         tri = Delaunay(conePoints)
         self.coneKDTree = kdtree.create(coneList)
 
-        delaunayEdges = []
+        delaunayEdges: list = []
         for simp in tri.simplices:
-
             for i in range(3):
                 j = i + 1
                 if j == 3:
@@ -137,7 +136,8 @@ class ConePipeline(Node):
 
         return delaunayEdges
 
-    def trackEdgesVisual(self, edges, cc: int):
+
+    def trackEdgesVisual(self, edges, cc: int) -> Marker:
         if not edges:
             return None
 
@@ -150,10 +150,9 @@ class ConePipeline(Node):
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         marker.scale.x = 0.05
-
         marker.pose.orientation.w = 1.0
-
         marker.color.a = 0.5
+
         if cc == 0:
             marker.color.b = 1.0
         elif cc == 1:
@@ -171,7 +170,6 @@ class ConePipeline(Node):
 
         for edge in edges:
             # print edge
-
             p1 = Point()
             p1.x = edge.x1
             p1.y = edge.y1
@@ -185,22 +183,22 @@ class ConePipeline(Node):
             path_markers.append(p2)
 
         marker.points = path_markers
-
         return marker
 
-    def publishDelaunayEdgesVisual(self, edges):
+
+    def publishDelaunayEdgesVisual(self, edges: list):
         if not edges:
             return
 
         marker = Marker()
         marker.header.frame_id = "map"
+        marker.header.stamp = self.get_clock().now().to_msg()
         marker.lifetime = DurationMsg(sec=1)
         marker.ns = "publishDelaunayLinesVisual"
 
         marker.type = marker.LINE_LIST
         marker.action = marker.ADD
         marker.scale.x = 0.05
-
         marker.pose.orientation.w = 1.0
 
         marker.color.a = 0.5
@@ -208,10 +206,8 @@ class ConePipeline(Node):
         marker.color.b = 1.0
 
         path_markers: List[Point] = []
-
         for edge in edges:
             # print edge
-
             p1 = Point()
             p1.x = edge.x1
             p1.y = edge.y1
@@ -225,9 +221,8 @@ class ConePipeline(Node):
             path_markers.append(p2)
 
         marker.points = path_markers
-
         self.delaunayLinesVisualPub.publish(marker)
-        
+
 
 class Edge():
     def __init__(self, x1, y1, x2, y2, p1, p2):
@@ -268,7 +263,7 @@ def main():
     # begin ros node
     rclpy.init()
 
-    node = ConePipeline()
+    node = TrackLines()
     rclpy.spin(node)
     
     node.destroy_node()
