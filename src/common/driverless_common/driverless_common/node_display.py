@@ -86,28 +86,35 @@ class DisplayDetections(Node):
 
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/fusion/loc_cone_detection", self.fusion_callback, 1)
 
         self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/display/vision_detection", 1)
         self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/display/lidar_detection", 1)
+        self.fusion_disp_publisher: Publisher = self.create_publisher(Image, "/display/fusion_detection", 1)
 
         self.get_logger().info('---Cone display node initialised---')
 
 
     def vision_callback(self, msg: ConeDetectionStamped):
-        logger = self.get_logger()
-        logger.debug("Received vision detection")
+        self.get_logger().debug("Received vision detection")
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
         self.vision_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
     def lidar_callback(self, msg: ConeDetectionStamped):
-        logger = self.get_logger()
-        logger.debug("Received lidar detection")
+        self.get_logger().debug("Received lidar detection")
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
         self.lidar_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+    def fusion_callback(self, msg: ConeDetectionStamped):
+        self.get_logger().debug("Received fusion detection")
+
+        cones: List[Cone] = msg.cones
+        debug_img = draw_markers(cones)
+        self.fusion_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main():
