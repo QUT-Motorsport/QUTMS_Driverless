@@ -32,16 +32,21 @@ class ConeFusion(Node):
     def __init__(self):
         super().__init__("cone_fusion")
 
+        # cone detection subscribers
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidarCallback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.visionCallback, 1)
-
+        # fused cone location publisher
         self.filtered_cones_pub: Publisher = self.create_publisher(ConeDetectionStamped, "/fusion/cone_detection", 1)
+        self.filtered_local_pub: Publisher = self.create_publisher(ConeDetectionStamped, "/fusion/loc_cone_detection", 1)
+        # rviz marker pubs
         self.lidar_markers: Publisher = self.create_publisher(MarkerArray, "/fusion/lidar_marker", 1)
         self.vision_markers: Publisher = self.create_publisher(MarkerArray, "/fusion/vision_marker", 1)
         self.filtered_markers: Publisher = self.create_publisher(MarkerArray, "/fusion/filtered_marker", 1)
-
+        # odom sub
         odom_sub = message_filters.Subscriber(self, Odometry, "/testing_only/odom")
-        self.actualodom = message_filters.Cache(odom_sub, 1000) # needs to be the more than the max latency of perception in ms
+        # odom msg cache
+        # needs to be the more than the max latency of perception in ms
+        self.actualodom = message_filters.Cache(odom_sub, 1000) 
 
         self.printmarkers: bool = True # this could be a ros-arg
 
@@ -72,7 +77,7 @@ class ConeFusion(Node):
         # if its close enough to a actual cone than fuse it and rebalance in case it moved a bit too much 
         # (should only really matter for the orange cones near the start and may not need to rebalance at this step but why not) 
         # (im sure i will remove the rebalance to spare my cpu later and then the whole thing will break lol)
-        if closestcone[0][0].data.inFourSigma(point):
+        if len(closestcone) > 0 and closestcone[0][0].data.inFourSigma(point):
             closestcone[0][0].data.update(point)
             self.conesKDTree.rebalance()
         # otherwise check it against the buffer
@@ -118,7 +123,9 @@ class ConeFusion(Node):
         if self.conesKDTree is not None:
             for point in points:
                 self.fuseCone(point)
-        # if not we will check them against the buffer (or create a buffer) this should happen the tirst two cycles the fuse points is run (first there wont be either tree and the second time there wont be a cone tree yet)
+        # if not we will check them against the buffer (or create a buffer) 
+        # this should happen the tirst two cycles the fuse points is run 
+        # (first there wont be either tree and the second time there wont be a cone tree yet)
         else:
             for point in points:
                 self.bufferCone(point)
@@ -132,6 +139,7 @@ class ConeFusion(Node):
 
             # create the lists to fill with our elements
             cone_list: List[Cone] = []
+            local_list: List[Cone] = []
             markers: List[Marker] = []
             msgid = 0
             for cone in curcones:
@@ -144,13 +152,18 @@ class ConeFusion(Node):
                     # set those parts of the message
                     pub_cone.color = cone.color
                     pub_cone.location.x = cone.global_x
-                    pub_cone.location.x = cone.global_y
-                    pub_cone.location.x = cone.global_z
+                    pub_cone.location.y = cone.global_y
+                    pub_cone.location.z = cone.global_z
                     # set its color
                     pub_cone.color = cone.color
 
                     # append those elements to the list of elements for the message
                     cone_list.append(pub_cone)
+
+                    pub_cone.location.x = cone.loc_x
+                    pub_cone.location.y = cone.loc_y
+                    pub_cone.location.z = cone.loc_z
+                    local_list.append(pub_cone)
 
                     if rviz:
                         # added clock stamp so they'd remove themselves after duration
@@ -166,23 +179,49 @@ class ConeFusion(Node):
                 marker_msg = MarkerArray()
                 marker_msg.markers = markers
                 self.filtered_markers.publish(marker_msg)
-                # is this supposed to publish all past filtered markers too?
-                # they seem to be republished after the car has passed
             
             # create a ConeDetectionStamped message
-            coneListPub = ConeDetectionStamped()
-            coneListPub.cones = cone_list
-            coneListPub.header = header
+            coneListMsg = ConeDetectionStamped()
+            coneListMsg.cones = cone_list
+            coneListMsg.header = header
             # publish the messages
-            self.filtered_cones_pub.publish(coneListPub)
+            self.filtered_cones_pub.publish(coneListMsg)
+            # create a ConeDetectionStamped message
+            coneLocalMsg = ConeDetectionStamped()
+            coneLocalMsg.cones = local_list
+            coneLocalMsg.header = header
+            # publish the messages
+            self.filtered_local_pub.publish(coneLocalMsg)
 
         # need to make a section to remove old points from the buffer
         if self.bufferKDTree is not None and self.bufferKDTree.data is not None:
             for point in self.bufferKDTree.returnElements():
-                if self.get_clock().now() - Duration(nanoseconds=2*10**9) > Time(seconds=point.header.stamp.sec, nanoseconds=point.header.stamp.nanosec, clock_type=ClockType.ROS_TIME):
+                if self.get_clock().now() - Duration(nanoseconds=2*10**9) \
+                    > Time(seconds=header.stamp.sec, nanoseconds=header.stamp.nanosec, clock_type=ClockType.ROS_TIME):
+
                     self.bufferKDTree.remove(point)
+
             self.bufferKDTree.rebalance()
-        
+
+        if self.conesKDTree is not None and self.conesKDTree.data is not None:
+            for point in self.conesKDTree.returnElements():
+                knn = self.conesKDTree.search_knn(point, 2)
+                #print(point.global_z)
+                if len(knn) > 1:
+                    if point.inFourSigma(knn[1][0].data) and \
+                        (point.color == knn[1][0].data.color or (point.color == 4 or knn[1][0].data.color == 4)):
+
+                        knn[1][0].data.update(point)
+                        self.conesKDTree.remove(point)
+                        self.conesKDTree.rebalance()
+
+                    elif (point.nMeasurments > 3 and point.covMin(1)) or point.global_z < 0.2 or point.global_z > 0.7:
+                        self.conesKDTree.remove(point)
+                        self.conesKDTree.rebalance()
+                if point.global_z < 0.1 or point.global_z > 0.1:
+                    self.conesKDTree.remove(point)
+                    self.conesKDTree.rebalance()
+
 
     def processConeData(self, msg: ConeDetectionStamped, method: str):
         # determines which callback this function was called from
@@ -203,12 +242,14 @@ class ConeFusion(Node):
             if odomloc is None:
                 return None
             orientation_q = odomloc.pose.pose.orientation
+            # r,p,y angles from quaternion
             roll, pitch, theta = quat2euler([
                 orientation_q.w,
                 orientation_q.x,
                 orientation_q.y,
                 orientation_q.z
             ])
+            # placeholder shorter variable
             odom_x = odomloc.pose.pose.position.x
             odom_y = odomloc.pose.pose.position.y
             odom_z = odomloc.pose.pose.position.z
@@ -217,16 +258,17 @@ class ConeFusion(Node):
             markers: List[Marker] = []
             msgid = 0
             for cone in msg.cones:
+                # creates a 'point with covariance' object
                 p = PointWithCov(
                     cone.location.x, 
                     cone.location.y, 
                     cone.location.z, 
                     np.array(cone.covariance).reshape((3,3)), 
                     cone.color, 
-                    header
                 )
                 p.translate(odom_x, odom_y, odom_z, theta, odomcov)
                 conelist.append(p)
+
                 if rviz:
                     # added clock stamp so they'd remove themselves after duration
                     cov_marker = p.getCov(msgid, True)
@@ -250,13 +292,14 @@ class ConeFusion(Node):
         # common function
         start: float = time.time()
         self.processConeData(msg, "lidar")
-        self.get_logger().debug("Lidar fusion time: " + str(start-time.time()))
+        self.get_logger().info("Lidar fusion time: " + str(time.time()-start))
+
 
     def visionCallback(self, msg: ConeDetectionStamped):
         # common function
         start: float = time.time()
         self.processConeData(msg, "vision")
-        self.get_logger().debug("vision fusion time: " + str(start-time.time()))
+        self.get_logger().info("Vision fusion time: " + str(time.time()-start))
 
 
 def main():

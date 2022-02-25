@@ -1,16 +1,18 @@
-"""
-A Python implemntation of a kd-tree
+"""A Python implemntation of a kd-tree
+
 This package provides a simple implementation of a kd-tree in Python.
-https://en.wikipedia.org/wiki/K-d_tree
-"""
+https://en.wikipedia.org/wiki/K-d_tree"""
 
 from __future__ import print_function
 
 import heapq
 import itertools
+import operator
 import math
 from collections import deque
 from functools import wraps
+
+from .point import Point
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.16'
@@ -22,8 +24,7 @@ class Node(object):
     """ A Node in a kd-tree
 
     A tree is represented by its root node, and every node represents
-    its subtree
-    """
+    its subtree"""
 
     def __init__(self, data=None, left=None, right=None):
         self.data = data
@@ -402,6 +403,40 @@ class KDNode(Node):
         """
         r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
+
+
+    def search_knn_point(self, x, y, k, dist=None):
+        """ Return the k nearest neighbors of point and their distances
+
+        point must be an actual point, not a node.
+
+        k is the number of results to return. The actual results can be less
+        (if there aren't more nodes to return) or more in case of equal
+        distances.
+
+        dist is a distance function, expecting two points and returning a
+        distance value. Distance values can be any comparable type.
+
+        The result is an ordered list of (node, distance) tuples.
+        """
+
+        point = Point(x, y)
+
+        if k < 1:
+            raise ValueError("k must be greater than 0.")
+
+        if dist is None:
+            get_dist = lambda n: n.dist(point)
+        else:
+            get_dist = lambda n: dist(n.data, point)
+
+        results = []
+
+        self._search_node(point, k, results, get_dist, itertools.count())
+
+        # We sort the final result by the distance in the tuple
+        # (<KdNode>, distance).
+        return [node for _, node in sorted(results, reverse=True)]
 
 
     def search_knn(self, point, k, dist=None):
