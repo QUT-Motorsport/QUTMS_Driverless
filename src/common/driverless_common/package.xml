@@ -8,6 +8,7 @@
     <license>MIT</license>
 
     <depend>driverless_msgs</depend>
+    <depend>rosboard</depend>
 
     <export>
         <build_type>ament_python</build_type>
