@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 # import ROS2 message libraries
+from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
 # import custom message libraries
@@ -26,7 +27,7 @@ ground-truth sim cone locations with lidar cone locations
 - probably wont work for real life but thats ok,
   there are better options with SLAM
 """
-lidar_cov = np.array([[ 0.01,  0.1, 0], [ 0.1, 0.01, 0.1], [0, 0.1,  0.01]])
+lidar_cov = np.array([[0.02, 0.1, 0], [0.1, 0.02, 0.1], [0, 0.1, 0.01]])
 
 def cone_msg(x_coord: float, y_coord: float) -> Cone: 
     location: Point = Point(
@@ -78,9 +79,12 @@ class LidarProcessing(Node):
 
         for cone in cones:
             detected_cones.append(cone_msg(cone[0], cone[1]))
-       
+
+        stamped_header = Header()
+        stamped_header.stamp = pc2_msg.header.stamp
+        stamped_header.frame_id = "detection"
         detection_msg = ConeDetectionStamped(
-            header=pc2_msg.header,
+            header=stamped_header,
             cones=detected_cones
         )
 
