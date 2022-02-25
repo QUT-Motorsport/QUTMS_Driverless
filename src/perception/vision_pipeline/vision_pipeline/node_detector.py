@@ -19,10 +19,7 @@ import numpy as np
 from typing import List, Tuple, Callable
 import time
 import enum
-import sys
 import os
-import pathlib
-import getopt
 
 # import required sub modules
 from .rect import Rect, draw_box
@@ -52,18 +49,27 @@ def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
 ) -> float:
+    # roi sized based on box size
+    roi_x = colour_frame_cone_bounding_box.center.x - int(colour_frame_cone_bounding_box.width/6)
+    roi_y = colour_frame_cone_bounding_box.center.y
+    roi_w = int(colour_frame_cone_bounding_box.width/6)
+    roi_h = int(colour_frame_cone_bounding_box.height/6)
+
     # get center as roi
     depth_roi: np.ndarray = Rect(
-        x=colour_frame_cone_bounding_box.center.x - 3,
-        y=colour_frame_cone_bounding_box.center.y,
-        width=6,
-        height=6,
+        x=roi_x,
+        y=roi_y,
+        width=roi_w,
+        height=roi_h,
     ).as_roi(depth_frame)
     
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
+    # assume the distribution of pixels is bimodal and only take the closer pixels because those will be the cone
+    mean = np.mean(depth_roi)
+    cone_pxs = depth_roi < mean
 
-    return np.mean(depth_roi)
+    return np.mean(depth_roi[cone_pxs])
 
 
 def cone_bearing(
@@ -190,32 +196,6 @@ class DetectorNode(Node):
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
         logger.debug("Time: " + str(time.time() - start) + "\n") # log time
-
-
-## initialise ROS2 logging system
-def init_logs() -> List[str]:
-    args = ['--ros-args']
-
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + '/logs'):
-        os.mkdir(path + '/logs')
-
-    # defaults args
-    print_mode = '--disable-stdout-logs'
-    # processing args
-    opts, arg = getopt.getopt(sys.argv[1:], str(), ['print', 'ros-args'])
-    for opt, arg in opts:
-        if opt == '--print':
-            print_mode = '--enable-stdout-logs'
-
-    args.append(print_mode)
-
-    os.environ['ROS_LOG_DIR'] = f'{path}/logs/'
-    os.environ.get('ROS_LOG_DIR')
-
-    return args
-
-
 
 
 ## OpenCV thresholding
