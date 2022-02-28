@@ -3,11 +3,32 @@
 
 # Vehicle characteristics
 
-  # lF: (distance from the centre of gravity point of the car to the front axle)
-  lF: 0.6
+  # lF: (distance from the centre of gravity point of the vehicle to the front axle)
+  lF: 0.47
 
-  # lR: (distance from the centre of gravity point of the car to the rear axle)
-  lR: 0.6
+  # lR: (distance from the centre of gravity point of the vehicle to the rear axle)
+  lR: 0.53
+
+  # m: mass of the vehicle
+  m: 230
+
+  # cRR: rolling resistance coefficient
+  cRR: 0.02 # may have to be calculated using a 'variable normal force based on sensor data' such that, rolling resistance = rolling coefficient*Normal reaction
+
+  # cD: drag coefficient
+  cD: 1.4475
+
+  # cDTM: drive train model;
+  cDTM: 1.6 # or 4.5 (not sure about this value) 1.6 = coefficient of fric, 4.5 = motor reduction coefficient
+
+  # iZ: inertial measurement around the z axis
+  iZ: 1 # not sure about this one
+
+# Tire parameters used to define the semi-empirical curve
+
+  cB: 0.34 # for 7 inch, 8 inch = 0.20
+  cC: 1.08 # for 7 inch, 8 inch = 1.18
+  cD: 2.91 # for 7 inch, 8 inch = 2.55
 
 # Model Constraints
 
