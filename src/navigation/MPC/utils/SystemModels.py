@@ -11,7 +11,7 @@ class KinematicBicycleModel:
 	State [x, y, theta, delta]:
 
 		x = vehicles relative x position
-		y = vehicles relative y postition
+		y = vehicles relative y position
 		theta = vehicles heading angle
 		delta = vehicles steering angle
 
@@ -173,6 +173,7 @@ class DynamicBicycleModel:
     cB = 0
     cC = 0
     cD = 0
+    cDr = 0
     lF = 0
     lR = 0
     iZ = 0
@@ -197,6 +198,7 @@ class DynamicBicycleModel:
             self.lR = Yaml['lR']
             self.iZ = Yaml['iZ']
             self.cRR = Yaml['cRR']
+            self.cDr = Yaml['cDr']
             self.cDTM = Yaml['cDTM']
             self.maxVelocity = Yaml['maxV']
             self.maxSteeringAngle = Yaml['maxSA']
@@ -226,7 +228,7 @@ class DynamicBicycleModel:
         FrY = self.cD * np.sin(self.cC * np.arctan(self.cB * aR))
         FfY = self.cD * np.sin(self.cC * np.arctan(self.cB * aF))
 
-        Fx = self.cDTM * self.t - self.cRR - (self.cD * self.vX ** 2)
+        Fx = self.cDTM * self.t - self.cRR - (self.cDr * self.vX ** 2)
 
         # checking constraints
         # self.CheckConstraints()

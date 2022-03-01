@@ -16,7 +16,7 @@
   cRR: 0.02 # may have to be calculated using a 'variable normal force based on sensor data' such that, rolling resistance = rolling coefficient*Normal reaction
 
   # cD: drag coefficient
-  cD: 1.4475
+  cDr: 1.4475
 
   # cDTM: drive train model;
   cDTM: 1.6 # or 4.5 (not sure about this value) 1.6 = coefficient of fric, 4.5 = motor reduction coefficient

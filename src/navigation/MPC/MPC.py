@@ -5,22 +5,24 @@ import time
 import turtle
 from utils.SystemModels import *
 
+
 # Model Predictive Controller class
 class MPC:
 
-	# Init
-	def __init__(self):
-		raise NotImplementedError()
+    # Init
+    def __init__(self):
+        raise NotImplementedError()
 
-	# Predict
-	def predict(self):
-		raise NotImplementedError()
+    # Predict
+    def predict(self):
+        raise NotImplementedError()
+
 
 # Main
 def main():
-	DyB = DynamicBicycleModel()
-	DyB.GetNextState(10,1)
+    DyB = DynamicBicycleModel()
+    DyB.GetNextState(10, 1)
+
 
 if __name__ == "__main__":
-	main() 
-
+    main()
