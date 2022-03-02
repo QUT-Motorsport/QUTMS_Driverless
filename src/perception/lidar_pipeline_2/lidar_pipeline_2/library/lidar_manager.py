@@ -107,3 +107,4 @@ def detect_cones(
 
 # Look into numpy views and see if they could be used instead of creating
 # entirely new variables
+# maybe add equal axes to figures
