@@ -146,6 +146,7 @@ def label_points(segments_bins: List[List[List]], ground_lines: List[List[List]]
             if left_idx == right_idx:
                 raise AssertionError("No ground lines found")
         ground_line = ground_lines[seg_idx][0]
+
         for j in range(NUM_BINS):
             for k in range(len(segments_bins[i][j])):
                 point = segments_bins[i][j][k]

@@ -76,8 +76,8 @@ def detect_cones(
     end_time = time.time()
 
     if create_figures:
-        vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
-        vis.plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        #vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
+        #vis.plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
