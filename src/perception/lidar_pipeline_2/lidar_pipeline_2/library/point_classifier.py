@@ -200,9 +200,40 @@ def dist_points_3D(x_0, p_1, p_2):
     # return distance
     return dist_norm / p_norm
 
-# m b start_x start_y end_x end_y count
-def label_points_3(ground_plane):
-    for thing in ground_plane:
-        print(thing)
-    print(len(ground_plane))
+from bisect import bisect_left
+
+# Adapted from www.stackoverflow.com Lauritz V. Thaulow
+def take_closest(myList, myNumber):
+    """
+    Assumes myList is sorted. Returns closest value to myNumber.
+
+    If two numbers are equally close, return the smallest number.
+    """
+    pos = bisect_left(myList, myNumber)
+    if pos == 0:
+        return myList[0]
+    if pos == len(myList):
+        return myList[-1]
+    before = myList[pos - 1]
+    after = myList[pos]
+    if after - myNumber < myNumber - before:
+        return pos
+    else:
+        return pos - 1
+
+# [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...]
+# size is 128 segments
+def label_points_3(ground_plane, SEGMENT_COUNT):
+    # Indices of segments without ground lines
+    empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
+    
+    # Indices of segments with ground lines
+    non_empty_segments = [idx for idx, lines in enumerate(ground_plane) if lines]
+    
+    for empty_segment in empty_segments:
+        nearest_line_idx = take_closest()
+        pass
+    
+    
+    print('hi', where_no_lines)
     pass
