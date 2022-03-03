@@ -31,33 +31,56 @@ def set_axes_equal(ax):
     ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
 path = "./src/perception/lidar_pipeline_2/lidar_pipeline_2/library/misc/"
-model = "qev3-10.obj"
+model = "qev3-10-c.obj"
+material = "qev3-10-c.mtl"
 
-part_set = []
+materials = dict()
+mat_name = None
+with open(path + material) as file:
+    for line in file.readlines():
+        values = line.split()
+        if not values:
+            continue
+        if values[0] == 'newmtl':
+            mat_name = values[1]
+        if values[0] == 'Kd':
+            materials[mat_name] = tuple([float(values[1]), float(values[2]), float(values[3])])
+
+plt.figure()
+ax = plt.axes(projection='3d')
+ax.set_title('QEV-3')
 
 vertices = []
 triangles = []
+colors = []
+mat_idx = 0
+last_count = 1
 with open(path + model) as file:
     for line in file.readlines():
         values = line.split()
         if not values:
             continue
 
+        if values[0] == 'usemtl':
+            mat_name = values[1]
         if values[0] == 'v':
             vertices.append(values[1:4])
         elif values[0] == 'f':
             triangles.append(values[1:4])
         #elif values[-1] == 'faces':
-        #    break
-        #    part_set.append([vertices, triangles])
-        #    vertices = []
-        #    triangles = []
+            #np_vertices = np.array(vertices, dtype=np.float32)
+            #np_triangles = np.array(triangles, dtype=np.int32) - last_count
+            #print("good", np_vertices.shape, np_triangles.shape, np_vertices[:, 0].size, np_triangles.max(), len(materials), mat_idx)
+            #ax.plot_trisurf(np_vertices[:, 0], np_vertices[:, 2], np_vertices[:, 1], triangles=np_triangles, shade=True, cmap='jet')
+            #last_count += np_vertices[:, 0].size
+            #vertices = []
+            #triangles = []
+            #mat_idx += 1
+            #if mat_idx > 100:
+            #    break
 
 np_vertices = np.array(vertices, dtype=np.float32)
 np_triangles = np.array(triangles, dtype=np.int32) - 1
-plt.figure()
-ax = plt.axes(projection='3d')
-ax.set_title('QEV-3')
-ax.plot_trisurf(np_vertices[:, 0], np_vertices[:, 2], np_triangles, np_vertices[:, 1], shade=True, color='grey')
+ax.plot_trisurf(np_vertices[:, 0], np_vertices[:, 2], np_vertices[:, 1], triangles=np_triangles, shade=True)
 set_axes_equal(ax)
 plt.show()
