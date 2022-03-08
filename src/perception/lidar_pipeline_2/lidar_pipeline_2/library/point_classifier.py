@@ -226,14 +226,24 @@ def take_closest(myList, myNumber):
 def label_points_3(ground_plane, SEGMENT_COUNT):
     # Indices of segments without ground lines
     empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
-    
+    print(empty_segments)
+
     # Indices of segments with ground lines
     non_empty_segments = [idx for idx, lines in enumerate(ground_plane) if lines]
+    print(non_empty_segments)
+
+    # [0, 1, ..., 126, 127]
+    segments_full = list(range(SEGMENT_COUNT))
     
     for empty_segment in empty_segments:
-        nearest_line_idx = take_closest()
-        pass
+        closest_idx = take_closest(non_empty_segments, empty_segment)
+        print(segments_full[closest_idx])
+        print(non_empty_segments[closest_idx])
+        segments_full[closest_idx] = non_empty_segments[closest_idx]
+
+    print(segments_full)
     
+    # probably don't need every segemnt to have lines.
+    # if it's far away, probably forget about? or maybe not
     
-    print('hi', where_no_lines)
     pass
