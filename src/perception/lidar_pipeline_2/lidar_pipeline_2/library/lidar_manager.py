@@ -95,7 +95,7 @@ def detect_cones(
     LOGGER.info(f'Ground Plane estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    labelled_points = pc.label_points_3(ground_plane)
+    labelled_points = pc.label_points_3(ground_plane, SEGMENT_COUNT)
     end_time = time.time()
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
@@ -108,3 +108,4 @@ def detect_cones(
 # Look into numpy views and see if they could be used instead of creating
 # entirely new variables
 # maybe add equal axes to figures
+# only import what's necessary for each file
