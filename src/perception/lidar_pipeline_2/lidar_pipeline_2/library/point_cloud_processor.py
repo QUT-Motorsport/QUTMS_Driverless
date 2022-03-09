@@ -127,7 +127,7 @@ def get_prototype_points_4(segments, bins, point_norms, z):
     # Prototype points split into subarrays for each segment
     split_prototype_segments = np.split(prototype_points, proto_seg_diff)
 
-    return split_prototype_segments, prototype_segments[np.concatenate((np.array([0]), proto_seg_diff))]
+    return split_prototype_segments, prototype_segments[np.concatenate((np.array([0]), proto_seg_diff))], seg_bin_z_ind
 
 # Notes
 # 1. For get_prototype_points() if needed you can revert back to using a numpy
