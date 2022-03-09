@@ -217,33 +217,44 @@ def take_closest(myList, myNumber):
     before = myList[pos - 1]
     after = myList[pos]
     if after - myNumber < myNumber - before:
-        return pos
+        return after
     else:
-        return pos - 1
+        return before
 
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...]
 # size is 128 segments
-def label_points_3(ground_plane, SEGMENT_COUNT):
+def label_points_3(point_cloud, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT):
     # Indices of segments without ground lines
     empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
-    print(empty_segments)
 
     # Indices of segments with ground lines
     non_empty_segments = [idx for idx, lines in enumerate(ground_plane) if lines]
-    print(non_empty_segments)
 
     # [0, 1, ..., 126, 127]
     segments_full = list(range(SEGMENT_COUNT))
-    
     for empty_segment in empty_segments:
         closest_idx = take_closest(non_empty_segments, empty_segment)
-        print(segments_full[closest_idx])
-        print(non_empty_segments[closest_idx])
-        segments_full[closest_idx] = non_empty_segments[closest_idx]
+        segments_full[empty_segment] = closest_idx
 
-    print(segments_full)
+    # 1. Ground set has been found for each segment
+    # print('segments full', segments_full)
     
-    # probably don't need every segemnt to have lines.
-    # if it's far away, probably forget about? or maybe not
+    segments_sorted = segments[seg_bin_z_ind]
+
+    # Indicies where segments differ
+    seg_sorted_diff = np.where(segments_sorted[:-1] != segments_sorted[1:])[0] + 1
     
+    # Indicies where segments differ (appending first element at 0)
+    seg_sorted_ind = np.empty(seg_sorted_diff.size + 1, dtype=int)
+    seg_sorted_ind[0] = 0
+    seg_sorted_ind[1:] = seg_sorted_diff
+    
+    # Point cloud split into subarrays for each segment
+    split_cloud_segments = np.split(point_cloud[seg_bin_z_ind], seg_sorted_ind)
+    
+    for segment_idx in segments_sorted[seg_sorted_ind]:
+        mapped_seg_idx = segments_full[segment_idx] # good, i don't need to modulo. It's automatic
+        ground_set = ground_plane[mapped_seg_idx]
+        
+     
     pass
