@@ -5,7 +5,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/include"
+                "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/include/**"
             ],
             "defines": [],
             "compilerPath": "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/bin/gcc",
