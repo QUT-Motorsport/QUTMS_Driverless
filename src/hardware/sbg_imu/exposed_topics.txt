@@ -10,10 +10,10 @@
 /sbg/gps_pos
 /sbg/gps_raw
 
-/imu/data (Req. /sbg/imu_data & /sbg/ekf_quat)
-/imu/temp (Req. /sbg/imu_data)
-/imu/velocity (Req. /sbg/imu_data)
-/imu/mag (Req. /sbg/mag)
-/imu/pos_ecef (Req. /sbg/ekf_nav)
+/imu/data (Req. /sbg/imu_data & /sbg/ekf_quat) -- COMPLETE
+/imu/temp (Req. /sbg/imu_data) -- COMPLETE
+/imu/velocity (Req. /sbg/imu_data) -- COMPLETE
+/imu/mag (Req. /sbg/mag) -- NOT GETTING IT
+/imu/pos_ecef (Req. /sbg/ekf_nav) -- NOT GETTING IT
 /imu/utc_ref (Req. /sbg/utc)
-/imu/nav_sat_ref (Req. /sbg/pos_pos)
+/imu/nav_sat_fix (Req. /sbg/pos_pos)
