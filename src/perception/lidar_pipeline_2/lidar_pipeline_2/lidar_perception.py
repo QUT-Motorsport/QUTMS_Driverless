@@ -97,16 +97,16 @@ class ConeSensingNode(Node):
         LOGGER.info('PointCloud2 message received at ' + timestamp)
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
-        start_time = time.time()
+        start_time = time.perf_counter()
         dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step)  # x y z intensity ring
         point_cloud = np.frombuffer(pc_msg.data, dtype_list)
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         LOGGER.info(f'PointCloud2 converted to numpy array in {end_time - start_time}s')
         LOGGER.debug(point_cloud)
 
         # Calculating the normal of each point
-        start_time = time.time()
+        start_time = time.perf_counter()
         point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
 
         # Creating mask to remove points outside of range and norms of 0
@@ -115,7 +115,7 @@ class ConeSensingNode(Node):
         # Applying mask
         point_norms = point_norms[mask]
         point_cloud = point_cloud[mask]
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         LOGGER.info(f'Norm computed and out of range points removed in {end_time - start_time}s')
 
@@ -167,7 +167,7 @@ class ConeSensingNode(Node):
 
         self.cone_publisher.publish(cones_msg)
 
-        total_time = time.time() - start_time
+        total_time = time.perf_counter() - start_time
         LOGGER.info(f'Total Time: {total_time}s | Est. Hz: {1 / total_time}')
 
 
