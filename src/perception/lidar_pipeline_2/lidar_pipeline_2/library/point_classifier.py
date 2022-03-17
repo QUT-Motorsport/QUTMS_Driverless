@@ -221,9 +221,22 @@ def take_closest(myList, myNumber):
     else:
         return before
 
+
+# https://stackoverflow.com/questions/50727961/shortest-distance-between-a-point-and-a-line-in-3-d-space
+def point_to_line_dist(point, line_start, line_end):
+    def t(line_start, line_end, point):
+        x = line_start - line_end
+        return np.dot(point - line_end, x) / np.dot(x, x)
+
+    def d(line_start, line_end, point):
+        return np.linalg.norm(t(line_start, line_end, point) * (line_start - line_end) + line_end - point)
+
+    return d(line_start, line_end, point)
+
+
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...]
 # size is 128 segments
-def label_points_3(point_cloud, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT):
+def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_MAX, point_count):
     # Indices of segments without ground lines
     empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
 
@@ -250,11 +263,38 @@ def label_points_3(point_cloud, seg_bin_z_ind, segments, ground_plane, SEGMENT_C
     seg_sorted_ind[1:] = seg_sorted_diff
     
     # Point cloud split into subarrays for each segment
-    split_cloud_segments = np.split(point_cloud[seg_bin_z_ind], seg_sorted_ind)
-    
+    split_segments_points_norms = np.split(np.column_stack((point_cloud[seg_bin_z_ind]['x'], point_cloud[seg_bin_z_ind]['y'], point_cloud[seg_bin_z_ind]['z'], point_norms[seg_bin_z_ind])), seg_sorted_ind)
+
+    point_labels = np.empty(point_count)
     for segment_idx in segments_sorted[seg_sorted_ind]:
-        mapped_seg_idx = segments_full[segment_idx] # good, i don't need to modulo. It's automatic
+        # Map from -31 to 32 segments to 0 to 127
+        mapped_seg_idx = segments_full[segment_idx]
+
+        point_norm_set = split_segments_points_norms[segment_idx]
+        print(point_norm_set.shape)
         ground_set = ground_plane[mapped_seg_idx]
+        line_count = len(ground_set)
         
-     
-    pass
+        if line_count > 0:
+            ground_line = ground_set[0]
+            for idx, point_norm in enumerate(point_norm_set):
+                point = point_norm[0]
+                norm = point_norm[1]
+                
+                is_ground = False
+                line_height = ground_line[0] * norm + ground_line[1]
+                if point[2] < line_height + 0.10:
+                    line = line_to_end_points(ground_line, mapped_seg_idx)
+                    closest_dist = dist_points_3D(point, line[0], line[1])
+                    for m in range(1, line_count):
+                        ground_line = ground_set[mapped_seg_idx][m]
+                        line = line_to_end_points(ground_line, mapped_seg_idx)
+                        dist_to_line = dist_points_3D(point, line[0], line[1])
+                        if (dist_to_line < closest_dist):
+                            closest_dist = dist_to_line
+                    dynamic_T_D_GROUND = 2*(norm)*math.tan(DELTA_ALPHA / 2) + BIN_SIZE * 1.3
+                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
+                        is_ground = True
+            point_labels[idx] = is_ground
+    
+    return point_labels
