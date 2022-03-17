@@ -84,7 +84,7 @@ def detect_cones(
 
     start_time = time.time()
     # ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-    ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+    ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE)
     end_time = time.time()
     
     if create_figures:
