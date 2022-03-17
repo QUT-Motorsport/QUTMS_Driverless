@@ -273,39 +273,11 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
     print('seg_sorted_ind', seg_sorted_ind)
 
-    # Point cloud split into subarrays for each segment
-    split_segments_points_norms = np.split(np.column_stack((point_cloud[seg_bin_z_ind]['x'], point_cloud[seg_bin_z_ind]['y'], point_cloud[seg_bin_z_ind]['z'], point_norms[seg_bin_z_ind])), seg_sorted_ind)
-
-    point_labels = np.empty(point_count)
+    # For every segment
     for segment_idx in segments_sorted[seg_sorted_ind]:
-        # Map from -31 to 32 segments to 0 to 127
+        # Maps segment_idx to nearest segment with ground line
         mapped_seg_idx = mapped_segments[segment_idx]
-
-        point_norm_set = split_segments_points_norms[segment_idx]
-        print(point_norm_set.shape)
-        ground_set = ground_plane[mapped_seg_idx]
-        line_count = len(ground_set)
         
-        if line_count > 0:
-            ground_line = ground_set[0]
-            for idx, point_norm in enumerate(point_norm_set):
-                point = point_norm[0]
-                norm = point_norm[1]
-                
-                is_ground = False
-                line_height = ground_line[0] * norm + ground_line[1]
-                if point[2] < line_height + 0.10:
-                    line = line_to_end_points(ground_line, mapped_seg_idx)
-                    closest_dist = dist_points_3D(point, line[0], line[1])
-                    for m in range(1, line_count):
-                        ground_line = ground_set[mapped_seg_idx][m]
-                        line = line_to_end_points(ground_line, mapped_seg_idx)
-                        dist_to_line = dist_points_3D(point, line[0], line[1])
-                        if (dist_to_line < closest_dist):
-                            closest_dist = dist_to_line
-                    dynamic_T_D_GROUND = 2*(norm)*math.tan(DELTA_ALPHA / 2) + BIN_SIZE * 1.3
-                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
-                        is_ground = True
-            point_labels[idx] = is_ground
-    
-    return point_labels
+        
+
+    return None
