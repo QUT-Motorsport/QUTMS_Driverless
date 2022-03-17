@@ -234,9 +234,7 @@ def point_to_line_dist(point, line_start, line_end):
     return d(line_start, line_end, point)
 
 
-# [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...]
-# size is 128 segments
-def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_MAX, point_count):
+def map_segments(ground_plane, SEGMENT_COUNT):
     # Indices of segments without ground lines
     empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
 
@@ -248,10 +246,11 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     for empty_segment in empty_segments:
         closest_idx = take_closest(non_empty_segments, empty_segment)
         segments_full[empty_segment] = closest_idx
-
-    # 1. Ground set has been found for each segment
-    # print('segments full', segments_full)
     
+    return segments_full
+
+
+def sort_segments(segments, seg_bin_z_ind):
     segments_sorted = segments[seg_bin_z_ind]
 
     # Indicies where segments differ
@@ -262,13 +261,25 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     seg_sorted_ind[0] = 0
     seg_sorted_ind[1:] = seg_sorted_diff
     
+    return seg_sorted_ind, segments_sorted
+
+# [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
+def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_MAX, point_count):
+    # Map segments with no ground lines to the nearest segment with a ground line
+    mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
+    print('mapped_segments', mapped_segments)
+
+    # Get indices where sorted segments differ
+    seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
+    print('seg_sorted_ind', seg_sorted_ind)
+
     # Point cloud split into subarrays for each segment
     split_segments_points_norms = np.split(np.column_stack((point_cloud[seg_bin_z_ind]['x'], point_cloud[seg_bin_z_ind]['y'], point_cloud[seg_bin_z_ind]['z'], point_norms[seg_bin_z_ind])), seg_sorted_ind)
 
     point_labels = np.empty(point_count)
     for segment_idx in segments_sorted[seg_sorted_ind]:
         # Map from -31 to 32 segments to 0 to 127
-        mapped_seg_idx = segments_full[segment_idx]
+        mapped_seg_idx = mapped_segments[segment_idx]
 
         point_norm_set = split_segments_points_norms[segment_idx]
         print(point_norm_set.shape)
