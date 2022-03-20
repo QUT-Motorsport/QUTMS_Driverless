@@ -91,7 +91,7 @@ def init_plot_3D(title,
     ax.tick_params(axis='z', colors=tick_c)
 
     # Set view anlge
-    ax.view_init(elev=0, azim=90)
+    ax.view_init(elev=34, azim=202)
 
     return fig, ax
 
@@ -284,7 +284,7 @@ def get_bin_count(bins):
     return bins.max()
 
 def plot_bins_2D(point_cloud, bins, working_dir, timestamp):
-    fig, ax = init_plot_2D(f"Segments Sliced into a Maximum of {get_bin_count(bins)} Bins", "X", "Y")
+    fig, ax = init_plot_2D(f"Segments Discretised into a Maximum of {get_bin_count(bins)} Bins", "X", "Y")
     ax.scatter(point_cloud['x'], point_cloud['y'], c=(bins % len(colours_01)), cmap=mpl_colors.ListedColormap(colours_01), marker='s', s=(72./fig.dpi)**2)
 
     # Save Figure
@@ -292,7 +292,7 @@ def plot_bins_2D(point_cloud, bins, working_dir, timestamp):
 
 
 def plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures):
-    fig, ax = init_plot_3D(f"Segments Sliced into a Maximum of {get_bin_count(bins)} Bins", "X", "Y", "Z")
+    fig, ax = init_plot_3D(f"Segments Discretised into a Maximum of {get_bin_count(bins)} Bins", "X", "Y", "Z")
 
     ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=(bins % len(colours_01)), cmap=mpl_colors.ListedColormap(colours_01), marker='s', s=(72./fig.dpi)**2)
 
@@ -336,6 +336,37 @@ def plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA
         animate_figure("04_PrototypePoints_Animated", ax, figure_timestamp)
 
 
+def plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp):
+    fig, ax = init_plot_2D("Ground Plane", "X", "Y")
+    
+    # Plot Prototype Points
+    for idx, segment in enumerate(split_prototype_segments):
+        segment_num = prototype_segments[idx]
+        x = segment[:, 0] * math.cos(DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(DELTA_ALPHA * segment_num)
+
+        ax.scatter(x, y, c=colours_01[prototype_segments[idx] % len(colours_01)], marker='s', s=(72./fig.dpi)**2)
+    
+    # Plot Ground Plane
+    for ground_set in ground_plane:
+        if type(ground_set) == type([]):
+            for ground_line in ground_set:
+                start_point = ground_line[2]
+                end_point = ground_line[3]
+
+                x = np.array([start_point[0], end_point[0]]) * math.cos(DELTA_ALPHA * segment_num)
+                y = np.array([start_point[1], end_point[1]]) * math.sin(DELTA_ALPHA * segment_num)
+
+                ax.plot(x, y)
+    
+    # Save Figure
+    save_figure("07_PrototypePoints_2D", working_dir, timestamp)
+
+
+def plot_ground_plane_3D():
+    pass
+
+
 def set_axes_equal(ax):
     '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
     cubes as cubes, etc..  This is one possible solution to Matplotlib's
@@ -368,3 +399,10 @@ def set_axes_equal(ax):
 # Use a list to store rgba and hex values for colours
 # Colour bar legend to have same number of segments with
 # repeating colour and add to plots
+
+# I don't think I'm using set axes equal function
+
+# Code for plotting prototype points is duplicated in ground plane
+
+# I should make a function for mapping norms to segments
+# i.e., the math.cos delta_alpha * segment and sine one
