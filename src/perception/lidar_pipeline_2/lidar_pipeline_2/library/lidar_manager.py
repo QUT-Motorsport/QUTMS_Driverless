@@ -63,10 +63,10 @@ def detect_cones(
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
     
     if create_figures:
-        #vis.plot_segments_2D(point_cloud, segments, working_dir, timestamp)
-        #vis.plot_bins_2D(point_cloud, bins, working_dir, timestamp)
-        #vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures)
-        #vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
+        vis.plot_segments_2D(point_cloud, segments, working_dir, timestamp)
+        vis.plot_bins_2D(point_cloud, bins, working_dir, timestamp)
+        vis.plot_segments_3D(point_cloud, segments, working_dir, timestamp, animate_figures)
+        vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
         pass
 
     # Calculate prototype point for every bin (if one exists)
@@ -76,8 +76,8 @@ def detect_cones(
     end_time = time.time()
 
     if create_figures:
-        #vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
-        #vis.plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
+        vis.plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
@@ -88,6 +88,8 @@ def detect_cones(
     end_time = time.time()
     
     if create_figures:
+        vis.plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
+        vis.plot_ground_plane_3D()
         pass
     
     # print(ground_plane)
@@ -109,3 +111,5 @@ def detect_cones(
 # entirely new variables
 # maybe add equal axes to figures
 # only import what's necessary for each file
+
+# FOR SOME REASON POINTS BEHIND x=0 DISAPPEAR DURING PROTOTYPE POINT

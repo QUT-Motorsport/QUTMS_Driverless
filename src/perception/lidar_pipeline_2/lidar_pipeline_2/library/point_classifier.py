@@ -283,6 +283,7 @@ def get_point_line_dist(ground_line, point_norm, point_z):
     return abs(point_z - ground_point)
 
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
+# [[m b start_point end_point count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
 def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_MAX, point_count, bins):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
