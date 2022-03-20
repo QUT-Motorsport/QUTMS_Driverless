@@ -234,7 +234,7 @@ def main(args=sys.argv[1:]):
 
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
-                                            'log=',
+                                            'loglevel=',
                                             'lidar_range=',
                                             'delta_alpha=',
                                             'bin_size=',
@@ -255,7 +255,7 @@ def main(args=sys.argv[1:]):
     for opt, arg in opts:
         if opt == '--pc_node':
             pc_node = arg
-        elif opt == '--log':
+        elif opt == '--loglevel':
             loglevel = arg
         elif opt == '--lidar_range':
             LIDAR_RANGE = int(arg)
@@ -310,7 +310,12 @@ def main(args=sys.argv[1:]):
         os.mkdir(logs_folder)
 
     date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
-    logging.basicConfig(filename=f'{working_dir}/logs/{date}.log',
+
+    new_log_dir = logs_folder + '/' + date
+    if not os.path.isdir(new_log_dir):
+        os.mkdir(new_log_dir)
+    
+    logging.basicConfig(filename=f'{new_log_dir}/{date}.log',
                         filemode='w',
                         # Remove levelname s ?
                         format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
