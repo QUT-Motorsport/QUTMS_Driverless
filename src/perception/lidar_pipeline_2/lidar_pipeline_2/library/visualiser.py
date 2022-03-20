@@ -91,7 +91,7 @@ def init_plot_3D(title,
     ax.tick_params(axis='z', colors=tick_c)
 
     # Set view anlge
-    ax.view_init(elev=34, azim=202)
+    ax.view_init(elev=0, azim=90)
 
     return fig, ax
 
@@ -149,31 +149,23 @@ def animate_figure(name, ax, figure_timestamp):
         os.remove(frames)
 
 
-def plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp):
-    # Create Figure
-    fig, ax = init_plot_2D("Point Cloud: " + str(point_count) + " Points", "X", "Y")
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
-    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
-
-    # Save Figure
-    save_figure("01_PointCloud_2D", working_dir, timestamp)
-
-
-def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures):
-    # Create Figure
-    fig, ax = init_plot_3D('Point Cloud: ' + str(point_count) + ' Points', 'X', 'Y', 'Z')
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
-    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
-
+def create_car_model(point_cloud, working_dir):
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    
+    model_path = "/model"
 
-    path = "./src/perception/lidar_pipeline_2/lidar_pipeline_2/library/misc/"
-    material = "qev3-10-c.mtl"
-    model = "qev3-10-c.obj"
+    material_file = None
+    object_file = None
+    for item in os.listdir(working_dir + model_path):
+        item_split = item.split('.')
+        if item_split[-1] == 'mtl':
+            material_file = item
+        elif item_split[-1] == 'obj':
+            object_file = item
 
-    materials = dict()
     mat_name = None
-    with open(path + material) as file:
+    materials = dict()
+    with open(working_dir + model_path + '/' + material_file) as file:
         for line in file.readlines():
             values = line.split()
             if not values:
@@ -183,10 +175,10 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animat
             if values[0] == 'Kd':
                 materials[mat_name] = tuple([float(values[1]), float(values[2]), float(values[3])])
 
-    triangles = []
-    vertices = []
     colours = []
-    with open(path + model) as file:
+    vertices = []
+    triangles = []
+    with open(working_dir + model_path + '/' + object_file) as file:
         for line in file.readlines():
             values = line.split()
             if not values:
@@ -198,45 +190,62 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animat
             elif values[0] == 'f':
                 triangles.append(values[1:4])
                 colours.append(materials[mat_name])
-                
-
+    
     np_vertices = np.array(vertices, dtype=np.float32)
     np_triangles = np.array(triangles, dtype=np.int32) - 1
 
-    x = np_vertices[:, 0] * 0.0254
-    y = np_vertices[:, 2] * 0.0254
-    z = np_vertices[:, 1] * 0.0254
+    # Convert model from inches to metres
+    INCH_TO_M = 0.0254
+    x = np_vertices[:, 0] * INCH_TO_M
+    y = np_vertices[:, 2] * INCH_TO_M
+    z = np_vertices[:, 1] * INCH_TO_M
 
+    # Align bottom of model's wheels with the lowest point in point cloud
     min_z = np.amin(z)
     point_min_z = np.amin(point_cloud['z'])
-    diff = min_z - point_min_z
+    z_diff = min_z - point_min_z
+    z = z - z_diff
 
-    if min_z > 0:
-        z = z + diff
-    else:
-        z = z - diff
-
-    y_range = np.amax(y) - np.amin(y)
-
+    # Align the front of the model (LiDAR camera location) with origin of point cloud (x=0)
     x_max = np.amax(x)
-
     x = x - x_max
 
-    # car is 113.221
-    # to get x max range of 2.5: divide by 45.2284
-
+    # Model vertices and faces
     triangle_vertices = np.array([np.array([[x[T[0]], y[T[0]], z[T[0]]],
                                             [x[T[1]], y[T[1]], z[T[1]]], 
                                             [x[T[2]], y[T[2]], z[T[2]]]]) for T in np_triangles])
 
     collection = Poly3DCollection(triangle_vertices, facecolors=colours, edgecolors=None)
+    return collection
 
-    # ax = fig.gca(projection='3d')
-    ax.add_collection(collection)
+def plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp):
+    # Create Figure
+    fig, ax = init_plot_2D("Point Cloud: " + str(point_count) + " Points", "X", "Y")
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
+    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
 
-    ax.set_xlim3d([-4, 4])
-    ax.set_ylim3d([-4, 4])
-    ax.set_zlim3d([-4, 4])
+    # Save Figure
+    save_figure("01_PointCloud_2D", working_dir, timestamp)
+
+
+def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car):
+    # Create Figure
+    fig, ax = init_plot_3D('Point Cloud: ' + str(point_count) + ' Points', 'X', 'Y', 'Z')
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
+    add_colourbar(fig, plot, 'Point Intensity', blue, mint)
+
+    # Plot car model
+    if model_car:
+        ax.add_collection(create_car_model(point_cloud, working_dir))
+
+    x_max = np.amax(point_cloud['x'])
+    y_max = np.amax(point_cloud['y'])
+    z_max = np.amax(point_cloud['z'])
+    max_val = max(x_max, y_max, z_max)
+
+    ax.set_xlim3d([-max_val, max_val])
+    ax.set_ylim3d([-max_val, max_val])
+    ax.set_zlim3d([-max_val, max_val])
 
     # Save Figure
     figure_timestamp = save_figure("02_PointCloud_3D", working_dir, timestamp)
