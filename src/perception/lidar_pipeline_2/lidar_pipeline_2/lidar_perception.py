@@ -49,6 +49,7 @@ class ConeSensingNode(Node):
                  _create_figures,
                  _show_figures,
                  _animate_figures,
+                 _model_car,
                  _export_data,
                  _print_logs,
                  _stdout_handler,
@@ -85,6 +86,7 @@ class ConeSensingNode(Node):
         self.create_figures = _create_figures
         self.show_figures = _show_figures
         self.animate_figures = _animate_figures
+        self.model_car = _model_car
         self.export_data = _export_data
         self.print_logs = _print_logs
         self.stdout_handler = _stdout_handler
@@ -152,6 +154,7 @@ class ConeSensingNode(Node):
                                               self.create_figures,
                                               self.show_figures,
                                               self.animate_figures,
+                                              self.model_car,
                                               self.print_logs,
                                               self.stdout_handler,
                                               self.working_dir,
@@ -222,6 +225,9 @@ def main(args=sys.argv[1:]):
 
     # Creates animations of figures
     animate_figures = False
+    
+    # Models the car within the figures
+    model_car = False 
 
     # Export numpy point clouds to text file
     export_data = False
@@ -242,6 +248,7 @@ def main(args=sys.argv[1:]):
                                             'create_figures',
                                             'show_figures',
                                             'animate_figures',
+                                            'model_car',
                                             'export_data',
                                             'print_logs'])
 
@@ -278,6 +285,9 @@ def main(args=sys.argv[1:]):
         elif opt == '--animate_figures':
             create_figures = True
             animate_figures = True
+        elif opt == '--model_car':
+            create_figures = True
+            model_car = True
         elif opt == '--export_data':
             export_data = True
         elif opt == '--print_logs':
@@ -338,6 +348,7 @@ def main(args=sys.argv[1:]):
                                               create_figures,
                                               show_figures,
                                               animate_figures,
+                                              model_car,
                                               print_logs,
                                               stdout_handler,
                                               working_dir,
@@ -359,6 +370,7 @@ def main(args=sys.argv[1:]):
                                             create_figures,
                                             show_figures,
                                             animate_figures,
+                                            model_car,
                                             export_data,
                                             print_logs,
                                             stdout_handler,
