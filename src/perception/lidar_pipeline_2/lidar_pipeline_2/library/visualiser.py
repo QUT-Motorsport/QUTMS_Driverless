@@ -345,22 +345,22 @@ def plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segme
         x = segment[:, 0] * math.cos(DELTA_ALPHA * segment_num)
         y = segment[:, 0] * math.sin(DELTA_ALPHA * segment_num)
 
-        ax.scatter(x, y, c=colours_01[prototype_segments[idx] % len(colours_01)], marker='s', s=(72./fig.dpi)**2)
+        ax.scatter(x, y, c=mint_hex, marker='s', s=(72./fig.dpi)**2)
     
     # Plot Ground Plane
-    for ground_set in ground_plane:
-        if type(ground_set) == type([]):
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
             for ground_line in ground_set:
-                start_point = ground_line[2]
-                end_point = ground_line[3]
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+                
+                x = np.array([p1[0], p2[0]]) * math.cos(DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(DELTA_ALPHA * idx)
 
-                x = np.array([start_point[0], end_point[0]]) * math.cos(DELTA_ALPHA * segment_num)
-                y = np.array([start_point[1], end_point[1]]) * math.sin(DELTA_ALPHA * segment_num)
-
-                ax.plot(x, y)
+                ax.plot(x, y, color=yellow_hex)
     
     # Save Figure
-    save_figure("07_PrototypePoints_2D", working_dir, timestamp)
+    save_figure("09_GroundPlane_2D", working_dir, timestamp)
 
 
 def plot_ground_plane_3D():
