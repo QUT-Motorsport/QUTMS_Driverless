@@ -45,6 +45,7 @@ class ConeSensingNode(Node):
                  _T_B,
                  _T_RMSE,
                  _REGRESS_BETWEEN_BINS,
+                 _T_D_GROUND,
                  _T_D_MAX,
                  _create_figures,
                  _show_figures,
@@ -80,6 +81,7 @@ class ConeSensingNode(Node):
         self.T_B = _T_B
         self.T_RMSE = _T_RMSE
         self.REGRESS_BETWEEN_BINS = _REGRESS_BETWEEN_BINS
+        self.T_D_GROUND = _T_D_GROUND
         self.T_D_MAX = _T_D_MAX
 
         # Misc variables for lidar manager
@@ -149,6 +151,7 @@ class ConeSensingNode(Node):
                                               self.T_B,
                                               self.T_RMSE,
                                               self.REGRESS_BETWEEN_BINS,
+                                              self.T_D_GROUND,
                                               self.T_D_MAX,
                                               point_count,
                                               self.create_figures,
@@ -209,6 +212,9 @@ def main(args=sys.argv[1:]):
     # Determines if regression for ground lines should occur between two
     # neighbouring bins when they're described by different lines
     REGRESS_BETWEEN_BINS = True
+    
+    # Maximum distance between point and line to be considered part of ground plane
+    T_D_GROUND = 0.1
 
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
@@ -242,6 +248,7 @@ def main(args=sys.argv[1:]):
                                             't_m_small=',
                                             't_b=',
                                             't_rmse=',
+                                            't_d_ground=',
                                             't_d_max=',
                                             'import_data=',
                                             'disable_regress',
@@ -271,6 +278,8 @@ def main(args=sys.argv[1:]):
             T_B = arg
         elif opt == '--t_rmse':
             T_RMSE = arg
+        elif opt == '--t_d_ground':
+            T_D_GROUND = arg
         elif opt == '--t_d_max':
             T_D_MAX = arg
         elif opt == '--import_data':
@@ -348,6 +357,7 @@ def main(args=sys.argv[1:]):
                                               T_B,
                                               T_RMSE,
                                               REGRESS_BETWEEN_BINS,
+                                              T_D_GROUND,
                                               T_D_MAX,
                                               point_count,
                                               create_figures,
@@ -371,6 +381,7 @@ def main(args=sys.argv[1:]):
                                             T_B,
                                             T_RMSE,
                                             REGRESS_BETWEEN_BINS,
+                                            T_D_GROUND,
                                             T_D_MAX,
                                             create_figures,
                                             show_figures,
