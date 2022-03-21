@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(ackermann_msgs REQUIRED)
+find_package(message_filters REQUIRED)
 
 add_executable(node_ekf src/node_ekf.cpp)
 target_include_directories(node_ekf PUBLIC
@@ -24,6 +25,7 @@ ament_target_dependencies(node_ekf
   sensor_msgs
   geometry_msgs
   ackermann_msgs
+  message_filters
 )
 
 

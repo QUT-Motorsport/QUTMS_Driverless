@@ -1,12 +1,22 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <optional>
+#include <memory>
 
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+
+// This is here to make message_filters build (https://stackoverflow.com/a/30851225)
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
+#include "message_filters/subscriber.h"
+#include "message_filters/time_synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/synchronizer.h"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -71,10 +81,19 @@ class EKFNode : public rclcpp::Node {
         Eigen::MatrixXd mu;  // final state (mean, μ)
         Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
-        std::optional<builtin_interfaces::msg::Time> last_vel_update;
+        std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
 
     public:
         EKFNode() : Node("ekf_node") {
+
+            // set up approximate time sycronised imu and gss subscribers
+            message_filters::Subscriber<sensor_msgs::msg::Imu> imu_sub(this, "imu");
+            message_filters::Subscriber<geometry_msgs::msg::TwistStamped> vel_sub(this, "gss");
+            typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, geometry_msgs::msg::TwistStamped> approximate_policy;
+            message_filters::Synchronizer<approximate_policy>syncApproximate(approximate_policy(10), imu_sub, vel_sub);
+            syncApproximate.registerCallback(&EKFNode::sensed_control_callback, this);
+
+
             pred_mu = Eigen::MatrixXd::Zero(INITAL_STATE_SIZE, 1);
             pred_cov = 0.1 * Eigen::MatrixXd::Identity(INITAL_STATE_SIZE, INITAL_STATE_SIZE);
 
@@ -88,20 +107,32 @@ class EKFNode : public rclcpp::Node {
             (void) msg;
         }
 
-        void velocity_callback(geometry_msgs::msg::TwistStamped msg) {
+        void sensed_control_callback(
+            const sensor_msgs::msg::Imu::SharedPtr imu_msg,
+            const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg
+        ) {
             // catch first call where we have no "last update time"
-            if(!this->last_vel_update.has_value()) {
-                this->last_vel_update = msg.header.stamp;
+            if(!this->last_sensed_control_update.has_value()) {
+                this->last_sensed_control_update = imu_msg->header.stamp;
                 return;
             }
 
-            double dt = compute_dt(last_vel_update.value(), msg.header.stamp);
-            this->last_vel_update = msg.header.stamp;
+            double dt = compute_dt(last_sensed_control_update.value(), imu_msg->header.stamp);
+            this->last_sensed_control_update = imu_msg->header.stamp;
 
-            // u vector doesnt really need to be constructed, but the concept lives here as [msg.twist.linear.x, msg.twist.angular.z]
+            // u vector doesnt really need to be constructed, but the concept lives here as:
+            // [vel_msg->twist.linear.x, imu_msg->angular_velocity.z]
             Eigen::MatrixXd motion_jacobian = Eigen::MatrixXd::Zero(INITAL_STATE_SIZE, INITAL_STATE_SIZE);  // G_x
-            motion_model(dt, msg.twist.linear.x, msg.twist.angular.z, this->mu, this->pred_mu, motion_jacobian);
-            update_pred_motion_cov(motion_jacobian, this->cov, this->pred_cov);
+            motion_model(
+                dt,
+                vel_msg->twist.linear.x,
+                imu_msg->angular_velocity.z,
+                this->pred_mu,
+                this->pred_mu,
+                motion_jacobian
+            );
+            std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
+            update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
         }
 
         void print_matricies() {
@@ -119,21 +150,32 @@ int main(int argc, char ** argv) {
 
     ekf_node.print_matricies();
 
-    builtin_interfaces::msg::Time time1;
-    builtin_interfaces::msg::Time time2;
+    sensor_msgs::msg::Imu::SharedPtr imu_msg = std::make_shared<sensor_msgs::msg::Imu>();
+    geometry_msgs::msg::TwistStamped::SharedPtr vel_msg = std::make_shared<geometry_msgs::msg::TwistStamped>();
+    std::cout << "\n ---------- 1. \n" << std::endl;
+    imu_msg->header.stamp.sec = 1;
+    vel_msg->header.stamp.sec = 1;
+    ekf_node.sensed_control_callback(imu_msg, vel_msg);
+    ekf_node.print_matricies();
 
-    time1.sec = 1;
-    time2.sec = 3;
+    std::cout << "\n ---------- 2. \n" << std::endl;
+    imu_msg->header.stamp.sec = 2;
+    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    vel_msg->header.stamp.sec = 2;
+    vel_msg->twist.linear.x = 2;  // m/s
+    ekf_node.sensed_control_callback(imu_msg, vel_msg);
+    ekf_node.print_matricies();
 
-    geometry_msgs::msg::TwistStamped test_msg;
-    test_msg.header.stamp = time1;
-    ekf_node.velocity_callback(test_msg);
+    std::cout << "\n ---------- 3. \n" << std::endl;
+    imu_msg->header.stamp.sec=3;
+    vel_msg->header.stamp.sec=3;
+    ekf_node.sensed_control_callback(imu_msg, vel_msg);
+    ekf_node.print_matricies();
 
-    test_msg.header.stamp = time2;
-    test_msg.twist.linear.x = 2;  // m/s
-    test_msg.twist.angular.z = 0.5;  // rad/s
-    ekf_node.velocity_callback(test_msg);
-
+    std::cout << "\n ---------- 4. \n" << std::endl;
+    imu_msg->header.stamp.sec=4;
+    vel_msg->header.stamp.sec=4;
+    ekf_node.sensed_control_callback(imu_msg, vel_msg);
     ekf_node.print_matricies();
 
 	return 0;
