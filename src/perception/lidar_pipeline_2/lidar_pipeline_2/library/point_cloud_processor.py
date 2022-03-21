@@ -45,7 +45,7 @@ def get_prototype_points(seg_bin_nrm_z, SEGMENT_COUNT, BIN_COUNT):
 
 def get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE):
     # Calculating the segment index for each point
-    segments_idx = np.arctan(point_cloud['y'] / point_cloud['x']) / DELTA_ALPHA
+    segments_idx = np.arctan2(point_cloud['y'], point_cloud['x']) / DELTA_ALPHA
     np.nan_to_num(segments_idx, copy=False, nan=((np.pi / 2) / DELTA_ALPHA))  # Limit arctan x->inf = pi/2
 
     # Calculating the bin index for each point
