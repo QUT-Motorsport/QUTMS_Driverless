@@ -24,6 +24,7 @@ blue_hex = '#636EFA'
 
 # Colour Sets
 colours_01 = [mint_hex, yellow_hex, red_hex, blue_hex]
+colours_01 = [blue_hex, yellow_hex, red_hex]
 
 # Scale 255 RGBA values between 0 and 1
 def normalise_rgba(rgba):
@@ -337,7 +338,7 @@ def plot_prototype_points_3D(split_prototype_segments, prototype_segments, DELTA
 
 
 def plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp):
-    fig, ax = init_plot_2D("Ground Plane", "X", "Y")
+    fig, ax = init_plot_2D("Ground Plane Fitted", "X", "Y")
     
     # Plot Prototype Points
     for idx, segment in enumerate(split_prototype_segments):
@@ -350,20 +351,56 @@ def plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segme
     # Plot Ground Plane
     for idx, ground_set in enumerate(ground_plane):
         if ground_set != 0:
-            for ground_line in ground_set:
+            for jdx, ground_line in enumerate(ground_set):
                 p1 = ground_line[2]
                 p2 = ground_line[3]
                 
                 x = np.array([p1[0], p2[0]]) * math.cos(DELTA_ALPHA * idx)
                 y = np.array([p1[0], p2[0]]) * math.sin(DELTA_ALPHA * idx)
 
-                ax.plot(x, y, color=yellow_hex)
+                ax.plot(x, y, color=colours_01[jdx % len(colours_01)])
     
     # Save Figure
     save_figure("09_GroundPlane_2D", working_dir, timestamp)
 
 
-def plot_ground_plane_3D():
+def plot_ground_plane_3D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures):
+    fig, ax = init_plot_3D("Ground Plane Fitted", "X", "Y", "Z")
+
+    for idx, segment in enumerate(split_prototype_segments):
+        segment_num = prototype_segments[idx]
+        x = segment[:, 0] * math.cos(DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(DELTA_ALPHA * segment_num)
+        
+        ax.scatter(x, y, segment[:, 1], color=mint_hex, marker='s', s=(72./fig.dpi)**2)
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+                
+                x = np.array([p1[0], p2[0]]) * math.cos(DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(DELTA_ALPHA * idx)
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(x, y, z, color=colours_01[jdx % len(colours_01)])
+
+    # Save Figure
+    figure_timestamp = save_figure("10_GroundPlane_3D", working_dir, timestamp)
+
+    # Create Animation
+    if animate_figures:
+        animate_figure("05_GroundPlane_Animated", ax, figure_timestamp)
+
+
+def plot_labelled_points_2D():
+    
+    pass
+
+
+def plot_labelled_points_3D():
     pass
 
 
@@ -406,3 +443,4 @@ def set_axes_equal(ax):
 
 # I should make a function for mapping norms to segments
 # i.e., the math.cos delta_alpha * segment and sine one
+# any code you're duplicating make a function
