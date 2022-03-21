@@ -140,7 +140,8 @@ class EKFNode : public rclcpp::Node {
         }
 
         void cone_detection_callback(driverless_msgs::msg::ConeDetectionStamped msg) {
-            
+            // TODO
+            (void) msg;
         }
 
         void print_matricies() {
