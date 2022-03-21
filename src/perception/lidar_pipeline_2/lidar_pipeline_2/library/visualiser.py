@@ -395,13 +395,50 @@ def plot_ground_plane_3D(ground_plane, split_prototype_segments, prototype_segme
         animate_figure("05_GroundPlane_Animated", ax, figure_timestamp)
 
 
-def plot_labelled_points_2D():
+def plot_labelled_points_2D(point_cloud, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp):
+    fig, ax = init_plot_2D("Labelled Points", "X", "Y")
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_labels, cmap=mpl_colors.ListedColormap(['red', 'green']), marker='s', s=(72./fig.dpi)**2)
     
-    pass
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+                
+                x = np.array([p1[0], p2[0]]) * math.cos(DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(DELTA_ALPHA * idx)
+
+                ax.plot(x, y, color=colours_01[jdx % len(colours_01)])
+    
+    # Save Figure
+    save_figure("11_LabelledPoints_2D", working_dir, timestamp)
 
 
-def plot_labelled_points_3D():
-    pass
+def plot_labelled_points_3D(point_cloud, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures):
+    # Create Figure
+    fig, ax = init_plot_3D("Labelled Points", "X", "Y", 'Z')
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_labels, cmap=mpl_colors.ListedColormap(['red', 'green']), marker='s', s=(72./fig.dpi)**2)
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+                
+                x = np.array([p1[0], p2[0]]) * math.cos(DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(DELTA_ALPHA * idx)
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(x, y, z, color=colours_01[jdx % len(colours_01)])
+
+    # Save Figure
+    figure_timestamp = save_figure("12_LabelledPoints_3D", working_dir, timestamp)
+    
+    # Create Animation
+    if animate_figures:
+        animate_figure("05_LabelledPoints_Animated", ax, figure_timestamp)
 
 
 def set_axes_equal(ax):
