@@ -324,9 +324,10 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
             point_z = point_z_set[jdx]
             ground_line = ground_line_dict[bin_idx]
             point_line_dist = get_point_line_dist(ground_line, point_norm, point_z)
-            point_line_dist = 0
+            point_line_dist = 0 # WHAT THE FUCK IS THIS DOING HERE
 
             is_ground = False
+            print(point_line_dist, T_D_MAX)
             if (point_line_dist < T_D_MAX):
                 is_ground = True
 
