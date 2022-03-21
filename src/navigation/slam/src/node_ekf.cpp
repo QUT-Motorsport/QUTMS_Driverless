@@ -8,6 +8,8 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "driverless_msgs/msg/cone_detection_stamped.hpp"
+#include "driverless_msgs/msg/cone.hpp"
 
 // This is here to make message_filters build (https://stackoverflow.com/a/30851225)
 #define __STDC_FORMAT_MACROS
@@ -21,8 +23,8 @@
 #include "rclcpp/rclcpp.hpp"
 
 
-// x, y, orientation (and 0 landmarks)
-#define INITAL_STATE_SIZE 3
+// x, y, orientation
+#define CAR_STATE_SIZE 3
 
 
 double compute_dt(builtin_interfaces::msg::Time start_, builtin_interfaces::msg::Time end_) {
@@ -52,13 +54,14 @@ void motion_model(
     pred_mu_out(2, 0) = theta + theta_dot*dt;           // theta'
 
     // compute jacobian for the robot state (G_x)
-    jacobian_out = Eigen::MatrixXd::Identity(INITAL_STATE_SIZE, INITAL_STATE_SIZE);
+    jacobian_out = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
     jacobian_out(0, 2) = -forward_vel*dt*sin(theta);
     jacobian_out(1, 2) = forward_vel*dt*cos(theta);
     jacobian_out(2, 2) = 2;
 }
 
 void update_pred_motion_cov(
+    int state_size,
     const Eigen::MatrixXd& motion_jacobian,  // G_x
     const Eigen::MatrixXd& cov,
     Eigen::MatrixXd& pred_cov_out
@@ -66,8 +69,8 @@ void update_pred_motion_cov(
     // G = ( G_x  0 )
     //     ( 0    I )
     // TODO: INITAL_STATE_SIZE needs to be dynamic current state size here
-    Eigen::MatrixXd G = Eigen::MatrixXd::Identity(INITAL_STATE_SIZE, INITAL_STATE_SIZE);
-    G.topLeftCorner(INITAL_STATE_SIZE, INITAL_STATE_SIZE) = motion_jacobian;
+    Eigen::MatrixXd G = Eigen::MatrixXd::Identity(state_size, state_size);
+    G.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = motion_jacobian;
 
     pred_cov_out = G * cov * G.transpose();
 }
@@ -81,6 +84,8 @@ class EKFNode : public rclcpp::Node {
         Eigen::MatrixXd mu;  // final state (mean, μ)
         Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
+        int state_size = CAR_STATE_SIZE;
+
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
 
     public:
@@ -93,9 +98,8 @@ class EKFNode : public rclcpp::Node {
             message_filters::Synchronizer<approximate_policy>syncApproximate(approximate_policy(10), imu_sub, vel_sub);
             syncApproximate.registerCallback(&EKFNode::sensed_control_callback, this);
 
-
-            pred_mu = Eigen::MatrixXd::Zero(INITAL_STATE_SIZE, 1);
-            pred_cov = 0.1 * Eigen::MatrixXd::Identity(INITAL_STATE_SIZE, INITAL_STATE_SIZE);
+            pred_mu = Eigen::MatrixXd::Zero(this->state_size, 1);
+            pred_cov = 0.1 * Eigen::MatrixXd::Identity(this->state_size, this->state_size);
 
             mu = pred_mu;
             cov = pred_cov;
@@ -122,7 +126,7 @@ class EKFNode : public rclcpp::Node {
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
             // [vel_msg->twist.linear.x, imu_msg->angular_velocity.z]
-            Eigen::MatrixXd motion_jacobian = Eigen::MatrixXd::Zero(INITAL_STATE_SIZE, INITAL_STATE_SIZE);  // G_x
+            Eigen::MatrixXd motion_jacobian = Eigen::MatrixXd::Zero(CAR_STATE_SIZE, CAR_STATE_SIZE);  // G_x
             motion_model(
                 dt,
                 vel_msg->twist.linear.x,
@@ -132,7 +136,11 @@ class EKFNode : public rclcpp::Node {
                 motion_jacobian
             );
             std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
-            update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
+            update_pred_motion_cov(this->state_size, motion_jacobian, this->pred_cov, this->pred_cov);
+        }
+
+        void cone_detection_callback(driverless_msgs::msg::ConeDetectionStamped msg) {
+            
         }
 
         void print_matricies() {

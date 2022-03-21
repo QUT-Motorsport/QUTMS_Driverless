@@ -14,6 +14,7 @@
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>ackermann_msgs</depend>
+  <depend>driverless_msgs</depend>
   <depend>message_filters</depend>
 
   <export>
