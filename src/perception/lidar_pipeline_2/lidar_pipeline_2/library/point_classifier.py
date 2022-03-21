@@ -275,16 +275,16 @@ def get_closest_line(ground_set, bin_idx):
     return ground_set[idx]
 
 
-def get_point_line_dist(ground_line, point_norm, point_z):
+def get_point_line_dist_2(ground_line, point_norm, point_z):
     gradient = ground_line[0]
     intercept = ground_line[1]
-    ground_point = gradient * point_norm + intercept
+    new_point = gradient * point_norm + intercept
 
-    return abs(point_z - ground_point)
+    return abs(point_z - new_point)
 
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
 # [[m b start_point end_point count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
-def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_MAX, point_count, bins):
+def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
     # print('mapped_segments', mapped_segments)
@@ -304,7 +304,7 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     # print('split_bins', split_bins)
     
     counter = 0
-    point_labels = np.empty(point_count)
+    point_labels = np.empty(point_count, dtype=bool)
     for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
         mapped_seg_idx = mapped_segments[segment_idx]
         bin_idx_set = split_bins[idx]
@@ -323,12 +323,12 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
             point_norm = point_norm_set[jdx]
             point_z = point_z_set[jdx]
             ground_line = ground_line_dict[bin_idx]
-            point_line_dist = get_point_line_dist(ground_line, point_norm, point_z)
-            point_line_dist = 0 # WHAT THE FUCK IS THIS DOING HERE
+            point_line_dist = get_point_line_dist_2(ground_line, point_norm, point_z)
 
             is_ground = False
-            print(point_line_dist, T_D_MAX)
-            if (point_line_dist < T_D_MAX):
+            # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
+            print(point_line_dist)
+            if (point_line_dist < T_D_GROUND):
                 is_ground = True
 
             point_labels[counter] = is_ground
@@ -342,3 +342,8 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
 # could probably run through all unique bin values and create a dictionary
 
 # Investigate the empty lists([])
+
+# look at lidar 1.0 and it's T_D_PREV parameter. Seems useful if you encounter
+# weird ground lines
+
+# investigate what T_D_Max is used for
