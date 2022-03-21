@@ -224,7 +224,11 @@ def get_ground_lines_4(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
     if len(new_line_points) > 1 and m_new != None and b_new != None:
         estimated_lines.append((m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], BIN_SIZE)))
 
-    return estimated_lines
+    # If no ground lines were identified in segment, return 0
+    if len(estimated_lines) > 0:
+        return estimated_lines
+    else:
+        return 0
 
 
 def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
