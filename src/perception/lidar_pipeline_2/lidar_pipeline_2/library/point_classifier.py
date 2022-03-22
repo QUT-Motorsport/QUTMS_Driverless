@@ -299,7 +299,7 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     
     split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
     # print('split_point_z', split_point_z)
-    
+
     split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
     # print('split_bins', split_bins)
     
@@ -311,7 +311,7 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
         point_norm_set = split_point_norms[idx]
         point_z_set = split_point_z[idx]
         ground_set = ground_plane[mapped_seg_idx]
-        
+
         unq_bin_idx = np.unique(bin_idx_set)
         
         ground_line_dict = dict()
@@ -327,9 +327,10 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
 
             is_ground = False
             # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
-            print(point_line_dist)
             if (point_line_dist < T_D_GROUND):
                 is_ground = True
+                if point_z > 0.4:
+                    print(point_norm, point_z, ground_line, point_line_dist)
 
             point_labels[counter] = is_ground
             counter += 1
