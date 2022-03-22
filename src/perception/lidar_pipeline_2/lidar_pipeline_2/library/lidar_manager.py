@@ -99,12 +99,13 @@ def detect_cones(
     LOGGER.info(f'Ground Plane estimated in {end_time - start_time}s')
 
     start_time = time.time()
-    point_labels = pc.label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
+    # point_labels = pc.label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
+    point_labels = pc.label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
     end_time = time.time()
     
     if create_figures:
-        vis.plot_labelled_points_2D(point_cloud, seg_bin_z_ind, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp)
-        vis.plot_labelled_points_3D(point_cloud, seg_bin_z_ind, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        vis.plot_labelled_points_2D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp)
+        vis.plot_labelled_points_3D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
@@ -119,8 +120,5 @@ def detect_cones(
 # maybe add equal axes to figures
 # only import what's necessary for each file
 
-# FOR SOME REASON POINTS BEHIND x=0 DISAPPEAR DURING PROTOTYPE POINT
-
-# AHHHHHHHHHHHHHHHHHHHHHH
-# YOU NEED THE XY NORM NOT THE XYZ NORM
-# AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+# aight so move timings so they ignore figures
+# perhaps even add figure timings

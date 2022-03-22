@@ -275,6 +275,10 @@ def get_closest_line(ground_set, bin_idx):
     return ground_set[idx]
 
 
+def get_closest_lines(ground_set, bin_set):
+    return np.where(bin_set < ground_set[:, 4])
+
+
 def get_point_line_dist_2(ground_line, point_norm, point_z):
     gradient = ground_line[0]
     intercept = ground_line[1]
@@ -282,26 +286,63 @@ def get_point_line_dist_2(ground_line, point_norm, point_z):
 
     return abs(point_z - new_point)
 
+
+def point_line_dist(ground_lines, point_norms, point_zs):
+    print(ground_lines)
+    gradients = ground_lines[:, 0]
+    intercepts = ground_lines[:, 1]
+    evaluations = (gradients * point_norms) + intercepts
+    
+    return np.abs(point_zs - evaluations)
+
+
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
 # [[m b start_point end_point count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
 def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
-    # print('mapped_segments', mapped_segments)
 
     # Get indices where sorted segments differ
     seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
-    # print('seg_sorted_ind', seg_sorted_ind)
 
-    # Split point_norms into segments
+    # Split point_norms, point_z and bins into segments
     split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
-    # print('split_point_norms', split_point_norms)
-    
     split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
-    # print('split_point_z', split_point_z)
-
     split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
-    # print('split_bins', split_bins)
+    
+    prev_point_count = 0
+    point_labels = np.empty(point_count, dtype=bool)
+    for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
+        mapped_seg_idx = mapped_segments[segment_idx]
+        bin_idx_set = split_bins[idx]
+        point_norm_set = split_point_norms[idx]
+        point_z_set = split_point_z[idx]
+        ground_set = np.array(ground_plane[mapped_seg_idx], dtype=object)
+        print(ground_set)
+        unq_bin_idx = np.unique(bin_idx_set)
+        
+        ground_lines = np.empty(unq_bin_idx.size)
+        ground_lines[unq_bin_idx] = get_closest_lines(ground_set, unq_bin_idx)
+        point_line_dists = point_line_dist(ground_lines, point_norm_set, point_z_set)
+        
+        curr_point_count = point_norm_set.size
+        point_labels[prev_point_count:curr_point_count] = point_line_dists < T_D_GROUND
+        prev_point_count = curr_point_count
+    
+    return point_labels
+
+
+def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
+    # Map segments with no ground lines to the nearest segment with a ground line
+    mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
+
+    # Get indices where sorted segments differ
+    seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
+
+    # Split point_norms, point_z and bins into segments
+    split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
+    split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
+    split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
     
     counter = 0
     point_labels = np.empty(point_count, dtype=bool)
@@ -329,8 +370,6 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
             # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
             if (point_line_dist < T_D_GROUND):
                 is_ground = True
-                if point_z > 0.4:
-                    print(point_norm, point_z, ground_line, point_line_dist)
 
             point_labels[counter] = is_ground
             counter += 1
