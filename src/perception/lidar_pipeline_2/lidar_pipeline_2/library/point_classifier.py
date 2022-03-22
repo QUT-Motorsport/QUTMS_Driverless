@@ -276,7 +276,15 @@ def get_closest_line(ground_set, bin_idx):
 
 
 def get_closest_lines(ground_set, bin_set):
-    return np.where(bin_set < ground_set[:, 4])
+    print('gs', ground_set)
+    print('bs', bin_set)
+    chingchang = np.zeros(bin_set.size)
+    # chingchang = np.where(bin_set < ground_set[:, 4])
+    
+    if len(chingchang):
+        return 0
+    else:
+        return chingchang
 
 
 def get_point_line_dist_2(ground_line, point_norm, point_z):
@@ -287,8 +295,9 @@ def get_point_line_dist_2(ground_line, point_norm, point_z):
     return abs(point_z - new_point)
 
 
-def point_line_dist(ground_lines, point_norms, point_zs):
+def point_line_dist_3(ground_lines, point_norms, point_zs):
     print(ground_lines)
+    
     gradients = ground_lines[:, 0]
     intercepts = ground_lines[:, 1]
     evaluations = (gradients * point_norms) + intercepts
@@ -307,8 +316,13 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
 
     # Split point_norms, point_z and bins into segments
     split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
+    split_point_norms[0] = point_norms[seg_bin_z_ind][0]
+    
     split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
+    split_point_z[0] = point_cloud['z'][seg_bin_z_ind][0]
+    
     split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
+    split_bins[0] = bins[seg_bin_z_ind][0]
     
     prev_point_count = 0
     point_labels = np.empty(point_count, dtype=bool)
@@ -318,15 +332,19 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
         point_norm_set = split_point_norms[idx]
         point_z_set = split_point_z[idx]
         ground_set = np.array(ground_plane[mapped_seg_idx], dtype=object)
-        print(ground_set)
+
         unq_bin_idx = np.unique(bin_idx_set)
+        print('ubi', unq_bin_idx)
+        print('other', get_closest_lines(ground_set, unq_bin_idx))
+        ground_lines = np.array(np.column_stack((unq_bin_idx, get_closest_lines(ground_set, unq_bin_idx))))
         
-        ground_lines = np.empty(unq_bin_idx.size)
-        ground_lines[unq_bin_idx] = get_closest_lines(ground_set, unq_bin_idx)
-        point_line_dists = point_line_dist(ground_lines, point_norm_set, point_z_set)
+        print('gl', ground_lines)
+
+        point_line_dists = point_line_dist_3(ground_lines, point_norm_set, point_z_set)
         
         curr_point_count = point_norm_set.size
-        point_labels[prev_point_count:curr_point_count] = point_line_dists < T_D_GROUND
+
+        point_labels[prev_point_count:curr_point_count + 1] = point_line_dists < T_D_GROUND
         prev_point_count = curr_point_count
     
     return point_labels
@@ -375,6 +393,52 @@ def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
             counter += 1
     
     return point_labels
+
+
+def label_points_5(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
+    # Map segments with no ground lines to the nearest segment with a ground line
+    mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
+
+    # Get indices where sorted segments differ
+    seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
+
+    # Split point_norms, point_z and bins into segments
+    split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
+    split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
+    split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
+    
+    counter = 0
+    point_labels = np.empty(point_count, dtype=bool)
+    for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
+        mapped_seg_idx = mapped_segments[segment_idx]
+        bin_idx_set = split_bins[idx]
+        point_norm_set = split_point_norms[idx]
+        point_z_set = split_point_z[idx]
+        ground_set = ground_plane[mapped_seg_idx]
+
+        unq_bin_idx = np.unique(bin_idx_set)
+        
+        ground_line_dict = dict()
+        for bin_idx in unq_bin_idx:
+            ground_line = get_closest_line(ground_set, bin_idx)
+            ground_line_dict[bin_idx] = ground_line
+
+        for jdx, bin_idx in enumerate(bin_idx_set):
+            point_norm = point_norm_set[jdx]
+            point_z = point_z_set[jdx]
+            ground_line = ground_line_dict[bin_idx]
+            point_line_dist = get_point_line_dist_2(ground_line, point_norm, point_z)
+
+            is_ground = False
+
+            if (point_line_dist < T_D_GROUND):
+                is_ground = True
+
+            point_labels[counter] = is_ground
+            counter += 1
+    
+    return point_labels
+
 
 # If you have computed what ground line is closest for some bin in some set, 
 # and multiple points have the same bin, you probably don't need to keep finding
