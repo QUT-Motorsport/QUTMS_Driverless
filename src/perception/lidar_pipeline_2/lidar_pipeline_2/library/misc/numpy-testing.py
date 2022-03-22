@@ -90,7 +90,13 @@ def test4():
     
     print(test[:, 0:2])
 
-test4()
+
+def test5():
+    test = np.array([23, np.array([2, 3], dtype=object), 0, 1 ,2, 0], dtype=object)
+    print(np.where(test.any() > 0))
+    
+test5()
+
 
 def line_to_end_points(line, segment_idx, DELTA_ALPHA):
     start = line[2]  # First point in line
