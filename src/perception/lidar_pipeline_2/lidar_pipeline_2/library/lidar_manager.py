@@ -3,7 +3,7 @@ from . import point_cloud_processor as pcp
 from . import ground_plane_estimator as gpe
 from . import point_classifier as pc
 from . import visualiser as vis
-from . import data_clusterer as dc
+from . import object_processor as op
 
 # Import Python Modules
 import time
@@ -118,10 +118,16 @@ def detect_cones(
     LOGGER.info(f'Object points extracted and stacked in {end_time - start_time}s')
     
     start_time = time.perf_counter()
-    object_centers = dc.group_points(object_points)
+    object_centers = op.group_points(object_points)
     end_time = time.perf_counter()
     
-    LOGGER.info(f'{end_time - start_time}s')
+    LOGGER.info(f'Object centers computed in {end_time - start_time}s')
+
+    start_time = time.perf_counter()
+    reconstructed_objects = op.reconstruct_objects(object_centers)
+    end_time = time.perf_counter()
+    
+    LOGGER.info(f'Objects reconstructed in {end_time - start_time}s')
 
     if show_figures:
         plt.show()
@@ -138,3 +144,5 @@ def detect_cones(
 
 # see if there's anywhere else you can use the multi-access
 # structured array indexing point_cloud[['x', 'y', 'z']]
+
+# moar visoolisations
