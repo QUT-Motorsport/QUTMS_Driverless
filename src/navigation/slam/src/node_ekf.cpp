@@ -268,10 +268,10 @@ class EKFNode : public rclcpp::Node {
 
                 this->pred_mu = this->pred_mu + K*(z - expected_z);
                 this->pred_cov = (Eigen::MatrixXd::Identity(K.rows(), observation_jacobian.cols()) - K*observation_jacobian) * this->pred_cov;
-
-                this->mu = pred_mu;
-                this->cov = pred_cov;
             }
+
+            this->mu = this->pred_mu;
+            this->cov = this->pred_cov;
         }
 
         void print_matricies() {
