@@ -11,7 +11,6 @@ def group_points(object_points):
     
     # All object ids
     unq_labels = np.unique(labels)
-    if 
     
     objects = np.empty(unq_labels.size, dtype=object)
     object_centers = np.empty((unq_labels.size, 2))
