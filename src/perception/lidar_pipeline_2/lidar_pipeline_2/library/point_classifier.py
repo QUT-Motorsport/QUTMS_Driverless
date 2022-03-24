@@ -384,12 +384,12 @@ def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
             ground_line = ground_line_dict[bin_idx]
             point_line_dist = get_point_line_dist_2(ground_line, point_norm, point_z)
 
-            is_ground = False
+            is_non_ground = True
             # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
             if (point_line_dist < T_D_GROUND):
-                is_ground = True
+                is_non_ground = False
 
-            point_labels[counter] = is_ground
+            point_labels[counter] = is_non_ground
             counter += 1
     
     return point_labels
