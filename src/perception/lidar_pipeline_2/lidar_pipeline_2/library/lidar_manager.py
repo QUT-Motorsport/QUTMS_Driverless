@@ -3,6 +3,7 @@ from . import point_cloud_processor as pcp
 from . import ground_plane_estimator as gpe
 from . import point_classifier as pc
 from . import visualiser as vis
+from . import data_clusterer as dc
 
 # Import Python Modules
 import time
@@ -57,10 +58,10 @@ def detect_cones(
         pass
 
     # Discretise point cloud for real-time performance
-    start_time = time.time()
+    start_time = time.perf_counter()
     # segments_bins_nrm_xyz = pcp.get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
     segments, bins = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
-    end_time = time.time()
+    end_time = time.perf_counter()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
     
@@ -72,10 +73,10 @@ def detect_cones(
         pass
 
     # Calculate prototype point for every bin (if one exists)
-    start_time = time.time()
+    start_time = time.perf_counter()
     # prototype_points, split_bin_nrm_z = pcp.get_prototype_points_2(segments_bins_nrm_xyz)
     split_prototype_segments, prototype_segments, seg_bin_z_ind = pcp.get_prototype_points_4(segments, bins, point_norms, point_cloud['z'])
-    end_time = time.time()
+    end_time = time.perf_counter()
 
     if create_figures:
         # vis.plot_prototype_points_2D(split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
@@ -84,10 +85,10 @@ def detect_cones(
 
     LOGGER.info(f'Prototype Points computed in {end_time - start_time}s')
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     # ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
     ground_plane = gpe.get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE)
-    end_time = time.time()
+    end_time = time.perf_counter()
     
     if create_figures:
         vis.plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
@@ -98,10 +99,10 @@ def detect_cones(
 
     LOGGER.info(f'Ground Plane estimated in {end_time - start_time}s')
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     point_labels = pc.label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
-    point_labels = pc.label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
-    end_time = time.time()
+    # point_labels = pc.label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
+    end_time = time.perf_counter()
     
     if create_figures:
         vis.plot_labelled_points_2D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp)
@@ -109,6 +110,18 @@ def detect_cones(
         pass
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
+
+    start_time = time.perf_counter()
+    object_points = np.column_stack((point_cloud['x'][seg_bin_z_ind][point_labels], point_cloud['y'][seg_bin_z_ind][point_labels]))
+    end_time = time.perf_counter()
+    
+    LOGGER.info(f'Object points extracted and stacked in {end_time - start_time}s')
+    
+    start_time = time.perf_counter()
+    object_centers = dc.group_points(object_points)
+    end_time = time.perf_counter()
+    
+    LOGGER.info(f'{end_time - start_time}s')
 
     if show_figures:
         plt.show()
@@ -122,3 +135,6 @@ def detect_cones(
 
 # aight so move timings so they ignore figures
 # perhaps even add figure timings
+
+# see if there's anywhere else you can use the multi-access
+# structured array indexing point_cloud[['x', 'y', 'z']]
