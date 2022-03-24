@@ -397,7 +397,7 @@ def plot_ground_plane_3D(ground_plane, split_prototype_segments, prototype_segme
 
 def plot_labelled_points_2D(point_cloud, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp):
     fig, ax = init_plot_2D("Labelled Points", "X", "Y")
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_labels, cmap=mpl_colors.ListedColormap([red_hex, mint_hex]), marker='s', s=(72./fig.dpi)**2)
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_labels, cmap=mpl_colors.ListedColormap([mint_hex, red_hex]), marker='s', s=(72./fig.dpi)**2)
     
     # Plot Ground Plane
     for idx, ground_set in enumerate(ground_plane):
@@ -418,7 +418,7 @@ def plot_labelled_points_2D(point_cloud, point_labels, ground_plane, DELTA_ALPHA
 def plot_labelled_points_3D(point_cloud, point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures):
     # Create Figure
     fig, ax = init_plot_3D("Labelled Points", "X", "Y", 'Z')
-    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_labels, cmap=mpl_colors.ListedColormap([red_hex, mint_hex]), marker='s', s=(72./fig.dpi)**2)
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], point_cloud['z'], c=point_labels, cmap=mpl_colors.ListedColormap([mint_hex, red_hex]), marker='s', s=(72./fig.dpi)**2)
 
     # Plot Ground Plane
     for idx, ground_set in enumerate(ground_plane):
