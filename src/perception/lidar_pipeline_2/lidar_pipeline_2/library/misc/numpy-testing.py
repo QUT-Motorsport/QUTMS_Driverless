@@ -92,8 +92,18 @@ def test4():
 
 
 def test5():
-    test = np.array([23, np.array([2, 3], dtype=object), 0, 1 ,2, 0], dtype=object)
-    print(np.where(test.any() > 0))
+    test = np.array([0, np.array([2, 3], dtype=object), 0, 0, 0, 0], dtype=object)
+    
+    zero = []
+    non0 = []
+    for idx, lines in enumerate(test):
+        if type(lines) == np.ndarray:
+            non0.append(idx)
+        else:
+            zero.append(idx)
+    
+    print(non0)
+    print(zero)
     
 test5()
 
