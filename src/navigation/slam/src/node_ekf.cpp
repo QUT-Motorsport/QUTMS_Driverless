@@ -133,21 +133,22 @@ void compute_expected_z(
 
     Eigen::MatrixXd Fx = Eigen::MatrixXd::Zero(CAR_STATE_SIZE + LANDMARK_STATE_SIZE, mu.rows());
     Fx.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
-    Fx(CAR_STATE_SIZE + 1, landmark_idx) = 1;
-    Fx(CAR_STATE_SIZE + 2, landmark_idx + 1) = 1;
+    Fx(CAR_STATE_SIZE, landmark_idx) = 1;
+    Fx(CAR_STATE_SIZE + 1, landmark_idx + 1) = 1;
 
     Eigen::MatrixXd low_dim_jacobian(2, CAR_STATE_SIZE + LANDMARK_STATE_SIZE);
+
     low_dim_jacobian(0, 0) = 1/q * -sqrt(q) * dx;
     low_dim_jacobian(0, 1) = 1/q * -sqrt(q) * dy;
     low_dim_jacobian(0, 2) = 0;  // 1/q * 0
     low_dim_jacobian(0, 3) = 1/q * sqrt(q) * dx;
     low_dim_jacobian(0, 4) = 1/q * sqrt(q) * dy;
+
     low_dim_jacobian(1, 0) = 1/q * dy;
     low_dim_jacobian(1, 1) = 1/q * -dx;
     low_dim_jacobian(1, 2) = -1;  // 1/q * -q
-    low_dim_jacobian(1, 2) = 1/q * -q;
     low_dim_jacobian(1, 3) = 1/q * -dy;
-    low_dim_jacobian(1, 3) = 1/q * dx;
+    low_dim_jacobian(1, 4) = 1/q * dx;
 
     observation_jacobian = low_dim_jacobian * Fx;
 }
@@ -259,13 +260,17 @@ class EKFNode : public rclcpp::Node {
                 Eigen::MatrixXd expected_z(2, 1);
                 Eigen::MatrixXd observation_jacobian = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());  // H
                 compute_expected_z(this->pred_mu, associated_idx.value(), expected_z, observation_jacobian);
+                std::cout << "H:\n" << observation_jacobian << "\n" << std::endl;
 
-                // std::cout << "H:\n" << observation_jacobian << "\n" << std::endl;
 
-                // Eigen::MatrixXd K = this->pred_cov*observation_jacobian.transpose()*((observation_jacobian*this->pred_cov*observation_jacobian.transpose() + Q).inverse());
-                // this->pred_mu = this->pred_mu + K*(z - expected_z);
-                // this->pred_cov = (Eigen::MatrixXd::Identity());
-                // std::cout << "K:\n" << K << "\n" << std::endl;
+                Eigen::MatrixXd K = this->pred_cov*observation_jacobian.transpose()*((observation_jacobian*this->pred_cov*observation_jacobian.transpose() + Q).inverse());
+                std::cout << "K:\n" << K << "\n" << std::endl;
+
+                this->pred_mu = this->pred_mu + K*(z - expected_z);
+                this->pred_cov = (Eigen::MatrixXd::Identity(K.rows(), observation_jacobian.cols()) - K*observation_jacobian) * this->pred_cov;
+
+                this->mu = pred_mu;
+                this->cov = pred_cov;
             }
         }
 
