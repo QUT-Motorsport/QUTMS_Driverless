@@ -20,6 +20,10 @@ def group_points(object_points):
     
     return object_centers
 
+
+def reconstruct_objects():
+    pass
+
 # If noise exists, it'll be the first object
 # Do i need objects?
 # can i simply just average without creating var for them
