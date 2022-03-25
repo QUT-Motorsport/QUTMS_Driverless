@@ -1,0 +1,19 @@
+/sbg/status
+/sbg/utc_time
+/sbg/imu_data
+/sbg/ekf_euler
+/sbg/ekf_quat
+/sbg/ekf_nav
+/sbg/mag
+/sbg/mag_calib
+/sbg/gps_vel
+/sbg/gps_pos
+/sbg/gps_raw
+
+/imu/data (Req. /sbg/imu_data & /sbg/ekf_quat) -- COMPLETE
+/imu/temp (Req. /sbg/imu_data) -- COMPLETE
+/imu/velocity (Req. /sbg/imu_data) -- COMPLETE
+/imu/mag (Req. /sbg/mag) -- NOT GETTING IT
+/imu/pos_ecef (Req. /sbg/ekf_nav) -- NOT GETTING IT
+/imu/utc_ref (Req. /sbg/utc)
+/imu/nav_sat_fix (Req. /sbg/pos_pos)

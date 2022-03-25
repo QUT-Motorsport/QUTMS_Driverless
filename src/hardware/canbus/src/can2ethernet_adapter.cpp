@@ -20,10 +20,8 @@ void Can2Ethernet::tx(uint32_t id, bool std_id, uint8_t* data) {
 		d->emplace_back(data[i]);
 	}
 	auto didSend = this->send_data(d);
-	if(!didSend) {
+	if (!didSend) {
 		std::cout << "Failed to send_data!" << std::endl;
 	}
 }
-std::shared_ptr<std::vector<char>> Can2Ethernet::rx() {
-	return this->recieve_data();
-}
+std::shared_ptr<std::vector<char>> Can2Ethernet::rx() { return this->recieve_data(); }
