@@ -1,13 +1,14 @@
+// COPY THIS FILE and rename to c_cpp_properties.json
 {
     "configurations": [
         {
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/tom/mambaforge/envs/driverless_env/include"
+                "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/include/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"
