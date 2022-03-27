@@ -9,7 +9,7 @@ const int RES_NODE_ID = 0x011;
 
 using std::placeholders::_1;
 
-class RESReciever : public rclcpp::Node, public CanInterface {
+class RESReceiver : public rclcpp::Node, public CanInterface {
    private:
 	rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
 	rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
@@ -62,18 +62,18 @@ class RESReciever : public rclcpp::Node, public CanInterface {
 	}
 
    public:
-	RESReciever() : Node("res") {
+	RESReceiver() : Node("res") {
 		RCLCPP_INFO(this->get_logger(), "starting res node setup...");
 		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
 		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-			"canbus_rosbound", 10, std::bind(&RESReciever::canbus_callback, this, _1));
+			"canbus_rosbound", 10, std::bind(&RESReceiver::canbus_callback, this, _1));
 		this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
 	}
 };
 
 int main(int argc, char *argv[]) {
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<RESReciever>());
+	rclcpp::spin(std::make_shared<RESReceiver>());
 	rclcpp::shutdown();
 	return 0;
 }
