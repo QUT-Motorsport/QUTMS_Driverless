@@ -14,11 +14,11 @@ find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(include)
-include_directories(${CMAKE_SOURCE_DIR}/../../common/canopen/include/)
+include_directories(${CMAKE_SOURCE_DIR}/../../common/can/include/)
 
 set (SOURCES
-  ${CMAKE_SOURCE_DIR}/../../common/canopen/src/canopen.cpp
-  ${CMAKE_SOURCE_DIR}/../../common/canopen/src/can_interface.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/can/src/canopen.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/can/src/can_interface.cpp
 )
 
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
