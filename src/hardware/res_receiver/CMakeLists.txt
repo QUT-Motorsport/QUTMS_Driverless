@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(res_reciever)
+project(res_receiver)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
@@ -20,7 +20,7 @@ set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../common/canopen/src/can_interface.cpp
 )
 
-add_executable(res src/node_res_reciever.cpp ${SOURCES})
+add_executable(res src/node_res_receiver.cpp ${SOURCES})
 ament_target_dependencies(res rclcpp driverless_msgs)
 
 target_include_directories(res PUBLIC
