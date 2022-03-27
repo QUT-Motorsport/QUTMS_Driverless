@@ -22,9 +22,17 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 	void canbus_callback(const driverless_msgs::msg::Can msg) {
 		switch (msg.id) {
 			case (0x700 + RES_NODE_ID): {
-				// Wake up message from RES Reciever
-				// Order start up of RES Reciever
-				uint8_t p[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+				/*
+				RES has reported in, request state change to enable it
+
+				Doing so will result in the RES reporting PDOs
+				2000 - 20007 every 30ms with the ID 0x180 + RES_NODE_ID
+
+				Byte 0 = state command (start up)
+				Byte 1 = Node ID (0x00 = All Nodes)
+				*/
+
+				uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 				this->can_pub->publish(this->_d_2_f(0x00, false, p));
 
 			} break;
@@ -34,11 +42,11 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 				this->_internal_status_time = this->now();	// Debug information
 
 				// Store in local state
-				this->res_status.estop = msg.data[9] & (1 << 0);
-				this->res_status.sw_k2 = msg.data[0] & (1 << 1);
-				this->res_status.bt_k3 = msg.data[0] & (1 << 2);
-				this->res_status.radio_quality = msg.data[6];
-				this->res_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);
+				this->res_status.estop = msg.data[0] & (1 << 0);						   // ESTOP = PDO 2000 Bit 0
+				this->res_status.sw_k2 = msg.data[0] & (1 << 1);						   // K2 = PDO 2000 Bit 1
+				this->res_status.bt_k3 = msg.data[0] & (1 << 2);						   // K3 = PDO 2000 Bit 2
+				this->res_status.radio_quality = msg.data[6];							   // Radio Quality = PDO 2006
+				this->res_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);  // LoSSN = PDO 2007 Bit 6
 
 				// Publish state
 				this->res_pub->publish(this->res_status);
@@ -61,6 +69,7 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
 			"canbus_rosbound", 10, std::bind(&RESReceiver::canbus_callback, this, _1));
 		this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
+		RCLCPP_INFO(this->get_logger(), "res node setup complete");
 	}
 };
 
