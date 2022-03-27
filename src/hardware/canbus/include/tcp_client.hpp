@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#define RECV_SIZE 4096
+const int RECV_SIZE = 4096;
 
 class TCPClient {
    private:
