@@ -20,7 +20,6 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 	rclcpp::Time _internal_status_time;
 
 	void canbus_callback(const driverless_msgs::msg::Can msg) {
-		printf("Got CAN MSG with ID: %u", msg.id);
 		switch (msg.id) {
 			case (0x700 + RES_NODE_ID): {
 				/*
