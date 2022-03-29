@@ -74,6 +74,9 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 		RCLCPP_INFO(this->get_logger(), "Attemping to start res");
 		uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 		this->can_pub->publish(this->_d_2_f(0x00, false, p));
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+		this->can_pub->publish(this->_d_2_f(0x00, false, p2));
 		RCLCPP_INFO(this->get_logger(), "res startup complete");
 	}
 };
