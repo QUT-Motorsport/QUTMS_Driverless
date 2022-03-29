@@ -70,6 +70,11 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 			"canbus_rosbound", 10, std::bind(&RESReceiver::canbus_callback, this, _1));
 		this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
 		RCLCPP_INFO(this->get_logger(), "res node setup complete");
+
+		RCLCPP_INFO(this->get_logger(), "Attemping to start res");
+		uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+		this->can_pub->publish(this->_d_2_f(0x00, false, p));
+		RCLCPP_INFO(this->get_logger(), "res startup complete");
 	}
 };
 
