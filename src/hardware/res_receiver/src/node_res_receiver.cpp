@@ -52,9 +52,9 @@ class RESReceiver : public rclcpp::Node, public CanInterface {
 				this->res_pub->publish(this->res_status);
 
 				// Log RES state
-				RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-							this->res_status.sw_k2, this->res_status.bt_k3, this->res_status.estop,
-							this->res_status.radio_quality);
+				// RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
+				// 			this->res_status.sw_k2, this->res_status.bt_k3, this->res_status.estop,
+				// 			this->res_status.radio_quality);
 			} break;
 
 			default:
