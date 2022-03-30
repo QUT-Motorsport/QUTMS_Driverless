@@ -38,7 +38,7 @@ ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 CONE_DISPLAY_PARAMETERS = [
     BLUE_DISP_COLOUR,
     YELLOW_DISP_COLOUR,
-    # ORANGE_DISP_COLOUR,
+    ORANGE_DISP_COLOUR,
 ]
 
 ConeMsgColour = int # define arbitrary variable type
@@ -213,7 +213,7 @@ def main_torch(args=None):
     from .torch_inference import torch_init, infer
     
     # loading Pytorch model
-    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.pt")
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBOV1.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
     CONFIDENCE = 0.35 # higher = tighter filter 
     model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
