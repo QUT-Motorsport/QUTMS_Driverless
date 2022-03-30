@@ -79,6 +79,26 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 
    public:
 	explicit SteeringActuator(const std::string &node_name) : LifecycleNode(node_name) {
+		RCLCPP_INFO(this->get_logger(), "%s node alive", node_name.c_str());
+	}
+
+	void setup() {
+		/* To initialise the controller to a usable state, we must set the:
+		Target Position = 0
+		Min Position Limit = -DEFAULT_LIMITS
+		Max Position Limit = DEFAULT_LIMITS
+		Home Offset = 0
+		Motion Profile Type = trapezoidal ramp
+		Profile Velocity = DEFAULT_VELOCITY
+		End Velocity = 0
+		Profile Acceleration = DEFAULT_ACCELERATIONS
+		Profile Deceleration = DEFAULT_ACCELERATIONS
+		Quick Stop Deceleration = DEFAUL_ACCELERATIONS
+		Max Acceleration = DEFAULT_ACCELERATIONS
+		MAX Deceleration = DEFAULT_ACCELERATIONS
+		Mode of Operation = 1 (Profile Position)
+	*/
+
 		// Defaults
 		this->declare_parameter<int>("d_acceleration", 0);
 		this->declare_parameter<int>("d_current", 0);
@@ -109,29 +129,11 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 
 		this->current = config.default_current;
 		this->target = 0;
-	}
-
-	void setup() {
-		/* To initialise the controller to a usable state, we must set the:
-		Target Position = 0
-		Min Position Limit = -DEFAULT_LIMITS
-		Max Position Limit = DEFAULT_LIMITS
-		Home Offset = 0
-		Motion Profile Type = trapezoidal ramp
-		Profile Velocity = DEFAULT_VELOCITY
-		End Velocity = 0
-		Profile Acceleration = DEFAULT_ACCELERATIONS
-		Profile Deceleration = DEFAULT_ACCELERATIONS
-		Quick Stop Deceleration = DEFAUL_ACCELERATIONS
-		Max Acceleration = DEFAULT_ACCELERATIONS
-		MAX Deceleration = DEFAULT_ACCELERATIONS
-		Mode of Operation = 1 (Profile Position)
-	*/
 
 		uint32_t id;	 // Packet id out
 		uint8_t out[8];	 // Data out
 
-		std::cout << "Performing C5-E Setup... ";
+		RCLCPP_INFO(this->get_logger(), "Performing C5-E motor controller setup...");
 
 		sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
 		this->can_pub->publish(_d_2_f(id, 0, out));
@@ -171,7 +173,7 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 		sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);	// Max Deceleration
 		this->can_pub->publish(_d_2_f(id, 0, out));
 
-		std::cout << "Done (Setup)" << std::endl;
+		RCLCPP_INFO(this->get_logger(), "Done (setup)");
 	}
 
 	void enable() {
@@ -200,7 +202,7 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Op Enabled
 		this->can_pub->publish(_d_2_f(id, 0, out));
 
-		std::cout << "Done (Operation Enabled)" << std::endl;
+		RCLCPP_INFO(this->get_logger(), "Motor operation enabled");
 	}
 
 	void target_position(int32_t target) {
@@ -293,6 +295,8 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
 		this->can_pub->publish(_d_2_f(id, 0, out));
 		std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+		RCLCPP_INFO(this->get_logger(), "Motor operation disabled");
 	}
 
 	void set_c5e_config(c5e_config_t config) {
@@ -349,8 +353,6 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 		this->can_pub.reset();
 		this->can_sub.reset();
 		this->steering_sub.reset();
-
-		RCLCPP_INFO(this->get_logger(), "Steering Actuator Shutdown");
 
 		return ni::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 	}
