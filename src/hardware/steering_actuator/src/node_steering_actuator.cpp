@@ -1,8 +1,12 @@
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
+#include "rclcpp/publisher.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
+using rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
 using std::placeholders::_1;
 
 const int C5_E_ID = 0x70;
@@ -21,7 +25,7 @@ typedef struct c5e_config {
 	}
 } c5e_config_t;
 
-class SteeringActuator : public rclcpp::Node {
+class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
    private:
 	int32_t target;
 	int32_t velocity;
@@ -82,25 +86,16 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
    public:
-	SteeringActuator() : Node("steering") {
+	explicit SteeringActuator(const std::string &node_name) : LifecycleNode(node_name) {
 		// Defaults
 		this->declare_parameter<int>("d_acceleration", 0);
 		this->declare_parameter<int>("d_current", 0);
 		this->declare_parameter<int>("d_limits", 0);
 		this->declare_parameter<int>("d_velocity", 0);
 
-		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
-		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-			"canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
-		this->steering_sub = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-			"steering", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
-
-		this->parameter_callback_handle =
-			this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
-
-		uint32_t _d_acceleration;
-		uint32_t _d_current;
-		uint32_t _d_limits;
+		int32_t _d_acceleration;
+		int32_t _d_current;
+		int32_t _d_limits;
 		int32_t _d_velocity;
 		this->get_parameter("d_acceleration", _d_acceleration);
 		this->get_parameter("d_current", _d_current);
@@ -122,8 +117,6 @@ class SteeringActuator : public rclcpp::Node {
 
 		this->current = config.default_current;
 		this->target = 0;
-
-		this->setup();
 	}
 
 	void setup() {
@@ -186,6 +179,13 @@ class SteeringActuator : public rclcpp::Node {
 		sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);	// Max Deceleration
 		this->can_pub->publish(_d_2_f(id, 0, out));
 
+		std::cout << "Done (Setup)" << std::endl;
+	}
+
+	void enable() {
+		uint32_t id;	 // Packet id out
+		uint8_t out[8];	 // Data out
+
 		int8_t ppm = 1;
 		sdo_write(C5_E_ID, 0x6060, 0x00, (uint8_t *)&ppm, 1, &id, out);	 // Modes of Operation
 		this->can_pub->publish(_d_2_f(id, 0, out));
@@ -216,7 +216,7 @@ class SteeringActuator : public rclcpp::Node {
 		this->target = target;
 
 		uint32_t id;	 // Packet id out
-		uint8_t out[8];	 // Data out
+		uint8_t out[8];	 // Data out~LifecycleNode
 
 		uint16_t control_word = 47;
 		sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
@@ -311,27 +311,70 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	c5e_config_t get_c5e_config() { return this->defaults; }
-};
 
-std::function<void(int)> handler;
-void signal_handler(int signal) { handler(signal); }
+	// LifecycleNode State Transitions
+	CallbackReturn on_configure(const rclcpp_lifecycle::State &) {
+		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
+		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
+			"canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
+		this->steering_sub = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
+			"steering", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+
+		this->parameter_callback_handle =
+			this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
+
+		this->setup();
+
+		return CallbackReturn::SUCCESS;
+	}
+
+	CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) {
+		LifecycleNode::on_activate(previous_state);
+
+		this->enable();
+		this->target_position(0);
+
+		return CallbackReturn::SUCCESS;
+	}
+
+	CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) {
+		LifecycleNode::on_deactivate(previous_state);
+
+		this->shutdown();
+
+		return CallbackReturn::SUCCESS;
+	}
+
+	CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) {
+		this->can_pub.reset();
+		this->can_sub.reset();
+		this->steering_sub.reset();
+
+		return CallbackReturn::SUCCESS;
+	}
+
+	CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) {
+		this->can_pub.reset();
+		this->can_sub.reset();
+		this->steering_sub.reset();
+
+		RCLCPP_INFO(this->get_logger(), "Steering Actuator Shutdown");
+
+		return CallbackReturn::SUCCESS;
+	}
+};
 
 int main(int argc, char *argv[]) {
 	rclcpp::init(argc, argv);
 
-	// Hack
-	auto x = std::make_shared<SteeringActuator>();
-	signal(SIGINT, signal_handler);
-	handler = [x](int signal) {
-		for (int i = 0; i < 10; i++) {
-			x->shutdown();
-		}
-		RCLCPP_INFO(x->get_logger(), "Motor shutdown, exiting node.");
-		rclcpp::shutdown();
-		return signal;
-	};
+	rclcpp::executors::SingleThreadedExecutor exe;
 
-	rclcpp::spin(x);
-	// rclcpp::shutdown();
+	auto x = std::make_shared<SteeringActuator>("steering");
+
+	exe.add_node(x->get_node_base_interface());
+
+	exe.spin();
+
+	rclcpp::shutdown();
 	return 0;
 }
