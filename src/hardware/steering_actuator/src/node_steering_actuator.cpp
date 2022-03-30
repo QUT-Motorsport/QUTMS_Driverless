@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "can_interface.hpp"
 #include "canopen.hpp"
@@ -7,8 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-using rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
-using std::placeholders::_1;
+namespace ni = rclcpp_lifecycle::node_interfaces;
 
 const int C5_E_ID = 0x70;
 
@@ -307,51 +308,51 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 	CallbackReturn on_configure(const rclcpp_lifecycle::State &) {
 		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
 		this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-			"canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
+			"canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, std::placeholders::_1));
 		this->steering_sub = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-			"steering", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+			"steering", 10, std::bind(&SteeringActuator::steering_callback, this, std::placeholders::_1));
 
-		this->parameter_callback_handle =
-			this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
+		this->parameter_callback_handle = this->add_on_set_parameters_callback(
+			std::bind(&SteeringActuator::parameter_callback, this, std::placeholders::_1));
 
 		this->setup();
 
 		return CallbackReturn::SUCCESS;
 	}
 
-	CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) {
+	ni::LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) {
 		LifecycleNode::on_activate(previous_state);
 
 		this->enable();
 		this->target_position(0);
 
-		return CallbackReturn::SUCCESS;
+		return ni::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 	}
 
-	CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) {
+	ni::LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) {
 		LifecycleNode::on_deactivate(previous_state);
 
 		this->shutdown();
 
-		return CallbackReturn::SUCCESS;
+		return ni::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 	}
 
-	CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) {
+	ni::LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) {
 		this->can_pub.reset();
 		this->can_sub.reset();
 		this->steering_sub.reset();
 
-		return CallbackReturn::SUCCESS;
+		return ni::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 	}
 
-	CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) {
+	ni::LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) {
 		this->can_pub.reset();
 		this->can_sub.reset();
 		this->steering_sub.reset();
 
 		RCLCPP_INFO(this->get_logger(), "Steering Actuator Shutdown");
 
-		return CallbackReturn::SUCCESS;
+		return ni::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 	}
 };
 
