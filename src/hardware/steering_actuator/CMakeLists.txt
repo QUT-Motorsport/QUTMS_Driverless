@@ -23,11 +23,18 @@ set (SOURCES
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
 ament_target_dependencies(steering rclcpp rclcpp_lifecycle ackermann_msgs driverless_msgs)
 
+add_executable(steering_test src/node_steering_actuator_tester.cpp ${SOURCES})
+ament_target_dependencies(steering_test rclcpp rclcpp_lifecycle ackermann_msgs driverless_msgs)
+
 target_include_directories(steering PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS steering
+target_include_directories(steering_test PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+install(TARGETS steering steering_test
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
