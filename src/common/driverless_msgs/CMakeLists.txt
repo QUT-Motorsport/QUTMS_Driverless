@@ -23,6 +23,7 @@ set(msg_files
   "msg/SplinePoint.msg"
   "msg/SplineStamped.msg"
   "msg/Can.msg"
+  "msg/RES.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

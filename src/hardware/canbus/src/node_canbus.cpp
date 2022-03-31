@@ -31,7 +31,7 @@ class CanBus : public rclcpp::Node {
 				std::copy(res->begin() + (FRAME_LENGTH * i), res->begin() + (FRAME_LENGTH * (i + 1)), packet.begin());
 
 				if (this->validate_frame(std::make_shared<std::vector<char>>(packet))) {
-					uint32_t id = packet.at(1) << 24 | packet.at(2) << 16 | packet.at(3) << 8 | packet.at(4);
+					uint32_t id = packet.at(1) << 24 | packet.at(2) << 16 | packet.at(3) << 8 | (packet.at(4) & 0xFF);
 					std::vector<uint8_t> data_bytes(8);
 					for (int i = 0; i < 8; i++) {
 						data_bytes.at(i) = packet.at(5 + i);

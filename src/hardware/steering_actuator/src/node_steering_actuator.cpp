@@ -1,4 +1,5 @@
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "can_interface.hpp"
 #include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -21,7 +22,7 @@ typedef struct c5e_config {
 	}
 } c5e_config_t;
 
-class SteeringActuator : public rclcpp::Node {
+class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
 	int32_t target;
 	int32_t velocity;
@@ -70,16 +71,6 @@ class SteeringActuator : public rclcpp::Node {
 	}
 
 	OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle;
-
-	driverless_msgs::msg::Can _d_2_f(uint32_t id, bool is_extended, uint8_t *data) {
-		driverless_msgs::msg::Can frame;
-		frame.id = id;
-		frame.id_type = is_extended;
-		std::vector<uint8_t> v;
-		v.assign(data, data + 8);
-		frame.data = v;
-		return frame;
-	}
 
    public:
 	SteeringActuator() : Node("steering") {

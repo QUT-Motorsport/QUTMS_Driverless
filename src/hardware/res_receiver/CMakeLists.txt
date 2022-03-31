@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(steering_actuator)
+project(res_receiver)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
@@ -9,7 +9,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
-find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
@@ -21,14 +20,14 @@ set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../common/can/src/can_interface.cpp
 )
 
-add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
-ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs)
+add_executable(res src/node_res_receiver.cpp ${SOURCES})
+ament_target_dependencies(res rclcpp driverless_msgs)
 
-target_include_directories(steering PUBLIC
+target_include_directories(res PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>) 
 
-install(TARGETS steering
+install(TARGETS res
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
