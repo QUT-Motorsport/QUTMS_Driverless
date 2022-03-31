@@ -27,7 +27,7 @@ typedef struct c5e_config {
 	}
 } c5e_config_t;
 
-class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
+class SteeringActuator : public rclcpp_lifecycle::LifecycleNode, public CanInterface {
    private:
 	int32_t target;
 	int32_t velocity;
@@ -81,7 +81,6 @@ class SteeringActuator : public rclcpp_lifecycle::LifecycleNode {
 	explicit SteeringActuator(const std::string &node_name) : LifecycleNode(node_name) {
 		RCLCPP_INFO(this->get_logger(), "%s node alive", node_name.c_str());
 	}
-
 	void setup() {
 		/* To initialise the controller to a usable state, we must set the:
 		Target Position = 0
