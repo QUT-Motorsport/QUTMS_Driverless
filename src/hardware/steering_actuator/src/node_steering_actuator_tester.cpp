@@ -100,15 +100,15 @@ class SteeringTest : public rclcpp::Node {
 	}
 };
 
-void callee_script(std::shared_ptr<SteeringTest> lc_client) {
+void callee_script(std::shared_ptr<SteeringTest> steering_client) {
 	rclcpp::WallRate time_between_state_changes(0.1);  // 10s
 
 	// configure
 	{
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -119,10 +119,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -133,10 +133,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -147,10 +147,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -161,10 +161,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -175,10 +175,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
@@ -192,10 +192,10 @@ void callee_script(std::shared_ptr<SteeringTest> lc_client) {
 		if (!rclcpp::ok()) {
 			return;
 		}
-		if (!lc_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN)) {
+		if (!steering_client->change_state(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN)) {
 			return;
 		}
-		if (!lc_client->get_state()) {
+		if (!steering_client->get_state()) {
 			return;
 		}
 	}
