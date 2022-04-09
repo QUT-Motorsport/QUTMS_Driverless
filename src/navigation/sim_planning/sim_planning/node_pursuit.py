@@ -1,9 +1,7 @@
 # import ROS2 libraries
-from pickle import NONE
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from cv_bridge import CvBridge
 # import ROS2 message libraries
 from nav_msgs.msg import Odometry
 # import custom message libraries
@@ -11,12 +9,10 @@ from driverless_msgs.msg import SplinePoint, SplineStamped
 from fs_msgs.msg import ControlCommand
 
 # other python modules
-from math import sqrt, atan2, pi, sin, cos, atan
-import cv2
+from math import sqrt, atan2, sin, cos
 import numpy as np
-import scipy.interpolate as scipy_interpolate # for spline calcs
 import scipy.spatial
-from typing import Tuple, List, Optional
+from typing import List
 import time
 import sys
 import os
@@ -31,7 +27,7 @@ from transforms3d.euler import quat2euler
 LOGGER = logging.getLogger(__name__)
 
 
-def getWheelPosition(pos_cog: List[float], heading: float) -> List[float]:
+def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     """
     Gets the position of the steering axle from the car's center of gravity and heading
     * param pos_cog: [x,y] coords of the car's center of gravity
@@ -39,14 +35,14 @@ def getWheelPosition(pos_cog: List[float], heading: float) -> List[float]:
     * return: [x,y] position of steering axle
     """
     #https://fs-driverless.github.io/Formula-Student-Driverless-Simulator/v2.1.0/vehicle_model/
-    cogToAxleDist = 0.4 #m
-    x_axle = pos_cog[0] + cos(heading)*cogToAxleDist
-    y_axle = pos_cog[1] + sin(heading)*cogToAxleDist
+    cog2axle = 0.4 #m
+    x_axle = pos_cog[0] + cos(heading)*cog2axle
+    y_axle = pos_cog[1] + sin(heading)*cog2axle
 
     return [x_axle, y_axle]
 
 
-def getRVWP(car_pos: List[float], path: np.ndarray, rvwpLookahead: int) -> List[float]:
+def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> List[float]:
     """
     Retrieve angle between two points 
     * param car_pos: [x,y] coords of point 1
@@ -55,18 +51,11 @@ def getRVWP(car_pos: List[float], path: np.ndarray, rvwpLookahead: int) -> List[
     * return: RVWP position as [x,y]
     """
     _pos = np.array([[car_pos[0], car_pos[1]]])
-    # start: float = time.time()
     dists: np.ndarray = scipy.spatial.distance.cdist(path,_pos, 'euclidean')
-    # LOGGER.info("Time taken to calc distance: "+ str(time.time()-start))
-    minIndex: int = np.where(dists == np.amin(dists))[0][0]
-    # LOGGER.info("Time taken to calc min distance: "+ str(time.time()-start))
-    # LOGGER.info(f"Minimum distance: {dists[minIndex]}")
-    # LOGGER.info(f"Closest point: {path[minIndex]}")
-    # LOGGER.info(f"Index: {minIndex}")
+    min_index: int = np.where(dists == np.amin(dists))[0][0]
 
-    rvwpIndex: int = (minIndex + rvwpLookahead) % len(path)
-    rvwp: List[float] = path[rvwpIndex]
-    # LOGGER.info(f"RVWP: {rvwp}")
+    rvwp_index: int = (min_index + rvwp_lookahead) % len(path)
+    rvwp: List[float] = path[rvwp_index]
 
     return rvwp
 
@@ -86,7 +75,7 @@ def angle(
     return atan2(y_disp, x_disp)
 
 
-def wrapToPi(angle: float) -> float:
+def wrap_to_pi(angle: float) -> float:
     """
     Wrap an angle between -pi and pi
     * param angle: angle in rads
@@ -97,7 +86,7 @@ def wrapToPi(angle: float) -> float:
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
-def getThrottleAndBrake(velocities: List[float], steering_angle: float) -> List[float]:
+def get_throttle_and_brake(velocities: List[float], steering_angle: float) -> List[float]:
     """
     Decrease velocity proportional to the desired steering angle
     * param velocities: [x,y] current x & y velocities
@@ -132,8 +121,6 @@ def getThrottleAndBrake(velocities: List[float], steering_angle: float) -> List[
         if (vel > vel_min):
             calc_brake = abs(brake_max * throttle_scalar)
 
-    # LOGGER.info(f"Target vel: {target_vel}\tTarget throttle: {calc_throttle}\tTarget brake: {calc_brake}")
-
     return [calc_throttle, calc_brake]
 
 
@@ -141,8 +128,6 @@ class SplinePursuit(Node):
     def __init__(self):
         super().__init__("spline_planner")
 
-        # # sub to track for all cone locations relative to car start point
-        # self.create_subscription(SplineStamped, "/spline_mapper/path", self.map_callback, 10)
         # sub to path mapper for the desired vehicle path (as an array)
         self.create_subscription(SplineStamped, "/spline_mapper/path", self.path_callback, 10)
         # sub to odometry for car pose + velocity
@@ -163,15 +148,13 @@ class SplinePursuit(Node):
 
         # convert List[SplinePoint] to 2D numpy array
         start: float = time.time()
-        self.path=np.array([[p.location.x, p.location.y] for p in spline_path_msg.path])
+        self.path = np.array([[p.location.x, p.location.y] for p in spline_path_msg.path])
         LOGGER.info("Time taken to convert to np array: "+ str(time.time()-start))
         LOGGER.info(f"Spline Path Recieved - length: {len(self.path)}")
 
     def callback(self, odom_msg: Odometry):
         # Only start once the path has been recieved
         if self.path is None: return
-
-        # LOGGER.info("Received odom")
 
         w = odom_msg.pose.pose.orientation.w
         i = odom_msg.pose.pose.orientation.x
@@ -187,44 +170,29 @@ class SplinePursuit(Node):
 
         # get the position of the center of gravity
         position_cog: List[float] = [x, y]
-        position: List[float] = getWheelPosition(position_cog, heading)
-
-        # LOGGER.info(f"COG pos: {position_cog}")
-        # LOGGER.info(f"Current pos: {position}")
+        position: List[float] = get_wheel_position(position_cog, heading)
         
         # rvwp control
         rvwpLookahead = 75
 
-        rvwp: List[float] = getRVWP(position, self.path, rvwpLookahead)
+        rvwp: List[float] = get_RVWP(position, self.path, rvwpLookahead)
 
         # steering control
-        Kp_ang: float = 1.25
-        ang_max: float = 30.0
-
         des_heading_ang: float = angle(position, rvwp)
-        steering_angle: float = wrapToPi(heading - des_heading_ang)
-        # calc_steering = Kp_ang * steering_angle / ang_max
+        steering_angle: float = wrap_to_pi(heading - des_heading_ang)
+
         calc_steering = steering_angle
-        # LOGGER.info(f"Desired steering angle (deg): {steering_angle * (180 / np.pi)}")
-        # LOGGER.info(f"calc_steering (deg): {calc_steering * (180 / np.pi)}")
 
         vel: List[float] = [odom_msg.twist.twist.linear.x, odom_msg.twist.twist.linear.y]
-        [calc_throttle, calc_break] = getThrottleAndBrake(vel, steering_angle)
+        [calc_throttle, calc_break] = get_throttle_and_brake(vel, steering_angle)
 
         # publish message
         control_msg = ControlCommand()
-        # control_msg.throttle = float(0.01)
         control_msg.steering = float(calc_steering)
         control_msg.throttle = float(calc_throttle)
         control_msg.brake = float(calc_break)
-        # control_msg.brake = 0.0
 
         self.control_publisher.publish(control_msg)
-        # LOGGER.info(f"Published steering angle (deg): {steering_angle * (180 / np.pi)}")
-        # LOGGER.info(f"Published steering angle: {steering_angle}")
-
-        # time.sleep(5)
-        # LOGGER.info('\n')
 
 
 def main(args=sys.argv[1:]):
