@@ -411,7 +411,7 @@ def main(args=sys.argv[1:]):
     spline_len = 200
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length='])
+    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length=', 'ros-args'])
 
     # TODO: provide documentation for different options
     for opt, arg in opts:
