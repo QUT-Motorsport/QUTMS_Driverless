@@ -1,3 +1,5 @@
+import point_cloud_processor as pcp
+
 import numpy as np
 from sklearn.cluster import DBSCAN
 
@@ -28,7 +30,9 @@ def reconstruct_objects(object_centers, DELTA_ALPHA, CONE_DIAM, BIN_SIZE):
     np.ceil(np.divide(CONE_DIAM, segment_widths), out=num_segs_to_search, casting='unsafe')
     
     num_bins_to_search = CONE_DIAM / BIN_SIZE
-    
+
+    # Which segments / bins to search around
+    center_segs, center_bins = pcp.get_discretised_positions_2(object_centers[:, 0], object_centers[:, 1], center_norms, DELTA_ALPHA, BIN_SIZE)
     
     
     print(object_centers)

@@ -60,7 +60,7 @@ def detect_cones(
     # Discretise point cloud for real-time performance
     start_time = time.perf_counter()
     # segments_bins_nrm_xyz = pcp.get_discretised_positions(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
-    segments, bins = pcp.get_discretised_positions_2(point_cloud, point_norms, DELTA_ALPHA, BIN_SIZE)
+    segments, bins = pcp.get_discretised_positions_2(point_cloud['x'], point_cloud['y'], point_norms, DELTA_ALPHA, BIN_SIZE)
     end_time = time.perf_counter()
 
     LOGGER.info(f'Numpy PointCloud discretised in {end_time - start_time}s')
