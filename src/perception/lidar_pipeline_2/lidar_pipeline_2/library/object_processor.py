@@ -1,5 +1,5 @@
-from sklearn.cluster import DBSCAN
 import numpy as np
+from sklearn.cluster import DBSCAN
 
 def group_points(object_points):
     EPSILON = 0.4  # Neighbourhood Scan Size
@@ -21,7 +21,29 @@ def group_points(object_points):
     return object_centers
 
 
-def reconstruct_objects():
+def reconstruct_objects(object_centers, DELTA_ALPHA, CONE_DIAM, BIN_SIZE):
+    center_norms = np.linalg.norm(object_centers, axis=1)
+    segment_widths = 2 * np.multiply(center_norms, np.tan(DELTA_ALPHA / 2))
+    num_segs_to_search = np.empty(segment_widths.size, dtype=int)
+    np.ceil(np.divide(CONE_DIAM, segment_widths), out=num_segs_to_search, casting='unsafe')
+    
+    num_bins_to_search = CONE_DIAM / BIN_SIZE
+    
+    
+    
+    print(object_centers)
+    print(object_centers.shape)
+    print(center_norms)
+    print(center_norms.shape)
+    print(segment_widths)
+    print(segment_widths.shape)
+    print(num_segs_to_search)
+    print(type(num_segs_to_search))
+    
+    return None
+
+
+def cone_filter(objects):
     pass
 
 # If noise exists, it'll be the first object
