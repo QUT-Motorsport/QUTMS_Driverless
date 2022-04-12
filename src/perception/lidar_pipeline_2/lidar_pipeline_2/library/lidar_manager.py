@@ -101,6 +101,7 @@ def detect_cones(
 
     start_time = time.perf_counter()
     point_labels = pc.label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
+    # point_labels = pc.label_points_5(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
     # point_labels = pc.label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins)
     end_time = time.perf_counter()
     
@@ -124,15 +125,21 @@ def detect_cones(
     LOGGER.info(f'Object centers computed in {end_time - start_time}s')
 
     start_time = time.perf_counter()
-    reconstructed_objects = op.reconstruct_objects(object_centers)
+    reconstructed_objects = op.reconstruct_objects(object_centers, DELTA_ALPHA, 0.4)
     end_time = time.perf_counter()
     
     LOGGER.info(f'Objects reconstructed in {end_time - start_time}s')
+    
+    start_time = time.perf_counter()
+    identified_cones = op.cone_filter(reconstructed_objects)
+    end_time = time.perf_counter()
+    
+    LOGGER.info(f'Objects filtered for cones in {end_time - start_time}s')
 
     if show_figures:
         plt.show()
 
-    return []
+    return identified_cones
 
 # Look into numpy views and see if they could be used instead of creating
 # entirely new variables
