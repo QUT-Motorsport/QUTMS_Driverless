@@ -11,10 +11,6 @@
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
 #include "driverless_msgs/msg/cone.hpp"
 
-// This is here to make message_filters build (https://stackoverflow.com/a/30851225)
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"
@@ -22,16 +18,46 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-// USEFUL LINKS
+using std::placeholders::_1;
+
+
+// USEFUL LINKS:
 // https://jihongju.github.io/2018/10/05/slam-05-ekf-slam/
 // https://www.youtube.com/watch?v=X30sEgIws0g
 // https://github.com/MURDriverless/slam/
 
+// HOW TO MAKE MESSAGE FILTERS BUILD:
+// // This is here to make message_filters build (https://stackoverflow.com/a/30851225)
+// #define __STDC_FORMAT_MACROS
+// #include <inttypes.h>
 
-// x, y, orientation
-#define CAR_STATE_SIZE 3
+
+// xdot, ydot, x, y, orientation
+#define CAR_STATE_SIZE 5
 // x, y
 #define LANDMARK_STATE_SIZE 2
+
+
+double get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
+    x = mu(2, 0);
+    y = mu(3, 0);
+    theta = mu(4, 0);
+}
+
+double get_full_state(
+    const Eigen::MatrixXd& mu,
+    double& xdot,
+    double& ydot,
+    double& x,
+    double& y,
+    double& theta
+) {
+    xdot = mu(0, 0);
+    ydot = mu(1, 0);
+    x = mu(2, 0);
+    y = mu(3, 0);
+    theta = mu(4, 0);
+}
 
 
 double compute_dt(builtin_interfaces::msg::Time start_, builtin_interfaces::msg::Time end_) {
@@ -44,27 +70,35 @@ double compute_dt(builtin_interfaces::msg::Time start_, builtin_interfaces::msg:
 
 void compute_motion_model(
     double dt,
-    double forward_vel,
+    double forward_accel,
     double theta_dot,
     const Eigen::MatrixXd& mu,
     Eigen::MatrixXd& pred_mu_out,
     Eigen::MatrixXd& jacobian_out  // G_x
 ) {
-    // this is g()
-    double x = mu(0, 0);
-    double y = mu(1, 0);
-    double theta = mu(2, 0);
+    // this function is g()
 
-    // predict new x, y, theta position
-    pred_mu_out(0, 0) = x + forward_vel*dt*cos(theta);  // x'
-    pred_mu_out(1, 0) = y + forward_vel*dt*sin(theta);  // y'
-    pred_mu_out(2, 0) = theta + theta_dot*dt;           // theta'
+    double xdot, ydot, x, y, theta;
+    get_full_state(mu, xdot, ydot, x, y, theta);
+
+    double dt2 = pow(dt, 2);
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+
+    // predict new xdot, ydot, x, y, theta position
+    pred_mu_out(0, 0) = xdot + forward_accel*dt*cos_theta;  // xdot'
+    pred_mu_out(1, 0) = ydot + forward_accel*dt*sin_theta;  // ydot'
+    pred_mu_out(2, 0) = x + 0.5*forward_accel*dt2*cos_theta + xdot*dt;  // x'
+    pred_mu_out(3, 0) = y + 0.5*forward_accel*dt2*sin_theta + ydot*dt;  // y'
+    pred_mu_out(4, 0) = theta + theta_dot*dt;           // theta'
 
     // compute jacobian for the robot state (G_x)
     jacobian_out = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
-    jacobian_out(0, 2) = -forward_vel*dt*sin(theta);
-    jacobian_out(1, 2) = forward_vel*dt*cos(theta);
-    jacobian_out(2, 2) = 2;
+    jacobian_out << 1,  0,  0, 0, -forward_accel*dt*sin_theta,
+                    0,  1,  0, 0, forward_accel*dt*cos_theta,
+                    dt, 0,  1, 0, -0.5*forward_accel*dt2*sin_theta,
+                    0,  dt, 0, 1, -0.5*forward_accel*dt2*cos_theta,
+                    0,  0,  0, 0,               1;
 }
 
 void update_pred_motion_cov(
@@ -112,11 +146,10 @@ void compute_expected_z(
     Eigen::MatrixXd& expected_z_out,
     Eigen::MatrixXd& observation_jacobian
 ) {
-    // this is h()
-    
-    double x = mu(0, 0);
-    double y = mu(1, 0);
-    double theta = mu(2, 0);
+    // this function is h()
+
+    double x, y, theta;
+    get_state(mu, x, y, theta);
 
     double lm_x = mu(landmark_idx);
     double lm_y = mu(landmark_idx+1);
@@ -154,25 +187,25 @@ void compute_expected_z(
 }
 
 
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, geometry_msgs::msg::TwistStamped> approximate_policy;
+
 class EKFNode : public rclcpp::Node {
     private:
-        Eigen::MatrixXd pred_mu;	 // predicted state (mean, μ)
-        Eigen::MatrixXd pred_cov;  // predicted state (covariance, ∑)
+        Eigen::MatrixXd pred_mu;	 // predicted state (mean, μ bar)
+        Eigen::MatrixXd pred_cov;  // predicted state (covariance, ∑ bar)
 
         Eigen::MatrixXd mu;  // final state (mean, μ)
         Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
+        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
 
     public:
-        EKFNode() : Node("ekf_node") {
-
-            // set up approximate time sycronised imu and gss subscribers
-            message_filters::Subscriber<sensor_msgs::msg::Imu> imu_sub(this, "imu");
-            message_filters::Subscriber<geometry_msgs::msg::TwistStamped> vel_sub(this, "gss");
-            typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, geometry_msgs::msg::TwistStamped> approximate_policy;
-            message_filters::Synchronizer<approximate_policy>syncApproximate(approximate_policy(10), imu_sub, vel_sub);
-            syncApproximate.registerCallback(&EKFNode::sensed_control_callback, this);
+        EKFNode() : Node("ekf_node")
+        {
+            imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
+                "imu", 10, std::bind(&EKFNode::sensed_control_callback, this, _1)
+            );
 
             // initalise state and convariance with just the car state
             // (landmarks will be added when they are detected)
@@ -189,25 +222,24 @@ class EKFNode : public rclcpp::Node {
             (void) msg;
         }
 
-        void sensed_control_callback(
-            const sensor_msgs::msg::Imu::SharedPtr imu_msg,
-            const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg
-        ) {
+        void sensed_control_callback(const sensor_msgs::msg::Imu::SharedPtr imu_msg) {
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
                 this->last_sensed_control_update = imu_msg->header.stamp;
                 return;
             }
 
+            std::cout << "U: \n" << imu_msg->linear_acceleration.x << " " << imu_msg->angular_velocity.z << "\n" << std::endl;
+
             double dt = compute_dt(last_sensed_control_update.value(), imu_msg->header.stamp);
             this->last_sensed_control_update = imu_msg->header.stamp;
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
-            // [vel_msg->twist.linear.x, imu_msg->angular_velocity.z]
+            // [imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z]
             Eigen::MatrixXd motion_jacobian = Eigen::MatrixXd::Zero(CAR_STATE_SIZE, CAR_STATE_SIZE);  // G_x
             compute_motion_model(
                 dt,
-                vel_msg->twist.linear.x,
+                imu_msg->linear_acceleration.x,
                 imu_msg->angular_velocity.z,
                 this->pred_mu,
                 this->pred_mu,
@@ -215,6 +247,8 @@ class EKFNode : public rclcpp::Node {
             );
             std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
             update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
+
+            this->print_matricies();
         }
 
         void cone_detection_callback(driverless_msgs::msg::ConeDetectionStamped msg) {
@@ -224,9 +258,8 @@ class EKFNode : public rclcpp::Node {
             Q << 10,   0,
                  0 ,  10;
 
-            double x = this->pred_mu(0, 0);
-            double y = this->pred_mu(1, 0);
-            double theta = this->pred_mu(2, 0);
+            double x, y, theta;
+            get_state(this->pred_mu, x, y, theta);
 
             for(driverless_msgs::msg::Cone cone : msg.cones) {
                 // landmark (cone) position in global frame
@@ -285,37 +318,39 @@ class EKFNode : public rclcpp::Node {
 int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
 
-    EKFNode ekf_node = EKFNode();
+    auto ekf_node = std::make_shared<EKFNode>();
+    // rclcpp::spin(ekf_node);
+    // rclcpp::shutdown();
 
-    ekf_node.print_matricies();
+    ekf_node->print_matricies();
 
     sensor_msgs::msg::Imu::SharedPtr imu_msg = std::make_shared<sensor_msgs::msg::Imu>();
-    geometry_msgs::msg::TwistStamped::SharedPtr vel_msg = std::make_shared<geometry_msgs::msg::TwistStamped>();
+
     std::cout << "\n ---------- 1. \n" << std::endl;
     imu_msg->header.stamp.sec = 1;
-    vel_msg->header.stamp.sec = 1;
-    ekf_node.sensed_control_callback(imu_msg, vel_msg);
-    ekf_node.print_matricies();
+    ekf_node->sensed_control_callback(imu_msg);
+    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 2. \n" << std::endl;
     imu_msg->header.stamp.sec = 2;
+    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
     imu_msg->angular_velocity.z = 0.5;  // rad/s
-    vel_msg->header.stamp.sec = 2;
-    vel_msg->twist.linear.x = 2;  // m/s
-    ekf_node.sensed_control_callback(imu_msg, vel_msg);
-    ekf_node.print_matricies();
+    ekf_node->sensed_control_callback(imu_msg);
+    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 3. \n" << std::endl;
-    imu_msg->header.stamp.sec=3;
-    vel_msg->header.stamp.sec=3;
-    ekf_node.sensed_control_callback(imu_msg, vel_msg);
-    ekf_node.print_matricies();
+    imu_msg->header.stamp.sec = 3;
+    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
+    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    ekf_node->sensed_control_callback(imu_msg);
+    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 4. \n" << std::endl;
-    imu_msg->header.stamp.sec=4;
-    vel_msg->header.stamp.sec=4;
-    ekf_node.sensed_control_callback(imu_msg, vel_msg);
-    ekf_node.print_matricies();
+    imu_msg->header.stamp.sec = 4;
+    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
+    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    ekf_node->sensed_control_callback(imu_msg);
+    ekf_node->print_matricies();
 
     std::cout << "\n ---------- Measurement \n" << std::endl;
     driverless_msgs::msg::ConeDetectionStamped msg;
@@ -327,8 +362,8 @@ int main(int argc, char ** argv) {
 
     msg.cones = {cone1};
 
-    ekf_node.cone_detection_callback(msg);
-    ekf_node.print_matricies();
+    ekf_node->cone_detection_callback(msg);
+    ekf_node->print_matricies();
 
 	return 0;
 }
