@@ -11,11 +11,6 @@
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
 #include "driverless_msgs/msg/cone.hpp"
 
-#include "message_filters/subscriber.h"
-#include "message_filters/time_synchronizer.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "message_filters/synchronizer.h"
-
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -31,6 +26,14 @@ using std::placeholders::_1;
 // #define __STDC_FORMAT_MACROS
 // #include <inttypes.h>
 
+// #include "message_filters/subscriber.h"
+// #include "message_filters/time_synchronizer.h"
+// #include "message_filters/sync_policies/approximate_time.h"
+// #include "message_filters/synchronizer.h"
+
+// typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, geometry_msgs::msg::TwistStamped> approximate_policy;
+
+
 
 // xdot, ydot, x, y, orientation
 #define CAR_STATE_SIZE 5
@@ -38,13 +41,13 @@ using std::placeholders::_1;
 #define LANDMARK_STATE_SIZE 2
 
 
-double get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
+void get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
     x = mu(2, 0);
     y = mu(3, 0);
     theta = mu(4, 0);
 }
 
-double get_full_state(
+void get_full_state(
     const Eigen::MatrixXd& mu,
     double& xdot,
     double& ydot,
@@ -186,8 +189,6 @@ void compute_expected_z(
     observation_jacobian = low_dim_jacobian * Fx;
 }
 
-
-typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Imu, geometry_msgs::msg::TwistStamped> approximate_policy;
 
 class EKFNode : public rclcpp::Node {
     private:
