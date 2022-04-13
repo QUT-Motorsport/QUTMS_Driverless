@@ -323,6 +323,7 @@ int main(int argc, char ** argv) {
     // rclcpp::spin(ekf_node);
     // rclcpp::shutdown();
 
+    std::cout << "\n ---------- Inital. \n" << std::endl;
     ekf_node->print_matricies();
 
     sensor_msgs::msg::Imu::SharedPtr imu_msg = std::make_shared<sensor_msgs::msg::Imu>();
@@ -330,28 +331,24 @@ int main(int argc, char ** argv) {
     std::cout << "\n ---------- 1. \n" << std::endl;
     imu_msg->header.stamp.sec = 1;
     ekf_node->sensed_control_callback(imu_msg);
-    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 2. \n" << std::endl;
     imu_msg->header.stamp.sec = 2;
     imu_msg->linear_acceleration.x = 0.5;  // m/s/s
-    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    imu_msg->angular_velocity.z = 0;  // rad/s
     ekf_node->sensed_control_callback(imu_msg);
-    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 3. \n" << std::endl;
     imu_msg->header.stamp.sec = 3;
-    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
-    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    imu_msg->linear_acceleration.x = 0;  // m/s/s
+    imu_msg->angular_velocity.z = 0;  // rad/s
     ekf_node->sensed_control_callback(imu_msg);
-    ekf_node->print_matricies();
 
     std::cout << "\n ---------- 4. \n" << std::endl;
     imu_msg->header.stamp.sec = 4;
-    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
-    imu_msg->angular_velocity.z = 0.5;  // rad/s
+    imu_msg->linear_acceleration.x = 0;  // m/s/s
+    imu_msg->angular_velocity.z = 0;  // rad/s
     ekf_node->sensed_control_callback(imu_msg);
-    ekf_node->print_matricies();
 
     std::cout << "\n ---------- Measurement \n" << std::endl;
     driverless_msgs::msg::ConeDetectionStamped msg;
