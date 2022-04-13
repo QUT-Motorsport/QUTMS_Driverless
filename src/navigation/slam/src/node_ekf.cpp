@@ -67,7 +67,7 @@ double compute_dt(builtin_interfaces::msg::Time start_, builtin_interfaces::msg:
     uint32_t sec_dt = end_.sec - start_.sec;
     uint32_t nsec_dt = end_.nanosec - start_.nanosec;
 
-    return (double)sec_dt + (double)nsec_dt/1e9;
+    return (double)sec_dt + (double)nsec_dt*1e-9;
 }
 
 
@@ -230,10 +230,11 @@ class EKFNode : public rclcpp::Node {
                 return;
             }
 
-            std::cout << "U: \n" << imu_msg->linear_acceleration.x << " " << imu_msg->angular_velocity.z << "\n" << std::endl;
-
             double dt = compute_dt(last_sensed_control_update.value(), imu_msg->header.stamp);
             this->last_sensed_control_update = imu_msg->header.stamp;
+
+            printf("U: %f %f \n", imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z);
+            printf("dt: %f \n", dt);
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
             // [imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z]
@@ -320,48 +321,48 @@ int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
 
     auto ekf_node = std::make_shared<EKFNode>();
-    // rclcpp::spin(ekf_node);
-    // rclcpp::shutdown();
+    rclcpp::spin(ekf_node);
+    rclcpp::shutdown();
 
-    std::cout << "\n ---------- Inital. \n" << std::endl;
-    ekf_node->print_matricies();
+    // std::cout << "\n ---------- Inital. \n" << std::endl;
+    // ekf_node->print_matricies();
 
-    sensor_msgs::msg::Imu::SharedPtr imu_msg = std::make_shared<sensor_msgs::msg::Imu>();
+    // sensor_msgs::msg::Imu::SharedPtr imu_msg = std::make_shared<sensor_msgs::msg::Imu>();
 
-    std::cout << "\n ---------- 1. \n" << std::endl;
-    imu_msg->header.stamp.sec = 1;
-    ekf_node->sensed_control_callback(imu_msg);
+    // std::cout << "\n ---------- 1. \n" << std::endl;
+    // imu_msg->header.stamp.sec = 1;
+    // ekf_node->sensed_control_callback(imu_msg);
 
-    std::cout << "\n ---------- 2. \n" << std::endl;
-    imu_msg->header.stamp.sec = 2;
-    imu_msg->linear_acceleration.x = 0.5;  // m/s/s
-    imu_msg->angular_velocity.z = 0;  // rad/s
-    ekf_node->sensed_control_callback(imu_msg);
+    // std::cout << "\n ---------- 2. \n" << std::endl;
+    // imu_msg->header.stamp.sec = 2;
+    // imu_msg->linear_acceleration.x = 0.5;  // m/s/s
+    // imu_msg->angular_velocity.z = 0;  // rad/s
+    // ekf_node->sensed_control_callback(imu_msg);
 
-    std::cout << "\n ---------- 3. \n" << std::endl;
-    imu_msg->header.stamp.sec = 3;
-    imu_msg->linear_acceleration.x = 0;  // m/s/s
-    imu_msg->angular_velocity.z = 0;  // rad/s
-    ekf_node->sensed_control_callback(imu_msg);
+    // std::cout << "\n ---------- 3. \n" << std::endl;
+    // imu_msg->header.stamp.sec = 3;
+    // imu_msg->linear_acceleration.x = 0;  // m/s/s
+    // imu_msg->angular_velocity.z = 0;  // rad/s
+    // ekf_node->sensed_control_callback(imu_msg);
 
-    std::cout << "\n ---------- 4. \n" << std::endl;
-    imu_msg->header.stamp.sec = 4;
-    imu_msg->linear_acceleration.x = 0;  // m/s/s
-    imu_msg->angular_velocity.z = 0;  // rad/s
-    ekf_node->sensed_control_callback(imu_msg);
+    // std::cout << "\n ---------- 4. \n" << std::endl;
+    // imu_msg->header.stamp.sec = 4;
+    // imu_msg->linear_acceleration.x = 0;  // m/s/s
+    // imu_msg->angular_velocity.z = 0;  // rad/s
+    // ekf_node->sensed_control_callback(imu_msg);
 
-    std::cout << "\n ---------- Measurement \n" << std::endl;
-    driverless_msgs::msg::ConeDetectionStamped msg;
+    // std::cout << "\n ---------- Measurement \n" << std::endl;
+    // driverless_msgs::msg::ConeDetectionStamped msg;
     
-    driverless_msgs::msg::Cone cone1;
-    cone1.location.x = 2;
-    cone1.location.y = 2;
-    cone1.color = driverless_msgs::msg::Cone::BLUE;
+    // driverless_msgs::msg::Cone cone1;
+    // cone1.location.x = 2;
+    // cone1.location.y = 2;
+    // cone1.color = driverless_msgs::msg::Cone::BLUE;
 
-    msg.cones = {cone1};
+    // msg.cones = {cone1};
 
-    ekf_node->cone_detection_callback(msg);
-    ekf_node->print_matricies();
+    // ekf_node->cone_detection_callback(msg);
+    // ekf_node->print_matricies();
 
 	return 0;
 }
