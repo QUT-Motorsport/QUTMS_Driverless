@@ -125,7 +125,7 @@ def detect_cones(
     LOGGER.info(f'Object centers computed in {end_time - start_time}s')
 
     start_time = time.perf_counter()
-    reconstructed_objects = op.reconstruct_objects(object_centers, DELTA_ALPHA, 0.4)
+    reconstructed_objects = op.reconstruct_objects(np.column_stack((point_cloud['x'], point_cloud['y'], point_cloud['z'])), object_centers, DELTA_ALPHA, 0.4, BIN_SIZE)
     end_time = time.perf_counter()
     
     LOGGER.info(f'Objects reconstructed in {end_time - start_time}s')
