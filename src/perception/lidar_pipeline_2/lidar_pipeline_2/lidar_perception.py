@@ -166,12 +166,12 @@ class ConeSensingNode(Node):
         self.count += 1
 
         # Publish identified cones
-        cones_msg = ConeDetectionStamped(
-            header=pc_msg.header,
-            cones=pc_cones
-        )
+        #cones_msg = ConeDetectionStamped(
+        #    header=pc_msg.header,
+        #    cones=pc_cones
+        #)
 
-        self.cone_publisher.publish(cones_msg)
+        #self.cone_publisher.publish(cones_msg)
 
         total_time = time.perf_counter() - start_time
         LOGGER.info(f'Total Time: {total_time}s | Est. Hz: {1 / total_time}')
