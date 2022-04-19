@@ -104,8 +104,15 @@ def test5():
     
     print(non0)
     print(zero)
-    
-test5()
+
+
+def test6():
+    test = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    test_ind = test > 4
+    print(test_ind)
+    print(test[test_ind])
+
+test6()
 
 
 def line_to_end_points(line, segment_idx, DELTA_ALPHA):
