@@ -45,10 +45,6 @@ def reconstruct_objects(point_cloud, object_centers, DELTA_ALPHA, CONE_DIAM, BIN
     
     return reconstructed_objects
 
-
-def cone_filter(objects):
-    pass
-
 # If noise exists, it'll be the first object
 # Do i need objects?
 # can i simply just average without creating var for them
