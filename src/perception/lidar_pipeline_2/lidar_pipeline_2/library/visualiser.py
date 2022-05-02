@@ -244,9 +244,9 @@ def plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animat
     z_max = np.amax(point_cloud['z'])
     max_val = max(x_max, y_max, z_max)
 
-    ax.set_xlim3d([-max_val, max_val])
+    ax.set_xlim3d([-3, (2*max_val) - 3])
     ax.set_ylim3d([-max_val, max_val])
-    ax.set_zlim3d([-max_val, max_val])
+    ax.set_zlim3d([-3, (2*max_val) - 3])
 
     # Save Figure
     figure_timestamp = save_figure("02_PointCloud_3D", working_dir, timestamp)
