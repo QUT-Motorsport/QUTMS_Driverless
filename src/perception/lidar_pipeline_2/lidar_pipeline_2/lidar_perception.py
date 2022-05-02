@@ -24,6 +24,64 @@ import sys
 import time
 import math
 
+# Ka blamo
+# import ROS2 libraries
+import rclpy
+from rclpy.node import Node
+from rclpy.publisher import Publisher
+# import ROS2 message libraries
+from std_msgs.msg import Header
+from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import Point
+from visualization_msgs.msg import Marker, MarkerArray
+from builtin_interfaces.msg import Duration
+# import custom message libraries
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+
+def cone_msg(x_coord: float, y_coord: float) -> Cone: 
+    # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
+    location: Point = Point(
+        x=x_coord,
+        y=y_coord,
+        z=0.0,
+    )
+
+    return Cone(
+        location=location,
+        color=4,
+    )
+
+
+def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker: 
+    marker = Marker()
+    marker.header = head
+    marker.ns = "current_scan"
+    marker.id = ID
+    marker.type = Marker.CYLINDER
+    marker.action = Marker.ADD
+
+    marker.pose.position.x = x_coord
+    marker.pose.position.y = y_coord
+    marker.pose.position.z = 0.0
+    marker.pose.orientation.x = 0.0
+    marker.pose.orientation.y = 0.0
+    marker.pose.orientation.z = 0.0
+    marker.pose.orientation.w = 1.0
+
+    # scale out of 1x1x1m
+    marker.scale.x = 0.228
+    marker.scale.y = 0.228
+    marker.scale.z = 0.325
+
+    marker.color.r = 0.0
+    marker.color.g = 1.0
+    marker.color.b = 0.0
+    marker.color.a = 1.0
+
+    marker.lifetime = Duration(sec=1, nanosec=0)
+
+    return marker
+
 # Import Logging
 import logging
 LOGGER = logging.getLogger(__name__)
@@ -69,6 +127,11 @@ class ConeSensingNode(Node):
             ConeDetectionStamped,
             'cone_sensing/cones',
             5)
+        
+        self.marker_publisher: Publisher = self.create_publisher(
+            MarkerArray, 
+            "lidar/debug_cones_array", 
+            1)
 
         self.count = 0
 
@@ -141,7 +204,7 @@ class ConeSensingNode(Node):
             print(dtype_list)
 
         # Identify cones within the received point cloud
-        pc_cones = lidar_manager.detect_cones(point_cloud,
+        cones = lidar_manager.detect_cones(point_cloud,
                                               point_norms,
                                               self.LIDAR_RANGE,
                                               self.DELTA_ALPHA,
@@ -166,12 +229,38 @@ class ConeSensingNode(Node):
         self.count += 1
 
         # Publish identified cones
-        #cones_msg = ConeDetectionStamped(
+        # cones_msg = ConeDetectionStamped(
         #    header=pc_msg.header,
-        #    cones=pc_cones
+        #    cones=identified_cones
         #)
 
         #self.cone_publisher.publish(cones_msg)
+        
+        # define message component - list of Cone type messages
+        detected_cones = [] # List of Cones
+        markers_list = [] # List of Markers
+        for i in range(len(cones)):
+            # add cone to msg list
+            detected_cones.append(cone_msg(
+                cones[i][0], 
+                cones[i][1],
+            ))
+            markers_list.append(marker_msg(
+                cones[i][0], 
+                cones[i][1], 
+                i, 
+                pc_msg.header,
+            ))
+
+        detection_msg = ConeDetectionStamped(
+            header=pc_msg.header,
+            cones=detected_cones
+        )
+
+        markers_msg = MarkerArray(markers=markers_list)
+
+        self.cone_publisher.publish(detection_msg) # publish cone data
+        self.marker_publisher.publish(markers_msg) # publish marker points data
 
         total_time = time.perf_counter() - start_time
         LOGGER.info(f'Total Time: {total_time}s | Est. Hz: {1 / total_time}')
