@@ -4,6 +4,7 @@ from . import ground_plane_estimator as gpe
 from . import point_classifier as pc
 from . import visualiser as vis
 from . import object_processor as op
+from . import worlds_worst_code as ihateuni
 
 # Import Python Modules
 import time
@@ -53,8 +54,8 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        # vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
-        # vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car)
+        vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
+        vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car)
         pass
 
     # Discretise point cloud for real-time performance
@@ -131,7 +132,8 @@ def detect_cones(
     LOGGER.info(f'Objects reconstructed in {end_time - start_time}s')
     
     start_time = time.perf_counter()
-    identified_cones = op.cone_filter(reconstructed_objects)
+    #identified_cones = op.cone_filter(reconstructed_objects)
+    identified_cones = ihateuni.get_cones(reconstructed_objects)
     end_time = time.perf_counter()
     
     LOGGER.info(f'Objects filtered for cones in {end_time - start_time}s')
