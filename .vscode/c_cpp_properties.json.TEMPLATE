@@ -1,4 +1,5 @@
 // COPY THIS FILE and rename to c_cpp_properties.json
+// Replace any <VALUES> with the relevant value
 {
     "configurations": [
         {
