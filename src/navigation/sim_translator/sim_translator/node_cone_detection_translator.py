@@ -14,7 +14,7 @@ from transforms3d.euler import quat2euler
 from typing import List
 
 
-MAX_CONE_RANGE = 10  # meters
+MAX_CONE_RANGE = 20  # meters
 
 
 class ConeDetectonTranslator(Node):
