@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run build_plotjuggler run_plotjuggler
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -76,7 +76,7 @@ build_plotjuggler:
     --network=host \
     .
 
-run_plotjuggler:
+run_plotjuggler: build_plotjuggler
 	docker run \
 		-it \
 		--rm \
