@@ -2,6 +2,7 @@
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
+export PLOTJUGGLER_IMAGE_NAME=qutms_driverless_plotjuggler
 
 # UNLESS YOU ARE UPDATING THE MAKEFILE FUNCTIONALITY
 # This file should rarely need to be touched.
@@ -68,3 +69,25 @@ build:
 # use make run target=<value>
 run:
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
+
+
+build_plotjuggler:
+	docker build -f Dockerfile.plotjuggler -t $(PLOTJUGGLER_IMAGE_NAME) \
+    --network=host \
+    .
+
+run_plotjuggler:
+	docker run \
+		-it \
+		--rm \
+		--privileged \
+		--net=host \
+		--gpus=all \
+		--env=DISPLAY=$(DISPLAY) \
+		--env=QT_X11_NO_MITSHM=1 \
+		--env=SDL_HINT_CUDA_DEVICE='0' \
+		--mount type=bind,source=$$(pwd)/../datasets,destination=/datasets \
+		--mount type=bind,source=/tmp/.X11-unix,destination=/tmp/.X11-unix \
+		--mount type=bind,source=$(xauthority_path),destination=/root/.Xauthority \
+		$(PLOTJUGGLER_IMAGE_NAME) \
+		/bin/bash -c "source /fs_msgs_ws/install/setup.bash; ros2 run plotjuggler plotjuggler"
