@@ -1,5 +1,4 @@
 import csv
-from io import TextIOWrapper
 from pathlib import Path
 import datetime as dt
 

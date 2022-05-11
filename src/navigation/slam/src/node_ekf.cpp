@@ -124,7 +124,7 @@ std::optional<int> find_associated_landmark_idx(
 ) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 0.3;  // m, threshold
+    double min_distance = 1;  // m, threshold
     std::optional<int> idx = {};
 
     for(int i=CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -200,12 +200,17 @@ class EKFNode : public rclcpp::Node {
 
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
+        rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
 
     public:
         EKFNode() : Node("ekf_node")
         {
             imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
                 "imu", 10, std::bind(&EKFNode::sensed_control_callback, this, _1)
+            );
+
+            detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
+                "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
             );
 
             // initalise state and convariance with just the car state
@@ -224,6 +229,7 @@ class EKFNode : public rclcpp::Node {
         }
 
         void sensed_control_callback(const sensor_msgs::msg::Imu::SharedPtr imu_msg) {
+            std::cout << "IMU Callback" << std::endl;
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
                 this->last_sensed_control_update = imu_msg->header.stamp;
@@ -233,8 +239,13 @@ class EKFNode : public rclcpp::Node {
             double dt = compute_dt(last_sensed_control_update.value(), imu_msg->header.stamp);
             this->last_sensed_control_update = imu_msg->header.stamp;
 
-            printf("U: %f %f \n", imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z);
-            printf("dt: %f \n", dt);
+            if(dt == 0) {
+                std::cout << "dt zero" << std::endl;
+                return;
+            }
+
+            // printf("U: %f %f \n", imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z);
+            // printf("dt: %f \n", dt);
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
             // [imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z]
@@ -247,13 +258,15 @@ class EKFNode : public rclcpp::Node {
                 this->pred_mu,
                 motion_jacobian
             );
-            std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
+            // std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
             update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
 
-            this->print_matricies();
+            std::cout << "pred mu:\n" << this->pred_mu << "\n" << std::endl;
         }
 
-        void cone_detection_callback(driverless_msgs::msg::ConeDetectionStamped msg) {
+        void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
+            std::cout << "Cone Callback" << std::endl;
+            
             // Q = ( σ_r^2  0         )
             //     ( 0      σ_theta^2 )
             Eigen::Matrix2d Q;
@@ -263,12 +276,16 @@ class EKFNode : public rclcpp::Node {
             double x, y, theta;
             get_state(this->pred_mu, x, y, theta);
 
-            for(driverless_msgs::msg::Cone cone : msg.cones) {
+            for(driverless_msgs::msg::Cone cone : msg->cones) {
+                // std::cout << "(" << cone.location.x << ", " << cone.location.y << ")" << std::endl;
                 // landmark (cone) position in global frame
                 double glob_lm_x = x + cone.location.x * cos(theta) - cone.location.y * sin(theta);
                 double glob_lm_y = y + cone.location.x * sin(theta) + cone.location.y * cos(theta);
 
                 std::optional<int> associated_idx = find_associated_landmark_idx(this->pred_mu, glob_lm_x, glob_lm_y);
+
+                // if(associated_idx.has_value())
+                //     std::cout << associated_idx.value() << std::endl;
 
                 if(!associated_idx.has_value()) {
                     // new landmark
@@ -280,8 +297,12 @@ class EKFNode : public rclcpp::Node {
                     this->pred_mu(new_lm_idx, 0) = glob_lm_x;
                     this->pred_mu(new_lm_idx + 1, 0) = glob_lm_y;
 
-                    this->pred_cov(new_lm_idx, new_lm_idx) = 0.5;
-                    this->pred_cov(new_lm_idx+1, new_lm_idx+1) = 0.5;
+                    for(int i=0; i<=new_lm_idx+1; i++) {
+                        this->pred_cov(i, new_lm_idx) = 0.5;
+                        this->pred_cov(i, new_lm_idx+1) = 0.5;
+                        this->pred_cov(new_lm_idx, i) = 0.5;
+                        this->pred_cov(new_lm_idx+1, i) = 0.5;
+                    }
 
                     associated_idx = new_lm_idx;
                 }
@@ -295,11 +316,11 @@ class EKFNode : public rclcpp::Node {
                 Eigen::MatrixXd expected_z(2, 1);
                 Eigen::MatrixXd observation_jacobian = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());  // H
                 compute_expected_z(this->pred_mu, associated_idx.value(), expected_z, observation_jacobian);
-                std::cout << "H:\n" << observation_jacobian << "\n" << std::endl;
+                // std::cout << "H:\n" << observation_jacobian << "\n" << std::endl;
 
 
                 Eigen::MatrixXd K = this->pred_cov*observation_jacobian.transpose()*((observation_jacobian*this->pred_cov*observation_jacobian.transpose() + Q).inverse());
-                std::cout << "K:\n" << K << "\n" << std::endl;
+                // std::cout << "K:\n" << K << "\n" << std::endl;
 
                 this->pred_mu = this->pred_mu + K*(z - expected_z);
                 this->pred_cov = (Eigen::MatrixXd::Identity(K.rows(), observation_jacobian.cols()) - K*observation_jacobian) * this->pred_cov;
@@ -307,6 +328,8 @@ class EKFNode : public rclcpp::Node {
 
             this->mu = this->pred_mu;
             this->cov = this->pred_cov;
+
+            std::cout << "mu:\n" << this->mu << "\n" << std::endl;
         }
 
         void print_matricies() {
