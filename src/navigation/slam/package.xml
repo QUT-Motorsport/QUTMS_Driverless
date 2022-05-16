@@ -17,6 +17,7 @@
   <depend>driverless_msgs</depend>
   <depend>message_filters</depend>
   <depend>sim_translator</depend>
+  <depend>visualization_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

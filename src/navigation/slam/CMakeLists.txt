@@ -14,6 +14,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 add_executable(node_ekf src/node_ekf.cpp)
 target_include_directories(node_ekf PUBLIC
@@ -28,6 +29,7 @@ ament_target_dependencies(node_ekf
   ackermann_msgs
   driverless_msgs
   message_filters
+  visualization_msgs
 )
 
 

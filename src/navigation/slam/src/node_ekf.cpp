@@ -3,9 +3,14 @@
 #include <optional>
 #include <memory>
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
@@ -201,6 +206,7 @@ class EKFNode : public rclcpp::Node {
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
         rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
 
     public:
         EKFNode() : Node("ekf_node")
@@ -212,6 +218,8 @@ class EKFNode : public rclcpp::Node {
             detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
                 "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
             );
+
+            viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
 
             // initalise state and convariance with just the car state
             // (landmarks will be added when they are detected)
@@ -229,6 +237,7 @@ class EKFNode : public rclcpp::Node {
         }
 
         void sensed_control_callback(const sensor_msgs::msg::Imu::SharedPtr imu_msg) {
+            std::cout << "==============================================================" << std::endl;
             std::cout << "IMU Callback" << std::endl;
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
@@ -261,10 +270,13 @@ class EKFNode : public rclcpp::Node {
             // std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
             update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
 
-            std::cout << "pred mu:\n" << this->pred_mu << "\n" << std::endl;
+            // print_matricies();
+            print_state();
+            publish_visualisations(imu_msg->header.stamp);
         }
 
         void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
+            std::cout << "==============================================================" << std::endl;
             std::cout << "Cone Callback" << std::endl;
             
             // Q = ( σ_r^2  0         )
@@ -328,8 +340,9 @@ class EKFNode : public rclcpp::Node {
 
             this->mu = this->pred_mu;
             this->cov = this->pred_cov;
-
-            std::cout << "mu:\n" << this->mu << "\n" << std::endl;
+            // print_matricies();
+            print_state();
+            publish_visualisations(msg->header.stamp);
         }
 
         void print_matricies() {
@@ -337,6 +350,57 @@ class EKFNode : public rclcpp::Node {
             std::cout << "pred_cov:\n" << this->pred_cov << "\n" << std::endl;
             std::cout << "mu:\n" << this->mu << "\n" << std::endl;
             std::cout << "cov:\n" << this->cov << "\n" << std::endl;
+        }
+
+        void print_state() {
+            double xdot, ydot, x, y, theta;
+            double pred_xdot, pred_ydot, pred_x, pred_y, pred_theta;
+            get_full_state(this->mu, xdot, ydot, x, y, theta);
+            get_full_state(this->pred_mu, pred_xdot, pred_ydot, pred_x, pred_y, pred_theta);
+            std::cout << "PRED" << std::endl;
+            std::cout << "vel: " << pred_xdot << " " << pred_ydot << std::endl;
+            std::cout << "pos: " << pred_x << " " << pred_y << std::endl;
+            std::cout << "theta: " << pred_theta << std::endl;
+
+            std::cout << "\nUPDATED" << std::endl;
+            std::cout << "vel: " << xdot << " " << ydot << std::endl;
+            std::cout << "pos: " << x << " " << y << std::endl;
+            std::cout << "theta: " << theta << std::endl;
+        }
+
+        void publish_visualisations(builtin_interfaces::msg::Time stamp) {
+            double x, y, theta, pred_x, pred_y, pred_theta;
+            get_state(this->mu, x, y, theta);
+            get_state(this->pred_mu, pred_x, pred_y, pred_theta);
+            tf2::Quaternion pred_heading;
+            tf2::Quaternion heading;
+            pred_heading.setRPY(0, 0, pred_theta);
+            heading.setRPY(0, 0, theta);
+
+            auto marker_array = visualization_msgs::msg::MarkerArray();
+
+            // car
+            auto pred_car_marker = visualization_msgs::msg::Marker();
+            pred_car_marker.header.frame_id = "map";
+            pred_car_marker.header.stamp = stamp;
+            pred_car_marker.ns = "ekf";
+            pred_car_marker.id = -1;  // -1 represents predicted car
+            pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
+            pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
+            pred_car_marker.pose.position.x = pred_x;
+            pred_car_marker.pose.position.y = pred_y;
+            pred_car_marker.pose.position.z = 0;
+            tf2::convert(pred_car_marker.pose.orientation, pred_heading);
+            pred_car_marker.scale.x = 1.0;
+            pred_car_marker.scale.y = 0.2;
+            pred_car_marker.scale.z = 0.2;
+            pred_car_marker.color.r = 0.0f;
+            pred_car_marker.color.g = 1.0f;
+            pred_car_marker.color.b = 0.0f;
+            pred_car_marker.color.a = 1.0;
+
+            marker_array.markers.push_back(pred_car_marker);
+            this->viz_pub->publish(marker_array);
         }
 };
 
