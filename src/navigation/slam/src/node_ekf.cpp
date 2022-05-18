@@ -191,9 +191,9 @@ class EKFNode : public rclcpp::Node {
                 "gss", 10, std::bind(&EKFNode::sensed_control_callback, this, _1)
             );
 
-            // detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            //     "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
-            // );
+            detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
+                "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
+            );
 
             viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
 
@@ -213,8 +213,8 @@ class EKFNode : public rclcpp::Node {
         }
 
         void sensed_control_callback(const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg) {
-            // std::cout << "==============================================================" << std::endl;
-            // std::cout << "Vel Callback" << std::endl;
+            std::cout << "==============================================================" << std::endl;
+            std::cout << "Vel Callback" << std::endl;
 
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
@@ -226,7 +226,7 @@ class EKFNode : public rclcpp::Node {
             this->last_sensed_control_update = vel_msg->header.stamp;
 
             if(dt == 0) {
-                // std::cout << "dt zero" << std::endl;
+                std::cout << "dt zero" << std::endl;
                 return;
             }
 
@@ -375,25 +375,25 @@ class EKFNode : public rclcpp::Node {
             pred_car_marker.color.a = 1.0;
             marker_array.markers.push_back(pred_car_marker);
 
-            // auto car_marker = visualization_msgs::msg::Marker();
-            // car_marker.header.frame_id = "map";
-            // car_marker.header.stamp = stamp;
-            // car_marker.ns = "ekf";
-            // car_marker.id = -1;  // -1 represents predicted car
-            // car_marker.type = visualization_msgs::msg::Marker::ARROW;
-            // car_marker.action = visualization_msgs::msg::Marker::ADD;
-            // car_marker.pose.position.x = x;
-            // car_marker.pose.position.y = y;
-            // car_marker.pose.position.z = 0;
-            // tf2::convert(car_marker.pose.orientation, heading);
-            // car_marker.scale.x = 1.0;
-            // car_marker.scale.y = 0.2;
-            // car_marker.scale.z = 0.2;
-            // car_marker.color.r = 1.0f;
-            // car_marker.color.g = 0.0f;
-            // car_marker.color.b = 0.0f;
-            // car_marker.color.a = 1.0;
-            // marker_array.markers.push_back(car_marker);
+            auto car_marker = visualization_msgs::msg::Marker();
+            car_marker.header.frame_id = "map";
+            car_marker.header.stamp = stamp;
+            car_marker.ns = "ekf";
+            car_marker.id = -1;  // -1 represents predicted car
+            car_marker.type = visualization_msgs::msg::Marker::ARROW;
+            car_marker.action = visualization_msgs::msg::Marker::ADD;
+            car_marker.pose.position.x = x;
+            car_marker.pose.position.y = y;
+            car_marker.pose.position.z = 0;
+            tf2::convert(car_marker.pose.orientation, heading);
+            car_marker.scale.x = 1.0;
+            car_marker.scale.y = 0.2;
+            car_marker.scale.z = 0.2;
+            car_marker.color.r = 1.0f;
+            car_marker.color.g = 0.0f;
+            car_marker.color.b = 0.0f;
+            car_marker.color.a = 1.0;
+            marker_array.markers.push_back(car_marker);
 
             // int num_cones = this->muCAR_STATE_SIZE
             // for(int i=0; i<)
