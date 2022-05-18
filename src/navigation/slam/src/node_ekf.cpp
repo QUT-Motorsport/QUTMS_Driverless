@@ -395,8 +395,26 @@ class EKFNode : public rclcpp::Node {
             car_marker.color.a = 1.0;
             marker_array.markers.push_back(car_marker);
 
-            // int num_cones = this->muCAR_STATE_SIZE
-            // for(int i=0; i<)
+            for(int i=CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
+                auto cone_marker = visualization_msgs::msg::Marker();
+                cone_marker.header.frame_id = "map";
+                cone_marker.header.stamp = stamp;
+                cone_marker.ns = "ekf";
+                cone_marker.id = i;
+                cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
+                cone_marker.action = visualization_msgs::msg::Marker::ADD;
+                cone_marker.pose.position.x = mu(i, 0);
+                cone_marker.pose.position.y = mu(i+1, 0);
+                cone_marker.pose.position.z = 0;
+                cone_marker.scale.x = 0.2;
+                cone_marker.scale.y = 0.2;
+                cone_marker.scale.z = 0.5;
+                cone_marker.color.r = 0.0f;
+                cone_marker.color.g = 0.0f;
+                cone_marker.color.b = 1.0f;
+                cone_marker.color.a = 1.0;
+                marker_array.markers.push_back(cone_marker);
+            }
 
             this->viz_pub->publish(marker_array);
         }
