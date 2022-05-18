@@ -40,27 +40,45 @@ using std::placeholders::_1;
 
 
 
-// x, y, orientation
-#define CAR_STATE_SIZE 3
+// xdot, ydot, x, y, orientation
+#define CAR_STATE_SIZE 5
 // x, y
 #define LANDMARK_STATE_SIZE 2
 
 
 void get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
-    x = mu(0, 0);
-    y = mu(1, 0);
-    theta = mu(2, 0);
+    x = mu(2, 0);
+    y = mu(3, 0);
+    theta = mu(4, 0);
+}
+
+void get_full_state(
+    const Eigen::MatrixXd& mu,
+    double& xdot,
+    double& ydot,
+    double& x,
+    double& y,
+    double& theta
+) {
+    xdot = mu(0, 0);
+    ydot = mu(1, 0);
+    x = mu(2, 0);
+    y = mu(3, 0);
+    theta = mu(4, 0);
 }
 
 
-double compute_dt(rclcpp::Time start_, rclcpp::Time end_) {
-    return (end_-start_).nanoseconds()*1e-9;
+double compute_dt(builtin_interfaces::msg::Time start_, builtin_interfaces::msg::Time end_) {
+    uint32_t sec_dt = end_.sec - start_.sec;
+    uint32_t nsec_dt = end_.nanosec - start_.nanosec;
+
+    return (double)sec_dt + (double)nsec_dt*1e-9;
 }
 
 
 void compute_motion_model(
     double dt,
-    double forward_vel,
+    double forward_accel,
     double theta_dot,
     const Eigen::MatrixXd& mu,
     Eigen::MatrixXd& pred_mu_out,
@@ -68,21 +86,27 @@ void compute_motion_model(
 ) {
     // this function is g()
 
-    double x, y, theta;
-    get_state(mu, x, y, theta);
+    double xdot, ydot, x, y, theta;
+    get_full_state(mu, xdot, ydot, x, y, theta);
 
+    double dt2 = pow(dt, 2);
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
     // predict new xdot, ydot, x, y, theta position
-    pred_mu_out(0, 0) = x + forward_vel*dt*cos_theta; // x'
-    pred_mu_out(1, 0) = y + forward_vel*dt*sin_theta; // y'
-    pred_mu_out(2, 0) = theta + theta_dot*dt; // theta'
+    pred_mu_out(0, 0) = xdot + forward_accel*dt*cos_theta;  // xdot'
+    pred_mu_out(1, 0) = ydot + forward_accel*dt*sin_theta;  // ydot'
+    pred_mu_out(2, 0) = x + 0.5*forward_accel*dt2*cos_theta + xdot*dt;  // x'
+    pred_mu_out(3, 0) = y + 0.5*forward_accel*dt2*sin_theta + ydot*dt;  // y'
+    pred_mu_out(4, 0) = theta + theta_dot*dt;           // theta'
 
     // compute jacobian for the robot state (G_x)
-    jacobian_out << 1,  0, -forward_vel*dt*sin_theta,
-                    0,  1,  forward_vel*dt*cos_theta,
-                    0,  0,  2;
+    jacobian_out = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
+    jacobian_out << 1,  0,  0, 0, -forward_accel*dt*sin_theta,
+                    0,  1,  0, 0, forward_accel*dt*cos_theta,
+                    dt, 0,  1, 0, -0.5*forward_accel*dt2*sin_theta,
+                    0,  dt, 0, 1, -0.5*forward_accel*dt2*cos_theta,
+                    0,  0,  0, 0,               1;
 }
 
 void update_pred_motion_cov(
@@ -180,20 +204,20 @@ class EKFNode : public rclcpp::Node {
         Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
-        rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_sub;
+        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
         rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
 
     public:
         EKFNode() : Node("ekf_node")
         {
-            vel_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-                "gss", 10, std::bind(&EKFNode::sensed_control_callback, this, _1)
-            );
-
-            // detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            //     "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
+            // imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
+            //     "imu", 10, std::bind(&EKFNode::sensed_control_callback, this, _1)
             // );
+
+            detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
+                "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
+            );
 
             viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
 
@@ -212,21 +236,20 @@ class EKFNode : public rclcpp::Node {
             (void) msg;
         }
 
-        void sensed_control_callback(const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg) {
-            // std::cout << "==============================================================" << std::endl;
-            // std::cout << "Vel Callback" << std::endl;
-
+        void sensed_control_callback(const sensor_msgs::msg::Imu::SharedPtr imu_msg) {
+            std::cout << "==============================================================" << std::endl;
+            std::cout << "IMU Callback" << std::endl;
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
-                this->last_sensed_control_update = vel_msg->header.stamp;
+                this->last_sensed_control_update = imu_msg->header.stamp;
                 return;
             }
 
-            double dt = compute_dt(last_sensed_control_update.value(), vel_msg->header.stamp);
-            this->last_sensed_control_update = vel_msg->header.stamp;
+            double dt = compute_dt(last_sensed_control_update.value(), imu_msg->header.stamp);
+            this->last_sensed_control_update = imu_msg->header.stamp;
 
             if(dt == 0) {
-                // std::cout << "dt zero" << std::endl;
+                std::cout << "dt zero" << std::endl;
                 return;
             }
 
@@ -234,12 +257,12 @@ class EKFNode : public rclcpp::Node {
             // printf("dt: %f \n", dt);
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
-            // [vel_msg->twist.linear.x, vel_msg->twist.angular.z]
+            // [imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z]
             Eigen::MatrixXd motion_jacobian = Eigen::MatrixXd::Zero(CAR_STATE_SIZE, CAR_STATE_SIZE);  // G_x
             compute_motion_model(
                 dt,
-                vel_msg->twist.linear.x,
-                vel_msg->twist.angular.z,
+                imu_msg->linear_acceleration.x,
+                imu_msg->angular_velocity.z,
                 this->pred_mu,
                 this->pred_mu,
                 motion_jacobian
@@ -249,7 +272,7 @@ class EKFNode : public rclcpp::Node {
 
             // print_matricies();
             print_state();
-            publish_visualisations(vel_msg->header.stamp);
+            publish_visualisations(imu_msg->header.stamp);
         }
 
         void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
@@ -330,15 +353,17 @@ class EKFNode : public rclcpp::Node {
         }
 
         void print_state() {
-            double x, y, theta;
-            double pred_x, pred_y, pred_theta;
-            get_state(this->mu, x, y, theta);
-            get_state(this->pred_mu, pred_x, pred_y, pred_theta);
+            double xdot, ydot, x, y, theta;
+            double pred_xdot, pred_ydot, pred_x, pred_y, pred_theta;
+            get_full_state(this->mu, xdot, ydot, x, y, theta);
+            get_full_state(this->pred_mu, pred_xdot, pred_ydot, pred_x, pred_y, pred_theta);
             std::cout << "PRED" << std::endl;
+            std::cout << "vel: " << pred_xdot << " " << pred_ydot << std::endl;
             std::cout << "pos: " << pred_x << " " << pred_y << std::endl;
             std::cout << "theta: " << pred_theta << std::endl;
 
             std::cout << "\nUPDATED" << std::endl;
+            std::cout << "vel: " << xdot << " " << ydot << std::endl;
             std::cout << "pos: " << x << " " << y << std::endl;
             std::cout << "theta: " << theta << std::endl;
         }
@@ -355,45 +380,46 @@ class EKFNode : public rclcpp::Node {
             auto marker_array = visualization_msgs::msg::MarkerArray();
 
             // car
-            auto pred_car_marker = visualization_msgs::msg::Marker();
-            pred_car_marker.header.frame_id = "map";
-            pred_car_marker.header.stamp = stamp;
-            pred_car_marker.ns = "ekf";
-            pred_car_marker.id = -1;  // -1 represents predicted car
-            pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
-            pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
-            pred_car_marker.pose.position.x = pred_x;
-            pred_car_marker.pose.position.y = pred_y;
-            pred_car_marker.pose.position.z = 0;
-            tf2::convert(pred_heading, pred_car_marker.pose.orientation);
-            pred_car_marker.scale.x = 1.0;
-            pred_car_marker.scale.y = 0.2;
-            pred_car_marker.scale.z = 0.2;
-            pred_car_marker.color.r = 0.0f;
-            pred_car_marker.color.g = 1.0f;
-            pred_car_marker.color.b = 0.0f;
-            pred_car_marker.color.a = 1.0;
-            marker_array.markers.push_back(pred_car_marker);
+            // auto pred_car_marker = visualization_msgs::msg::Marker();
+            // pred_car_marker.header.frame_id = "map";
+            // pred_car_marker.header.stamp = stamp;
+            // pred_car_marker.ns = "ekf";
+            // pred_car_marker.id = -1;  // -1 represents predicted car
+            // pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
+            // pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
+            // pred_car_marker.pose.position.x = pred_x;
+            // pred_car_marker.pose.position.y = pred_y;
+            // pred_car_marker.pose.position.z = 0;
+            // tf2::convert(pred_heading, pred_car_marker.pose.orientation);
+            // pred_car_marker.scale.x = 1.0;
+            // pred_car_marker.scale.y = 0.2;
+            // pred_car_marker.scale.z = 0.2;
+            // pred_car_marker.color.r = 0.0f;
+            // pred_car_marker.color.g = 1.0f;
+            // pred_car_marker.color.b = 0.0f;
+            // pred_car_marker.color.a = 1.0;
 
-            // auto car_marker = visualization_msgs::msg::Marker();
-            // car_marker.header.frame_id = "map";
-            // car_marker.header.stamp = stamp;
-            // car_marker.ns = "ekf";
-            // car_marker.id = -1;  // -1 represents predicted car
-            // car_marker.type = visualization_msgs::msg::Marker::ARROW;
-            // car_marker.action = visualization_msgs::msg::Marker::ADD;
-            // car_marker.pose.position.x = x;
-            // car_marker.pose.position.y = y;
-            // car_marker.pose.position.z = 0;
-            // tf2::convert(car_marker.pose.orientation, heading);
-            // car_marker.scale.x = 1.0;
-            // car_marker.scale.y = 0.2;
-            // car_marker.scale.z = 0.2;
-            // car_marker.color.r = 1.0f;
-            // car_marker.color.g = 0.0f;
-            // car_marker.color.b = 0.0f;
-            // car_marker.color.a = 1.0;
-            // marker_array.markers.push_back(car_marker);
+            auto car_marker = visualization_msgs::msg::Marker();
+            car_marker.header.frame_id = "map";
+            car_marker.header.stamp = stamp;
+            car_marker.ns = "ekf";
+            car_marker.id = -1;  // -1 represents predicted car
+            car_marker.type = visualization_msgs::msg::Marker::ARROW;
+            car_marker.action = visualization_msgs::msg::Marker::ADD;
+            car_marker.pose.position.x = x;
+            car_marker.pose.position.y = y;
+            car_marker.pose.position.z = 0;
+            tf2::convert(car_marker.pose.orientation, heading);
+            car_marker.scale.x = 1.0;
+            car_marker.scale.y = 0.2;
+            car_marker.scale.z = 0.2;
+            car_marker.color.r = 1.0f;
+            car_marker.color.g = 0.0f;
+            car_marker.color.b = 0.0f;
+            car_marker.color.a = 1.0;
+
+            // marker_array.markers.push_back(pred_car_marker);
+            marker_array.markers.push_back(car_marker);
 
             // int num_cones = this->muCAR_STATE_SIZE
             // for(int i=0; i<)
