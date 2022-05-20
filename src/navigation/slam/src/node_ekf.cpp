@@ -18,6 +18,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "colours.h"
+
+
 using std::placeholders::_1;
 
 
@@ -180,6 +183,7 @@ class EKFNode : public rclcpp::Node {
         Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
         std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
+        std::optional<builtin_interfaces::msg::Time> last_cone_update;
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_sub;
         rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
@@ -255,6 +259,20 @@ class EKFNode : public rclcpp::Node {
         void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
             std::cout << "==============================================================" << std::endl;
             std::cout << "Cone Callback" << std::endl;
+
+            // catch first call where we have no "last update time"
+            if(!this->last_cone_update.has_value()) {
+                this->last_cone_update = msg->header.stamp;
+                return;
+            }
+
+            double dt = compute_dt(last_cone_update.value(), msg->header.stamp);
+            this->last_cone_update = msg->header.stamp;
+
+            if(dt == 0) {
+                std::cout << "dt zero" << std::endl;
+                return;
+            }
             
             // Q = ( σ_r^2  0         )
             //     ( 0      σ_theta^2 )
@@ -265,16 +283,43 @@ class EKFNode : public rclcpp::Node {
             double x, y, theta;
             get_state(this->pred_mu, x, y, theta);
 
+            auto cones = visualization_msgs::msg::MarkerArray();
+            int i = 0;
+
             for(driverless_msgs::msg::Cone cone : msg->cones) {
                 // std::cout << "(" << cone.location.x << ", " << cone.location.y << ")" << std::endl;
                 // landmark (cone) position in global frame
                 double glob_lm_x = x + cone.location.x * cos(theta) - cone.location.y * sin(theta);
                 double glob_lm_y = y + cone.location.x * sin(theta) + cone.location.y * cos(theta);
+                
 
-                std::optional<int> associated_idx = find_associated_landmark_idx(this->pred_mu, glob_lm_x, glob_lm_y);
+                std::optional<int> associated_idx = find_associated_landmark_idx(this->mu, glob_lm_x, glob_lm_y);
+
+                // =============================================================
+                auto cone_marker = visualization_msgs::msg::Marker();
+                cone_marker.header.frame_id = "map";
+                cone_marker.header.stamp = msg->header.stamp;
+                cone_marker.ns = "ekf_associated";
+                cone_marker.id = i;
+                cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
+                cone_marker.action = visualization_msgs::msg::Marker::ADD;
+                cone_marker.pose.position.x = glob_lm_x;
+                cone_marker.pose.position.y = glob_lm_y;
+                cone_marker.pose.position.z = 0;
+                cone_marker.scale.x = 0.2;
+                cone_marker.scale.y = 0.2;
+                cone_marker.scale.z = 0.5;
+                cone_marker.color.r = colours[associated_idx.value_or(700)].r;
+                cone_marker.color.g = colours[associated_idx.value_or(700)].g;
+                cone_marker.color.b = colours[associated_idx.value_or(700)].b;
+                cone_marker.color.a = 0.5;
+                cones.markers.push_back(cone_marker);
+                i++;
+                // =============================================================
 
                 // if(associated_idx.has_value())
                 //     std::cout << associated_idx.value() << std::endl;
+
 
                 if(!associated_idx.has_value()) {
                     // new landmark
@@ -315,11 +360,14 @@ class EKFNode : public rclcpp::Node {
                 this->pred_cov = (Eigen::MatrixXd::Identity(K.rows(), observation_jacobian.cols()) - K*observation_jacobian) * this->pred_cov;
             }
 
+            this->viz_pub->publish(cones);
+
             this->mu = this->pred_mu;
             this->cov = this->pred_cov;
             // print_matricies();
             print_state();
             publish_visualisations(msg->header.stamp);
+            std::cout << "n cones:" << (this->mu.rows() - CAR_STATE_SIZE) / LANDMARK_STATE_SIZE << "\n" << std::endl;
         }
 
         void print_matricies() {
@@ -409,9 +457,9 @@ class EKFNode : public rclcpp::Node {
                 cone_marker.scale.x = 0.2;
                 cone_marker.scale.y = 0.2;
                 cone_marker.scale.z = 0.5;
-                cone_marker.color.r = 0.0f;
-                cone_marker.color.g = 0.0f;
-                cone_marker.color.b = 1.0f;
+                cone_marker.color.r = colours[i].r;
+                cone_marker.color.g = colours[i].g;
+                cone_marker.color.b = colours[i].b;
                 cone_marker.color.a = 1.0;
                 marker_array.markers.push_back(cone_marker);
             }
