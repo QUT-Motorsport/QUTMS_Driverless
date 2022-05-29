@@ -303,7 +303,7 @@ def main(args=sys.argv[1:]):
     REGRESS_BETWEEN_BINS = True
     
     # Maximum distance between point and line to be considered part of ground plane
-    T_D_GROUND = 0.1
+    T_D_GROUND = 0.15 # changed from 0.1
 
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
@@ -354,7 +354,7 @@ def main(args=sys.argv[1:]):
         elif opt == '--loglevel':
             loglevel = arg
         elif opt == '--lidar_range':
-            LIDAR_RANGE = int(arg)
+            LIDAR_RANGE = float(arg)
         elif opt == '--delta_alpha':
             DELTA_ALPHA = arg
         elif opt == '--bin_size':
@@ -368,7 +368,7 @@ def main(args=sys.argv[1:]):
         elif opt == '--t_rmse':
             T_RMSE = arg
         elif opt == '--t_d_ground':
-            T_D_GROUND = arg
+            T_D_GROUND = float(arg)
         elif opt == '--t_d_max':
             T_D_MAX = arg
         elif opt == '--import_data':
@@ -433,6 +433,19 @@ def main(args=sys.argv[1:]):
     if data_path != None:
         point_cloud = np.loadtxt(data_path + "/point_cloud.txt", dtype=np.dtype([('x', np.float32), ('y', np.float32), ('z', np.float32), ('intensity', np.float32), ('ring', np.uint16)]))
         point_norms = np.loadtxt(data_path + "/point_norms.txt")
+        ################################
+        print("WARNING: YEETING POINTS")
+        point_cloud = np.delete(point_cloud, np.where(point_cloud['y'] > 3))
+        point_cloud = np.delete(point_cloud, np.where(point_cloud['y'] < -10))
+        
+        point_norms = np.linalg.norm([point_cloud['x'], point_cloud['y']], axis=0)
+
+        # Creating mask to remove points outside of range and norms of 0
+        mask = (point_norms <= 20) & (point_norms != 0)
+
+        # Applying mask
+        point_norms = point_norms[mask]
+        ##################################
         point_count = point_cloud.shape[0]
         timestamp = create_timestamp()
 
