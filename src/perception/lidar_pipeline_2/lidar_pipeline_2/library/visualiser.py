@@ -441,6 +441,32 @@ def plot_labelled_points_3D(point_cloud, point_labels, ground_plane, DELTA_ALPHA
         animate_figure("05_LabelledPoints_Animated", ax, figure_timestamp)
 
 
+def plot_object_points_2D(object_points):
+    fig, ax = init_plot_2D("Object Points", "X", "Y")
+    plot = ax.scatter(object_points[:, 0], object_points[:, 1], c=red_hex, marker='s', s=(72./fig.dpi)**2)
+
+
+def plot_object_centers_2D(object_points, object_centers):
+    fig, ax = init_plot_2D("Object Centers", "X", "Y")
+    plot = ax.scatter(object_points[:, 0], object_points[:, 1], c=red_hex, marker='s', s=(72./fig.dpi)**2)
+    plot = ax.scatter(object_centers[:, 0], object_centers[:, 1], c=mint_hex, marker='x')
+
+
+def plot_reconstructed_objects_2D(reconstructed_objects):
+    fig, ax = init_plot_2D("Reconstructed Objects", "X", "Y")
+    
+    for reconstructed_object in reconstructed_objects:
+        plot = ax.scatter(reconstructed_object[:, 0], reconstructed_object[:, 1], c=red_hex, marker='s', s=(72./fig.dpi)**2)
+
+
+def plot_identified_cones_2D(point_cloud, identified_cones):
+    fig, ax = init_plot_2D("Identified Cones", "X", "Y")
+    plot = ax.scatter(point_cloud['x'], point_cloud['y'], c=point_cloud['intensity']/255, cmap=plt.cm.gist_rainbow, marker='s', s=(72./fig.dpi)**2, vmin=0.0, vmax=1.0)
+    
+    for cone in identified_cones:
+        plot = ax.scatter(cone[0], cone[1], c=mint_hex, marker='.')
+
+
 def set_axes_equal(ax):
     '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
     cubes as cubes, etc..  This is one possible solution to Matplotlib's
