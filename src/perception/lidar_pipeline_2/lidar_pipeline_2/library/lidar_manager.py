@@ -92,8 +92,8 @@ def detect_cones(
     end_time = time.perf_counter()
     
     if create_figures:
-        vis.plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
-        vis.plot_ground_plane_3D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        # vis.plot_ground_plane_2D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp)
+        # vis.plot_ground_plane_3D(ground_plane, split_prototype_segments, prototype_segments, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
     
     # print(ground_plane)
@@ -108,7 +108,7 @@ def detect_cones(
     
     if create_figures:
         vis.plot_labelled_points_2D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp)
-        vis.plot_labelled_points_3D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures)
+        # vis.plot_labelled_points_3D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
 
     LOGGER.info(f'Points labelled in {end_time - start_time}s')
@@ -117,11 +117,17 @@ def detect_cones(
     object_points = np.column_stack((point_cloud['x'][seg_bin_z_ind][point_labels], point_cloud['y'][seg_bin_z_ind][point_labels]))
     end_time = time.perf_counter()
     
+    if create_figures:
+        vis.plot_object_points_2D(object_points)
+    
     LOGGER.info(f'Object points extracted and stacked in {end_time - start_time}s')
     
     start_time = time.perf_counter()
     object_centers = op.group_points(object_points)
     end_time = time.perf_counter()
+    
+    if create_figures:
+        vis.plot_object_centers_2D(object_points, object_centers)
     
     LOGGER.info(f'Object centers computed in {end_time - start_time}s')
 
@@ -129,12 +135,18 @@ def detect_cones(
     reconstructed_objects = op.reconstruct_objects(np.column_stack((point_cloud['x'], point_cloud['y'], point_cloud['z'])), object_centers, DELTA_ALPHA, 0.4, BIN_SIZE)
     end_time = time.perf_counter()
     
+    if create_figures:
+        vis.plot_reconstructed_objects_2D(reconstructed_objects)
+    
     LOGGER.info(f'Objects reconstructed in {end_time - start_time}s')
     
     start_time = time.perf_counter()
     #identified_cones = op.cone_filter(reconstructed_objects)
     identified_cones = ihateuni.get_cones(reconstructed_objects)
     end_time = time.perf_counter()
+    
+    if create_figures:
+        vis.plot_identified_cones_2D(point_cloud, identified_cones)
     
     LOGGER.info(f'Objects filtered for cones in {end_time - start_time}s')
 

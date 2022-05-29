@@ -5,7 +5,7 @@ from sklearn.cluster import DBSCAN
 
 def group_points(object_points):
     EPSILON = 0.4  # Neighbourhood Scan Size
-    MIN_POINTS = 3 # Number of points required to form a neighbourhood
+    MIN_POINTS = 2 # Number of points required to form a neighbourhood
 
     # Cluster object points
     clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(object_points)
@@ -41,7 +41,7 @@ def reconstruct_objects(point_cloud, object_centers, DELTA_ALPHA, CONE_DIAM, BIN
         diff = point_cloud - np.append(object_centers[i], 0)
         norms = np.linalg.norm(diff, axis=1)
 
-        reconstructed_objects.append(point_cloud[norms <= CONE_DIAM]) 
+        reconstructed_objects.append(point_cloud[norms <= CONE_DIAM/2]) 
     
     return reconstructed_objects
 
