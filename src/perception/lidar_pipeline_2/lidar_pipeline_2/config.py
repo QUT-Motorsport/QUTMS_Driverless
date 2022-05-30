@@ -11,23 +11,12 @@ class general_config:
         self._animate_figures = False
         self._model_car = False
         self._export_data = False
-
-    # General
-    loglevel = 'info' # 
-    print_logs = False # Printing logs to terminal
-    data_path = None # Path to data to import and use
-    create_figures = False # Creates and saves plots
-    show_figures = False # Creates, saves and displays plots to the screen    
-    animate_figures = False # Creates animations of figures
-    model_car = False # Models the car within the figures
-    export_data = False # Export numpy point clouds to text file
     
     @property
     def pc_node(self):
-        """ Point Cloud source
-
+        """ 
         Returns:
-            _type_: _description_
+            str: Point Cloud source
         """
         return self._pc_node
     
@@ -37,108 +26,99 @@ class general_config:
     
     @property
     def loglevel(self):
-        """ Level of detail of logs
-
+        """
         Returns:
-            _type_: _description_
+            str: Level of detail of logs
         """
         return self._loglevel
     
-    @pc_node.setter
+    @loglevel.setter
     def loglevel(self, value):
         self._loglevel = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def print_logs(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Printing logs to terminal
+        """
+        return self._print_logs
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @print_logs.setter
+    def print_logs(self, value):
+        self._print_logs = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def create_figures(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Creates and saves plots
+        """
+        return self._create_figures
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @create_figures.setter
+    def create_figures(self, value):
+        self._create_figures = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def show_figures(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Creates, saves and displays plots to the screen
+        """
+        return self._show_figures
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @show_figures.setter
+    def show_figures(self, value):
+        self._show_figures = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def animate_figures(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Creates animations of figures
+        """
+        return self._animate_figures
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @animate_figures.setter
+    def animate_figures(self, value):
+        self._animate_figures = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def model_car(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Models the car within the figures
+        """
+        return self._model_car
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @model_car.setter
+    def model_car(self, value):
+        self._model_car = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def export_data(self):
         """
-        return self.pc_node
+        Returns:
+            bool: Export numpy point clouds to text file
+        """
+        return self._export_data
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
+    @export_data.setter
+    def export_data(self, value):
+        self._export_data = value
     
     @property
-    def pc_node(self):
-        """ Point Cloud source
-
-        Returns:
-            _type_: _description_
+    def data_path(self):
         """
-        return self.pc_node
+        Returns:
+            str: Path to data to import and use
+        """
+        return self._data_path
     
-    @pc_node.setter
-    def pc_node(self, value):
-        self.pc_node = value
-    
+    @data_path.setter
+    def data_path(self, value):
+        self._data_path = value
     
 
 class lidar_config:
