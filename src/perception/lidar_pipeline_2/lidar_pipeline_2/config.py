@@ -22,7 +22,7 @@ class general_config:
     
     @pc_node.setter
     def pc_node(self, value):
-        self.pc_node = value
+        self._pc_node = value
     
     @property
     def loglevel(self):
@@ -122,14 +122,134 @@ class general_config:
     
 
 class lidar_config:
-    # Algorithm
-    LIDAR_RANGE = 20 # Max range of points to process (metres)
-    DELTA_ALPHA = (2 * math.pi) / 128 # Angle between segments
-    BIN_SIZE = 0.14 # Size of bins
-    T_M = (2 * math.pi) / 152 # Max angle that will be considered for ground lines
-    T_M_SMALL = 0 # Angle considered to be a small slope
-    T_B = 0.1 # Max y-intercept for a ground plane line
-    T_RMSE = 0.2 # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
-    REGRESS_BETWEEN_BINS = True # Determines if regression for ground lines should occur between two neighbouring bins when they're described by different lines
-    T_D_GROUND = 0.15 # Maximum distance between point and line to be considered part of ground plane # changed from 0.1
-    T_D_MAX = 100 # Maximum distance a point can be from the origin to even be considered as a ground point. Otherwise it's labelled as a non-ground point.
+    def __init__(self):
+        self._LIDAR_RANGE = 20
+        self._DELTA_ALPHA = (2 * math.pi) / 128
+        self._BIN_SIZE = 0.14
+        self._T_M = (2 * math.pi) / 152
+        self._T_M_SMALL = 0
+        self._T_B = 0.1
+        self._T_RMSE = 0.2
+        self._REGRESS_BETWEEN_BINS = True
+        self._T_D_GROUND = 0.15
+        self._T_D_MAX = 100
+
+    @property
+    def LIDAR_RANGE(self):
+        """ 
+        Returns:
+            float: Max range of points to process (metres)
+        """
+        return self._LIDAR_RANGE
+    
+    @LIDAR_RANGE.setter
+    def LIDAR_RANGE(self, value):
+        self._LIDAR_RANGE = value
+    
+    @property
+    def DELTA_ALPHA(self):
+        """ 
+        Returns:
+            float: Angle between segments
+        """
+        return self._DELTA_ALPHA
+    
+    @DELTA_ALPHA.setter
+    def DELTA_ALPHA(self, value):
+        self._DELTA_ALPHA = value
+    
+    @property
+    def BIN_SIZE(self):
+        """ 
+        Returns:
+            float: Size of bins
+        """
+        return self._BIN_SIZE
+    
+    @BIN_SIZE.setter
+    def BIN_SIZE(self, value):
+        self._BIN_SIZE = value
+    
+    @property
+    def T_M(self):
+        """ 
+        Returns:
+            float: Max angle that will be considered for ground lines
+        """
+        return self._T_M
+    
+    @T_M.setter
+    def T_M(self, value):
+        self._T_M = value
+    
+    @property
+    def T_M_SMALL(self):
+        """ 
+        Returns:
+            float: Angle considered to be a small slope
+        """
+        return self._T_M_SMALL
+    
+    @T_M_SMALL.setter
+    def T_M_SMALL(self, value):
+        self._T_M_SMALL = value
+    
+    @property
+    def T_B(self):
+        """ 
+        Returns:
+            float: Max y-intercept for a ground plane line
+        """
+        return self._T_B
+    
+    @T_B.setter
+    def T_B(self, value):
+        self._T_B = value
+
+    @property
+    def T_RMSE(self):
+        """ 
+        Returns:
+            float: Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
+        """
+        return self._T_RMSE
+    
+    @T_RMSE.setter
+    def T_RMSE(self, value):
+        self._T_RMSE = value
+    
+    @property
+    def REGRESS_BETWEEN_BINS(self):
+        """ 
+        Returns:
+            float: Determines if regression for ground lines should occur between two neighbouring bins when they're described by different lines
+        """
+        return self._REGRESS_BETWEEN_BINS
+    
+    @REGRESS_BETWEEN_BINS.setter
+    def REGRESS_BETWEEN_BINS(self, value):
+        self._REGRESS_BETWEEN_BINS = value
+    
+    @property
+    def T_D_GROUND(self):
+        """ 
+        Returns:
+            float: Maximum distance between point and line to be considered part of ground plane # changed from 0.1
+        """
+        return self._T_D_GROUND
+    
+    @T_D_GROUND.setter
+    def T_D_GROUND(self, value):
+        self._T_D_GROUND = value
+    
+    @property
+    def T_D_MAX(self):
+        """ 
+        Returns:
+            float: Maximum distance a point can be from the origin to even be considered as a ground point. Otherwise it's labelled as a non-ground point
+        """
+        return self._T_D_MAX
+    
+    @T_D_MAX.setter
+    def T_D_MAX(self, value):
+        self._T_D_MAX = value
