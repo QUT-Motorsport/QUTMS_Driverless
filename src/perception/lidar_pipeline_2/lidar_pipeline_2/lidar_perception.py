@@ -24,6 +24,8 @@ import sys
 import time
 import math
 
+from . import config
+
 # Ka blamo
 # import ROS2 libraries
 import rclpy
@@ -267,6 +269,9 @@ class ConeSensingNode(Node):
 
 
 def main(args=sys.argv[1:]):
+    general_config = config.general_config()
+    lidar_config = config.lidar_config()
+    
     # Point cloud source
     pc_node = '/velodyne_points'
 
