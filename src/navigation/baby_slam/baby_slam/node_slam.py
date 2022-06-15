@@ -145,7 +145,8 @@ def update(track: np.ndarray,
 
 class EKFSlam(Node):
     R = np.diag([0.01, 0.01, 0.01]) # very confident of odom (cause its OP)
-    Q = np.diag([1, 0.5])**2 # detections are a big meh
+    Q = np.diag([1, 0.5])**2 # detections are a big mehr
+    radius = 4.5 # nn kdtree nearch
 
     def __init__(self):
         super().__init__("ekf_slam")
@@ -206,7 +207,7 @@ class EKFSlam(Node):
             if len(same_track) != 0: # this spline has been populated with cones
                 neighbourhood = KDTree(same_track[:,:2], leaf_size=5)
                 check = np.reshape([mapx,mapy], (1,-1)) # turn into a 2D row array
-                ind = neighbourhood.query_radius(check, r=4.5) # check neighbours in radius
+                ind = neighbourhood.query_radius(check, self.radius) # check neighbours in radius
                 close = ind[0] # index from the single colour list
                 if close.size != 0: 
                     on_map = True
