@@ -438,7 +438,7 @@ class EKFNode : public rclcpp::Node {
             car_marker.pose.position.x = x;
             car_marker.pose.position.y = y;
             car_marker.pose.position.z = 0;
-            tf2::convert(car_marker.pose.orientation, heading);
+            tf2::convert(heading, car_marker.pose.orientation);
             car_marker.scale.x = 1.0;
             car_marker.scale.y = 0.2;
             car_marker.scale.z = 0.2;
