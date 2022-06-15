@@ -48,7 +48,7 @@ class ZedNode(Node):
         self.rgb_img_info_publisher.publish(self.camera_info)
         self.rgb_img_publisher.publish(colour_msg)
         self.depth_img_publisher.publish(self.depth_msg)
-        self.get_logger().info("Published RBG, Info, Depth")
+        self.get_logger().debug("Published RBG, Info, Depth")
 
 
 def main(args=None):
