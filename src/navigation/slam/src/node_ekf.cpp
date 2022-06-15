@@ -98,7 +98,12 @@ void update_pred_motion_cov(
     Eigen::MatrixXd G = Eigen::MatrixXd::Identity(cov.rows(), cov.cols());
     G.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = motion_jacobian;
 
-    pred_cov_out = G * cov * G.transpose();
+    // R is just identity for car state atm
+    Eigen::MatrixXd R = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());
+    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 50;
+
+    pred_cov_out = G * cov * G.transpose() + R;
+    // pred_cov_out = G * cov * G.transpose();
 }
 
 std::optional<int> find_associated_landmark_idx(
@@ -277,8 +282,8 @@ class EKFNode : public rclcpp::Node {
             // Q = ( σ_r^2  0         )
             //     ( 0      σ_theta^2 )
             Eigen::Matrix2d Q;
-            Q << 10,   0,
-                 0 ,  10;
+            Q << 50,   0,
+                 0 ,  50;
 
             double x, y, theta;
             get_state(this->pred_mu, x, y, theta);
