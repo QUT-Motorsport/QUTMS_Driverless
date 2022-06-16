@@ -109,7 +109,7 @@ void update_pred_motion_cov(
 
     // R is just identity for car state atm
     Eigen::MatrixXd R = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());
-    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 10;
+    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 0.1;
 
     pred_cov_out = G * cov * G.transpose() + R;
     // pred_cov_out = G * cov * G.transpose();
@@ -122,7 +122,7 @@ std::optional<int> find_associated_landmark_idx(
 ) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 2*2;  // m, threshold^2
+    double min_distance = 3*3;  // m, threshold^2
     std::optional<int> idx = {};
 
     for(int i=CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
