@@ -49,6 +49,15 @@ using std::placeholders::_1;
 #define LANDMARK_STATE_SIZE 2
 
 
+double wrap_pi(double x) {
+    // [-pi, pi)
+    double m = fmod(x+M_PI, M_PI*2);
+    if(m < 0) {
+        m += M_PI*2;
+    }
+    return m - M_PI;
+}
+
 void get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
     x = mu(0, 0);
     y = mu(1, 0);
@@ -100,7 +109,7 @@ void update_pred_motion_cov(
 
     // R is just identity for car state atm
     Eigen::MatrixXd R = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());
-    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 50;
+    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 10;
 
     pred_cov_out = G * cov * G.transpose() + R;
     // pred_cov_out = G * cov * G.transpose();
@@ -113,7 +122,7 @@ std::optional<int> find_associated_landmark_idx(
 ) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 1;  // m, threshold
+    double min_distance = 2*2;  // m, threshold^2
     std::optional<int> idx = {};
 
     for(int i=CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -122,7 +131,7 @@ std::optional<int> find_associated_landmark_idx(
         double i_x = mu(i, 0);
         double i_y = mu(i+1, 0);
         
-        double distance = sqrt(pow(search_x - i_x, 2) + pow(search_y - i_y, 2));
+        double distance = (search_x - i_x)*(search_x - i_x) + (search_y - i_y)*(search_y - i_y);
         if(distance < min_distance) {
             min_distance = distance;
             idx = i;
@@ -154,7 +163,7 @@ void compute_expected_z(
     // z = (  range  )
     //     ( bearing )
     expected_z_out(0, 0) = sqrt(q);
-    expected_z_out(1, 0) = atan2(dy, dx) - theta;
+    expected_z_out(1, 0) = wrap_pi(atan2(dy, dx) - theta);
 
     Eigen::MatrixXd Fx = Eigen::MatrixXd::Zero(CAR_STATE_SIZE + LANDMARK_STATE_SIZE, mu.rows());
     Fx.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
@@ -201,7 +210,7 @@ class EKFNode : public rclcpp::Node {
             );
 
             detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-                "sim_translator/cone_detection", 1, std::bind(&EKFNode::cone_detection_callback, this, _1)
+                "sim_translator/cone_detection", 10, std::bind(&EKFNode::cone_detection_callback, this, _1)
             );
 
             viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
@@ -222,9 +231,6 @@ class EKFNode : public rclcpp::Node {
         }
 
         void sensed_control_callback(const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg) {
-            std::cout << "==============================================================" << std::endl;
-            std::cout << "Vel Callback" << std::endl;
-
             // catch first call where we have no "last update time"
             if(!this->last_sensed_control_update.has_value()) {
                 this->last_sensed_control_update = vel_msg->header.stamp;
@@ -235,12 +241,11 @@ class EKFNode : public rclcpp::Node {
             this->last_sensed_control_update = vel_msg->header.stamp;
 
             if(dt == 0) {
-                std::cout << "dt zero" << std::endl;
+                // std::cout << "dt zero" << std::endl;
                 return;
             }
 
-            // printf("U: %f %f \n", imu_msg->linear_acceleration.x, imu_msg->angular_velocity.z);
-            // printf("dt: %f \n", dt);
+            // printf("U: %f %f \n", vel_msg->twist.linear.x, vel_msg->twist.angular.z);
 
             // u vector doesnt really need to be constructed, but the concept lives here as:
             // [vel_msg->twist.linear.x, vel_msg->twist.angular.z]
@@ -256,15 +261,13 @@ class EKFNode : public rclcpp::Node {
             // std::cout << "motion jacobian:\n" << motion_jacobian << "\n" << std::endl;
             update_pred_motion_cov(motion_jacobian, this->pred_cov, this->pred_cov);
 
+            std::cout << "Vel Callback" << std::endl;
             // print_matricies();
             print_state();
             publish_visualisations(vel_msg->header.stamp);
         }
 
         void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
-            std::cout << "==============================================================" << std::endl;
-            std::cout << "Cone Callback" << std::endl;
-
             // catch first call where we have no "last update time"
             if(!this->last_cone_update.has_value()) {
                 this->last_cone_update = msg->header.stamp;
@@ -275,56 +278,66 @@ class EKFNode : public rclcpp::Node {
             this->last_cone_update = msg->header.stamp;
 
             if(dt == 0) {
-                std::cout << "dt zero" << std::endl;
+                // std::cout << "dt zero" << std::endl;
+                return;
+            }
+
+            if(
+                !this->last_sensed_control_update.has_value() ||
+                compute_dt(last_sensed_control_update.value(), last_cone_update.value()) < 0
+            ) {
+                // std::cout << "!!!!! sync !!!!!" << std::endl;
                 return;
             }
             
             // Q = ( σ_r^2  0         )
             //     ( 0      σ_theta^2 )
             Eigen::Matrix2d Q;
-            Q << 50,   0,
-                 0 ,  50;
+            Q << 100,   0,
+                 0 ,  100;
 
             double x, y, theta;
             get_state(this->pred_mu, x, y, theta);
 
-            auto cones = visualization_msgs::msg::MarkerArray();
-            int i = 0;
+            double sin_theta = sin(theta);
+            double cos_theta = cos(theta);
+
+            // // =========================================================================================================
+            // auto cones = visualization_msgs::msg::MarkerArray();
+            // int i = 0;
+            // for(driverless_msgs::msg::Cone cone : msg->cones) {
+            //     double glob_lm_x = x + cone.location.x * cos_theta - cone.location.y * sin_theta;
+            //     double glob_lm_y = y + cone.location.x * sin_theta + cone.location.y * cos_theta;
+            //     auto cone_marker = visualization_msgs::msg::Marker();
+            //     cone_marker.header.frame_id = "map";
+            //     cone_marker.header.stamp = msg->header.stamp;
+            //     cone_marker.ns = "ekf_associated";
+            //     cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
+            //     cone_marker.action = visualization_msgs::msg::Marker::ADD;
+            //     cone_marker.pose.position.x = glob_lm_x;
+            //     cone_marker.pose.position.y = glob_lm_y;
+            //     cone_marker.scale.x = 0.2;
+            //     cone_marker.scale.y = 0.2;
+            //     cone_marker.scale.z = 0.25;
+
+            //     cone_marker.id = 10000 + i;
+            //     cone_marker.pose.position.z = 0;
+            //     cone_marker.color.r = 0.05*(i+1);
+            //     cone_marker.color.g = 0;
+            //     cone_marker.color.b = 0;
+            //     cone_marker.color.a = 1;
+            //     cones.markers.push_back(cone_marker);
+            //     i+=1;
+
+            //     this->viz_pub->publish(cones);
+            // }
 
             for(driverless_msgs::msg::Cone cone : msg->cones) {
-                // std::cout << "(" << cone.location.x << ", " << cone.location.y << ")" << std::endl;
                 // landmark (cone) position in global frame
-                double glob_lm_x = x + cone.location.x * cos(theta) - cone.location.y * sin(theta);
-                double glob_lm_y = y + cone.location.x * sin(theta) + cone.location.y * cos(theta);
-                
+                double glob_lm_x = x + cone.location.x * cos_theta - cone.location.y * sin_theta;
+                double glob_lm_y = y + cone.location.x * sin_theta + cone.location.y * cos_theta;
 
                 std::optional<int> associated_idx = find_associated_landmark_idx(this->mu, glob_lm_x, glob_lm_y);
-
-                // =============================================================
-                auto cone_marker = visualization_msgs::msg::Marker();
-                cone_marker.header.frame_id = "map";
-                cone_marker.header.stamp = msg->header.stamp;
-                cone_marker.ns = "ekf_associated";
-                cone_marker.id = i;
-                cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
-                cone_marker.action = visualization_msgs::msg::Marker::ADD;
-                cone_marker.pose.position.x = glob_lm_x;
-                cone_marker.pose.position.y = glob_lm_y;
-                cone_marker.pose.position.z = 0;
-                cone_marker.scale.x = 0.2;
-                cone_marker.scale.y = 0.2;
-                cone_marker.scale.z = 0.5;
-                cone_marker.color.r = colours[associated_idx.value_or(700)].r;
-                cone_marker.color.g = colours[associated_idx.value_or(700)].g;
-                cone_marker.color.b = colours[associated_idx.value_or(700)].b;
-                cone_marker.color.a = 0.5;
-                cones.markers.push_back(cone_marker);
-                i++;
-                // =============================================================
-
-                // if(associated_idx.has_value())
-                //     std::cout << associated_idx.value() << std::endl;
-
 
                 if(!associated_idx.has_value()) {
                     // new landmark
@@ -350,29 +363,26 @@ class EKFNode : public rclcpp::Node {
                 //     ( bearing )
                 Eigen::MatrixXd z(2, 1);
                 z(0, 0) = sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2));
-                z(1, 0) = atan2(cone.location.y, cone.location.x);
+                z(1, 0) = wrap_pi(atan2(cone.location.y, cone.location.x));
 
                 Eigen::MatrixXd expected_z(2, 1);
                 Eigen::MatrixXd observation_jacobian = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());  // H
                 compute_expected_z(this->pred_mu, associated_idx.value(), expected_z, observation_jacobian);
-                // std::cout << "H:\n" << observation_jacobian << "\n" << std::endl;
-
 
                 Eigen::MatrixXd K = this->pred_cov*observation_jacobian.transpose()*((observation_jacobian*this->pred_cov*observation_jacobian.transpose() + Q).inverse());
-                // std::cout << "K:\n" << K << "\n" << std::endl;
 
                 this->pred_mu = this->pred_mu + K*(z - expected_z);
                 this->pred_cov = (Eigen::MatrixXd::Identity(K.rows(), observation_jacobian.cols()) - K*observation_jacobian) * this->pred_cov;
             }
 
-            this->viz_pub->publish(cones);
-
             this->mu = this->pred_mu;
             this->cov = this->pred_cov;
+
+            std::cout << "Cone Callback" << std::endl;
             // print_matricies();
             print_state();
             publish_visualisations(msg->header.stamp);
-            std::cout << "n cones:" << (this->mu.rows() - CAR_STATE_SIZE) / LANDMARK_STATE_SIZE << "\n" << std::endl;
+            // std::cout << "n cones:" << (this->mu.rows() - CAR_STATE_SIZE) / LANDMARK_STATE_SIZE << "\n" << std::endl;
         }
 
         void print_matricies() {
@@ -390,10 +400,12 @@ class EKFNode : public rclcpp::Node {
             std::cout << "PRED" << std::endl;
             std::cout << "pos: " << pred_x << " " << pred_y << std::endl;
             std::cout << "theta: " << pred_theta << std::endl;
+            std::cout << std::endl;
 
-            std::cout << "\nUPDATED" << std::endl;
+            std::cout << "UPDATED" << std::endl;
             std::cout << "pos: " << x << " " << y << std::endl;
             std::cout << "theta: " << theta << std::endl;
+            std::cout << std::endl;
         }
 
         void publish_visualisations(builtin_interfaces::msg::Time stamp) {
