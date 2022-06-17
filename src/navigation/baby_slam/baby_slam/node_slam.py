@@ -8,6 +8,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
+from fs_msgs.msg import Track
 
 # other python modules
 from math import hypot, atan2, pi, sin, cos
@@ -145,8 +146,9 @@ def update(track: np.ndarray,
 
 class EKFSlam(Node):
     R = np.diag([0.01, 0.01, 0.01]) # very confident of odom (cause its OP)
-    Q = np.diag([1, 0.5])**2 # detections are a big mehr
-    radius = 4.5 # nn kdtree nearch
+    Q = np.diag([.96, 0.45])**2 # detections are a bit meh
+    radius = 3 # nn kdtree nearch
+    leaf = 50 # nodes per tree before it starts brute forcing?
 
     def __init__(self):
         super().__init__("ekf_slam")
@@ -154,11 +156,13 @@ class EKFSlam(Node):
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 10)
         # some service call here from simple controller to send when the car has completed a lap
+        # sub to track for all cone locations relative to car start point
+        self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
 
         # publishers
         self.map_img_publisher: Publisher = self.create_publisher(Image, "/slam/map_image", 1)
         # map cone loc publisher
-
+        self.real_map_img_publisher: Publisher = self.create_publisher(Image, "/slam/real_map_image", 1)
         self.get_logger().info("---SLAM node initialised---")
 
         self.odom_msg = None
@@ -205,9 +209,9 @@ class EKFSlam(Node):
                 same_track = self.track[self.track[:, 2]==det.colour] # extract same colours
 
             if len(same_track) != 0: # this spline has been populated with cones
-                neighbourhood = KDTree(same_track[:,:2], leaf_size=5)
+                neighbourhood = KDTree(same_track[:,:2], leaf_size=self.leaf)
                 check = np.reshape([mapx,mapy], (1,-1)) # turn into a 2D row array
-                ind = neighbourhood.query_radius(check, self.radius) # check neighbours in radius
+                ind = neighbourhood.query_radius(check, r=self.radius) # check neighbours in radius
                 close = ind[0] # index from the single colour list
                 if close.size != 0: 
                     on_map = True
@@ -260,6 +264,29 @@ class EKFSlam(Node):
             )
 
         self.map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
+
+
+    def map_callback(self, track_msg: Track):       
+        # track cone list is taken as coords relative to the initial car position
+        track=track_msg.track
+        map_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  
+        for cone in track:
+            if cone.color == Cone.BLUE:
+                disp_col = (255, 0, 0)
+            elif cone.color == Cone.YELLOW:
+                disp_col = (0, 255, 255)
+            elif cone.color == Cone.ORANGE_BIG:
+                disp_col = (0, 100, 255)
+
+            cv2.drawMarker(
+                map_img, 
+                coord_to_img(cone.location.x,cone.location.y).to_tuple(),
+                disp_col,
+                markerType=cv2.MARKER_TRIANGLE_UP,
+                markerSize=6,
+                thickness=2
+            )
+        self.real_map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
 
 
 def main(args=None):
