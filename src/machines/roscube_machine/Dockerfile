@@ -31,8 +31,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
-# steering controller
-COPY ./src/hardware/steering_controller/conda_requirements ./conda_requirements
+# steering actuator
+COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
