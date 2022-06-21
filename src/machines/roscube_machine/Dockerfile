@@ -58,7 +58,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         sensors \
         rosboard \
         controllers \
-        steering_controller \
+        steering_actuator \
         canbus \
     && rm -rf ./src
 
