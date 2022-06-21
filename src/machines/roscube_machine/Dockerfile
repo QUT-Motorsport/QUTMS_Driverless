@@ -46,6 +46,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         sensors \
         rosboard \
         controllers \
+        steering_controller \
+        canbus \
     && rm -rf ./src
 
 # force ROS to use Jetson interface
