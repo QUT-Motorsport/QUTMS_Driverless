@@ -4,11 +4,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package='canbus',
-            executable='canbus',
+            package="canbus",
+            executable="canbus",
+            parameters="/home/developer/driverless_ws/src/hardware/canbus/config/canbus.yaml",  # TODO: use auto getter for path
         ),
         Node(
-            package='rosboard',
-            executable='rosboard_node',
+            package="rosboard",
+            executable="rosboard_node",
         ),
     ])
