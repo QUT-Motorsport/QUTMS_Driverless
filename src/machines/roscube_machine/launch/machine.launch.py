@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from launch_ros.actions import Node, IncludeLaunchDescription
 
 def generate_launch_description():
     return LaunchDescription([
@@ -11,5 +11,9 @@ def generate_launch_description():
         Node(
             package="rosboard",
             executable="rosboard_node",
+        ),
+        IncludeLaunchDescription(
+            package="sensors",
+            launch="sensors.launch.py"
         ),
     ])

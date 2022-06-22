@@ -8,6 +8,6 @@
 steering:
   ros__parameters:
     d_velocity: 1000
-    d_acceleration: 2000
+    d_acceleration: 1000
     d_limits: 5000
     d_current: 2500
