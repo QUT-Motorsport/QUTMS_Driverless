@@ -1,6 +1,8 @@
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
@@ -15,7 +17,9 @@ def generate_launch_description():
             executable="rosboard_node",
         ),
         IncludeLaunchDescription(
-            package="sensors",
-            launch="sensors.launch.py"
+            launch_description_source=PythonLaunchDescriptionSource([
+                get_package_share_directory("sensors"),
+                "/launch/sensors.launch.py"
+            ]),
         ),
     ])
