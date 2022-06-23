@@ -96,7 +96,7 @@ def get_throttle_and_brake(velocities: List[float], steering_angle: float) -> Li
     # velocity control
     # init constants
     Kp_vel: float = 20
-    vel_max: float = 15
+    vel_max: float = 12
     vel_min = 1
     throttle_max: float = 0.5 # m/s^2
     brake_max = 0.25
