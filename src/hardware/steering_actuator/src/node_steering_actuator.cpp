@@ -40,7 +40,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
 	void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
 		float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
-		int32_t steeringDemandStepper = cappedAngle * 5000 / M_PI;
+		int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
 		RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
 		RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
