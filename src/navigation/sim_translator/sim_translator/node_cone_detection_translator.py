@@ -1,12 +1,10 @@
-from math import sin, cos, sqrt
-from turtle import stamp
+from math import sin, cos, sqrtd
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray
-from std_msgs.msg import Header
 from driverless_msgs.msg import ConeDetectionStamped, Cone
 from fs_msgs.msg import Track, Cone as FSCone
 from driverless_common.marker import marker_array_from_cone_detection
