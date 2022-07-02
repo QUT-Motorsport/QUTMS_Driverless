@@ -1,26 +1,24 @@
 # Modules
-import time
-import math
-from typing import List
-import matplotlib.pyplot as plt
 import logging
+import math
+import time
+
+import matplotlib.pyplot as plt
+
+from typing import List
 
 RUN_ROS = True
 if RUN_ROS:
     # Line Fitting
-    from . import line_extraction
-
-    # Point Cloud Clustering
-    from . import DBSCAN
-
     # Visualiser
+    # Point Cloud Clustering
+    from . import DBSCAN, line_extraction
     from . import visualiser as vis
 else:
     # Line Fitting
-    import line_extraction
-
     # Point Cloud Clustering
     import DBSCAN
+    import line_extraction
 
     # Visualiser
     import visualiser as vis

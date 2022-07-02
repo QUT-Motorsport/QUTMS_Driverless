@@ -1,5 +1,6 @@
-from math import floor, ceil
 import curses
+from math import ceil, floor
+
 from typing import Optional
 
 

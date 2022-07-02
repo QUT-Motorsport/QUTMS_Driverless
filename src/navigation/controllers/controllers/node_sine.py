@@ -1,12 +1,10 @@
+import math
+
+from ackermann_msgs.msg import AckermannDrive
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.timer import Timer
-
-import math
-
-from ackermann_msgs.msg import AckermannDrive
-
 
 interval = 0.02
 

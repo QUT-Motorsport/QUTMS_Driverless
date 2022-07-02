@@ -1,16 +1,14 @@
+from collections import OrderedDict
 import csv
-from pathlib import Path
 import datetime as dt
+from pathlib import Path
 
 import rclpy
 from rclpy.node import Node
 from rosidl_runtime_py.convert import message_to_ordereddict
-from collections import OrderedDict
-
 from sensor_msgs.msg import Imu
 
-from typing import List, Tuple, Any, Dict
-
+from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
 SUBSCRIPTIONS: List[Tuple[str, Any]] = [

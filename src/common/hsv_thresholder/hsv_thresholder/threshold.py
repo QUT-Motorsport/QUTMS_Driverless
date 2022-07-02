@@ -2,6 +2,7 @@
 # TODO: figure out a way to share python code among ROS packages
 
 import json
+
 import numpy as np
 
 from typing import List

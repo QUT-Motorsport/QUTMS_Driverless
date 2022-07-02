@@ -1,6 +1,7 @@
-import torch
-import numpy as np
 import cv2
+import numpy as np
+import torch
+
 
 # initialising function for the YOLOv5 model with confidence threshold
 def torch_init(conf_thresh: float, model_path: str, repo_path: str):

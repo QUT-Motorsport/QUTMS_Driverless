@@ -2,6 +2,7 @@
 import math
 import sys
 
+
 # Point Wise Variance
 def get_point_var(x, y, x_mean, y_mean):
     # point_x_var = (x - x_mean)**2

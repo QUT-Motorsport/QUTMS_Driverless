@@ -1,6 +1,8 @@
 # import python libraries
 import math
+
 from typing import List
+
 
 # finds distances (magnitude) between two top-down points
 def distance(x1: float, y1: float, x2: float, y2: float):

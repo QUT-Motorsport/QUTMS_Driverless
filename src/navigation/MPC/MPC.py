@@ -3,7 +3,9 @@
 # Importing some libraries
 import time
 import turtle
+
 from utils.SystemModels import KinematicBicycleModel
+
 
 # Model Predictive Controller class
 class MPC:

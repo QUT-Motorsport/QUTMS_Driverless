@@ -1,39 +1,40 @@
 # import ROS2 libraries
-import rclpy
-from rclpy.node import Node
-from rclpy.publisher import Publisher
-from cv_bridge import CvBridge
-import message_filters
+import datetime
+import getopt
+import logging
 
-# import ROS2 message libraries
-from sensor_msgs.msg import Image
-from geometry_msgs.msg import Point as ROSPoint
-from visualization_msgs.msg import Marker, MarkerArray
+# other python modules
+from math import atan, atan2, cos, pi, sin, sqrt
+import os
+import pathlib
+import sys
+import time
+
 from builtin_interfaces.msg import Duration
-from nav_msgs.msg import Odometry
+import cv2
+from cv_bridge import CvBridge
+
+# import required sub modules
+from driverless_common.point import Point
 
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import ControlCommand
-
-# other python modules
-from math import sqrt, atan2, pi, sin, cos, atan
-import cv2
+from geometry_msgs.msg import Point as ROSPoint
+import message_filters
+from nav_msgs.msg import Odometry
 import numpy as np
+import rclpy
+from rclpy.node import Node
+from rclpy.publisher import Publisher
 import scipy.interpolate as scipy_interpolate  # for spline calcs
-from typing import Tuple, List, Optional
-import time
-import sys
-import os
-import getopt
-import logging
-import datetime
-import pathlib
 
+# import ROS2 message libraries
+from sensor_msgs.msg import Image
 from transforms3d.euler import quat2euler
+from visualization_msgs.msg import Marker, MarkerArray
 
-# import required sub modules
-from driverless_common.point import Point
+from typing import List, Optional, Tuple
 
 # initialise logger
 LOGGER = logging.getLogger(__name__)

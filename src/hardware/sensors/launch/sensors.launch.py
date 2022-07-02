@@ -34,11 +34,11 @@
 """Launch the velodyne driver, pointcloud, and laserscan nodes with default configuration."""
 
 import os
-import yaml
 
 import ament_index_python.packages
 import launch
 import launch_ros.actions
+import yaml
 
 
 def generate_launch_description():

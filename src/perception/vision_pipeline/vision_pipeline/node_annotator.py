@@ -1,25 +1,26 @@
 # import ROS2 libraries
-import rclpy
-from rclpy.node import Node
-from cv_bridge import CvBridge
-import message_filters
-from ament_index_python.packages import get_package_share_directory
+# other python libraries
+import os
 
-# import ROS2 message libraries
-from sensor_msgs.msg import Image, CameraInfo
+from ament_index_python.packages import get_package_share_directory
+import cv2
+from cv_bridge import CvBridge
 
 # import custom message libraries
 from driverless_msgs.msg import Cone
-
-# other python libraries
-import os
-import cv2
+import message_filters
 import numpy as np
-from typing import List, Tuple
+import rclpy
+from rclpy.node import Node
+
+# import ROS2 message libraries
+from sensor_msgs.msg import CameraInfo, Image
 
 # import required sub modules
 from .rect import Rect, draw_box
 from .torch_inference import torch_init
+
+from typing import List, Tuple
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()

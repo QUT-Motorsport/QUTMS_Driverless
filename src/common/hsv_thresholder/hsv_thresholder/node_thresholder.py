@@ -1,16 +1,13 @@
+import cv2
+from cv_bridge import CvBridge
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
-from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-
-import cv2
-import numpy as np
+from std_msgs.msg import String
 
 from .threshold import Threshold
-
 
 cv_bridge = CvBridge()
 

@@ -1,7 +1,8 @@
 # import python libraries
+import random
+
 import cv2
 import numpy as np
-import random
 
 # HSV limits
 orange_high = np.array([0.100, 1, 1]) * 255

@@ -1,6 +1,8 @@
-import os
 from glob import glob
+import os
+
 from setuptools import setup
+
 from typing import List, Tuple
 
 package_name = "vision_pipeline"

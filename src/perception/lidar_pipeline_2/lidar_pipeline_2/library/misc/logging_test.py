@@ -1,6 +1,6 @@
+import getopt
 import logging
 import pathlib
-import getopt
 import sys
 
 

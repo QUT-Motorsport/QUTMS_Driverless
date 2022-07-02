@@ -1,7 +1,8 @@
 # This is a library that contains the various kinematic and dynamic models used within MPC.py
 
-import yaml
 import numpy as np
+import yaml
+
 
 # class that represents the 'kinematic bicycle model' for the 'centre of gravity' (CoG) reference point
 class KinematicBicycleModel:

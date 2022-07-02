@@ -3,11 +3,12 @@ An example that uses TensorRT's Python api to make inferences.
 """
 import ctypes
 import os
-import shutil
 import random
+import shutil
 import sys
 import threading
 import time
+
 import cv2
 import numpy as np
 import pycuda.autoinit

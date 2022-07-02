@@ -3,11 +3,10 @@ import curses
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
 from std_msgs.msg import String
 
-from .threshold import Threshold
 from .curses_slider import CursesSlider
+from .threshold import Threshold
 
 
 class GUINode(Node):

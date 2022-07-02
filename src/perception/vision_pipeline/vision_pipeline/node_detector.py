@@ -1,29 +1,31 @@
 # import ROS2 libraries
-import rclpy
-from rclpy.node import Node
-from rclpy.publisher import Publisher
-from cv_bridge import CvBridge
-import message_filters
-from ament_index_python.packages import get_package_share_directory
-
-# import ROS2 message libraries
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Point
-
-# import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+import enum
+from math import cos, isinf, isnan, radians, sin
 
 # other python libraries
 import os
-from math import sin, cos, radians, isnan, isinf
-import cv2
-import numpy as np
-from typing import List, Tuple, Callable
 import time
-import enum
+
+from ament_index_python.packages import get_package_share_directory
+import cv2
+from cv_bridge import CvBridge
+
+# import custom message libraries
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point
+import message_filters
+import numpy as np
+import rclpy
+from rclpy.node import Node
+from rclpy.publisher import Publisher
+
+# import ROS2 message libraries
+from sensor_msgs.msg import CameraInfo, Image
 
 # import required sub modules
 from .rect import Rect, draw_box
+
+from typing import Callable, List, Tuple
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
@@ -174,8 +176,8 @@ class DetectorNode(Node):
 
 ## OpenCV thresholding
 def main_cv2(args=None):
-    from .threshold import Threshold
     from .hsv_cv import get_coloured_bounding_boxes
+    from .threshold import Threshold
 
     # HSV threshold constants
     YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
@@ -208,7 +210,7 @@ def main_cv2(args=None):
 
 ## PyTorch inference
 def main_torch(args=None):
-    from .torch_inference import torch_init, infer
+    from .torch_inference import infer, torch_init
 
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBOV1.pt")

@@ -1,11 +1,12 @@
 # python libraries
 import cv2
 import numpy as np
-from typing import List
 
 # import required sub modules
 from .rect import Rect
 from .threshold import Threshold
+
+from typing import List
 
 Contour = List
 

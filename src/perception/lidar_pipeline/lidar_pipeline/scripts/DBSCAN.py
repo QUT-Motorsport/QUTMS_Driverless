@@ -1,7 +1,9 @@
 # Modules
 import numpy as np
 from sklearn.cluster import DBSCAN
+
 from typing import List
+
 
 # Density-Based Spatial Clustering of Applications with Noise (DBSCAN)
 def get_objects(object_points: List[List[List]]) -> List[List]:

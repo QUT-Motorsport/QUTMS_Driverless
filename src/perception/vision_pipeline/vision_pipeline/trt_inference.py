@@ -4,14 +4,16 @@
 # import python libraries
 import ctypes
 import time
+
 import cv2
 import numpy as np
-from typing import Tuple, List
 
 # import TensorRT libraries
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
+
+from typing import List, Tuple
 
 
 class TensorWrapper(object):
