@@ -25,7 +25,7 @@ ament_target_dependencies(res rclcpp driverless_msgs)
 
 target_include_directories(res PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>) 
+  $<INSTALL_INTERFACE:include>)
 
 install(TARGETS res
   DESTINATION lib/${PROJECT_NAME})

@@ -18,7 +18,7 @@ SUBSCRIPTIONS: List[Tuple[str, Any]] = [
 ]
 
 
-def flatten_msg_dict(msg_dict: OrderedDict, parent_key: str = '', sep: str ='.') -> OrderedDict:
+def flatten_msg_dict(msg_dict: OrderedDict, parent_key: str = "", sep: str = ".") -> OrderedDict:
     items = []
     for key, value in msg_dict.items():
         new_key = parent_key + sep + key if parent_key else key
@@ -34,7 +34,7 @@ class NodeTopicToCSV(Node):
 
     def __init__(self) -> None:
         super().__init__("topic_to_csv")
-        
+
         self.csv_writers = {}
 
         for type_, topic in SUBSCRIPTIONS:
@@ -42,7 +42,7 @@ class NodeTopicToCSV(Node):
             self.create_subscription(type_, topic, callback, 10)
 
         self.get_logger().info("Node topic_to_csv initalised")
-    
+
     def msg_callback(self, msg: Any, topic: str):
         msg_dict = flatten_msg_dict(message_to_ordereddict(msg))
         print(msg_dict)
@@ -53,7 +53,7 @@ class NodeTopicToCSV(Node):
             f = open(csv_folder / f"{topic}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
             self.csv_writers[topic] = csv.DictWriter(f, fieldnames=msg_dict.keys())
             self.csv_writers[topic].writeheader()
-        
+
         self.csv_writers[topic].writerow(msg_dict)
 
 

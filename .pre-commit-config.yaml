@@ -12,3 +12,4 @@ repos:
     rev: 22.6.0
     hooks:
       - id: black
+        additional_dependencies: [typing_extensions]

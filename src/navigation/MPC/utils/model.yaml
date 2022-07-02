@@ -14,6 +14,5 @@
   # maxV: (maximum velocity of the vehicle)
   maxV: 0
 
-  # maxSA: (maximum steering angle of the vehicle) 
+  # maxSA: (maximum steering angle of the vehicle)
   maxSA: 0
-

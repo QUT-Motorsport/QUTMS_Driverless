@@ -4,11 +4,13 @@ from dataclasses import dataclass
 import numpy as np
 from typing import Tuple, Optional
 
+
 @dataclass
 class Point:
     """
     Creates a datatype for storing a point x,y coordinate
     """
+
     x: int
     y: int
 
@@ -19,14 +21,15 @@ class Point:
         return Point(self.x - other.x, self.y - other.y)
 
     def __truediv__(self, divisor: int) -> "Point":
-        return Point(int(round(self.x/divisor)), int(round(self.y/divisor)))
+        return Point(int(round(self.x / divisor)), int(round(self.y / divisor)))
+
 
 @dataclass
 class Rect:
     """
     Creates a datatype for storing a rectangle (in terms of pixels)
     - Initialised with 'top-left' pixel coord, width and length in pixels
-    
+
     Available properties:
     - bl:   Return the 'bottom-left' pixel coord
     - br:   Return the 'bottom-right' pixel coord
@@ -37,6 +40,7 @@ class Rect:
     - as_roi:   Specify a rectangle as a region of interest on a frame.
                 Returns the region as a sub-frame Numpy array
     """
+
     tl: Point
     width: int
     height: int
@@ -53,7 +57,7 @@ class Rect:
     @property
     def br(self) -> Point:
         return Point(self.tl.x + self.width, self.tl.y + self.height)
-    
+
     @property
     def bc(self) -> Point:
         return Point(self.tl.x + int(round(self.width / 2)), self.tl.y + self.height)
@@ -65,13 +69,13 @@ class Rect:
     @property
     def area(self) -> int:
         return self.width * self.height
-    
+
     @property
     def aspect_ratio(self) -> float:
         return self.width / self.height
 
     def as_roi(self, frame: np.ndarray) -> np.ndarray:
-        return frame[self.tl.y:self.br.y, self.tl.x:self.br.x]
+        return frame[self.tl.y : self.br.y, self.tl.x : self.br.x]
 
 
 def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
@@ -81,13 +85,7 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
     """
 
     # draw a bounding box around the cone on the display image
-    cv2.rectangle(
-        img, 
-        (box.tl.x, box.tl.y), 
-        (box.tl.x + box.width, box.tl.y + box.height), 
-        colour, 
-        thickness=2
-    )
+    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
 
     # write text above the cone bounding box on the display image
     if distance is not None:
@@ -98,5 +96,5 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
             cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=0.4,
             color=(255, 255, 255),
-            thickness=1
+            thickness=1,
         )

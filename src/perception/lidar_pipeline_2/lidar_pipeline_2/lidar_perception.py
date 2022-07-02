@@ -87,6 +87,7 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
 
 # Import Logging
 import logging
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -119,11 +120,7 @@ class ConeSensingNode(Node):
         super().__init__('cone_sensing')
         LOGGER.info('Initialising ConeSensingNode')
 
-        self.pc_subscription = self.create_subscription(
-            PointCloud2,
-            pc_node,
-            self.pc_callback,
-            2)
+        self.pc_subscription = self.create_subscription(PointCloud2, pc_node, self.pc_callback, 2)
         self.pc_subscription  # Prevent unused variable warning
 
         self.cone_publisher = self.create_publisher(
@@ -352,7 +349,7 @@ def main(args=sys.argv[1:]):
                                             'print_logs'])
 
     for opt, arg in opts:
-        if opt == '--pc_node':
+        if opt == "--pc_node":
             pc_node = arg
         elif opt == '--loglevel':
             loglevel = arg
@@ -402,7 +399,7 @@ def main(args=sys.argv[1:]):
     numeric_level = getattr(logging, loglevel.upper(), None)
 
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
+        raise ValueError("Invalid log level: %s" % loglevel)
 
     # Setting up logging
     working_dir = str(pathlib.Path(__file__).parent.resolve())

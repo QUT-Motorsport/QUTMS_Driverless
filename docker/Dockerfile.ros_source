@@ -18,7 +18,7 @@ ENV ROS_ROOT=/opt/ros/${ROS_DISTRO}
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV SHELL /bin/bash
-SHELL ["/bin/bash", "-c"] 
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /tmp
 
@@ -28,7 +28,7 @@ ENV LANG=en_US.UTF-8
 ENV PYTHONIOENCODING=utf-8
 
 
-# 
+#
 # add the ROS deb repo to the apt sources list
 #
 RUN apt-get update && \
@@ -45,7 +45,7 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o 
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 
-# 
+#
 # install development packages
 #
 RUN apt-get update && \
@@ -89,7 +89,7 @@ RUN python3 -m pip install -U \
         pytest-rerunfailures \
         pytest
 
-# 
+#
 # install OpenCV (with CUDA)
 #
 ARG OPENCV_URL=https://nvidia.box.com/shared/static/5v89u6g5rb62fpz4lh0rz531ajo2t5ef.gz
@@ -110,9 +110,9 @@ RUN apt-get purge -y '*opencv*' || echo "previous OpenCV installation not found"
     rm -rf opencv && \
     cp -r /usr/include/opencv4 /usr/local/include/opencv4 && \
     cp -r /usr/lib/python3.6/dist-packages/cv2 /usr/local/lib/python3.6/dist-packages/cv2
-    
-    
-# 
+
+
+#
 # download/build ROS from source
 #
 RUN mkdir -p ${ROS_ROOT}/src && \
@@ -159,8 +159,8 @@ RUN mkdir -p ${ROS_ROOT}/src && \
     rm -rf ${ROS_ROOT}/logs && \
     rm -rf ${ROS_ROOT}/build && \
     rm ${ROS_ROOT}/*.rosinstall
-    
-    
+
+
 #
 # fix broken package.xml in test_pluginlib that crops up if/when rosdep is run again
 #
@@ -172,8 +172,8 @@ RUN mkdir -p ${ROS_ROOT}/src && \
 #    sed -i '/<\/description>/a <license>BSD<\/license>' $TEST_PLUGINLIB_PACKAGE && \
 #    sed -i '/<\/description>/a <maintainer email="michael@openrobotics.org">Michael Carroll<\/maintainer>' $TEST_PLUGINLIB_PACKAGE && \
 #    cat $TEST_PLUGINLIB_PACKAGE
-    
-    
+
+
 #
 # Set the default DDS middleware to cyclonedds
 # https://github.com/ros2/rclcpp/issues/1335

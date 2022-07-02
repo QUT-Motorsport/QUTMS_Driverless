@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from cv_bridge import CvBridge
+
 # import ROS2 message libraries
 from sensor_msgs.msg import Image, CameraInfo
 from rclpy.publisher import Publisher
@@ -24,7 +25,7 @@ class ZedNode(Node):
         self.depth_img_publisher: Publisher = self.create_publisher(Image, "/zed2i/zed_node/depth/depth_registered", 1)
         self.rgb_img_publisher: Publisher = self.create_publisher(Image, "/zed2i/zed_node/rgb/image_rect_color", 1)
         self.rgb_img_info_publisher: Publisher = self.create_publisher(CameraInfo, "/zed2i/zed_node/rgb/camera_info", 1)
-        
+
         self.camera_info = CameraInfo()
         self.camera_info.height = 360
         self.camera_info.width = 640
@@ -32,15 +33,13 @@ class ZedNode(Node):
         self.depth_msg = Image()
 
         self.get_logger().info("Initialised ZED camera simulator node")
-    
 
     def depth_callback(self, depth_msg: Image):
-        depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
+        depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
         # for some reason, depth is 2x in the depth camera
         new_depth = np.divide(depth_frame, 2)
         self.depth_msg = cv_bridge.cv2_to_imgmsg(new_depth, encoding="32FC1")
-        
-    
+
     def rgb_callback(self, colour_msg: Image):
         self.camera_info.header = colour_msg.header
         self.depth_msg.header.stamp = colour_msg.header.stamp
@@ -60,5 +59,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -4,12 +4,14 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 from cv_bridge import CvBridge
 import message_filters
+
 # import ROS2 message libraries
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point as ROSPoint
 from visualization_msgs.msg import Marker, MarkerArray
 from builtin_interfaces.msg import Duration
 from nav_msgs.msg import Odometry
+
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import ControlCommand
@@ -18,7 +20,7 @@ from fs_msgs.msg import ControlCommand
 from math import sqrt, atan2, pi, sin, cos, atan
 import cv2
 import numpy as np
-import scipy.interpolate as scipy_interpolate # for spline calcs
+import scipy.interpolate as scipy_interpolate  # for spline calcs
 from typing import Tuple, List, Optional
 import time
 import sys
@@ -41,16 +43,16 @@ cv_bridge = CvBridge()
 
 # image display geometry
 SCALE = 20
-WIDTH = 30*SCALE # 15m either side
-HEIGHT = 25*SCALE # 25m forward
+WIDTH = 30 * SCALE  # 15m either side
+HEIGHT = 25 * SCALE  # 25m forward
 ORIGIN = Point(0, 0)
-IMG_ORIGIN = Point(int(WIDTH/2), HEIGHT)
+IMG_ORIGIN = Point(int(WIDTH / 2), HEIGHT)
 
 # display colour constants
 Colour = Tuple[int, int, int]
-YELLOW_DISP_COLOUR: Colour = (0, 255, 255) # bgr - yellow
-BLUE_DISP_COLOUR: Colour = (255, 0, 0) # bgr - blue
-ORANGE_DISP_COLOUR: Colour = (0, 165, 255) # bgr - orange
+YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
+BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
+ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
 
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
@@ -64,13 +66,13 @@ def robot_pt_to_img_pt(x: float, y: float) -> Point:
     * return: Point int pixel coords
     """
     return Point(
-        int(round(WIDTH/2 - y*SCALE)),
-        int(round(HEIGHT - x*SCALE)),
+        int(round(WIDTH / 2 - y * SCALE)),
+        int(round(HEIGHT - x * SCALE)),
     )
 
 
 def dist(a: Point, b: Point) -> float:
-    return sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
+    return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
 
 
 def cone_to_point(cone: Cone) -> Point:
@@ -80,12 +82,7 @@ def cone_to_point(cone: Cone) -> Point:
     )
 
 
-def approximate_b_spline_path(
-    x: list, 
-    y: list, 
-    n_path_points: int,
-    degree: int = 3
-) -> Tuple[list, list]:
+def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int = 3) -> Tuple[list, list]:
     """
     ADAPTED FROM: https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/BSplinePath/bspline_path.py \n
     Approximate points with a B-Spline path
@@ -114,12 +111,12 @@ def approximate_b_spline_path(
 
 def midpoint(p1: list, p2: list):
     """
-    Retrieve midpoint between two points 
+    Retrieve midpoint between two points
     * param p1: [x,y] coords of point 1
     * param p2: [x,y] coords of point 2
     * return: x,y tuple of midpoint coord
     """
-    return (p1[0]+p2[0])/2, (p1[1]+p2[1])/2
+    return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
 
 
 class LocalSpline(Node):
@@ -139,10 +136,8 @@ class LocalSpline(Node):
         self.spline_len = spline_len
         self.odom_msg = Odometry()
 
-    
     def odom_callback(self, odom_msg: Odometry):
         self.odom_msg = odom_msg
-
 
     def callback(self, cone_msg: ConeDetectionStamped):
         LOGGER.info("Received detection")
@@ -152,7 +147,6 @@ class LocalSpline(Node):
         cones: List[Cone] = cone_msg.cones
         # create black image
         debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-
 
         ## PROCESS DETECTED CONES
         yellow_list: List[float] = []
@@ -166,17 +160,16 @@ class LocalSpline(Node):
                 blue_list.append([cone.location.x, cone.location.y])
             else:
                 colour = (255, 255, 255)
-            
+
             # draws location of cone w/ colour
             cv2.drawMarker(
-                debug_img, 
+                debug_img,
                 robot_pt_to_img_pt(cone.location.x, cone.location.y).to_tuple(),
                 colour,
                 markerType=cv2.MARKER_SQUARE,
                 markerSize=5,
-                thickness=5
+                thickness=5,
             )
-
 
         ## TARGET SPLINE PLANNER
         tx: List[float] = []
@@ -190,18 +183,20 @@ class LocalSpline(Node):
             blue_y: List[float] = []
 
             # indice degree of interpolation determined by num cones
-            y_degree = len(yellow_list)-1
-            b_degree = len(blue_list)-1
+            y_degree = len(yellow_list) - 1
+            b_degree = len(blue_list) - 1
             # cubic (3rd degree) maximum
-            if y_degree > 3: y_degree = 3
-            if b_degree > 3: b_degree = 3
+            if y_degree > 3:
+                y_degree = 3
+            if b_degree > 3:
+                b_degree = 3
 
             # sort by closest cones to join waypoints
-            yellow_sort = sorted(yellow_list, key=lambda x: (x[0],x[1]))
-            blue_sort = sorted(blue_list, key=lambda x: (x[0],x[1]))
-            for i in yellow_sort: # each cone coord
+            yellow_sort = sorted(yellow_list, key=lambda x: (x[0], x[1]))
+            blue_sort = sorted(blue_list, key=lambda x: (x[0], x[1]))
+            for i in yellow_sort:  # each cone coord
                 # ref frame so x is forward from the car (this is graph axis y)
-                yellow_x.append(-i[1]) # negative because we mixed up yellow/blue track sides
+                yellow_x.append(-i[1])  # negative because we mixed up yellow/blue track sides
                 yellow_y.append(i[0])
             for i in blue_sort:
                 blue_x.append(-i[1])
@@ -216,7 +211,6 @@ class LocalSpline(Node):
                 tx.append(mid_x)
                 ty.append(mid_y)
 
-
         ## ORIGINAL BANG-BANG CODE
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
@@ -227,7 +221,7 @@ class LocalSpline(Node):
             closest_left = min(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
         if len(right_cones) > 0:
             closest_right = min(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
-        
+
         # if we have two cones, check if they are greater than 5 meters apart
         if closest_left is not None and closest_right is not None:
             if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
@@ -242,8 +236,8 @@ class LocalSpline(Node):
         target: Optional[Point] = None
         if closest_left is not None and closest_right is not None:
             target = Point(
-                x=closest_left.location.x + (closest_right.location.x - closest_left.location.x)/2,
-                y=closest_left.location.y + (closest_right.location.y - closest_left.location.y)/2,
+                x=closest_left.location.x + (closest_right.location.x - closest_left.location.x) / 2,
+                y=closest_left.location.y + (closest_right.location.y - closest_left.location.y) / 2,
             )
         elif closest_left is not None:
             target = Point(
@@ -255,25 +249,24 @@ class LocalSpline(Node):
                 x=closest_right.location.x,
                 y=closest_right.location.y + 2,
             )
-                
 
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 3) # 1/3 along
-            target = Point(ty[target_index], -tx[target_index]) 
+            target_index = round(self.spline_len / 3)  # 1/3 along
+            target = Point(ty[target_index], -tx[target_index])
 
             # spline visualisation
             path_markers: List[Marker] = []
             for t in range(len(tx)):
                 # draw each element in target spline
                 cv2.drawMarker(
-                    debug_img, 
+                    debug_img,
                     robot_pt_to_img_pt(ty[t], -tx[t]).to_tuple(),
                     (0, 0, 255),
                     markerType=cv2.MARKER_SQUARE,
                     markerSize=1,
-                    thickness=2
+                    thickness=2,
                 )
 
                 # target spline markers for rviz
@@ -286,8 +279,8 @@ class LocalSpline(Node):
                 # i, j, k angles in rad
                 ai, aj, ak = quat2euler([w, i, j, k])
                 # displacement from car to target element
-                x_dist = (tx[t]*sin(ak) + ty[t]*cos(ak))
-                y_dist = (ty[t]*sin(ak) - tx[t]*cos(ak))
+                x_dist = tx[t] * sin(ak) + ty[t] * cos(ak)
+                y_dist = ty[t] * sin(ak) - tx[t] * cos(ak)
 
                 line_point = ROSPoint()
                 line_point.x = x_dist
@@ -315,7 +308,7 @@ class LocalSpline(Node):
 
             marker.points = path_markers
 
-            marker.color.a = 1.0 # alpha
+            marker.color.a = 1.0  # alpha
             marker.color.r = 1.0
             marker.color.g = 0.0
             marker.color.b = 0.0
@@ -323,8 +316,7 @@ class LocalSpline(Node):
             marker.lifetime = Duration(sec=1, nanosec=0)
 
             # create message for all cones on the track
-            self.path_marker_publisher.publish(marker) # publish marker points data
-
+            self.path_marker_publisher.publish(marker)  # publish marker points data
 
         ## APPROACH TARGET
         if target is not None:
@@ -332,30 +324,33 @@ class LocalSpline(Node):
             # init constants
             Kp_vel: float = 2
             vel_max: float = 8
-            vel_min = vel_max/2
-            throttle_max: float = 0.3 # m/s^2
+            vel_min = vel_max / 2
+            throttle_max: float = 0.3  # m/s^2
 
             # get car vel
             vel_x: float = odom_msg.twist.twist.linear.x
             vel_y: float = odom_msg.twist.twist.linear.y
             vel: float = sqrt(vel_x**2 + vel_y**2)
-            
+
             # target velocity proportional to angle
             target_vel: float = vel_max - (abs(atan(target.y / target.x))) * Kp_vel
-            if target_vel < vel_min: target_vel = vel_min
+            if target_vel < vel_min:
+                target_vel = vel_min
             LOGGER.info(f"Target vel: {target_vel}")
 
             # increase proportionally as it approaches target
-            throttle_scalar: float = (1 - (vel / target_vel)) 
-            if throttle_scalar > 0: calc_throttle = throttle_max * throttle_scalar
+            throttle_scalar: float = 1 - (vel / target_vel)
+            if throttle_scalar > 0:
+                calc_throttle = throttle_max * throttle_scalar
             # if its over maximum, cut throttle
-            elif throttle_scalar <= 0: calc_throttle = 0
+            elif throttle_scalar <= 0:
+                calc_throttle = 0
 
             # steering control
             Kp_ang: float = 1.25
             ang_max: float = 7.0
 
-            steering_angle = -((pi/2) - atan2(target.x, target.y))*5
+            steering_angle = -((pi / 2) - atan2(target.x, target.y)) * 5
             LOGGER.info(f"Target angle: {steering_angle}")
             calc_steering = Kp_ang * steering_angle / ang_max
 
@@ -370,78 +365,69 @@ class LocalSpline(Node):
             # draw target
             target_img_pt = robot_pt_to_img_pt(target.x, target.y)
             cv2.drawMarker(
-                debug_img, 
+                debug_img,
                 robot_pt_to_img_pt(target.x, target.y).to_tuple(),
                 (0, 0, 255),
                 markerType=cv2.MARKER_TILTED_CROSS,
                 markerSize=10,
-                thickness=2
+                thickness=2,
             )
             target_img_angle = atan2(target_img_pt.y - IMG_ORIGIN.y, target_img_pt.x - IMG_ORIGIN.x)
             # draw angle line
             cv2.line(
                 debug_img,
-                (int(50*cos(target_img_angle) + IMG_ORIGIN.x), int(50*sin(target_img_angle) + IMG_ORIGIN.y)),
+                (int(50 * cos(target_img_angle) + IMG_ORIGIN.x), int(50 * sin(target_img_angle) + IMG_ORIGIN.y)),
                 IMG_ORIGIN.to_tuple(),
-                (0, 0, 255)
+                (0, 0, 255),
             )
             # add text for targets data
-            cv2.putText(
-                debug_img, "Targets", (10, HEIGHT-40),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2
-            )
-            text_angle = "Steering: "+str(round(steering_angle, 2))
-            cv2.putText(
-                debug_img, text_angle, (10, HEIGHT-25),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2
-            )
-            text_vel = "Velocity: "+str(round(target_vel, 2))
-            cv2.putText(
-                debug_img, text_vel, (10, HEIGHT-10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2
-            )
+            cv2.putText(debug_img, "Targets", (10, HEIGHT - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            text_angle = "Steering: " + str(round(steering_angle, 2))
+            cv2.putText(debug_img, text_angle, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            text_vel = "Velocity: " + str(round(target_vel, 2))
+            cv2.putText(debug_img, text_vel, (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         self.path_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main(args=sys.argv[1:]):
     # defaults args
-    loglevel = 'info'
+    loglevel = "info"
     print_logs = False
     spline_len = 200
 
     # processing args
-    opts, arg = getopt.getopt(args, str(), ['log=', 'print_logs', 'length=', 'ros-args'])
+    opts, arg = getopt.getopt(args, str(), ["log=", "print_logs", "length=", "ros-args"])
 
     # TODO: provide documentation for different options
     for opt, arg in opts:
-        if opt == '--log':
+        if opt == "--log":
             loglevel = arg
-        elif opt == '--print_logs':
+        elif opt == "--print_logs":
             print_logs = True
-        elif opt == '--length':
+        elif opt == "--length":
             spline_len = arg
 
     # validating args
     numeric_level = getattr(logging, loglevel.upper(), None)
 
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
+        raise ValueError("Invalid log level: %s" % loglevel)
 
     if not isinstance(spline_len, int):
-        raise ValueError('Invalid range: %s. Must be int' % spline_len)
+        raise ValueError("Invalid range: %s. Must be int" % spline_len)
 
     # setting up logging
     path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + '/logs'):
-        os.mkdir(path + '/logs')
+    if not os.path.isdir(path + "/logs"):
+        os.mkdir(path + "/logs")
 
-    date = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
+    date = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     logging.basicConfig(
-        filename=f'{path}/logs/{date}.log',
-        filemode='w',
-        format='%(asctime)s | %(levelname)s:%(name)s: %(message)s',
-        datefmt='%I:%M:%S %p',
+        filename=f"{path}/logs/{date}.log",
+        filemode="w",
+        format="%(asctime)s | %(levelname)s:%(name)s: %(message)s",
+        datefmt="%I:%M:%S %p",
         # encoding='utf-8',
         level=numeric_level,
     )
@@ -451,19 +437,18 @@ def main(args=sys.argv[1:]):
         stdout_handler = logging.StreamHandler(sys.stdout)
         LOGGER.addHandler(stdout_handler)
 
-    LOGGER.info(f'args = {args}')
+    LOGGER.info(f"args = {args}")
 
     # begin ros node
     rclpy.init(args=args)
 
     node = LocalSpline(spline_len)
     rclpy.spin(node)
-    
+
     node.destroy_node()
 
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])
-

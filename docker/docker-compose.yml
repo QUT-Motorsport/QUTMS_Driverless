@@ -91,7 +91,7 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: ros2 launch jetson_machine machine.launch.py
-    
+
     roscube:
         build:
             context: ../
@@ -106,7 +106,7 @@ services:
         <<: *network
         <<: *interactive
         command: ros2 launch roscube_machine machine.launch.py
-    
+
     jetson_terminal:
         build:
             context: ../
@@ -122,7 +122,7 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: bash
-    
+
     roscube_terminal:
         build:
             context: ../

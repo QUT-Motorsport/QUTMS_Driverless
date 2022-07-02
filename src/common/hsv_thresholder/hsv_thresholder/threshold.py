@@ -6,6 +6,7 @@ import numpy as np
 
 from typing import List
 
+
 class Threshold:
     lower: np.array
     upper: np.array
@@ -21,7 +22,7 @@ class Threshold:
             "upper": self.upper.tolist(),
         }
         return json.dumps(json_obj)
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> "Threshold":
         json_obj = json.loads(json_str)
