@@ -3,7 +3,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray
 from driverless_msgs.msg import ConeDetectionStamped, Cone
 from fs_msgs.msg import Track, Cone as FSCone

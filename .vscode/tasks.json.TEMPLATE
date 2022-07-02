@@ -16,7 +16,19 @@
                 "isDefault": true
             },
             "problemMatcher": "$gcc"
-        }
+        },
+        {
+            "label": "debug",
+            "detail": "Build packages up to (default)",
+            "type": "shell",
+            "command": ". ~/.zshrc; conda activate driverless_env && colcon build --merge-install --symlink-install --cmake-args '-DCMAKE_BUILD_TYPE=Debug' '-DCMAKE_EXPORT_COMPILE_COMMANDS=On' '-DCMAKE_C_FLAGS_DEBUG=-g -O0' '-DCMAKE_CXX_FLAGS_DEBUG=-g -O0' -Wall -Wextra -Wpedantic --packages-up-to ${input:packagesUpTo}" ,
+            "options": {"cwd": "${workspaceFolder}"},
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
     ],
     "inputs": [
         {
