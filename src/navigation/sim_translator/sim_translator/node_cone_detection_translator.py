@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, sqrt
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
