@@ -1,8 +1,7 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run build_plotjuggler run_plotjuggler
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
-export PLOTJUGGLER_IMAGE_NAME=qutms_driverless_plotjuggler
 
 # UNLESS YOU ARE UPDATING THE MAKEFILE FUNCTIONALITY
 # This file should rarely need to be touched.
