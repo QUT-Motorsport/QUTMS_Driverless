@@ -18,7 +18,7 @@ class SimMapControllerNode(Node):
 
     def control_callback(self, msg: ControlCommand):
         steering_msg = AckermannDrive()
-        steering_msg.steering_angle = msg.steering*math.pi*3
+        steering_msg.steering_angle = msg.steering*math.pi*4
         self.steering_publisher.publish(steering_msg)
 
 
