@@ -26,7 +26,19 @@ RUN apt-get update && \
         libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
-COPY ./src/navigation/spline_test/conda_requirements ./conda_requirements
+COPY ./src/navigation/controllers/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# steering actuator
+COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# canbus
+COPY ./src/hardware/canbus/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
@@ -46,6 +58,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         sensors \
         rosboard \
         controllers \
+        steering_actuator \
+        canbus \
     && rm -rf ./src
 
 # force ROS to use Jetson interface

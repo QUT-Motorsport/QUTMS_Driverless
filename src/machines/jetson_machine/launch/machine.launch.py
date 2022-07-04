@@ -5,6 +5,6 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='vision_pipeline',
-            executable='detector',
+            executable='trt_detector',
         ),
     ])

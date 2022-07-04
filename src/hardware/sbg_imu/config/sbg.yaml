@@ -1,0 +1,30 @@
+sbg:
+  ros__parameters:
+      imu_info: 1
+      imu_accelerometer: 100
+      imu_gyrometer: 100
+      imu_delta_velocity: 100
+      imu_delta_angle: 100
+      
+      orientation_info: 1
+      orientation_quaternion: 100
+      orientation_euler: 50
+      orientation_orientation_acc: 50
+      
+      navigation_position: 50
+      navigation_altitude: 10
+      navigation_position_acc: 10
+      navigation_velocity: 10
+      navigation_velocity_acc: 10
+      navigation_velocity_body: 10
+      
+      automotive_track_slip_curve: 50
+
+      gps_1_velocity_info: 1
+      gps_1_velocity: 10
+      gps_1_velocity_acc: 10
+      gps_1_course: 10
+      gps_1_position_info: 1
+      gps_1_position: 10
+      gps_1_altitude: 10
+      gps_1_position_acc: 10

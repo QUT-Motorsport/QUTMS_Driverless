@@ -4,7 +4,7 @@
     <name>sim_planning</name>
     <version>0.0.0</version>
     <description>Plans a target path and waypoint to approach</description>
-    <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
+    <maintainer email="team@qutmotorsport.com">Alastair Bradford, Grant van Breda</maintainer>
     <license>MIT</license>
 
     <depend>driverless_msgs</depend>

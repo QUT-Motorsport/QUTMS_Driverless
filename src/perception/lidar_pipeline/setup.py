@@ -21,7 +21,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lidar_perception = lidar_pipeline.node_processing:main'
+            'lidar_perception = lidar_pipeline.node_processing:main',
+            'sim_simple = lidar_pipeline.node_simple:main'
         ],
     },
 )

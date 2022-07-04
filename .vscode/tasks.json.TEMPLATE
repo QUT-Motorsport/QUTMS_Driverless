@@ -1,0 +1,41 @@
+// COPY THIS FILE and rename to tasks.json
+// Replace any <VALUES> with the relevant value
+// https://github.com/athackst/vscode_ros2_workspace/blob/foxy/.vscode/tasks.json
+{
+    "version": "2.0.0",
+    "tasks": [
+        // Build tasks
+        {
+            "label": "build",
+            "detail": "Build packages up to (default)",
+            "type": "shell",
+            "command": ". ~/.zshrc; conda activate driverless_env && colcon build --merge-install --symlink-install --cmake-args '-DCMAKE_BUILD_TYPE=RelWithDebInfo' '-DCMAKE_EXPORT_COMPILE_COMMANDS=On' -Wall -Wextra -Wpedantic --packages-up-to ${input:packagesUpTo}" ,
+            "options": {"cwd": "${workspaceFolder}"},
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "debug",
+            "detail": "Build packages up to (default)",
+            "type": "shell",
+            "command": ". ~/.zshrc; conda activate driverless_env && colcon build --merge-install --symlink-install --cmake-args '-DCMAKE_BUILD_TYPE=Debug' '-DCMAKE_EXPORT_COMPILE_COMMANDS=On' '-DCMAKE_C_FLAGS_DEBUG=-g -O0' '-DCMAKE_CXX_FLAGS_DEBUG=-g -O0' -Wall -Wextra -Wpedantic --packages-up-to ${input:packagesUpTo}" ,
+            "options": {"cwd": "${workspaceFolder}"},
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+    ],
+    "inputs": [
+        {
+          "id": "packagesUpTo",
+          "type": "promptString",
+          "description": "Packages up to:"
+          // "default": "<OPTIONAL: default package>"
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+// COPY THIS FILE and rename to c_cpp_properties.json
+// Replace any <VALUES> with the relevant value
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "<PATH_TO_MAMBAFORGE_INSTALL>/envs/driverless_env/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}

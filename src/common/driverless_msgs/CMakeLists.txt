@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.18)
 project(driverless_msgs)
 
 # Default to C++14
@@ -22,6 +22,8 @@ set(msg_files
   "msg/ConeDetectionStamped.msg"
   "msg/SplinePoint.msg"
   "msg/SplineStamped.msg"
+  "msg/Can.msg"
+  "msg/RES.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
