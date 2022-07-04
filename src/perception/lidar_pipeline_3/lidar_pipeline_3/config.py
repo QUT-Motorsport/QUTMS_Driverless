@@ -1,10 +1,15 @@
+import datetime
 import getopt
 import logging
+import os
+
+from . import constants as const
 
 from typing import Any
 
 class Config:
     def __init__(self) -> None:
+        # Parameters
         self._pc_node: str = '/velodyne_points'
         self._loglevel: str = 'info'
         self._print_logs: bool = False
@@ -14,6 +19,12 @@ class Config:
         self._animate_figures: bool = False
         self._plot_car: bool = False
         self._export_data: bool = False
+        
+        # Misc
+        self._timestamp, self._datestamp, self._datetimestamp = self.get_timestamp()
+        self._runtime_dir = const.OUTPUT_DIR + '/' + self.timestamp
+        
+        self.setup_output_dir()
     
     @property
     def pc_node(self) -> str:
@@ -135,6 +146,50 @@ class Config:
     def data_path(self, value) -> None:
         self._data_path = value
     
+    @property
+    def timestamp(self) -> str:
+        """
+        Returns:
+            str: Time at init
+        """
+        return self._timestamp
+    
+    @property
+    def datestamp(self) -> str:
+        """
+        Returns:
+            str: Date at init
+        """
+        return self._datestamp
+    
+    @property
+    def datetimestamp(self) -> str:
+        """
+        Returns:
+            str: Date and time at init
+        """
+        return self._datetimestamp
+    
+    @property
+    def runtime_dir(self) -> str:
+        """
+        Returns:
+            str: Runtime directory
+        """
+        return self._runtime_dir
+    
+    def setup_output_dir(self):
+        """Create output directory if it does not exist
+        """
+        if not os.path.isdir(const.OUTPUT_DIR):
+            os.mkdir(const.OUTPUT_DIR)
+    
+    def setup_runtime_dir(self):
+        """Create runtime directory if it does not exist
+        """
+        if not os.path.isdir(self.runtime_dir):
+            os.mkdir(self.runtime_dir)
+    
     def update(self, args: list) -> None:
         """Update config values with user input
 
@@ -170,3 +225,7 @@ class Config:
                 self.export_data = True
             elif opt == '--print_logs':
                 self.print_logs = True
+    
+    def get_timestamp(self) -> tuple:
+        curr_datetime = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+        return (curr_datetime[:10], curr_datetime[11:], curr_datetime)
