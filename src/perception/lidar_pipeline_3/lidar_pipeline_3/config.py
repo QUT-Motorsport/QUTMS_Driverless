@@ -1,3 +1,8 @@
+import getopt
+import logging
+
+from typing import Any
+
 class Config:
     def __init__(self) -> None:
         self._pc_node: str = '/velodyne_points'
@@ -7,7 +12,7 @@ class Config:
         self._create_figures: bool = False
         self._show_figures: bool = False
         self._animate_figures: bool = False
-        self._model_car: bool = False
+        self._plot_car: bool = False
         self._export_data: bool = False
     
     @property
@@ -32,7 +37,19 @@ class Config:
     
     @loglevel.setter
     def loglevel(self, value) -> None:
+        numeric_level: Any = getattr(logging, value.upper(), None)
+        if not isinstance(numeric_level, int):
+            raise ValueError(f'Invalid log level: {value}')
+        
         self._loglevel = value
+    
+    @property
+    def numeric_loglevel(self) -> Any:
+        """
+        Returns:
+            str: Return numeric (int) level of detail of logs
+        """
+        return getattr(logging, self.loglevel.upper(), None)
     
     @property
     def print_logs(self) -> bool:
@@ -83,16 +100,16 @@ class Config:
         self._animate_figures = value
     
     @property
-    def model_car(self) -> bool:
+    def plot_car(self) -> bool:
         """
         Returns:
-            bool: Models the car within the figures
+            bool: Plots the car within the figures
         """
-        return self._model_car
+        return self._plot_car
     
-    @model_car.setter
-    def model_car(self, value) -> None:
-        self._model_car = value
+    @plot_car.setter
+    def plot_car(self, value) -> None:
+        self._plot_car = value
     
     @property
     def export_data(self) -> bool:
@@ -117,3 +134,39 @@ class Config:
     @data_path.setter
     def data_path(self, value) -> None:
         self._data_path = value
+    
+    def update(self, args: list) -> None:
+        """Update config values with user input
+
+        Args:
+            args (list): List of flags provided by the user from the command line
+        """
+        opts, arg = getopt.getopt(args, '', ['pc_node=',
+                                            'loglevel=',
+                                            'data_path=',
+                                            'create_figures',
+                                            'show_figures',
+                                            'animate_figures',
+                                            'plot_car',
+                                            'export_data',
+                                            'print_logs'])
+        
+        for opt, arg in opts:
+            if opt == '--pc_node':
+                self.pc_node = arg
+            elif opt == '--loglevel':
+                self.loglevel = arg
+            elif opt == '--data_path':
+                self.data_path = arg
+            elif opt == '--create_figures':
+                self.create_figures = True
+            elif opt == '--show_figures':
+                self.show_figures = True
+            elif opt == '--animate_figures':
+                self.animate_figures = True
+            elif opt == '--plot_car':
+                self.plot_car = True
+            elif opt == '--export_data':
+                self.export_data = True
+            elif opt == '--print_logs':
+                self.print_logs = True
