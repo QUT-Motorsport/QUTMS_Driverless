@@ -158,3 +158,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# LiDAR Pipeline
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/.vscode/*
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/figures/*
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/exports/*
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library/total_least_squares.html
+/src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library/total_least_squares.c

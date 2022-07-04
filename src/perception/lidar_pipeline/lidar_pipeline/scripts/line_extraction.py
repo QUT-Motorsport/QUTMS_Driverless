@@ -90,11 +90,62 @@ def get_ground_lines(segment, num_bins) -> List[List]:
     return lines
 
 
+def get_ground_lines_2(seg_proto_points):
+    proto_count = len(seg_proto_points)
+
+    estimated_lines = []
+    new_line_points = []
+    lines_created = 0
+
+    m_new = None
+    b_new = None
+
+    idx = 0
+    while idx < proto_count:
+        if len(seg_proto_points[idx]) == 2:
+            m_new = None
+            b_new = None
+
+            new_point = seg_proto_points[idx]
+            if (len(new_line_points) >= 2):
+                new_line_points_copy = copy.deepcopy(new_line_points)
+                new_line_points_copy.append(new_point)
+
+                [m_new, b_new] = total_least_squares.fit_line(new_line_points_copy)
+
+                if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points_copy) <= T_RMSE):
+                    new_line_points.append(new_point)
+                    new_line_points_copy = []
+                else:
+                    [m_new, b_new] = total_least_squares.fit_line(new_line_points)
+
+                    if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
+                        estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+                        lines_created += 1
+
+                    new_line_points = []
+
+                    idx -= 2
+
+            else:
+                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                    new_line_points.append(new_point)
+
+        idx += 1
+
+    if len(new_line_points) > 1 and m_new != None and b_new != None:
+        estimated_lines.append((m_new, b_new, new_line_points[0][0],new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+
+    return estimated_lines
+
+
 # Returns the ground lines for all segments
 def get_ground_plane(segments_bins_prototype: List[List[List]], num_segments: int, num_bins: int) -> List[List[List]]:
     ground_plane: List[List[List]] = []
     for i in range(num_segments):
+        # print(i, segments_bins_prototype[i])
         ground_plane.append(get_ground_lines(segments_bins_prototype[i], num_bins))
+        #ground_plane.append(get_ground_lines_2(segments_bins_prototype[i]))
 
     return ground_plane
 

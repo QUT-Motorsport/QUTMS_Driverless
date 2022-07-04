@@ -146,6 +146,7 @@ def label_points(segments_bins: List[List[List]], ground_lines: List[List[List]]
             if left_idx == right_idx:
                 raise AssertionError("No ground lines found")
         ground_line = ground_lines[seg_idx][0]
+
         for j in range(NUM_BINS):
             for k in range(len(segments_bins[i][j])):
                 point = segments_bins[i][j][k]
@@ -412,6 +413,7 @@ def get_ground_plane(point_cloud: List[List]) -> List[List]:
     print("approximate_2D", time.time() - now)
 
     now = time.time()
+    print(len(point_cloud))
     ground_plane: List[List[List]] = line_extraction.get_ground_plane(segments_bins_prototype, NUM_SEGMENTS, NUM_BINS)
     print("get_ground_plane", time.time() - now)
 
