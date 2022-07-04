@@ -15,6 +15,7 @@ import ros2_numpy as rnp
 from .library import lidar_manager
 
 # Import Python Modules
+import math
 import numpy as np
 import datetime
 import pathlib
@@ -80,7 +81,7 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
     marker.color.b = 0.0
     marker.color.a = 1.0
 
-    marker.lifetime = Duration(sec=1, nanosec=0)
+    marker.lifetime = Duration(sec=0, nanosec=100000000)
 
     return marker
 
@@ -269,9 +270,6 @@ class ConeSensingNode(Node):
 
 
 def main(args=sys.argv[1:]):
-    general_config = config.general_config()
-    lidar_config = config.lidar_config()
-    
     # Point cloud source
     pc_node = '/velodyne_points'
 
@@ -306,14 +304,14 @@ def main(args=sys.argv[1:]):
     # Determines if regression for ground lines should occur between two
     # neighbouring bins when they're described by different lines
     REGRESS_BETWEEN_BINS = True
-    
+
     # Maximum distance between point and line to be considered part of ground plane
     T_D_GROUND = 0.15 # changed from 0.1
 
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = 100
-    
+
     # Path to data to import and use
     data_path = None
 
@@ -325,13 +323,13 @@ def main(args=sys.argv[1:]):
 
     # Creates animations of figures
     animate_figures = False
-    
+
     # Models the car within the figures
     model_car = False 
 
     # Export numpy point clouds to text file
     export_data = False
-
+    
     # Processing args
     opts, arg = getopt.getopt(args, str(), ['pc_node=',
                                             'loglevel=',
