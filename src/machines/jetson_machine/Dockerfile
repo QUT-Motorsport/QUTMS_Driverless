@@ -6,7 +6,7 @@ ARG HOST_UID
 # dialout group is used for compatability with mac
 ARG HOST_GROUP=dialout
 
-WORKDIR /tmp 
+WORKDIR /tmp
 
 # pycuda (TRT) env vars
 ENV PATH="/usr/local/cuda-10.2/bin${PATH:+:${PATH}}"

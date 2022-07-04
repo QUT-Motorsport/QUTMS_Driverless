@@ -1,15 +1,17 @@
 # python libraries
 import cv2
 import numpy as np
-from typing import List
 
 # import required sub modules
 from .rect import Rect
 from .threshold import Threshold
 
+from typing import List
+
 Contour = List
 
-kernal = np.ones((5, 5), "uint8") # used for dilating mask
+kernal = np.ones((5, 5), "uint8")  # used for dilating mask
+
 
 def get_coloured_contours(hsv_img: np.ndarray, threshold: Threshold) -> List[Contour]:
     """

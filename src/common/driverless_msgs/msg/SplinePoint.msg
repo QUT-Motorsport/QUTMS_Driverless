@@ -1,2 +1,2 @@
 geometry_msgs/Point location
-float32 turn_intensity 
+float32 turn_intensity

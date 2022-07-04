@@ -1,10 +1,10 @@
 import math
 
 # Point cloud source
-pc_node = '/velodyne_points'
+pc_node = "/velodyne_points"
 
 # Detail of logs
-loglevel = 'info'
+loglevel = "info"
 
 # Printing logs to terminal
 print_logs = False
@@ -36,7 +36,7 @@ T_RMSE = 0.2
 REGRESS_BETWEEN_BINS = True
 
 # Maximum distance between point and line to be considered part of ground plane
-T_D_GROUND = 0.15 # changed from 0.1
+T_D_GROUND = 0.15  # changed from 0.1
 
 # Maximum distance a point can be from the origin to even be considered as
 # a ground point. Otherwise it's labelled as a non-ground point.
@@ -55,12 +55,13 @@ show_figures = False
 animate_figures = False
 
 # Models the car within the figures
-model_car = False 
+model_car = False
 
 # Export numpy point clouds to text file
 export_data = False
 
 import config
+
 general_config = config.general_config()
 print(general_config.pc_node)
 general_config.pc_node = "test"

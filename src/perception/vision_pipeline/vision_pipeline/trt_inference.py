@@ -1,27 +1,32 @@
-## The code below is adapted from 
+## The code below is adapted from
 # https://github.com/wang-xinyu/tensorrtx/blob/master/yolov5/yolov5_trt.py
 
 # import python libraries
 import ctypes
 import time
+
 import cv2
 import numpy as np
-from typing import Tuple, List
+
 # import TensorRT libraries
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 
+from typing import List, Tuple
+
+
 class TensorWrapper(object):
     """
     description: A YOLOv5 class that wraps TensorRT ops, preprocess and postprocess ops.
     """
+
     def __init__(
-        self, 
-        engine_file_path: str, 
+        self,
+        engine_file_path: str,
         pluggin_file_path: str,
-        conf_thresh: float=0.5,
-        iou_thresh: float=0.4,
+        conf_thresh: float = 0.5,
+        iou_thresh: float = 0.4,
     ):
         # load in object pluggin file
         ctypes.CDLL(pluggin_file_path)
@@ -32,10 +37,10 @@ class TensorWrapper(object):
         runtime = trt.Runtime(TRT_LOGGER)
 
         # Deserialize the engine from file
-        f = open(engine_file_path, "rb")           
+        f = open(engine_file_path, "rb")
         engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
-        f.close() # might break 2nd loop of inference, hope not
+        f.close()  # might break 2nd loop of inference, hope not
 
         host_inputs = []
         cuda_inputs = []
@@ -74,7 +79,6 @@ class TensorWrapper(object):
         self.conf_thresh = conf_thresh
         self.iou_thresh = iou_thresh
 
-
     def infer(self, image_raw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # Make self the active context, pushing it on top of the context stack.
         self.ctx.push()
@@ -87,7 +91,7 @@ class TensorWrapper(object):
         host_outputs = self.host_outputs
         cuda_outputs = self.cuda_outputs
         bindings = self.bindings
-        
+
         # Do image preprocess
         input_image, image_raw, origin_h, origin_w = self.preprocess_image(image_raw)
 
@@ -108,7 +112,6 @@ class TensorWrapper(object):
 
         # Do postprocess and return
         return self.post_process(output, origin_h, origin_w)
-                
 
     def preprocess_image(self, raw_bgr_image: np.ndarray) -> Tuple[np.ndarray, np.ndarray, int, int]:
         """
@@ -148,9 +151,7 @@ class TensorWrapper(object):
         # print(tw, th, ty1, ty2, tx1, tx2)
 
         # Pad the short side with (128,128,128)
-        image = cv2.copyMakeBorder(
-            image, ty1, ty2, tx1, tx2, cv2.BORDER_CONSTANT, (128, 128, 128)
-        )
+        image = cv2.copyMakeBorder(image, ty1, ty2, tx1, tx2, cv2.BORDER_CONSTANT, (128, 128, 128))
         image = image.astype(np.float32)
         # Normalize to [0,1]
         image /= 255.0
@@ -162,14 +163,13 @@ class TensorWrapper(object):
         image = np.ascontiguousarray(image)
         return image, image_raw, h, w
 
-
     def post_process(
         self, output: np.ndarray, origin_h: int, origin_w: int
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         description: postprocess the prediction.\n
         param:
-            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...] 
+            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...]
             origin_h:   height of original image
             origin_w:   width of original image
         return:
@@ -190,13 +190,8 @@ class TensorWrapper(object):
         result_classid: np.ndarray = boxes[:, 5] if len(boxes) else np.array([])
         return result_boxes, result_scores, result_classid
 
-
     def non_max_suppression(
-        self, prediction: np.ndarray, 
-        origin_h: int, 
-        origin_w: int, 
-        conf_thres: float=0.5, 
-        nms_thres: float=0.4
+        self, prediction: np.ndarray, origin_h: int, origin_w: int, conf_thres: float = 0.5, nms_thres: float = 0.4
     ) -> np.ndarray:
         """
         description: Removes detections with lower object confidence score than 'conf_thres' and performs
@@ -215,10 +210,10 @@ class TensorWrapper(object):
         # Trandform bbox from [center_x, center_y, w, h] to [x1, y1, x2, y2]
         boxes[:, :4] = self.xywh2xyxy(origin_h, origin_w, boxes[:, :4])
         # clip the coordinates
-        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w -1)
-        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w -1)
-        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h -1)
-        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h -1)
+        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w - 1)
+        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w - 1)
+        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h - 1)
+        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h - 1)
         # Object confidence
         confs: np.ndarray = boxes[:, 4]
         # Sort by the confs
@@ -235,10 +230,9 @@ class TensorWrapper(object):
         boxes = np.stack(keep_boxes, 0) if len(keep_boxes) else np.array([])
         return boxes
 
-
     def xywh2xyxy(self, origin_h: int, origin_w: int, x: int) -> np.ndarray:
         """
-        description:    Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] 
+        description:    Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2]
                         where xy1=top-left, xy2=bottom-right.\n
         param:
             origin_h:   height of original image
@@ -265,13 +259,12 @@ class TensorWrapper(object):
 
         return y
 
-
-    def bbox_iou(self, box1: np.ndarray, box2: np.ndarray, x1y1x2y2: bool=True) -> float:
+    def bbox_iou(self, box1: np.ndarray, box2: np.ndarray, x1y1x2y2: bool = True) -> float:
         """
         description: compute the IoU of two bounding boxes.\n
         param:
             box1: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))
-            box2: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))            
+            box2: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))
             x1y1x2y2: select the coordinate format
         return:
             iou: computed iou
@@ -293,15 +286,15 @@ class TensorWrapper(object):
         inter_rect_x2: np.ndarray = np.minimum(b1_x2, b2_x2)
         inter_rect_y2: np.ndarray = np.minimum(b1_y2, b2_y2)
         # Intersection area
-        inter_area: np.ndarray = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * \
-                                 np.clip(inter_rect_y2 - inter_rect_y1 + 1, 0, None)
+        inter_area: np.ndarray = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * np.clip(
+            inter_rect_y2 - inter_rect_y1 + 1, 0, None
+        )
         # Union Area
         b1_area: float = (b1_x2 - b1_x1 + 1) * (b1_y2 - b1_y1 + 1)
         b2_area: float = (b2_x2 - b2_x1 + 1) * (b2_y2 - b2_y1 + 1)
         iou: float = inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
         return iou
-
 
     def destroy(self):
         # Remove any context from the top of the context stack, deactivating it.

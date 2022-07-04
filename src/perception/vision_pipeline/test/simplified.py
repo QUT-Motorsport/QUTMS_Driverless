@@ -1,8 +1,9 @@
-## The code below is adapted from 
+## The code below is adapted from
 # https://github.com/wang-xinyu/tensorrtx/blob/master/yolov5/yolov5_trt.py
 
 import ctypes
 import time
+
 import cv2
 import numpy as np
 import pycuda.autoinit
@@ -18,11 +19,12 @@ ENGINE_PATH = "yolov5s.engine"
 
 categories = ["blue", "yellow"]
 
+
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
     """
     description: Plots one bounding box on image img,
                  this function comes from YoLov5 project.
-    param: 
+    param:
         x:      a box likes [x1,y1,x2,y2]
         img:    a opencv image object
         color:  color to draw rectangle, such as (0,255,0)
@@ -32,10 +34,8 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         no return
 
     """
-    tl = (
-        line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1
-    )  # line/font thickness
-    color = (0,255,0)
+    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
+    color = (0, 255, 0)
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
@@ -53,11 +53,13 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
             thickness=tf,
             lineType=cv2.LINE_AA,
         )
-        
+
+
 class TensorModel(object):
     """
     description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
     """
+
     def __init__(self, engine_file_path: str):
         # load in object pluggin file
         ctypes.CDLL(PLUGIN_LIBRARY)
@@ -68,7 +70,7 @@ class TensorModel(object):
         runtime = trt.Runtime(TRT_LOGGER)
 
         # Deserialize the engine from file
-        f = open(engine_file_path, "rb")           
+        f = open(engine_file_path, "rb")
         engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
 
@@ -79,7 +81,7 @@ class TensorModel(object):
         bindings = []
 
         for binding in engine:
-            print('binding:', binding, engine.get_binding_shape(binding))
+            print("binding:", binding, engine.get_binding_shape(binding))
             size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
             dtype = trt.nptype(engine.get_binding_dtype(binding))
             # Allocate host and device buffers
@@ -108,7 +110,6 @@ class TensorModel(object):
         self.bindings = bindings
         self.batch_size = engine.max_batch_size
 
-
     def infer(self, image_raw):
         # threading.Thread.__init__(self)
         # Make self the active context, pushing it on top of the context stack.
@@ -122,7 +123,7 @@ class TensorModel(object):
         host_outputs = self.host_outputs
         cuda_outputs = self.cuda_outputs
         bindings = self.bindings
-        
+
         # Do image preprocess
         input_image, image_raw, origin_h, origin_w = self.preprocess_image(image_raw)
 
@@ -142,9 +143,7 @@ class TensorModel(object):
         # Here we use the first row of output in that batch_size = 1
         output = host_outputs[0]
         # Do postprocess
-        result_boxes, result_scores, result_classid = self.post_process(
-            output, origin_h, origin_w
-        )
+        result_boxes, result_scores, result_classid = self.post_process(output, origin_h, origin_w)
         end = time.time()
         # Draw rectangles and labels on the original image
         # for j in range(len(result_boxes)):
@@ -157,7 +156,6 @@ class TensorModel(object):
         #         ),
         #     )
         return image_raw, end - start
-                
 
     def preprocess_image(self, raw_bgr_image):
         """
@@ -195,9 +193,7 @@ class TensorModel(object):
         # print(tw, th, ty1, ty2, tx1, tx2)
 
         # Pad the short side with (128,128,128)
-        image = cv2.copyMakeBorder(
-            image, ty1, ty2, tx1, tx2, cv2.BORDER_CONSTANT, (128, 128, 128)
-        )
+        image = cv2.copyMakeBorder(image, ty1, ty2, tx1, tx2, cv2.BORDER_CONSTANT, (128, 128, 128))
         image = image.astype(np.float32)
         # Normalize to [0,1]
         image /= 255.0
@@ -208,7 +204,6 @@ class TensorModel(object):
         # Convert the image to row-major order, also known as "C order":
         image = np.ascontiguousarray(image)
         return image, image_raw, h, w
-
 
     def xywh2xyxy(self, origin_h, origin_w, x):
         """
@@ -238,12 +233,11 @@ class TensorModel(object):
 
         return y
 
-
     def post_process(self, output, origin_h, origin_w):
         """
         description: postprocess the prediction
         param:
-            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...] 
+            output:     A numpy likes [num_boxes,cx,cy,w,h,conf,cls_id, cx,cy,w,h,conf,cls_id, ...]
             origin_h:   height of original image
             origin_w:   width of original image
         return:
@@ -262,13 +256,12 @@ class TensorModel(object):
         result_classid = boxes[:, 5] if len(boxes) else np.array([])
         return result_boxes, result_scores, result_classid
 
-
     def bbox_iou(self, box1, box2, x1y1x2y2=True):
         """
         description: compute the IoU of two bounding boxes
         param:
             box1: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))
-            box2: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))            
+            box2: A box coordinate (can be (x1, y1, x2, y2) or (x, y, w, h))
             x1y1x2y2: select the coordinate format
         return:
             iou: computed iou
@@ -290,8 +283,9 @@ class TensorModel(object):
         inter_rect_x2 = np.minimum(b1_x2, b2_x2)
         inter_rect_y2 = np.minimum(b1_y2, b2_y2)
         # Intersection area
-        inter_area = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * \
-                     np.clip(inter_rect_y2 - inter_rect_y1 + 1, 0, None)
+        inter_area = np.clip(inter_rect_x2 - inter_rect_x1 + 1, 0, None) * np.clip(
+            inter_rect_y2 - inter_rect_y1 + 1, 0, None
+        )
         # Union Area
         b1_area = (b1_x2 - b1_x1 + 1) * (b1_y2 - b1_y1 + 1)
         b2_area = (b2_x2 - b2_x1 + 1) * (b2_y2 - b2_y1 + 1)
@@ -299,7 +293,6 @@ class TensorModel(object):
         iou = inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
         return iou
-
 
     def non_max_suppression(self, prediction, origin_h, origin_w, conf_thres=0.5, nms_thres=0.4):
         """
@@ -319,10 +312,10 @@ class TensorModel(object):
         # Trandform bbox from [center_x, center_y, w, h] to [x1, y1, x2, y2]
         boxes[:, :4] = self.xywh2xyxy(origin_h, origin_w, boxes[:, :4])
         # clip the coordinates
-        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w -1)
-        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w -1)
-        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h -1)
-        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h -1)
+        boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w - 1)
+        boxes[:, 2] = np.clip(boxes[:, 2], 0, origin_w - 1)
+        boxes[:, 1] = np.clip(boxes[:, 1], 0, origin_h - 1)
+        boxes[:, 3] = np.clip(boxes[:, 3], 0, origin_h - 1)
         # Object confidence
         confs = boxes[:, 4]
         # Sort by the confs
@@ -339,21 +332,20 @@ class TensorModel(object):
         boxes = np.stack(keep_boxes, 0) if len(keep_boxes) else np.array([])
         return boxes
 
-
     def destroy(self):
         # Remove any context from the top of the context stack, deactivating it.
         self.ctx.pop()
 
 
 img_paths: list = [
-    'samples/test1.jpg', 
-    'samples/test2.jpg',
-    'samples/test3.jpg',
-    'samples/test4.jpg',
-    'samples/test5.jpg',
-    'samples/test6.jpg',
-    'samples/test7.jpg',
-    'samples/test8.jpg',
+    "samples/test1.jpg",
+    "samples/test2.jpg",
+    "samples/test3.jpg",
+    "samples/test4.jpg",
+    "samples/test5.jpg",
+    "samples/test6.jpg",
+    "samples/test7.jpg",
+    "samples/test8.jpg",
 ]
 
 trt_wrapper = TensorModel(ENGINE_PATH)
@@ -362,5 +354,5 @@ for img_path in img_paths:
     print("Reading image: ", img_path)
     img: np.ndarray = cv2.imread(img_path)
     image_raw, use_time = trt_wrapper.infer(img)
-    print('input->{}, time->{:.2f}ms, saving into output/'.format(img_path, use_time * 1000))
+    print("input->{}, time->{:.2f}ms, saving into output/".format(img_path, use_time * 1000))
 trt_wrapper.destroy()

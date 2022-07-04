@@ -1,11 +1,12 @@
 # Import Custom Modules
 # from . import total_least_squares_old as tls
-from .cy_library import total_least_squares as tls
+import copy
+import math
 
 # Python Modules
 import numpy as np
-import math
-import copy
+
+from .cy_library import total_least_squares as tls
 
 
 def fit_error(m, b, points):
@@ -14,10 +15,10 @@ def fit_error(m, b, points):
     sse = 0
     for i in range(num_points):
         x = points[i][0]
-        best_fit = m*x + b
+        best_fit = m * x + b
 
         observed = points[i][1]
-        sse += (best_fit - observed)**2
+        sse += (best_fit - observed) ** 2
 
     # root mean square return
     return math.sqrt(sse / num_points)
@@ -39,20 +40,38 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
             b_new = None
 
             new_point = seg_proto_points[idx]
-            if (len(new_line_points) >= 2):
+            if len(new_line_points) >= 2:
                 new_line_points_copy = copy.deepcopy(new_line_points)
                 new_line_points_copy.append(new_point)
 
                 [m_new, b_new] = tls.fit_line(new_line_points_copy)
 
-                if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points_copy) <= T_RMSE):
+                if (
+                    abs(m_new) <= T_M
+                    and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+                    and fit_error(m_new, b_new, new_line_points_copy) <= T_RMSE
+                ):
                     new_line_points.append(new_point)
                     new_line_points_copy = []
                 else:
                     [m_new, b_new] = tls.fit_line(new_line_points)
 
-                    if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                        estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+                    if (
+                        abs(m_new) <= T_M
+                        and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+                        and fit_error(m_new, b_new, new_line_points) <= T_RMSE
+                    ):
+                        estimated_lines.append(
+                            (
+                                m_new,
+                                b_new,
+                                new_line_points[0][0],
+                                new_line_points[0][1],
+                                new_line_points[len(new_line_points) - 1][0],
+                                new_line_points[len(new_line_points) - 1][1],
+                                len(new_line_points),
+                            )
+                        )
                         lines_created += 1
 
                     new_line_points = []
@@ -63,13 +82,27 @@ def get_ground_lines_2(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                         idx -= 1
 
             else:
-                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                if (
+                    len(new_line_points) == 0
+                    or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0]))
+                    <= T_M
+                ):
                     new_line_points.append(new_point)
 
         idx += 1
 
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        estimated_lines.append((m_new, b_new, new_line_points[0][0],new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+        estimated_lines.append(
+            (
+                m_new,
+                b_new,
+                new_line_points[0][0],
+                new_line_points[0][1],
+                new_line_points[len(new_line_points) - 1][0],
+                new_line_points[len(new_line_points) - 1][1],
+                len(new_line_points),
+            )
+        )
 
     return estimated_lines
 
@@ -95,32 +128,62 @@ def get_ground_lines(segment, num_bins, T_M, T_M_SMALL, T_B, T_RMSE):
 
                 [m_new, b_new] = tls.fit_line(temp_line_points)
 
-                if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
+                if (
+                    abs(m_new) <= T_M
+                    and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+                    and fit_error(m_new, b_new, temp_line_points) <= T_RMSE
+                ):
                     new_line_points.append(new_point)
                     temp_line_points = []
                 else:
                     [m_new, b_new] = tls.fit_line(new_line_points)
 
-                    if (abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B) and fit_error(m_new, b_new, temp_line_points) <= T_RMSE):
-                        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+                    if (
+                        abs(m_new) <= T_M
+                        and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+                        and fit_error(m_new, b_new, temp_line_points) <= T_RMSE
+                    ):
+                        lines.append(
+                            [
+                                m_new,
+                                b_new,
+                                new_line_points[0],
+                                new_line_points[len(new_line_points) - 1],
+                                len(new_line_points),
+                            ]
+                        )
                         lines_created += 1
 
                     new_line_points = []
                     i = i - 2
             else:
-                if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+                if (
+                    len(new_line_points) == 0
+                    or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0]))
+                    <= T_M
+                ):
                     new_line_points.append(new_point)
                 else:
                     # print("no", new_point, i) # whats this for?
                     pass
         elif len(segment[i]) > 2 or len(segment[i]) == 1:
             # This case should not be possible
-            raise ValueError("More than one prototype point has been found in a bin!", "i:", i, "len:", len(segment[i]), "segment[i]:", segment[i])
+            raise ValueError(
+                "More than one prototype point has been found in a bin!",
+                "i:",
+                i,
+                "len:",
+                len(segment[i]),
+                "segment[i]:",
+                segment[i],
+            )
 
         i += 1
-        
+
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        lines.append([m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)])
+        lines.append(
+            [m_new, b_new, new_line_points[0], new_line_points[len(new_line_points) - 1], len(new_line_points)]
+        )
 
     if (m_new == None and b_new != None) or (m_new != None and b_new == None):
         raise ValueError("how the hell did this happen. Like literally how. it wont, this if statement is unnecessary.")
@@ -140,20 +203,30 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
         b_new = None
 
         new_point = seg_proto_points[idx]
-        if (len(new_line_points) >= 2):
+        if len(new_line_points) >= 2:
             new_line_points.append(new_point)
 
             [m_new, b_new] = tls.fit_line(new_line_points)
 
             m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
             if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                new_line_points.pop() # Remove the point we just added
+                new_line_points.pop()  # Remove the point we just added
 
                 [m_new, b_new] = tls.fit_line(new_line_points)
 
                 m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
-                if (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                    estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+                if m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE:
+                    estimated_lines.append(
+                        (
+                            m_new,
+                            b_new,
+                            new_line_points[0][0],
+                            new_line_points[0][1],
+                            new_line_points[len(new_line_points) - 1][0],
+                            new_line_points[len(new_line_points) - 1][1],
+                            len(new_line_points),
+                        )
+                    )
                     lines_created += 1
 
                 new_line_points = []
@@ -164,13 +237,26 @@ def get_ground_lines_3(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                     idx -= 1
 
         else:
-            if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+            if (
+                len(new_line_points) == 0
+                or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M
+            ):
                 new_line_points.append(new_point)
 
         idx += 1
 
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        estimated_lines.append((m_new, b_new, new_line_points[0][0], new_line_points[0][1], new_line_points[len(new_line_points) - 1][0], new_line_points[len(new_line_points) - 1][1], len(new_line_points)))
+        estimated_lines.append(
+            (
+                m_new,
+                b_new,
+                new_line_points[0][0],
+                new_line_points[0][1],
+                new_line_points[len(new_line_points) - 1][0],
+                new_line_points[len(new_line_points) - 1][1],
+                len(new_line_points),
+            )
+        )
 
     return estimated_lines
 
@@ -192,20 +278,28 @@ def get_ground_lines_4(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
         b_new = None
 
         new_point = seg_proto_points[idx]
-        if (len(new_line_points) >= 2):
+        if len(new_line_points) >= 2:
             new_line_points.append(new_point)
 
             [m_new, b_new] = tls.fit_line(new_line_points)
 
             m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
             if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                new_line_points.pop() # Remove the point we just added
+                new_line_points.pop()  # Remove the point we just added
 
                 [m_new, b_new] = tls.fit_line(new_line_points)
 
                 m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
-                if (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
-                    estimated_lines.append((m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], BIN_SIZE)))
+                if m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE:
+                    estimated_lines.append(
+                        (
+                            m_new,
+                            b_new,
+                            new_line_points[0],
+                            new_line_points[-1],
+                            get_bin(new_line_points[0][0], BIN_SIZE),
+                        )
+                    )
                     lines_created += 1
 
                 new_line_points = []
@@ -216,13 +310,18 @@ def get_ground_lines_4(seg_proto_points, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BE
                     idx -= 1
 
         else:
-            if len(new_line_points) == 0 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M:
+            if (
+                len(new_line_points) == 0
+                or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M
+            ):
                 new_line_points.append(new_point)
 
         idx += 1
 
     if len(new_line_points) > 1 and m_new != None and b_new != None:
-        estimated_lines.append((m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], BIN_SIZE)))
+        estimated_lines.append(
+            (m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], BIN_SIZE))
+        )
 
     # If no ground lines were identified in segment, return 0
     if len(estimated_lines) > 0:
@@ -237,16 +336,20 @@ def get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMAL
 
     # For every segment
     for segment in prototype_points:
-        #print(sum( [ len(listElem) for listElem in segment[1:]]))
-        #print(segment[1:])
-        #ground_plane[int(segment[0])] = get_ground_lines(segment[1:], len(segment[1:]), T_M, T_M_SMALL, T_B, T_RMSE)
+        # print(sum( [ len(listElem) for listElem in segment[1:]]))
+        # print(segment[1:])
+        # ground_plane[int(segment[0])] = get_ground_lines(segment[1:], len(segment[1:]), T_M, T_M_SMALL, T_B, T_RMSE)
         print(segment[1:])
-        ground_plane[int(segment[0])] = get_ground_lines_2(segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        ground_plane[int(segment[0])] = get_ground_lines_2(
+            segment[1:], T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS
+        )
 
     return ground_plane
 
 
-def get_ground_plane_4(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+def get_ground_plane_4(
+    prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS
+):
     norms_z = np.column_stack((norms, z))
 
     # Where the segments change
@@ -263,16 +366,18 @@ def get_ground_plane_4(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, 
     # Try creating the prototype points like you did in the other one
     # Try just including segments during the split
     seg_idx = 0
-    #print("hello", sum( [ len(listElem) for listElem in prototype_points]))
+    # print("hello", sum( [ len(listElem) for listElem in prototype_points]))
     for segment in prototype_points:
         segment = segment.tolist()
         # ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
         seg_idx = seg_idx + 1
-    
+
     return ground_plane
 
 
-def get_ground_plane_5(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+def get_ground_plane_5(
+    prototype_points_idx, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS
+):
     proto_points_nrm_z = np.column_stack((norms[prototype_points_idx], z[prototype_points_idx]))
 
     # Where the segments change
@@ -290,14 +395,26 @@ def get_ground_plane_5(prototype_points_idx, segments, norms, z, SEGMENT_COUNT, 
     # Try just including segments during the split
     seg_idx = 0
     for segment in prototype_points:
-        #segment = segment.tolist()
-        #ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        # segment = segment.tolist()
+        # ground_plane[segments[seg_idx]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
         seg_idx = seg_idx + 1
 
     return ground_plane
 
 
-def get_ground_plane_6(prototype_points_idx, seg_sorted_ind, segments, norms, z, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS):
+def get_ground_plane_6(
+    prototype_points_idx,
+    seg_sorted_ind,
+    segments,
+    norms,
+    z,
+    SEGMENT_COUNT,
+    T_M,
+    T_M_SMALL,
+    T_B,
+    T_RMSE,
+    REGRESS_BETWEEN_BINS,
+):
     # Sorted indicies (by segment) of prototype points
     sorted_proto_ind = seg_sorted_ind[np.sort(prototype_points_idx)]
 
@@ -321,12 +438,24 @@ def get_ground_plane_6(prototype_points_idx, seg_sorted_ind, segments, norms, z,
     # Computing the ground plane
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
     for segment_idx in range(len(proto_segments)):
-        ground_plane[segments[segment_idx]] = get_ground_lines_2(proto_segments[segment_idx].tolist(), T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
+        ground_plane[segments[segment_idx]] = get_ground_lines_2(
+            proto_segments[segment_idx].tolist(), T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS
+        )
 
     return ground_plane
 
 
-def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE):
+def get_ground_plane_7(
+    split_prototype_segments,
+    prototype_segments,
+    SEGMENT_COUNT,
+    T_M,
+    T_M_SMALL,
+    T_B,
+    T_RMSE,
+    REGRESS_BETWEEN_BINS,
+    BIN_SIZE,
+):
     # Computing the ground plane
     ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
     for segment_counter in range(len(split_prototype_segments)):
@@ -334,7 +463,9 @@ def get_ground_plane_7(split_prototype_segments, prototype_segments, SEGMENT_COU
         # print(get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS))
         # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_2(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
         # ground_plane[prototype_segments[segment_counter]] = get_ground_lines_3(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_4(segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE)
+        ground_plane[prototype_segments[segment_counter]] = get_ground_lines_4(
+            segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE
+        )
 
     return ground_plane
 

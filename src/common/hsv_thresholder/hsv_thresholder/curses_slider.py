@@ -1,6 +1,8 @@
-from math import floor, ceil
 import curses
+from math import ceil, floor
+
 from typing import Optional
+
 
 class CursesSlider:
     label: str
@@ -20,7 +22,7 @@ class CursesSlider:
         row: int,
         col: int,
         initial_val: Optional[int] = None,
-        scalar: int = 1
+        scalar: int = 1,
     ) -> None:
         self.label = label
         self.scalar = scalar
@@ -29,13 +31,13 @@ class CursesSlider:
         self.row = row
         self.col = col
         self.val = initial_val if initial_val is not None else min_val
-    
+
     def __iadd__(self, i: int):
         self.val += i
         if self.val > self.max_val:
             self.val = self.max_val
         return self
-    
+
     def __isub__(self, i: int):
         self.val -= i
         if self.val < self.min_val:
@@ -47,7 +49,5 @@ class CursesSlider:
         unfilled = ceil((self.max_val - self.val) / self.scalar)
 
         stdscr.addstr(
-            self.row, 
-            self.col, 
-            f"{self.label}: {'█'*filled}{'░'*unfilled} {self.val}", curses.color_pair(colour_pair)
+            self.row, self.col, f"{self.label}: {'█'*filled}{'░'*unfilled} {self.val}", curses.color_pair(colour_pair)
         )

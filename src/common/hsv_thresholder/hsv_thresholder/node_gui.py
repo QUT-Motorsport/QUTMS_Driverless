@@ -3,11 +3,10 @@ import curses
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
 from std_msgs.msg import String
 
-from .threshold import Threshold
 from .curses_slider import CursesSlider
+from .threshold import Threshold
 
 
 class GUINode(Node):
@@ -15,7 +14,7 @@ class GUINode(Node):
         super().__init__("gui")
 
         self.threshold_publisher: Publisher = self.create_publisher(String, "hsv_thresholder/threshold", 1)
-        
+
         self.get_logger().info("GUI Node Initalised")
 
     def publish_threshold(self, threshold: Threshold):
@@ -50,13 +49,12 @@ def gui_main(stdscr, gui_node: GUINode):
         stdscr.addstr(0, 0, "Lower", curses.A_BOLD)
         stdscr.addstr(7, 0, "Upper", curses.A_BOLD)
 
-
         stdscr.addstr(sliders[active_idx].row, 1, ">", curses.color_pair(1))
         for i, slider in enumerate(sliders):
             slider.draw(stdscr, colour_pair=1 if i == active_idx else 0)
 
         key = stdscr.getch()
-        
+
         # slider selection
         if key == curses.KEY_DOWN:
             active_idx += 1
@@ -76,7 +74,7 @@ def gui_main(stdscr, gui_node: GUINode):
             sliders[active_idx] += 10
         if key == curses.KEY_NPAGE:
             sliders[active_idx] -= 10
-        
+
         # update publish new threshold value
         gui_node.publish_threshold(
             Threshold(
@@ -89,9 +87,10 @@ def gui_main(stdscr, gui_node: GUINode):
                     upper_H_slider.val,
                     upper_S_slider.val,
                     upper_V_slider.val,
-                ]
+                ],
             )
         )
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -99,9 +98,9 @@ def main(args=None):
     gui_node = GUINode()
 
     curses.wrapper(gui_main, gui_node=gui_node)
-    
+
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

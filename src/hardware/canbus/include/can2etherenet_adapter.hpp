@@ -6,15 +6,15 @@
 
 class Can2Ethernet : TCPClient {
    private:
-	std::string ip;
-	int port;
-	std::string address;
+    std::string ip;
+    int port;
+    std::string address;
 
    public:
-	Can2Ethernet(std::string ip, int port);
-	void tx(uint32_t id, bool std_id, uint8_t* data);
-	std::shared_ptr<std::vector<char>> rx();
-	~Can2Ethernet() { this->_disconnect(); };
+    Can2Ethernet(std::string ip, int port);
+    void tx(uint32_t id, bool std_id, uint8_t* data);
+    std::shared_ptr<std::vector<char>> rx();
+    ~Can2Ethernet() { this->_disconnect(); };
 };
 
 /*

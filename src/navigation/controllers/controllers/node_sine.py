@@ -1,21 +1,19 @@
+import math
+
+from ackermann_msgs.msg import AckermannDrive
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.timer import Timer
 
-import math
-
-from ackermann_msgs.msg import AckermannDrive
-
-
 interval = 0.02
+
 
 class SineControllerNode(Node):
     def __init__(self):
         super().__init__("SineController")
 
-        self.steering_publisher: Publisher = self.create_publisher(
-            AckermannDrive, "steering", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
         self.get_logger().info("Sine Controller")
         self.create_timer(interval, self.timer_cb)
         self.count = 0
