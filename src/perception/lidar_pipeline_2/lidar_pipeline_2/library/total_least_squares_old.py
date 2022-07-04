@@ -16,8 +16,8 @@ def get_sample_vars(points, x_mean, y_mean, num_points):
     x_sample_var = 0
     y_sample_var = 0
     for i in range(num_points):
-        x_sample_var += (points[i][0] - x_mean)**2
-        y_sample_var += (points[i][1] - y_mean)**2
+        x_sample_var += (points[i][0] - x_mean) ** 2
+        y_sample_var += (points[i][1] - y_mean) ** 2
 
     x_sample_var = x_sample_var / (num_points - 1)
     y_sample_var = y_sample_var / (num_points - 1)
@@ -30,7 +30,7 @@ def get_theta(x, y):
     if x == 0:
         x = sys.maxsize
 
-    theta = math.atan(y/x)
+    theta = math.atan(y / x)
     return theta
 
 
@@ -73,7 +73,7 @@ def get_x_weight(w_mat, rho_mat, theta_mat, w_sum, num_points):
     for i in range(num_points):
         x_weight += w_mat[i] * rho_mat[i] * math.cos(theta_mat[i])
 
-    x_weight = (1/w_sum) * x_weight
+    x_weight = (1 / w_sum) * x_weight
     return x_weight
 
 
@@ -83,7 +83,7 @@ def get_y_weight(w_mat, rho_mat, theta_mat, w_sum, num_points):
     for i in range(num_points):
         y_weight += w_mat[i] * rho_mat[i] * math.sin(theta_mat[i])
 
-    y_weight = (1/w_sum) * y_weight
+    y_weight = (1 / w_sum) * y_weight
     return y_weight
 
 
@@ -93,7 +93,7 @@ def get_alpha(points, num_points, w_mat, x_weight, y_weight):
     denominator = 0
     for i in range(num_points):
         numerator += w_mat[i] * (y_weight - points[i][1]) * (x_weight - points[i][0])
-        denominator += w_mat[i] * ((y_weight - points[i][1])**2 - (x_weight - points[i][0])**2)
+        denominator += w_mat[i] * ((y_weight - points[i][1]) ** 2 - (x_weight - points[i][0]) ** 2)
 
     numerator = -2 * numerator
     tan_2_alpha = numerator / denominator
@@ -154,12 +154,13 @@ def fit_line(points):
 
     if r < 0:
         r = -r
-        alpha += math.pi/2
+        alpha += math.pi / 2
 
     m = get_m(alpha, y_weight)
     b = get_b(points, num_points, r, alpha, m)
 
-    return ([m, b])
+    return [m, b]
+
 
 # Notes
 # 1. The get_point_var() is incorrectly implemented for the time being as I was unable to

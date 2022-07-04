@@ -1,6 +1,7 @@
 # Import Python Modules
-import numpy as np
 import math
+
+import numpy as np
 
 
 # Returns the start and end points (x, y, z) of a line
@@ -30,18 +31,16 @@ def dist_points_3D(x_0, p_1, p_2):
 
     # cross product of dimension distances
     dist_cross = [
-        p_1_dist[1]*p_2_dist[2] - p_2_dist[1]*p_1_dist[2], 
-        -(p_1_dist[0]*p_2_dist[2] - p_2_dist[0]*p_1_dist[2]), 
-        p_1_dist[0]*p_2_dist[1] - p_2_dist[0]*p_1_dist[1]
+        p_1_dist[1] * p_2_dist[2] - p_2_dist[1] * p_1_dist[2],
+        -(p_1_dist[0] * p_2_dist[2] - p_2_dist[0] * p_1_dist[2]),
+        p_1_dist[0] * p_2_dist[1] - p_2_dist[0] * p_1_dist[1],
     ]
 
     # normalise (pythag) each cross
-    dist_norm: float = math.sqrt(dist_cross[0]**2 + dist_cross[1]**2 + dist_cross[2]**2)
+    dist_norm: float = math.sqrt(dist_cross[0] ** 2 + dist_cross[1] ** 2 + dist_cross[2] ** 2)
 
     # normalise point 1 and 2 distances
-    p_norm: float = math.sqrt(
-        (p_2[0] - p_1[0])**2 + (p_2[1] - p_1[1])**2 + (p_2[2] - p_1[2])**2
-    )
+    p_norm: float = math.sqrt((p_2[0] - p_1[0]) ** 2 + (p_2[1] - p_1[1]) ** 2 + (p_2[2] - p_1[2]) ** 2)
 
     # return distance
     return dist_norm / p_norm
@@ -55,8 +54,8 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
         seg_idx = i
         # If there is no ground line in current segment, find the closest one
         if num_lines == 0:
-            left_counter = i-1
-            right_counter = i+1
+            left_counter = i - 1
+            right_counter = i + 1
             left_idx = (left_counter) % SEGMENT_COUNT
             right_idx = (right_counter) % SEGMENT_COUNT
             while left_idx != right_idx:
@@ -79,7 +78,7 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
                 point = segments_bins[i][j][k]
                 is_ground = False
                 line_height = ground_line[0] * (j * BIN_COUNT) + ground_line[1]
-                if point[2] < line_height + 0.10: # Make this a constant
+                if point[2] < line_height + 0.10:  # Make this a constant
                     line = line_to_end_points(ground_line, seg_idx)
                     closest_dist = dist_points_3D(point, line[0], line[1])
 
@@ -88,11 +87,13 @@ def label_points(segments_bins, ground_lines, DELTA_ALPHA, SEGMENT_COUNT, BIN_CO
                         line = line_to_end_points(ground_line, seg_idx)
 
                         dist_to_line = dist_points_3D(point, line[0], line[1])
-                        if (dist_to_line < closest_dist):
+                        if dist_to_line < closest_dist:
                             closest_dist = dist_to_line
 
-                    dynamic_T_D_GROUND = 2*((j + 1) * BIN_COUNT)*math.tan(DELTA_ALPHA/2) + BIN_COUNT * 1.3 # Solved for gradient of segment wrt points and distance
-                    if (closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND):
+                    dynamic_T_D_GROUND = (
+                        2 * ((j + 1) * BIN_COUNT) * math.tan(DELTA_ALPHA / 2) + BIN_COUNT * 1.3
+                    )  # Solved for gradient of segment wrt points and distance
+                    if closest_dist < T_D_MAX and closest_dist < dynamic_T_D_GROUND:
                         is_ground = True
                 segments_bins[i][j][k].append(is_ground)
 
@@ -160,7 +161,10 @@ def get_point_line_dist(line_end_points, nearest_line_set, split_bin_nrm_z, SEGM
 
         distances = []
         for j in range(line_start.shape[0]):
-            distances.append(np.abs(np.cross(end_minus_start[j], line_start[j] - point_set[:, 3:6])) / np.linalg.norm(end_minus_start[j]))
+            distances.append(
+                np.abs(np.cross(end_minus_start[j], line_start[j] - point_set[:, 3:6]))
+                / np.linalg.norm(end_minus_start[j])
+            )
 
         point_line_dist[seg_idx] = distances
 
@@ -184,23 +188,23 @@ def dist_points_3D(x_0, p_1, p_2):
 
     # cross product of dimension distances
     dist_cross = [
-        p_1_dist[1]*p_2_dist[2] - p_2_dist[1]*p_1_dist[2], 
-        -(p_1_dist[0]*p_2_dist[2] - p_2_dist[0]*p_1_dist[2]), 
-        p_1_dist[0]*p_2_dist[1] - p_2_dist[0]*p_1_dist[1]
+        p_1_dist[1] * p_2_dist[2] - p_2_dist[1] * p_1_dist[2],
+        -(p_1_dist[0] * p_2_dist[2] - p_2_dist[0] * p_1_dist[2]),
+        p_1_dist[0] * p_2_dist[1] - p_2_dist[0] * p_1_dist[1],
     ]
 
     # normalise (pythag) each cross
-    dist_norm: float = math.sqrt(dist_cross[0]**2 + dist_cross[1]**2 + dist_cross[2]**2)
+    dist_norm: float = math.sqrt(dist_cross[0] ** 2 + dist_cross[1] ** 2 + dist_cross[2] ** 2)
 
     # normalise point 1 and 2 distances
-    p_norm: float = math.sqrt(
-        (p_2[0] - p_1[0])**2 + (p_2[1] - p_1[1])**2 + (p_2[2] - p_1[2])**2
-    )
+    p_norm: float = math.sqrt((p_2[0] - p_1[0]) ** 2 + (p_2[1] - p_1[1]) ** 2 + (p_2[2] - p_1[2]) ** 2)
 
     # return distance
     return dist_norm / p_norm
 
+
 from bisect import bisect_left
+
 
 # Adapted from www.stackoverflow.com Lauritz V. Thaulow
 def take_closest(myList, myNumber):
@@ -246,7 +250,7 @@ def map_segments(ground_plane, SEGMENT_COUNT):
     for empty_segment in empty_segments:
         closest_idx = take_closest(non_empty_segments, empty_segment)
         segments_full[empty_segment] = closest_idx
-    
+
     return segments_full
 
 
@@ -255,12 +259,12 @@ def sort_segments(segments, seg_bin_z_ind):
 
     # Indicies where segments differ
     seg_sorted_diff = np.where(segments_sorted[:-1] != segments_sorted[1:])[0] + 1
-    
+
     # Indicies where segments differ (appending first element at 0)
     seg_sorted_ind = np.empty(seg_sorted_diff.size + 1, dtype=int)
     seg_sorted_ind[0] = 0
     seg_sorted_ind[1:] = seg_sorted_diff
-    
+
     return seg_sorted_ind, segments_sorted
 
 
@@ -276,11 +280,11 @@ def get_closest_line(ground_set, bin_idx):
 
 
 def get_closest_lines(ground_set, bin_set):
-    print('gs', ground_set)
-    print('bs', bin_set)
+    print("gs", ground_set)
+    print("bs", bin_set)
     chingchang = np.zeros(bin_set.size)
     # chingchang = np.where(bin_set < ground_set[:, 4])
-    
+
     if len(chingchang):
         return 0
     else:
@@ -297,17 +301,30 @@ def get_point_line_dist_2(ground_line, point_norm, point_z):
 
 def point_line_dist_3(ground_lines, point_norms, point_zs):
     print(ground_lines)
-    
+
     gradients = ground_lines[:, 0]
     intercepts = ground_lines[:, 1]
     evaluations = (gradients * point_norms) + intercepts
-    
+
     return np.abs(point_zs - evaluations)
 
 
 # [[m b start_x start_y end_x end_y count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
 # [[m b start_point end_point count], [m b start_x start_y end_x end_y count], ...] size is 128 segments
-def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
+def label_points_3(
+    point_cloud,
+    point_norms,
+    seg_bin_z_ind,
+    segments,
+    ground_plane,
+    SEGMENT_COUNT,
+    DELTA_ALPHA,
+    BIN_SIZE,
+    T_D_GROUND,
+    T_D_MAX,
+    point_count,
+    bins,
+):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
 
@@ -317,13 +334,13 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
     # Split point_norms, point_z and bins into segments
     split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
     split_point_norms[0] = point_norms[seg_bin_z_ind][0]
-    
-    split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
-    split_point_z[0] = point_cloud['z'][seg_bin_z_ind][0]
-    
+
+    split_point_z = np.split(point_cloud["z"][seg_bin_z_ind], seg_sorted_ind)
+    split_point_z[0] = point_cloud["z"][seg_bin_z_ind][0]
+
     split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
     split_bins[0] = bins[seg_bin_z_ind][0]
-    
+
     prev_point_count = 0
     point_labels = np.empty(point_count, dtype=bool)
     for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
@@ -334,23 +351,36 @@ def label_points_3(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
         ground_set = np.array(ground_plane[mapped_seg_idx], dtype=object)
 
         unq_bin_idx = np.unique(bin_idx_set)
-        print('ubi', unq_bin_idx)
-        print('other', get_closest_lines(ground_set, unq_bin_idx))
+        print("ubi", unq_bin_idx)
+        print("other", get_closest_lines(ground_set, unq_bin_idx))
         ground_lines = np.array(np.column_stack((unq_bin_idx, get_closest_lines(ground_set, unq_bin_idx))))
-        
-        print('gl', ground_lines)
+
+        print("gl", ground_lines)
 
         point_line_dists = point_line_dist_3(ground_lines, point_norm_set, point_z_set)
-        
+
         curr_point_count = point_norm_set.size
 
-        point_labels[prev_point_count:curr_point_count + 1] = point_line_dists < T_D_GROUND
+        point_labels[prev_point_count : curr_point_count + 1] = point_line_dists < T_D_GROUND
         prev_point_count = curr_point_count
-    
+
     return point_labels
 
 
-def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
+def label_points_4(
+    point_cloud,
+    point_norms,
+    seg_bin_z_ind,
+    segments,
+    ground_plane,
+    SEGMENT_COUNT,
+    DELTA_ALPHA,
+    BIN_SIZE,
+    T_D_GROUND,
+    T_D_MAX,
+    point_count,
+    bins,
+):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments(ground_plane, SEGMENT_COUNT)
 
@@ -359,9 +389,9 @@ def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
 
     # Split point_norms, point_z and bins into segments
     split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
-    split_point_z = np.split(point_cloud['z'][seg_bin_z_ind], seg_sorted_ind)
+    split_point_z = np.split(point_cloud["z"][seg_bin_z_ind], seg_sorted_ind)
     split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
-    
+
     counter = 0
     point_labels = np.empty(point_count, dtype=bool)
     for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
@@ -372,7 +402,7 @@ def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
         ground_set = ground_plane[mapped_seg_idx]
 
         unq_bin_idx = np.unique(bin_idx_set)
-        
+
         ground_line_dict = dict()
         for bin_idx in unq_bin_idx:
             ground_line = get_closest_line(ground_set, bin_idx)
@@ -386,18 +416,17 @@ def label_points_4(point_cloud, point_norms, seg_bin_z_ind, segments, ground_pla
 
             is_non_ground = True
             # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
-            if (point_line_dist < T_D_GROUND):
+            if point_line_dist < T_D_GROUND:
                 is_non_ground = False
 
             point_labels[counter] = is_non_ground
             counter += 1
-    
+
     return point_labels
 
 
 def map_segments_2(ground_plane, SEGMENT_COUNT):
-    
-    
+
     zero = []
     non0 = []
     for idx, lines in enumerate(test):
@@ -405,11 +434,10 @@ def map_segments_2(ground_plane, SEGMENT_COUNT):
             non0.append(idx)
         else:
             zero.append(idx)
-    
+
     print(non0)
     print(zero)
-    
-    
+
     # Indices of segments without ground lines
     empty_segments = [idx for idx, lines in enumerate(ground_plane) if not lines]
 
@@ -421,19 +449,32 @@ def map_segments_2(ground_plane, SEGMENT_COUNT):
     for empty_segment in empty_segments:
         closest_idx = take_closest(non_empty_segments, empty_segment)
         segments_full[empty_segment] = closest_idx
-    
+
     return segments_full
     pass
 
 
-def label_points_5(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, SEGMENT_COUNT, DELTA_ALPHA, BIN_SIZE, T_D_GROUND, T_D_MAX, point_count, bins):
+def label_points_5(
+    point_cloud,
+    point_norms,
+    seg_bin_z_ind,
+    segments,
+    ground_plane,
+    SEGMENT_COUNT,
+    DELTA_ALPHA,
+    BIN_SIZE,
+    T_D_GROUND,
+    T_D_MAX,
+    point_count,
+    bins,
+):
     # Map segments with no ground lines to the nearest segment with a ground line
     mapped_segments = map_segments_2(ground_plane, SEGMENT_COUNT)
-    
+
     return None
 
 
-# If you have computed what ground line is closest for some bin in some set, 
+# If you have computed what ground line is closest for some bin in some set,
 # and multiple points have the same bin, you probably don't need to keep finding
 # which line is closest to bin 4 when you've already done it before
 # could probably run through all unique bin values and create a dictionary
