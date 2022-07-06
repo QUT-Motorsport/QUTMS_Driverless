@@ -4,10 +4,7 @@
     # Configuration file for SBG Ellipse
     # YAML
 
-    # Ellipse-A - Magnetic-based
-    # Ellipse-E - External GNSS
     # Ellipse-N - GNSS-based
-    # Ellipse-D - Dual-antenna GNSS
 
     driver:
       # Node frequency (Hz)
@@ -28,7 +25,7 @@
       initFrameId: "map"
 
     # Configuration of the device with ROS.
-    confWithRos: false
+    confWithRos: true
 
     # Uart configuration
     uartConf:
