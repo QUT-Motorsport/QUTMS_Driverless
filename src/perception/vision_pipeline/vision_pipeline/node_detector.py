@@ -83,6 +83,20 @@ def cone_bearing(
     
     return CAMERA_FOV/2 * center_scaled
 
+
+def cone_elevation(
+    colour_frame_cone_bounding_box: Rect,
+    colour_frame_camera_info: CameraInfo,
+) -> float:
+
+    vfov = (colour_frame_camera_info.height / colour_frame_camera_info.width) * CAMERA_FOV
+    cone_center = colour_frame_cone_bounding_box.center.y
+    frame_width = colour_frame_camera_info.height
+    center_scaled = (frame_width / 2 - cone_center) / (frame_width / 2)  # 1 to -1 left to right
+    
+    return (vfov/2 * center_scaled)
+
+
 """
 covariance matrix determined by comparing
 ground-truth sim cone locations with vision cone locations
@@ -90,23 +104,33 @@ ground-truth sim cone locations with vision cone locations
 - probably wont work for real life but thats ok,
   there are better options with SLAM
 """
-vision_cov = np.array([[ 0.4,  0.01, 0], [ 0.01, 0.1, 0], [0, 0,  0.01]])
+vision_cov = np.array([[0.4, 0, 0], [0, 0.1, 0], [0, 0, 0.05]])
+def cone_cov(bearing: float, distance: float):
+    # could also impliment shifting cov due to elevation
+    s, c = sin(radians(bearing)), cos(radians(bearing))
+    rotation_matrix = np.array([[c, -1*s, 0],[s, c, 0], [0, 0, 1]])
+    new_cov = rotation_matrix @ vision_cov @ rotation_matrix.T
+    retcov = new_cov * (distance/20)
+    return retcov
+
 
 def cone_msg(
     distance: float,
     bearing: float,
     colour: int,  # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
+    elevation: float,
 ) -> Cone:
 
     location = Point(
         x=distance*cos(radians(bearing))-0.5, # distance from cam to CoG
         y=distance*sin(radians(bearing)),
-        z=0.0,
+        z=distance*sin(radians(elevation))+0.8, # distance detected + cam to CoG
     )
+    cov = cone_cov(bearing, distance)
 
     return Cone(
         location=location,
-        covariance=vision_cov.flatten(),
+        covariance=cov.flatten(),
         color=colour,
     )
 
@@ -181,7 +205,8 @@ class DetectorNode(Node):
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
-            detected_cones.append(cone_msg(distance, bearing, cone_colour))
+            elevation = cone_elevation(bounding_box, colour_camera_info_msg)
+            detected_cones.append(cone_msg(distance, bearing, cone_colour, elevation))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
         
         stamped_header = Header()
@@ -195,7 +220,7 @@ class DetectorNode(Node):
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
-        logger.debug("Time: " + str(time.time() - start) + "\n") # log time
+        logger.info("Time: " + str(time.time() - start) + "\n") # log time
 
 
 ## OpenCV thresholding

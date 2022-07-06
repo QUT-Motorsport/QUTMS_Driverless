@@ -13,12 +13,14 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 import time
 import numpy as np
 from typing import List
+from math import sin, cos, sqrt, atan2
 
 # import ROS function that has been ported to ROS2 by
 # SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .scripts.read_pcl import read_points_list
 # lidar cone detection algorithm
 from .scripts.sim_simple import find_cones
+
 
 """
 covariance matrix determined by comparing
@@ -27,18 +29,28 @@ ground-truth sim cone locations with lidar cone locations
 - probably wont work for real life but thats ok,
   there are better options with SLAM
 """
-lidar_cov = np.array([[0.02, 0.1, 0], [0.1, 0.02, 0.1], [0, 0.1, 0.01]])
+lidar_cov = np.array([[0.04, 0, 0], [ 0, 0.06, 0], [0, 0, 0.02]])
+def cone_cov(x: float, y: float, z: float):
+    bearing = atan2(y, x)
+    distance = sqrt(x**2 +y**2 + z**2)
+    s, c = sin(bearing), cos(bearing)
+    rotation_matrix = np.array([[c, -1*s, 0],[s, c, 0], [0, 0, 1]])
+    new_cov = rotation_matrix @ lidar_cov @ rotation_matrix.T
+    retcov = new_cov * distance/20
+    return retcov
 
-def cone_msg(x_coord: float, y_coord: float) -> Cone: 
+
+def cone_msg(x_coord: float, y_coord: float, z_coord: float) -> Cone: 
     location: Point = Point(
         x=x_coord+1.2, # distance from lidar to CoG
         y=y_coord,
-        z=0.0,
+        z=z_coord+0.2, # scanned height + height of lidar from ground
     )
+    cov = cone_cov(x_coord, y_coord, z_coord)
 
     return Cone(
         location=location,
-        covariance=lidar_cov.flatten(),
+        covariance=cov.flatten(),
         color=4,
     )
 
@@ -78,7 +90,7 @@ class LidarProcessing(Node):
         detected_cones: List[Cone] = []
 
         for cone in cones:
-            detected_cones.append(cone_msg(cone[0], cone[1]))
+            detected_cones.append(cone_msg(cone[0], cone[1], cone[2]))
 
         stamped_header = Header()
         stamped_header.stamp = pc2_msg.header.stamp
@@ -90,7 +102,7 @@ class LidarProcessing(Node):
 
         self.detection_publisher.publish(detection_msg) # publish cone data
 
-        logger.debug("Total Time:" + str(time.time()-start) + "\n")
+        logger.info("Total Time:" + str(time.time()-start) + "\n")
 
 
 def main():

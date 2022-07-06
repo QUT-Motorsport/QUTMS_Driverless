@@ -23,7 +23,8 @@ from transforms3d.euler import quat2euler
 
 # import required sub modules
 from .point import PointWithCov
-from . import kdtree
+from .kdtree import create, KDNode
+from .kdtree import Node as kdNode
 
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
@@ -50,8 +51,8 @@ class ConeFusion(Node):
 
         self.printmarkers: bool = True # this could be a ros-arg
 
-        self.conesKDTree = None
-        self.bufferKDTree = None
+        self.conesKDTree: KDNode = None
+        self.bufferKDTree: KDNode = None
 
         self.get_logger().info("---Cone Fusion Node Initalised---")
 
@@ -59,15 +60,15 @@ class ConeFusion(Node):
     def getNearestOdom(self, stamp: Time) -> Tuple[Odometry, np.ndarray]:
         # need to switch this over to a position from a EKF with covariance
         # have to do the time stuff this way because the compating of time in the message_filters __init__.py is wack
-        locodom: Odometry = self.actualodom.getElemBeforeTime(
-            Time(
-                seconds=stamp.sec, 
-                nanoseconds=stamp.nanosec, 
-                clock_type=ClockType.ROS_TIME
-            )
-        )
+        locodom: Odometry = self.actualodom.getElemAfterTime(Time.from_msg(stamp))
         # standin covariance for ekf assuming the variance is sigma = 5cm with no covariance
         cov: np.ndarray = np.identity(3) * 0.0025 
+
+        # if the nearest Odom in the cache is more than 0.05 sec off then just throw it away
+        if locodom is not None:
+            #print(Time.from_msg(stamp) - Time.from_msg(locodom.header.stamp))
+            if Time.from_msg(stamp) - Time.from_msg(locodom.header.stamp) > Duration(nanoseconds=0.05*(10**9)):
+                return None, cov
         return locodom, cov
 
 
@@ -94,7 +95,7 @@ class ConeFusion(Node):
             if closestcone[0][0].data.inTwoSigma(point):
                 # select the first group from the returned tuple (point objects) and then get the first one 
                 # (which will be our point since we only asked for one)
-                pointnew = closestcone[0][0]
+                pointnew: kdNode = closestcone[0][0]
                 # fuse the points together
                 pointnew.data.update(point)
                 # if there is already a tree of Offical Cones tm than add it to that tree and then rebalance it
@@ -103,7 +104,7 @@ class ConeFusion(Node):
                     self.conesKDTree.rebalance()
                 # if not than make a tree for them
                 else:
-                    self.conesKDTree = kdtree.create([point])
+                    self.conesKDTree = create([point])
                 # remove the point from the buffer tree
                 self.bufferKDTree.remove(pointnew.data)
                 # the rebalance the buffer tree since we removed something
@@ -115,7 +116,7 @@ class ConeFusion(Node):
         # if we dont already have a buffer tree than create one 
         # (this should only ever happen once i hope, otherwise something has gone horrible wrong)
         else:
-            self.bufferKDTree = kdtree.create([point])
+            self.bufferKDTree = create([point])
 
 
     def fusePoints(self, points: List[PointWithCov], header: Header):
@@ -196,9 +197,7 @@ class ConeFusion(Node):
         # need to make a section to remove old points from the buffer
         if self.bufferKDTree is not None and self.bufferKDTree.data is not None:
             for point in self.bufferKDTree.returnElements():
-                if self.get_clock().now() - Duration(nanoseconds=2*10**9) \
-                    > Time(seconds=header.stamp.sec, nanoseconds=header.stamp.nanosec, clock_type=ClockType.ROS_TIME):
-
+                if self.get_clock().now() - Duration(nanoseconds=2*10**9) > Time.from_msg(header.stamp):
                     self.bufferKDTree.remove(point)
 
             self.bufferKDTree.rebalance()
