@@ -7,7 +7,7 @@ import yaml
 
 
 def generate_launch_description():
-    return launch.LaunchDescription(velodyne_launch())
+    return launch.LaunchDescription(velodyne_launch() + sbg_launch())
 
 
 def velodyne_launch():
