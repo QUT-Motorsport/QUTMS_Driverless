@@ -17,4 +17,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+# launch folder
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()

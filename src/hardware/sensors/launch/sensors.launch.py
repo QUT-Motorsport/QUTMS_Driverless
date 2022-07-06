@@ -1,38 +1,3 @@
-# XXX: COPIED AND MODIFIED FROM https://github.com/ros-drivers/velodyne/blob/galactic-devel/velodyne/launch/velodyne-all-nodes-VLP32C-launch.py
-
-# Copyright 2019 Open Source Robotics Foundation, Inc.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
-"""Launch the velodyne driver, pointcloud, and laserscan nodes with default configuration."""
-
 import os
 
 import ament_index_python.packages
@@ -42,6 +7,11 @@ import yaml
 
 
 def generate_launch_description():
+    return launch.LaunchDescription(velodyne_launch())
+
+
+def velodyne_launch():
+    # Copied from: https://github.com/ros-drivers/velodyne/blob/galactic-devel/velodyne/launch/velodyne-all-nodes-VLP32C-launch.py
     driver_share_dir = ament_index_python.packages.get_package_share_directory("velodyne_driver")
     driver_params_file = os.path.join(driver_share_dir, "config", "VLP32C-velodyne_driver_node-params.yaml")
     velodyne_driver_node = launch_ros.actions.Node(
@@ -66,16 +36,24 @@ def generate_launch_description():
         parameters=[laserscan_params_file],
     )
 
-    return launch.LaunchDescription(
-        [
-            velodyne_driver_node,
-            velodyne_convert_node,
-            velodyne_laserscan_node,
-            launch.actions.RegisterEventHandler(
-                event_handler=launch.event_handlers.OnProcessExit(
-                    target_action=velodyne_driver_node,
-                    on_exit=[launch.actions.EmitEvent(event=launch.events.Shutdown())],
-                )
-            ),
-        ]
+    return [
+        velodyne_driver_node,
+        velodyne_convert_node,
+        velodyne_laserscan_node,
+        launch.actions.RegisterEventHandler(
+            event_handler=launch.event_handlers.OnProcessExit(
+                target_action=velodyne_driver_node,
+                on_exit=[launch.actions.EmitEvent(event=launch.events.Shutdown())],
+            )
+        ),
+    ]
+
+
+def sbg_launch():
+    # Copied from: https://github.com/SBG-Systems/sbg_ros2_driver/blob/master/launch/sbg_device_launch.py
+
+    config = os.path.join(
+        ament_index_python.packages.get_package_share_directory("sensors"), "config", "sbg_config.yaml"
     )
+
+    return [launch_ros.actions.Node(package="sbg_driver", executable="sbg_device", output="both", parameters=[config])]
