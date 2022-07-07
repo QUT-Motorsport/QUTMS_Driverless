@@ -1,1 +1,3 @@
-datasets/*
+*
+!src/
+!dev_environment.yml
