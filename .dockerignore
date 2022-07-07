@@ -1,1 +1,4 @@
-datasets/*
+*
+!src/
+!docker/
+!dev_environment.yml
