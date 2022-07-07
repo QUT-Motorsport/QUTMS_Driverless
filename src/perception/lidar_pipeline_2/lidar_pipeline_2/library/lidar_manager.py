@@ -3,6 +3,7 @@ import math
 
 # Import Python Modules
 import time
+import logging
 
 import matplotlib.pyplot as plt
 
@@ -12,7 +13,6 @@ import numpy as np
 from . import ground_plane_estimator as gpe
 from . import object_processor as op
 from . import point_classifier as pc
-from . import point_cloud_processing as pcp
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from . import worlds_worst_code as ihateuni
