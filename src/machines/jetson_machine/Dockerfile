@@ -8,8 +8,8 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp
 
-# TODO:
-# export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/dist-packages
+# Set PYTHONPATH to include base libraries from container
+ENV PYTHONPATH="${PYTHONPATH}:/usr/local/lib/python3.8/dist-packages"
 
 # vision_pipeline
 COPY ./src/perception/vision_pipeline/trt_requirements.txt ./trt_requirements.txt
