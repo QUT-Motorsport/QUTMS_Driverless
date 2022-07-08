@@ -1,13 +1,8 @@
-# Import Custom Modules
-import math
-
-# Import Python Modules
-import time
 import logging
+import math
+import time
 
 import matplotlib.pyplot as plt
-
-# Import Helper Modules
 import numpy as np
 
 from . import ground_plane_estimator as gpe
