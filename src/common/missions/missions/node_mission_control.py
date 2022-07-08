@@ -16,8 +16,7 @@ class MissionControl(Node):
         super().__init__("mission_control")
 
         self.create_subscription(Can, "/can_rosbound", self.callback, 10)
-
-        self.srv = self.create_service(SelectMission, "select_mission", self.terminal_srv)
+        self.create_service(SelectMission, "select_mission", self.terminal_srv)
 
         self.publisher: Publisher = self.create_publisher(Can, "/can_carbound", 10)
 
@@ -28,8 +27,8 @@ class MissionControl(Node):
         self.r2d: bool = False
 
     def terminal_srv(self, request, response):  # service callback from terminal selection
-        self.get_logger().info("Incoming request\n%d", request)
-        self.target_mission = request
+        self.get_logger().info("Incoming request\n" + request.mission)
+        self.target_mission = request.mission
 
         response.confirmation = "Mission confirmed: " + str(self.target_mission)
         return response

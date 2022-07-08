@@ -27,7 +27,7 @@ set(msg_files
 )
 
 set(srv_files
-  srv/SelectMission.srv
+  "srv/SelectMission.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
