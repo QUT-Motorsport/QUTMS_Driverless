@@ -11,6 +11,11 @@ WORKDIR /tmp
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
+# vision pipeline
+COPY ./src/perception/vision_pipeline/trt_requirements.txt ./trt_requirements.txt
+RUN pip install -r ./trt_requirements.txt \
+    && rm -f ./trt_requirements.txt
+
 # run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
@@ -20,5 +25,5 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         vision_pipeline \
     && rm -rf ./src
 
-# Set PYTHONPATH to include base libraries from container
-ENV PYTHONPATH="${PYTHONPATH}:/usr/local/lib/python3.8/dist-packages"
+# HACK: Set PYTHONPATH to include base libraries from container (we want tensorrt from the base environment)
+ENV PYTHONPATH=/usr/local/lib/python3.8/dist-packages
