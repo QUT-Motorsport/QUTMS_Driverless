@@ -68,6 +68,7 @@ class MissionControl(Node):
                 out_can = Can()
                 out_can.id = "r2d"
                 out_can.data = 1
+                # any other CAN data??
                 self.publisher.publish(out_can)
 
 
