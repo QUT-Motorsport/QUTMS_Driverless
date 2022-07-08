@@ -5,6 +5,8 @@ dependencies:
   # ---------------------------------------------------------------------------
   # ROS Base Env deps
   # ---------------------------------------------------------------------------
+  # tag below used for PYTHON_VERSION_OVERRIDE in Dockerfile.base
+  ###PYTHON_VERSION###
   - python=3.9
   - ros-galactic-desktop
   - ca-certificates
