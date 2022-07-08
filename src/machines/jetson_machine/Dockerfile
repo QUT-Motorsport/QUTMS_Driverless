@@ -8,21 +8,17 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp
 
-# Set PYTHONPATH to include base libraries from container
-ENV PYTHONPATH="${PYTHONPATH}:/usr/local/lib/python3.8/dist-packages"
-
-# vision_pipeline
-COPY ./src/perception/vision_pipeline/trt_requirements.txt ./trt_requirements.txt
-RUN pip3 install -r trt_requirements.txt
-RUN rm -f ./trt_requirements.txt
-
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-RUN source /opt/ros/galactic/install/setup.bash; \
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
         jetson_machine \
         vision_pipeline \
     && rm -rf ./src
+
+# Set PYTHONPATH to include base libraries from container
+ENV PYTHONPATH="${PYTHONPATH}:/usr/local/lib/python3.8/dist-packages"
