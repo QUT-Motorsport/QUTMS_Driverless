@@ -16,7 +16,7 @@ class MissionControl(Node):
         super().__init__("mission_control")
 
         self.create_subscription(Can, "/can_rosbound", self.callback, 10)
-        self.create_service(SelectMission, "select_mission", self.terminal_srv)
+        self.create_service(SelectMission, "select_mission", self.gui_srv)
 
         self.publisher: Publisher = self.create_publisher(Can, "/can_carbound", 10)
 
@@ -26,11 +26,11 @@ class MissionControl(Node):
         self.mission_start: bool = False
         self.r2d: bool = False
 
-    def terminal_srv(self, request, response):  # service callback from terminal selection
-        self.get_logger().info("Incoming request\n" + request.mission)
+    def gui_srv(self, request, response):  # service callback from terminal selection
+        self.get_logger().info("Incoming request: " + request.mission)
         self.target_mission = request.mission
 
-        response.confirmation = "Mission confirmed: " + str(self.target_mission)
+        print(str(self.target_mission))
         return response
 
     def callback(self, can_msg: Can):
@@ -41,6 +41,7 @@ class MissionControl(Node):
             mission: int = can_msg.data  # extract msg data
             if mission >= 0 and mission < 4:  # check if its an actual value
                 self.target_mission = missions[mission]
+                print(str(self.target_mission))
 
         # next, listen to the RES 'start' button CAN msg.
         # send can msg to EBS VCU

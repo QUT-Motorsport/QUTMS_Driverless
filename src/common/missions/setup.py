@@ -1,4 +1,6 @@
 from setuptools import setup
+from glob import glob
+import os
 
 package_name = "missions"
 
@@ -9,6 +11,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join("share", package_name), glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -18,6 +21,9 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["mission_control = missions.node_mission_control:main", "gui = missions.node_gui:main"],
+        "console_scripts": [
+            "mission_control = missions.node_mission_control:main", 
+            "gui = missions.node_gui:main"
+        ],
     },
 )
