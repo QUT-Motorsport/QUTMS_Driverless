@@ -47,10 +47,10 @@ build_docker_base_1804:
 	..
 
 build_docker_base_l4t:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-r32.6.1 \
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.0.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-base:r32.6.1 \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime \
 	--build-arg PYTHON_VERSION_OVERRIDE=3.8 \
 	..
 
