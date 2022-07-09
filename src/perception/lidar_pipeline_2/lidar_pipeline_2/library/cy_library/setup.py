@@ -1,3 +1,6 @@
+# Run the following command to compile required files
+# python setup.py build_ext --inplace
+
 from distutils.core import setup
 import pathlib
 
