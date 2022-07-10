@@ -7,11 +7,18 @@ def generate_launch_description():
         [
             Node(
                 package="vision_pipeline",
-                executable="zed_simulator",
+                executable="trt_detector",
             ),
             Node(
-                package="sim_pursuit",
+                package="lidar_pipeline",
+                executable="lidar_processing",
+            ),
+            Node(
+                package="sim_pursuit", # will rename package in refactor
                 executable="local_pursuit",
             ),
+            ## MAPPING NODE
+
+            ## MPC NODE (PURE PURSUIT FOR NOW) - dormant until loop closure service call
         ]
     )
