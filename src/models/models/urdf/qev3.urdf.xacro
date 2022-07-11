@@ -7,7 +7,7 @@
     <xacro:property name="chassis_length" value="1.5" />
     <xacro:property name="chassis_height" value="0.2" />
 
-    <xacro:property name="wheel_diameter" value="0.4318" />
+    <xacro:property name="wheel_diameter" value="0.381" />
     <xacro:property name="wheel_thickness" value="0.05" />
 
     <xacro:property name="velodyne_diameter" value="0.1" />
@@ -101,7 +101,7 @@
     <joint name="zed2i_joint" type="fixed">
         <parent link="base_link"/>
         <child link="zed2i"/>
-        <origin xyz="-0.05 0 ${2*chassis_height}" rpy="0 0 0"/>
+        <origin xyz="-0.1 0 ${2*chassis_height}" rpy="0 0 0"/>
     </joint>
 
 </robot>
