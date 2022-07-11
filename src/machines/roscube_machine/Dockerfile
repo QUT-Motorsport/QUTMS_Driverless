@@ -12,12 +12,14 @@ WORKDIR /tmp
 COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # rosboard
 COPY ./src/common/rosboard/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # controllers
@@ -29,24 +31,28 @@ RUN apt-get update && \
 COPY ./src/navigation/controllers/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # steering actuator
 COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # canbus
 COPY ./src/hardware/canbus/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # models
 COPY ./src/models/models/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
+    mamba clean --all --yes \
     mamba install -y --file ./conda_requirements
 
 # cleanup
