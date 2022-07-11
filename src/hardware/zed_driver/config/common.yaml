@@ -14,7 +14,7 @@
             svo_realtime:               false                               # if true SVO will be played trying to respect the original framerate eventually skipping frames, otherwise every frame will be processed respecting the `pub_frame_rate` setting
             camera_timeout_sec:         5
             camera_max_reconnect:       5
-            camera_flip:                true
+            camera_flip:                false
             zed_id:                     0
             serial_number:              0
             resolution:                 2                                   # '0': HD2K, '1': HD1080, '2': HD720, '3': VGA
