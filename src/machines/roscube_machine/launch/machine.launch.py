@@ -14,7 +14,7 @@ def generate_launch_description():
                 package="canbus",
                 executable="canbus",
                 parameters=[
-                    get_package_share_directory("canbus") / "config" / "canbus.yaml",
+                    Path(get_package_share_directory("canbus")) / "config" / "canbus.yaml",
                 ],
             ),
             Node(
