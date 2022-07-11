@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
@@ -12,8 +14,8 @@ def generate_launch_description():
                 package="canbus",
                 executable="canbus",
                 parameters=[
-                    "/home/developer/driverless_ws/src/hardware/canbus/config/canbus.yaml"
-                ],  # TODO: use auto getter for path
+                    get_package_share_directory("canbus") / "config" / "canbus.yaml",
+                ],
             ),
             Node(
                 package="rosboard",
