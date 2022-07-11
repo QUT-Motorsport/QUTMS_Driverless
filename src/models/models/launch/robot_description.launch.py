@@ -1,11 +1,18 @@
+from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.substitutions import Command
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    urdf_model = LaunchConfiguration("urdf_model")
+
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "urdf_model", default_value="qev3.urdf.xacro", description="URDF Model to use (from models/urdf)"
+            ),
             Node(
                 package="robot_state_publisher",
                 executable="robot_state_publisher",
@@ -14,10 +21,7 @@ def generate_launch_description():
                 parameters=[
                     {
                         "robot_description": Command(
-                            [
-                                "xacro ",
-                                "/home/alistair/dev/repos/QUTMS_Driverless/src/models/models/urdf/qev3.urdf.xacro",
-                            ]
+                            ["xacro ", f"{get_package_share_path('models') / 'urdf'}/", urdf_model]
                         )
                     }
                 ],
