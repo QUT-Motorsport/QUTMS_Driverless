@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>sensors</name>
+    <name>models</name>
     <version>0.0.0</version>
-    <description>Holding package for sensor packages</description>
+    <description>URDF Models</description>
     <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
     <license>MIT</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <depend>sbg_driver</depend>
-    <depend>velodyne</depend>
+    <depend>robot_state_publisher</depend>
+    <depend>xacro</depend>
 
     <exec_depend>ros2launch</exec_depend>
 
