@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -14,7 +14,7 @@ def generate_launch_description():
                 package="canbus",
                 executable="canbus",
                 parameters=[
-                    Path(get_package_share_directory("canbus")) / "config" / "canbus.yaml",
+                    get_package_share_path("canbus") / "config" / "canbus.yaml",
                 ],
             ),
             Node(
@@ -23,7 +23,7 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
-                    [get_package_share_directory("sensors"), "/launch/sensors.launch.py"]
+                    launch_file_path=get_package_share_path("sensors") / "launch" / "sensors.launch.py"
                 ),
             ),
         ]
