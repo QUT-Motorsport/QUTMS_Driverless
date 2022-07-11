@@ -8,6 +8,12 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp
 
+# sensors
+COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # rosboard
 COPY ./src/common/rosboard/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
@@ -39,12 +45,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 
 # models
 COPY ./src/models/models/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
-
-# sensors
-COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
