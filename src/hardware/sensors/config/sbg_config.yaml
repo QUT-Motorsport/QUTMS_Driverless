@@ -46,17 +46,17 @@
     # Sensor Parameters
     sensorParameters:
       # Initial latitude (°)
-      initLat: 48.419727
+      initLat: -27.4780001465071
       # Initial longitude (°)
-      initLong: -4.472119
+      initLong: 153.0285495700094
       # Initial altitude (above WGS84 ellipsoid) (m)
-      initAlt: 100.0
+      initAlt: 20.0
       # Year at startup
-      year: 2018
+      year: 2022
       # month in year at startup
-      month: 03
+      month: 07
       # day in month at startup
-      day: 10
+      day: 12
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
