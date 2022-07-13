@@ -6,7 +6,6 @@ import rclpy
 from rclpy.node import Node
 from fs_msgs.msg import ControlCommand
 
-
 class GUINode(Node):
     def __init__(self):
         super().__init__("gui")
@@ -55,14 +54,14 @@ def gui_main(stdscr, gui_node: GUINode):
             if steering_count > steering_max: steering_count = steering_max
 
         if c == curses.KEY_UP:
-            throttle = throttle + 10 # 2 secs to reach max/min 
+            throttle = throttle + 10 
             active_throttle = throttle
             if throttle > 100: throttle = 100
             active_throttle = throttle
 
         # Throttle and brake control
         if c == curses.KEY_DOWN:
-            brake = brake + 15 # 1 sec to reach max
+            brake = brake + 15 
             active_brake = brake
             if brake > 100: brake = 100
             active_brake = brake
@@ -109,10 +108,14 @@ def gui_main(stdscr, gui_node: GUINode):
 def main():
     rclpy.init()
     node = GUINode()
-    curses.wrapper(gui_main, gui_node=node)  #stdscr = curses.initscr() intialised with curses.wrapper in gui_main
+    curses.wrapper(gui_main, gui_node=node) 
     node.destroy_node()
     rclpy.shutdown()
 
 
 if __name__ == "__main__":
     main()
+
+
+
+

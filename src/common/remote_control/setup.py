@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'node_key_control = remote_control.key_control:main'
+            'key_control = remote_control.node_key_control:main',
+            'key_pygame = remote_control.node_key_pygame:main'
         ],
     },
 )
