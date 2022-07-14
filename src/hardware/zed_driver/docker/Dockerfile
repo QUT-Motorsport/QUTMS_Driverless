@@ -238,7 +238,7 @@ RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-
 #     Following instructions from https://www.stereolabs.com/docs/ros2/
 # ==============================================================================
 WORKDIR /ros_zed_ws/src
-RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-v3.5.1
+RUN git clone --recurse-submodules https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-v3.7
 
 WORKDIR /ros_zed_ws
 # symlink libusb for the build
