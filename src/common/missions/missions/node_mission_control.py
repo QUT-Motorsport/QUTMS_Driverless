@@ -1,7 +1,7 @@
 import time
 
 from driverless_msgs.msg import Can
-from driverless_msgs.srv import SelectMission
+from driverless_msgs.srv import SelectMission, StartControl
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -20,17 +20,22 @@ class MissionControl(Node):
 
         self.publisher: Publisher = self.create_publisher(Can, "/can_carbound", 10)
 
-        self.get_logger().info("---Mission Control node initialised---")
-
         self.target_mission: str = None
         self.mission_start: bool = False
         self.r2d: bool = False
 
+        self.client = self.create_client(StartControl, "start_control")
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("service not available, waiting again...")
+
+        self.send_srv = StartControl.Request()
+        self.future = None
+
+        self.get_logger().info("---Mission Control node initialised---")
+
     def gui_srv(self, request, response):  # service callback from terminal selection
         self.get_logger().info("Incoming request: " + request.mission)
         self.target_mission = request.mission
-
-        print(str(self.target_mission))
         return response
 
     def callback(self, can_msg: Can):
@@ -41,7 +46,6 @@ class MissionControl(Node):
             mission: int = can_msg.data  # extract msg data
             if mission >= 0 and mission < 4:  # check if its an actual value
                 self.target_mission = missions[mission]
-                print(str(self.target_mission))
 
         # next, listen to the RES 'start' button CAN msg.
         # send can msg to EBS VCU
@@ -55,6 +59,7 @@ class MissionControl(Node):
                 out_can.data = 1
                 # any other CAN data??
                 self.publisher.publish(out_can)
+                print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
 
         # then, listen to EBS check success
         # else its bad, dont continue
@@ -70,6 +75,13 @@ class MissionControl(Node):
                 out_can.data = 1
                 # any other CAN data??
                 self.publisher.publish(out_can)
+                # this should send srv to start controlling
+
+                self.send_srv.start = True
+                self.future = self.client.call_async(self.send_srv)
+
+                rclpy.spin_until_future_complete(self, self.future)
+                response = self.future.result()
 
 
 def main(args=None):
