@@ -56,7 +56,7 @@
     </joint>
 
     <!-- ZED2i -->
-    <link name="zed2i">
+    <link name="zed_base_link">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
@@ -67,7 +67,7 @@
     </link>
     <joint name="zed2i_joint" type="fixed">
         <parent link="base_link"/>
-        <child link="zed2i"/>
+        <child link="zed_base_link"/>
         <origin xyz="${-trolley_length/2} 0 ${0.5}" rpy="0 0 0"/>
     </joint>
 
