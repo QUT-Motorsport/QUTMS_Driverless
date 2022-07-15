@@ -1,6 +1,7 @@
-from setuptools import setup
 from glob import glob
 import os
+
+from setuptools import setup
 
 package_name = "missions"
 
@@ -22,8 +23,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "mission_control = missions.node_mission_control:main", 
-            "gui = missions.node_gui:main"
+            "mission_control = missions.node_mission_control:main",
+            "gui = missions.node_gui:main",
+            "dummy_can = missions.node_dummy_can:main",
         ],
     },
 )

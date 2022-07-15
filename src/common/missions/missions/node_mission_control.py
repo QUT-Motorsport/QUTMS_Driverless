@@ -25,8 +25,6 @@ class MissionControl(Node):
         self.r2d: bool = False
 
         self.client = self.create_client(StartControl, "start_control")
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("service not available, waiting again...")
 
         self.send_srv = StartControl.Request()
         self.future = None
@@ -34,7 +32,7 @@ class MissionControl(Node):
         self.get_logger().info("---Mission Control node initialised---")
 
     def gui_srv(self, request, response):  # service callback from terminal selection
-        self.get_logger().info("Incoming request: " + request.mission)
+        self.get_logger().info("Selected mission: " + request.mission)
         self.target_mission = request.mission
         return response
 
@@ -50,31 +48,32 @@ class MissionControl(Node):
         # next, listen to the RES 'start' button CAN msg.
         # send can msg to EBS VCU
         # VCU side: go thru ebs checks
-        if can_msg.id == "res_start":
-            start_confirm: bool = can_msg.data
-            if start_confirm:
+        if can_msg.id == 600 and self.target_mission is not None:
+            self.get_logger().info("Received can msg for start")
+            if can_msg.data[0]:
+                self.get_logger().info("Start confirmed")
                 self.mission_start = True
-                out_can = Can()
-                out_can.id = "check_ebs"
-                out_can.data = 1
-                # any other CAN data??
-                self.publisher.publish(out_can)
+                # out_can = Can()
+                # out_can.id = "check_ebs"
+                # out_can.data = 1
+                # # any other CAN data??
+                # self.publisher.publish(out_can)
                 print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
 
         # then, listen to EBS check success
         # else its bad, dont continue
         # delay 5s
         # send 'go' ros message to control and perception nodes
-        if can_msg.id == "ebs_ready":
-            ebs_ready: bool = can_msg.data
-            if ebs_ready:
-                time.sleep(5)  # probably a better way to pause
+        if can_msg.id == 601 and self.target_mission is not None and self.mission_start:
+            self.get_logger().info("Received can msg for ebs ready")
+            if can_msg.data[0]:
+                self.get_logger().info("EBS ready confirmed")
                 self.r2d = True
-                out_can = Can()
-                out_can.id = "r2d"
-                out_can.data = 1
-                # any other CAN data??
-                self.publisher.publish(out_can)
+                # out_can = Can()
+                # out_can.id = "r2d"
+                # out_can.data = 1
+                # # any other CAN data??
+                # self.publisher.publish(out_can)
                 # this should send srv to start controlling
 
                 self.send_srv.start = True
