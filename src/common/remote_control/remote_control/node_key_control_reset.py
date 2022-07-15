@@ -1,10 +1,10 @@
 # car control no auto decrementation of throttle, brake or steering
-from math import floor, ceil
 import curses
 import time
 import rclpy
 from rclpy.node import Node
 from fs_msgs.msg import ControlCommand
+from .draw_gui import Gui
 
 class GUINode(Node):
     def __init__(self):
@@ -17,10 +17,6 @@ class GUINode(Node):
 
 
 def gui_main(stdscr, gui_node: GUINode):
-    scalar = 5
-    _scalar = 10   # bar of throttle and brake half the size of steering bar
-    min = 0        # throttle & brake
-    max = 100
     steering_min = -50
     steering_max = 50
     steering_count = 0
@@ -44,27 +40,54 @@ def gui_main(stdscr, gui_node: GUINode):
         #curses.flushinp()
         stdscr.clear() # clear the screen
 
-        # Steering control
-        if c == curses.KEY_LEFT:
-            steering_count -= 10
-            if steering_count < steering_min: steering_count = steering_min
+        active_steering = 0
+        active_throttle = 0
+        active_brake = 0
+        c = stdscr.getch()
+        curses.flushinp()
+        stdscr.clear()
 
-        if c == curses.KEY_RIGHT:
-            steering_count += 10
-            if steering_count > steering_max: steering_count = steering_max
+        # input for control_command 
+        if c == ord('a'):
+            steering_count -= 10 #original value -5
+            active_steering = steering_count
+            if steering_count < steering_min: 
+                steering_count = steering_min   # max steering angle is 25 degrees
+                active_steering = steering_count
 
-        if c == curses.KEY_UP:
-            throttle = throttle + 10 
+        if c == ord('d'):
+            steering_count += 10 #original value 5
+            active_steering = steering_count
+            if steering_count > steering_max: 
+                steering_count = steering_max
+                active_steering = steering_count
+
+        if c == ord('w'):
+            throttle = throttle + 20  #orginal value 10
             active_throttle = throttle
             if throttle > 100: throttle = 100
             active_throttle = throttle
-
-        # Throttle and brake control
-        if c == curses.KEY_DOWN:
-            brake = brake + 15 
+        
+        if c == ord('s'):
+            brake = brake + 25 # orginal value 15
             active_brake = brake
             if brake > 100: brake = 100
             active_brake = brake
+
+        #decrement steering_count to 0 when no key is pressed
+        if c == -1 and steering_count > 0:
+            steering_count -= 5  # original 2
+            active_steering = steering_count
+            if steering_count < 0: 
+                steering_count = 0
+                active_steering = steering_count
+
+        if c == -1 and steering_count < 0:
+            steering_count += 5 # original 2
+            active_steering = steering_count
+            if steering_count > 0: 
+                steering_count = 0
+                active_steering = steering_count
 
         if c == ord('r'):
             active_throttle = 0
@@ -76,26 +99,7 @@ def gui_main(stdscr, gui_node: GUINode):
         if c == ord('k'):
             break
             
-        right = floor((steering_count - steering_min)/scalar)
-        left = ceil((steering_max - steering_count)/scalar)
-        brake_filled = ceil((active_brake - min)/_scalar)
-        brake_unfilled = floor((max-active_brake)/_scalar)
-        throttle_filled = ceil((active_throttle - min)/_scalar)
-        throttle_unfilled = floor((max - active_throttle)/_scalar)
-
-        # boxed controls
-        stdscr.addstr(0,1,"+-------------------------+")
-        stdscr.addstr(1,1,"|                         |")
-        stdscr.addstr(2,1,"|        STEERING         |")
-        stdscr.addstr(3,1,f'{"|"}  {"░"*right}{"┃"}{"░"*left}  {"|"}')
-        stdscr.addstr(4,1,f'|           {(float(steering_count/100))}\t   |')
-        stdscr.addstr(5,1,"|                         |")
-        stdscr.addstr(6,1,f'{"|"}   T:  {"█"*throttle_filled}{"░"*throttle_unfilled} {active_throttle/100}\t   {"|"}')
-        stdscr.addstr(7,1,"|                         |")
-        stdscr.addstr(8,1,f'{"|"}   B:  {"█"*brake_filled}{"░"*brake_unfilled} {round(active_brake/100,1)}\t   {"|"}')
-        stdscr.addstr(9,1,"|        r: reset         |")
-        stdscr.addstr(10,1,"+-------------------------+")
-        stdscr.refresh() 
+        Gui(stdscr).draw_gui(active_steering, active_throttle, active_brake)
         
         control_msg.throttle = float(active_throttle/100)
         control_msg.steering = float(steering_count/100)
