@@ -6,23 +6,25 @@ from cv_bridge import CvBridge
 # import ROS2 message libraries
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
+from visualization_msgs.msg import Marker, MarkerArray
+from std_msgs.msg import Header
 # import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import Track
 
 # other python modules
-from math import hypot, atan2, pi, sin, cos
+from math import hypot, atan2, pi, sin, cos, sqrt
 import cv2
 import numpy as np
 from typing import Tuple, List, Optional
 import time
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
-import matplotlib.pyplot as plt
 
 # import required sub modules
 from driverless_common.point import Point
 from .map_cone import MapCone
+from .rviz_marker import cone_marker, cov_marker
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
@@ -146,7 +148,7 @@ def update(track: np.ndarray,
 
 class EKFSlam(Node):
     R = np.diag([0.01, 0.01, 0.01]) # very confident of odom (cause its OP)
-    Q = np.diag([.96, 0.45])**2 # detections are a bit meh
+    Q = np.diag([0.96, 0.45])**2 # detections are a bit meh
     radius = 3 # nn kdtree nearch
     leaf = 50 # nodes per tree before it starts brute forcing?
 
@@ -161,9 +163,9 @@ class EKFSlam(Node):
 
         # publishers
         self.map_img_publisher: Publisher = self.create_publisher(Image, "/slam/map_image", 1)
+        self.markers_publisher: Publisher = self.create_publisher(MarkerArray, "/slam/cone_markers", 1)
         # map cone loc publisher
         self.real_map_img_publisher: Publisher = self.create_publisher(Image, "/slam/real_map_image", 1)
-        self.get_logger().info("---SLAM node initialised---")
 
         self.odom_msg = None
 
@@ -172,14 +174,13 @@ class EKFSlam(Node):
         self.track = []
         self.blue_indexes = []
         self.yellow_indexes = []
+        self.orange_indexes = []
 
-        plt.figure()
-
+        self.get_logger().info("---SLAM node initialised---")
     
     def odom_callback(self, odom_msg: Odometry):
         self.get_logger().debug("Received Odom")
         self.odom_msg = odom_msg # odom updates about 20x faster than vision
-
 
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -195,7 +196,7 @@ class EKFSlam(Node):
         # process detected cones
         cones: List[Cone] = cone_msg.cones
         for cone in cones:
-            if cone.color==2: cone.color = 1 # count orange as yellow cause simplicity
+            # if cone.color==2: cone.color = 1 # count orange as yellow cause simplicity
             det = MapCone(cone) # detection with properties
             if det.range > 12: continue # out of range dont care
             
@@ -216,8 +217,12 @@ class EKFSlam(Node):
                 if close.size != 0: 
                     on_map = True
                     # update the index of the matched cone on the track
-                    if det.colour == 0: self.mu, self.Sigma, self.track = update(self.track, self.blue_indexes[close[0]], det.sense_rb, self.Q, self.mu, self.Sigma)
-                    elif det.colour == 1: self.mu, self.Sigma, self.track = update(self.track, self.yellow_indexes[close[0]], det.sense_rb, self.Q, self.mu, self.Sigma)
+                    if det.colour == 0: 
+                        self.mu, self.Sigma, self.track = update(self.track, self.blue_indexes[close[0]], det.sense_rb, self.Q, self.mu, self.Sigma)
+                    elif det.colour == 1: 
+                        self.mu, self.Sigma, self.track = update(self.track, self.yellow_indexes[close[0]], det.sense_rb, self.Q, self.mu, self.Sigma)
+                    elif det.colour == 2: 
+                        self.mu, self.Sigma, self.track = update(self.track, self.orange_indexes[close[0]], det.sense_rb, self.Q, self.mu, self.Sigma)
 
             if not on_map:
                 if self.track == []: # first in this list
@@ -225,16 +230,20 @@ class EKFSlam(Node):
                     self.track = np.reshape(self.track, (1,-1)) # turn 2D
                 else: # otherwise append vertically
                     self.track = np.vstack([self.track, [mapx, mapy, det.colour]])
-                # get index relative to the whole track 
+                # get i relative to the whole track 
                 if det.colour == 0: self.blue_indexes.append(len(self.track)-1)
                 elif det.colour == 1: self.yellow_indexes.append(len(self.track)-1)
+                elif det.colour == 2: self.orange_indexes.append(len(self.track)-1)
                 # initialise new landmark
                 self.mu, self.Sigma = init_landmark(det.sense_rb, self.Q, self.mu, self.Sigma)
 
-        blue_track = self.track[self.track[:, 2]==0]
-        yellow_track = self.track[self.track[:, 2]==1]
         # Plotting
         map_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
+        cone_markers: List[Marker] = []
+        header = Header()
+        header.stamp = cone_msg.header.stamp
+        header.frame_id = 'map'
+
         cv2.drawMarker(
             map_img, 
             coord_to_img(muR[0],muR[1]).to_tuple(),
@@ -243,28 +252,28 @@ class EKFSlam(Node):
             markerSize=4,
             thickness=2
         )
-
-        for cone in blue_track:
+        for i, cone in enumerate(self.track):
+            if cone[2] == 0: colour = (255, 0, 0)
+            elif cone[2] == 1: colour = (0, 255, 255)
+            elif cone[2] == 2: colour = (0, 100, 255)
             cv2.drawMarker(
                 map_img, 
                 coord_to_img(cone[0],cone[1]).to_tuple(),
-                (255, 0, 0),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=6,
-                thickness=2
-            )
-        for cone in yellow_track:
-            cv2.drawMarker(
-                map_img, 
-                coord_to_img(cone[0],cone[1]).to_tuple(),
-                (0, 255, 255),
+                colour,
                 markerType=cv2.MARKER_TRIANGLE_UP,
                 markerSize=6,
                 thickness=2
             )
 
+            cone_markers.append(cone_marker(cone[0], cone[1], i, header, colour))
+            cov_i = i*2+3
+            curr_cov = self.Sigma[cov_i:cov_i+2, cov_i:cov_i+2] # 2x2 covariance to plot
+            cone_markers.append(cov_marker(cone[0], cone[1], i, header, 3*sqrt(abs(curr_cov[0,0])), 3*sqrt(abs(curr_cov[1,1]))))
+
+        mkrs = MarkerArray()
+        mkrs.markers = cone_markers
         self.map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
-
+        self.markers_publisher.publish(mkrs)
 
     def map_callback(self, track_msg: Track):       
         # track cone list is taken as coords relative to the initial car position
