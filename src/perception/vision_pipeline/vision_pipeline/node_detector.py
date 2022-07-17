@@ -1,25 +1,22 @@
-# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from cv_bridge import CvBridge
 import message_filters
-from ament_index_python.packages import get_package_share_directory
-# import ROS2 message libraries
+
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import Point
-# import custom message libraries
+
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
-# other python libraries
 import os
 from math import sin, cos, radians, isnan, isinf, sqrt
 import cv2
 import numpy as np
 from typing import List, Tuple, Callable
 import time
+from ament_index_python.packages import get_package_share_directory
 
-# import required sub modules
 from .rect import Rect, draw_box
 
 # translate ROS image messages to OpenCV
