@@ -1,27 +1,25 @@
-# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from cv_bridge import CvBridge
-# import ROS2 message libraries
+import message_filters
+
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Header
-# import custom message libraries
+
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import Track
 
-# other python modules
-from math import hypot, atan2, pi, sin, cos, sqrt
+from math import hypot, atan2, sin, cos, sqrt
 import cv2
 import numpy as np
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 import time
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
 
-# import required sub modules
 from driverless_common.point import Point
 from .map_cone import MapCone
 from .rviz_marker import cone_marker, cov_marker
@@ -147,27 +145,31 @@ def update(track: np.ndarray,
 
 
 class EKFSlam(Node):
-    R = np.diag([0.01, 0.01, 0.01]) # very confident of odom (cause its OP)
-    Q = np.diag([0.96, 0.45])**2 # detections are a bit meh
+    R = np.diag([0.05, 0.05, 0.05]) # very confident of odom (cause its OP)
+    Q = np.diag([1, 0.6])**2 # detections are a bit meh
     radius = 3 # nn kdtree nearch
-    leaf = 50 # nodes per tree before it starts brute forcing?
+    leaf = 30 # nodes per tree before it starts brute forcing?
 
     def __init__(self):
         super().__init__("ekf_slam")
 
-        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 10)
         # some service call here from simple controller to send when the car has completed a lap
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
+
+        # sync subscribers
+        odom_sub = message_filters.Subscriber(self, Odometry, "/testing_only/odom")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[odom_sub, detection_sub], queue_size=20, slop=0.2
+        )
+        synchronizer.registerCallback(self.callback)
 
         # publishers
         self.map_img_publisher: Publisher = self.create_publisher(Image, "/slam/map_image", 1)
         self.markers_publisher: Publisher = self.create_publisher(MarkerArray, "/slam/cone_markers", 1)
         # map cone loc publisher
         self.real_map_img_publisher: Publisher = self.create_publisher(Image, "/slam/real_map_image", 1)
-
-        self.odom_msg = None
 
         self.mu = np.array([3.0,0.0,0.0]) # initial pose
         self.Sigma = np.diag([0.01, 0.01, 0.01])
@@ -178,18 +180,11 @@ class EKFSlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
     
-    def odom_callback(self, odom_msg: Odometry):
-        self.get_logger().debug("Received Odom")
-        self.odom_msg = odom_msg # odom updates about 20x faster than vision
-
-    def callback(self, cone_msg: ConeDetectionStamped):
+    def callback(self, odom_msg: Odometry, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
-        while self.odom_msg == None: # sometimes odom sub breaks
-            time.sleep(0.5)
-
         # predict car location (pretty accurate odom)
-        muR, SigmaR = predict(self.odom_msg, self.R)
+        muR, SigmaR = predict(odom_msg, self.R)
         self.mu[0:3] = muR
         self.Sigma[0:3,0:3] = SigmaR
 
