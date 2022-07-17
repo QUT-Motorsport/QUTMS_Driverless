@@ -254,8 +254,8 @@ class LocalSpline(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 3)  # 1/3 along
-            target = Point(ty[target_index], -tx[target_index])
+            target_index = round(self.spline_len / 5) # 1/3 along
+            target = Point(ty[target_index], -tx[target_index]) 
 
             # spline visualisation
             path_markers: List[Marker] = []
