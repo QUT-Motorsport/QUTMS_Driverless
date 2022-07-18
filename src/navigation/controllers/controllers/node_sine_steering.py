@@ -6,25 +6,27 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 
-interval = 0.02
-
 
 class SineController(Node):
+    count = 0
+    interval = 0.02
+
     def __init__(self):
         super().__init__("sine_controller")
 
+        # timed callback
+        self.create_timer(self.interval, self.timer_cb)
+
         self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
-        self.create_timer(interval, self.timer_cb)
-        self.count = 0
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 
-    def timer_cb(self):
+    def timer_callback(self):
         self.translate = 2 * math.pi / 5
-        self.count += interval
+        self.count += self.interval
         steering_msg = AckermannDrive()
         steering_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        # self.get_logger().info(f"angle: {steering_msg.steering_angle}")
+        self.get_logger().info("Angle: " + str(steering_msg.steering_angle))
         self.steering_publisher.publish(steering_msg)
 
 
