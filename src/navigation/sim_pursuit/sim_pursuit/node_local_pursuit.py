@@ -254,8 +254,8 @@ class LocalSpline(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 3)  # 1/3 along
-            target = Point(ty[target_index], -tx[target_index])
+            target_index = round(self.spline_len / 5) # 1/3 along
+            target = Point(ty[target_index], -tx[target_index]) 
 
             # spline visualisation
             path_markers: List[Marker] = []
@@ -324,9 +324,9 @@ class LocalSpline(Node):
             # velocity control
             # init constants
             Kp_vel: float = 2
-            vel_max: float = 8
-            vel_min = vel_max / 2
-            throttle_max: float = 0.3  # m/s^2
+            vel_max: float = 4
+            vel_min = vel_max/2
+            throttle_max: float = 0.3 # m/s^2
 
             # get car vel
             vel_x: float = odom_msg.twist.twist.linear.x
