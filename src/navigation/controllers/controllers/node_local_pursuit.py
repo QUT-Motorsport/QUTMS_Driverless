@@ -1,21 +1,25 @@
 from math import atan, atan2, cos, pi, sin, sqrt
 
-from ackermann_msgs.msg import AckermannDrive
-from builtin_interfaces.msg import Duration
 import cv2
-from cv_bridge import CvBridge
-from driverless_common.point import Point
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point as ROSPoint
-from nav_msgs.msg import Odometry
 import numpy as np
+import scipy.interpolate as scipy_interpolate
+from transforms3d.euler import quat2euler
+
+from cv_bridge import CvBridge
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-import scipy.interpolate as scipy_interpolate
+
+from ackermann_msgs.msg import AckermannDrive
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point as ROSPoint
+from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 from sensor_msgs.msg import Image
-from transforms3d.euler import quat2euler
 from visualization_msgs.msg import Marker
+
+from driverless_common.point import Point
 
 from typing import List, Optional, Tuple
 
@@ -100,9 +104,26 @@ def midpoint(p1: list, p2: list):
     return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
 
 
+def target_line_mkr(pose_msg, path_markers):
+    marker = Marker()
+    marker.header.frame_id = "map"
+    marker.ns = "current_path"
+    marker.id = 0
+    marker.type = Marker.LINE_STRIP
+    marker.action = Marker.ADD
+
 class LocalPursuit(Node):
     def __init__(self):
         super().__init__("local_pursuit")
+
+        # sync subscribers
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[pose_sub, vel_sub, detection_sub], queue_size=20, slop=0.1
+        )
+        synchronizer.registerCallback(self.callback)
 
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 10)
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
@@ -111,15 +132,12 @@ class LocalPursuit(Node):
         self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/local_spline/path_marker", 1)
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+
         self.get_logger().info("---Local Pursuit Node Initalised---")
 
-        self.spline_len = 200
-        self.odom_msg = Odometry()
-
-    def odom_callback(self, odom_msg: Odometry):
-        self.odom_msg = odom_msg
-
-    def callback(self, cone_msg: ConeDetectionStamped):
+    def callback(
+        self, pose_msg: PoseWithCovarianceStamped, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped
+    ):
         self.get_logger().debug("Received detection")
 
         odom_msg = self.odom_msg
@@ -233,8 +251,8 @@ class LocalPursuit(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 5) # 1/3 along
-            target = Point(ty[target_index], -tx[target_index]) 
+            target_index = round(self.spline_len / 5)  # 1/3 along
+            target = Point(ty[target_index], -tx[target_index])
 
             # spline visualisation
             path_markers: List[Marker] = []
@@ -257,7 +275,14 @@ class LocalPursuit(Node):
                 j = odom_msg.pose.pose.orientation.y
                 k = odom_msg.pose.pose.orientation.z
                 # i, j, k angles in rad
-                ai, aj, ak = quat2euler([w, i, j, k])
+                ai, aj, ak = quat2euler(
+                    [
+                        pose_msg.pose.orientation.w,
+                        pose_msg.pose.orientation.x,
+                        pose_msg.pose.orientation.y,
+                        pose_msg.pose.orientation.z,
+                    ]
+                )
                 # displacement from car to target element
                 x_dist = tx[t] * sin(ak) + ty[t] * cos(ak)
                 y_dist = ty[t] * sin(ak) - tx[t] * cos(ak)
@@ -304,8 +329,8 @@ class LocalPursuit(Node):
             # init constants
             Kp_vel: float = 2
             vel_max: float = 4
-            vel_min = vel_max/2
-            throttle_max: float = 0.3 # m/s^2
+            vel_min = vel_max / 2
+            throttle_max: float = 0.3  # m/s^2
 
             # get car vel
             vel_x: float = odom_msg.twist.twist.linear.x

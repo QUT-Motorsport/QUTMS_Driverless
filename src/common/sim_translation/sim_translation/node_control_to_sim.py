@@ -1,10 +1,11 @@
 import math
 
-from ackermann_msgs.msg import AckermannDrive
-from fs_msgs.msg import ControlCommand
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
+
+from ackermann_msgs.msg import AckermannDrive
+from fs_msgs.msg import ControlCommand
 
 
 class ControlToSim(Node):
@@ -12,7 +13,10 @@ class ControlToSim(Node):
         super().__init__("control_to_sim")
 
         self.create_subscription(AckermannDrive, "/driving_command", self.control_callback, 1)
+
+        # publish to sim
         self.publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 1)
+
         self.get_logger().info("---Sim control translator initialised---")
 
     def control_callback(self, msg: AckermannDrive):

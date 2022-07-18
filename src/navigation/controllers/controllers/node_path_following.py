@@ -1,14 +1,17 @@
 from math import atan2, cos, sin, sqrt
 
-from ackermann_msgs.msg import AckermannDrive
-from driverless_msgs.msg import PathStamped
-from nav_msgs.msg import Odometry
 import numpy as np
+import scipy.spatial
+from transforms3d.euler import quat2euler
+
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-import scipy.spatial
-from transforms3d.euler import quat2euler
+
+from ackermann_msgs.msg import AckermannDrive
+from driverless_msgs.msg import PathStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 
 from typing import List
 
@@ -113,9 +116,12 @@ class PurePursuit(Node):
         super().__init__("pure_pursuit")
 
         # sub to path mapper for the desired vehicle path (as an array)
-        self.create_subscription(PathStamped, "/spline_mapper/path", self.path_callback, 10)
-        # sub to odometry for car pose + velocity
-        self.create_subscription(Odometry, "/testing_only/odom", self.callback, 10)
+        self.create_subscription(PathStamped, "/path_planner/path", self.path_callback, 10)
+        # sync subscribers pose + velocity
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.1)
+        synchronizer.registerCallback(self.callback)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
@@ -134,7 +140,11 @@ class PurePursuit(Node):
         self.path = np.array([[p.location.x, p.location.y] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
-    def callback(self, odom_msg: Odometry):
+    def callback(
+        self,
+        pose_msg: PoseWithCovarianceStamped,
+        vel_msg: TwistWithCovarianceStamped,
+    ):
         # Only start once the path has been recieved
         if self.path is None:
             return
@@ -145,8 +155,14 @@ class PurePursuit(Node):
         k = odom_msg.pose.pose.orientation.z
 
         # i, j, k angles in rad
-        ai, aj, ak = quat2euler([w, i, j, k])
-        heading: float = ak
+        ai, aj, ak = quat2euler(
+            [
+                pose_msg.pose.orientation.w,
+                pose_msg.pose.orientation.x,
+                pose_msg.pose.orientation.y,
+                pose_msg.pose.orientation.z,
+            ]
+        )
 
         x = odom_msg.pose.pose.position.x
         y = odom_msg.pose.pose.position.y
