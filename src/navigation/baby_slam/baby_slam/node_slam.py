@@ -14,7 +14,7 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import Track
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
@@ -52,7 +52,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
-def predict(odom_msg: Odometry, R: np.ndarray) -> Tuple[np.ndarray]:
+def predict(pose_msg: PoseWithCovarianceStamped, R: np.ndarray) -> Tuple[np.ndarray]:
     """Covariance from odom
     xx, xy, xz, xi, xj, xk
     yx, yy, yz, yi, yj, yk
@@ -65,23 +65,21 @@ def predict(odom_msg: Odometry, R: np.ndarray) -> Tuple[np.ndarray]:
     # i, j, k angles in rad
     ai, aj, ak = quat2euler(
         [
-            odom_msg.pose.pose.orientation.w,
-            odom_msg.pose.pose.orientation.x,
-            odom_msg.pose.pose.orientation.y,
-            odom_msg.pose.pose.orientation.z,
+            pose_msg.pose.orientation.w,
+            pose_msg.pose.orientation.x,
+            pose_msg.pose.orientation.y,
+            pose_msg.pose.orientation.z,
         ]
     )
 
-    x = odom_msg.pose.pose.position.x
-    y = odom_msg.pose.pose.position.y
+    x = pose_msg.pose.position.x
+    y = pose_msg.pose.position.y
     theta = ak
 
     muR = np.array([x, y, theta])  # robot mean
 
-    cov = odom_msg.pose.covariance
-    # cov = np.reshape(cov, (6,6)) # turns out this is a matrix of zeros from sim.
-    # but IRL we will have covariance from the SBG
-    cov = np.diag(np.random.rand(6) * 0.01)  # so mke some noise
+    cov = pose_msg.covariance
+    cov = np.reshape(cov, (6, 6))
     SigmaR = np.array(
         [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
     )
@@ -176,10 +174,10 @@ class EKFSlam(Node):
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
 
         # sync subscribers
-        odom_sub = message_filters.Subscriber(self, Odometry, "/testing_only/odom")
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[odom_sub, detection_sub], queue_size=20, slop=0.2
+            fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
         )
         synchronizer.registerCallback(self.callback)
 
@@ -191,11 +189,11 @@ class EKFSlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def callback(self, odom_msg: Odometry, cone_msg: ConeDetectionStamped):
+    def callback(self, pose_msg: PoseWithCovarianceStamped, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # predict car location (pretty accurate odom)
-        muR, SigmaR = predict(odom_msg, self.R)
+        muR, SigmaR = predict(pose_msg, self.R)
         self.mu[0:3] = muR
         self.Sigma[0:3, 0:3] = SigmaR
 
