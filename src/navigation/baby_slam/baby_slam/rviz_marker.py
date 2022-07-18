@@ -1,15 +1,16 @@
-from visualization_msgs.msg import Marker
-from std_msgs.msg import Header
 from builtin_interfaces.msg import Duration
+from std_msgs.msg import Header
+from visualization_msgs.msg import Marker
+
 
 def cov_marker(
-    x_coord: float, 
-    y_coord: float, 
-    ID: int, 
+    x_coord: float,
+    y_coord: float,
+    ID: int,
     header: Header,
-    x_scale: float, # x sigma
-    y_scale: float, # y sigma
-) -> Marker: 
+    x_scale: float,  # x sigma
+    y_scale: float,  # y sigma
+) -> Marker:
 
     marker = Marker()
     marker.header = header
@@ -31,7 +32,7 @@ def cov_marker(
     marker.scale.y = y_scale
     marker.scale.z = 0.05
 
-    marker.color.a = 0.3 # alpha
+    marker.color.a = 0.3  # alpha
     marker.color.r = 0.1
     marker.color.g = 0.1
     marker.color.b = 0.1
@@ -40,13 +41,14 @@ def cov_marker(
 
     return marker
 
+
 def cone_marker(
-    x_coord: float, 
-    y_coord: float, 
-    ID: int, 
+    x_coord: float,
+    y_coord: float,
+    ID: int,
     header: Header,
     colour: tuple,
-) -> Marker: 
+) -> Marker:
 
     marker = Marker()
     marker.header = header
@@ -68,10 +70,10 @@ def cone_marker(
     marker.scale.y = 0.15
     marker.scale.z = 0.28
 
-    marker.color.a = 0.5 # alpha
-    marker.color.r = colour[2]/255
-    marker.color.g = colour[1]/255
-    marker.color.b = colour[0]/255
+    marker.color.a = 0.5  # alpha
+    marker.color.r = colour[2] / 255  # scale 0-255 to 0-1
+    marker.color.g = colour[1] / 255
+    marker.color.b = colour[0] / 255
 
     marker.lifetime = Duration(sec=1, nanosec=0)
 
