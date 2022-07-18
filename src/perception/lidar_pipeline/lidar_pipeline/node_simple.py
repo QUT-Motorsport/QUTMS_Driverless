@@ -1,28 +1,18 @@
-# import ROS2 libraries
 import sys
-
-# other python modules
 import time
 
-from builtin_interfaces.msg import Duration
-
-# import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from sensor_msgs.msg import PointCloud2
 
-# import ROS2 message libraries
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point
+from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
 
-# import ROS function that has been ported to ROS2 by
-# SebastianGrans https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo
 from .scripts.read_pcl import read_points_list
-
-# lidar cone detection algorithm
 from .scripts.sim_simple import find_cones
 
 from typing import List

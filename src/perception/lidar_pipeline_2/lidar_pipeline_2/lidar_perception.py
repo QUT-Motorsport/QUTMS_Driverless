@@ -1,43 +1,28 @@
-# Import ROS2 Modules
-# Import Python Modules
 import datetime
 import getopt
-
-# Import Logging
 import logging
-
-# Import Python Modules
 import math
 import os
 import pathlib
 import sys
 import time
 
-from builtin_interfaces.msg import Duration
-
-# import custom message libraries
-# Import Custom Message Modules
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point
 import numpy as np
 
-# Ka blamo
-# import ROS2 libraries
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-# Import ROS2 Helper Modules
-import ros2_numpy as rnp
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2
-
-# import ROS2 message libraries
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
 
-from . import config
+import ros2_numpy as rnp
 
-# Import Custom Modules
+from . import config
 from .library import lidar_manager
 
 

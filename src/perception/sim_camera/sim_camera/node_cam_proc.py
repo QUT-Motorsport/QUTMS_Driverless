@@ -1,26 +1,17 @@
-# import ROS2 libraries
 import time
 
-from cv_bridge import CvBridge  # package to convert between ROS and OpenCV Images
-
-# importcustom sim data message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point
-import message_filters
-
-# import other python libraries
 import numpy as np
+
+from cv_bridge import CvBridge  # package to convert between ROS and OpenCV Images
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-# import ROS2 message libraries
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
 
-# import helper cone location processing module
 from .depth_proc import *
-
-# import helper image processing module
 from .img_proc import *
 
 from typing import Callable, List, Tuple

@@ -1,24 +1,21 @@
-# import ROS2 libraries
 from math import sqrt
 
-from builtin_interfaces.msg import Duration
 import cv2
-from cv_bridge import CvBridge
-from driverless_common.point import Point
-
-# import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
 import numpy as np
+
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from sensor_msgs.msg import Image
 
-# import ROS2 message libraries
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
 
-# other python modules
+from driverless_common.point import Point
+
 from typing import List, Tuple
 
 cv_bridge = CvBridge()

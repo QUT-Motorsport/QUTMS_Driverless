@@ -1,27 +1,23 @@
-# import ROS2 libraries
 import datetime
 import getopt
 import logging
-
-# other python modules
 from math import atan2, cos, sin, sqrt
 import os
 import pathlib
 import sys
 import time
 
-# import custom message libraries
-from driverless_msgs.msg import SplinePoint, SplineStamped
-from fs_msgs.msg import ControlCommand
-
-# import ROS2 message libraries
-from nav_msgs.msg import Odometry
 import numpy as np
+import scipy.spatial
+from transforms3d.euler import quat2euler
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-import scipy.spatial
-from transforms3d.euler import quat2euler
+
+from driverless_msgs.msg import SplinePoint, SplineStamped
+from fs_msgs.msg import ControlCommand
+from nav_msgs.msg import Odometry
 
 from typing import List
 

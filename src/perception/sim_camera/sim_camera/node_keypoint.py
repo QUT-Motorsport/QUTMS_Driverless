@@ -1,25 +1,17 @@
-# import ROS2 libraries
 import os
 import time
 
 import cv2
-from cv_bridge import CvBridge  # package to convert between ROS and OpenCV Images
-
-# import other python libraries
 import numpy as np
 
-# importcustom sim data message libraries
-from qutms_msgs.msg import ConeData, ConeScan
+from cv_bridge import CvBridge  # package to convert between ROS and OpenCV Images
 import rclpy
 from rclpy.node import Node
 
-# import ROS2 message libraries
+from qutms_msgs.msg import ConeData, ConeScan
 from sensor_msgs.msg import Image
 
-# import helper cone location processing module
 from .depth_proc import *
-
-# import helper image processing module
 from .img_processing_KP import *
 
 

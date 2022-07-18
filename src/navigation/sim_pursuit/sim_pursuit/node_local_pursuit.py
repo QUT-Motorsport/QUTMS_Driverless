@@ -1,38 +1,31 @@
-# import ROS2 libraries
 import datetime
 import getopt
 import logging
-
-# other python modules
 from math import atan, atan2, cos, pi, sin, sqrt
 import os
 import pathlib
 import sys
 import time
 
-from builtin_interfaces.msg import Duration
 import cv2
-from cv_bridge import CvBridge
-
-# import required sub modules
-from driverless_common.point import Point
-
-# import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from fs_msgs.msg import ControlCommand
-from geometry_msgs.msg import Point as ROSPoint
-import message_filters
-from nav_msgs.msg import Odometry
 import numpy as np
+import scipy.interpolate as scipy_interpolate  # for spline calcs
+from transforms3d.euler import quat2euler
+
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-import scipy.interpolate as scipy_interpolate  # for spline calcs
 
-# import ROS2 message libraries
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from fs_msgs.msg import ControlCommand
+from geometry_msgs.msg import Point as ROSPoint
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
-from transforms3d.euler import quat2euler
 from visualization_msgs.msg import Marker, MarkerArray
+
+from driverless_common.point import Point
 
 from typing import List, Optional, Tuple
 
@@ -254,8 +247,8 @@ class LocalSpline(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 5) # 1/3 along
-            target = Point(ty[target_index], -tx[target_index]) 
+            target_index = round(self.spline_len / 5)  # 1/3 along
+            target = Point(ty[target_index], -tx[target_index])
 
             # spline visualisation
             path_markers: List[Marker] = []
@@ -325,8 +318,8 @@ class LocalSpline(Node):
             # init constants
             Kp_vel: float = 2
             vel_max: float = 4
-            vel_min = vel_max/2
-            throttle_max: float = 0.3 # m/s^2
+            vel_min = vel_max / 2
+            throttle_max: float = 0.3  # m/s^2
 
             # get car vel
             vel_x: float = odom_msg.twist.twist.linear.x

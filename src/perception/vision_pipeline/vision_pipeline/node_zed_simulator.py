@@ -1,13 +1,11 @@
-# import ROS2 libraries
-# other python libraries
 import cv2
-from cv_bridge import CvBridge
 import numpy as np
+
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-# import ROS2 message libraries
 from sensor_msgs.msg import CameraInfo, Image
 
 # translate ROS image messages to OpenCV

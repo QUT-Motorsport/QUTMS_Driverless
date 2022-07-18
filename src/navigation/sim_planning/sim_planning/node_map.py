@@ -1,32 +1,25 @@
-# import ROS2 libraries
 import datetime
 import getopt
 import logging
-
-# other python modules
 from math import atan2, pi
 import os
 import pathlib
 import sys
 import time
 
-from builtin_interfaces.msg import Duration
-
-# for velocity display colour
 from colour import Color
 import cv2
-from driverless_msgs.msg import SplinePoint, SplineStamped
-
-# import custom message libraries
-from fs_msgs.msg import Cone, Track
-
-# import ROS2 message libraries
-from geometry_msgs.msg import Point
 import numpy as np
+import scipy.interpolate as scipy_interpolate  # for spline calcs
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-import scipy.interpolate as scipy_interpolate  # for spline calcs
+
+from builtin_interfaces.msg import Duration
+from driverless_msgs.msg import SplinePoint, SplineStamped
+from fs_msgs.msg import Cone, Track
+from geometry_msgs.msg import Point
 from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 
