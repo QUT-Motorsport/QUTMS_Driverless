@@ -1,18 +1,16 @@
 import cv2
-import numpy as np
-
 from cv_bridge import CvBridge
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
 from sensor_msgs.msg import CameraInfo, Image
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
 
-class ZedNode(Node):
+class ZedSimulator(Node):
     def __init__(self):
         super().__init__("zed_simulator")
 
@@ -29,7 +27,7 @@ class ZedNode(Node):
 
         self.depth_msg = Image()
 
-        self.get_logger().info("Initialised ZED camera simulator node")
+        self.get_logger().info("---Initialised ZED camera simulator node---")
 
     def depth_callback(self, depth_msg: Image):
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
@@ -49,12 +47,7 @@ class ZedNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    annotator_node = ZedNode()
-
-    rclpy.spin(annotator_node)
+    node = ZedSimulator()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()

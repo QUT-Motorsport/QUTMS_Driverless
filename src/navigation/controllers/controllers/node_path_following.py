@@ -1,28 +1,16 @@
-import datetime
-import getopt
-import logging
 from math import atan2, cos, sin, sqrt
-import os
-import pathlib
-import sys
-import time
 
+from ackermann_msgs.msg import AckermannDrive
+from driverless_msgs.msg import PathStamped
+from nav_msgs.msg import Odometry
 import numpy as np
-import scipy.spatial
-from transforms3d.euler import quat2euler
-
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
-from driverless_msgs.msg import SplinePoint, SplineStamped
-from fs_msgs.msg import ControlCommand
-from nav_msgs.msg import Odometry
+import scipy.spatial
+from transforms3d.euler import quat2euler
 
 from typing import List
-
-# initialise logger
-LOGGER = logging.getLogger(__name__)
 
 
 def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
@@ -120,33 +108,31 @@ def get_throttle_and_brake(velocities: List[float], steering_angle: float) -> Li
     return [calc_throttle, calc_brake]
 
 
-class SplinePursuit(Node):
+class PurePursuit(Node):
     def __init__(self):
-        super().__init__("spline_planner")
+        super().__init__("pure_pursuit")
 
         # sub to path mapper for the desired vehicle path (as an array)
-        self.create_subscription(SplineStamped, "/spline_mapper/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/spline_mapper/path", self.path_callback, 10)
         # sub to odometry for car pose + velocity
         self.create_subscription(Odometry, "/testing_only/odom", self.callback, 10)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
         # path is a numpy array with 2 dimensions
         self.path: np.ndarray = None
 
-        LOGGER.info("---Spline Controller Node Initalised---")
+        self.get_logger().info("---Spline Controller Node Initalised---")
 
-    def path_callback(self, spline_path_msg: SplineStamped):
+    def path_callback(self, spline_path_msg: PathStamped):
         # Only set the desired path once (before the car is moving)
         if self.path is not None:
             return
 
-        # convert List[SplinePoint] to 2D numpy array
-        start: float = time.time()
+        # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y] for p in spline_path_msg.path])
-        LOGGER.info("Time taken to convert to np array: " + str(time.time() - start))
-        LOGGER.info(f"Spline Path Recieved - length: {len(self.path)}")
+        self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
     def callback(self, odom_msg: Odometry):
         # Only start once the path has been recieved
@@ -184,67 +170,17 @@ class SplinePursuit(Node):
         [calc_throttle, calc_break] = get_throttle_and_brake(vel, steering_angle)
 
         # publish message
-        control_msg = ControlCommand()
-        control_msg.steering = float(calc_steering)
-        control_msg.throttle = float(calc_throttle)
-        control_msg.brake = float(calc_break)
+        control_msg = AckermannDrive()
+        control_msg.steering_angle = float(calc_steering)
+        control_msg.acceleration = float(calc_throttle)
+        control_msg.jerk = float(calc_break)  # using jerk for brake for now
 
         self.control_publisher.publish(control_msg)
 
 
-def main(args=sys.argv[1:]):
-    # defaults args
-    loglevel = "info"
-    print_logs = False
-
-    # processing args
-    opts, arg = getopt.getopt(args, str(), ["log=", "print_logs", "ros-args"])
-
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == "--log":
-            loglevel = arg
-        elif opt == "--print_logs":
-            print_logs = True
-
-    # validating args
-    numeric_level = getattr(logging, loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
-
-    # setting up logging
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + "/logs"):
-        os.mkdir(path + "/logs")
-
-    date = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    logging.basicConfig(
-        filename=f"{path}/logs/{date}.log",
-        filemode="w",
-        format="%(asctime)s | %(levelname)s:%(name)s: %(message)s",
-        datefmt="%I:%M:%S %p",
-        # encoding='utf-8',
-        level=numeric_level,
-    )
-
-    # terminal stream
-    if print_logs:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        LOGGER.addHandler(stdout_handler)
-
-    LOGGER.info(f"args = {args}")
-
-    # begin ros node
+def main(args=None):  # begin ros node
     rclpy.init(args=args)
-
-    node = SplinePursuit()
+    node = PurePursuit()
     rclpy.spin(node)
-
     node.destroy_node()
-
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

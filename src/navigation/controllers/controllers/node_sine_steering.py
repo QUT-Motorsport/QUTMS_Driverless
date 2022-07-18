@@ -3,21 +3,21 @@ import math
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from rclpy.timer import Timer
 
 from ackermann_msgs.msg import AckermannDrive
 
 interval = 0.02
 
 
-class SineControllerNode(Node):
+class SineController(Node):
     def __init__(self):
-        super().__init__("SineController")
+        super().__init__("sine_controller")
 
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
-        self.get_logger().info("Sine Controller")
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
         self.create_timer(interval, self.timer_cb)
         self.count = 0
+
+        self.get_logger().info("---Sine Controller Node Initalised---")
 
     def timer_cb(self):
         self.translate = 2 * math.pi / 5
@@ -30,12 +30,7 @@ class SineControllerNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    sine_controller_node = SineControllerNode()
-
-    rclpy.spin(sine_controller_node)
+    node = SineController()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()

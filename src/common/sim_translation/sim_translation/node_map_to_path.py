@@ -1,32 +1,21 @@
-import datetime
-import getopt
-import logging
 from math import atan2, pi
-import os
-import pathlib
-import sys
 import time
 
+from builtin_interfaces.msg import Duration
 from colour import Color
 import cv2
-import numpy as np
-import scipy.interpolate as scipy_interpolate  # for spline calcs
-
-import rclpy
-from rclpy.node import Node
-from rclpy.publisher import Publisher
-
-from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import SplinePoint, SplineStamped
 from fs_msgs.msg import Cone, Track
 from geometry_msgs.msg import Point
+import numpy as np
+import rclpy
+from rclpy.node import Node
+from rclpy.publisher import Publisher
+import scipy.interpolate as scipy_interpolate
 from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 
 from typing import List, Tuple
-
-# initialise logger
-LOGGER = logging.getLogger(__name__)
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
@@ -84,24 +73,24 @@ def angle(p1: List[float], p2: List[float]) -> float:
     return atan2(y_disp, x_disp)
 
 
-class SplineMapper(Node):
-    def __init__(self, spline_len: int):
-        super().__init__("spline_mapper")
+class MapPathPlanner(Node):
+    def __init__(self):
+        super().__init__("map_path_planner")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
 
         # publishers
-        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/spline_mapper/path_marker_array", 1)
-        self.path_publisher: Publisher = self.create_publisher(SplineStamped, "/spline_mapper/path", 1)
+        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/path_planner/path_marker_array", 1)
+        self.path_publisher: Publisher = self.create_publisher(SplineStamped, "/path_planner/path", 1)
 
-        self.spline_len: int = spline_len
+        self.spline_len: int = 3999
         self.track: List[Cone] = None
 
-        LOGGER.info("---Spline Mapper Node Initalised---")
+        self.get_logger().info("---Sim Path Planner Node Initalised---")
 
     def map_callback(self, track_msg: Track):
-        LOGGER.info("Received map")
+        self.get_logger().debug("Received map")
 
         start: float = time.time()
         # track cone list is taken as coords relative to the initial car position
@@ -225,65 +214,13 @@ class SplineMapper(Node):
         marker.lifetime = Duration(sec=10, nanosec=100000)
         self.path_marker_publisher.publish(marker)
 
-        LOGGER.info("Time taken: " + str(time.time() - start))
+        self.get_logger().info("Time taken: " + str(time.time() - start))
 
 
-def main(args=sys.argv[1:]):
-    # defaults args
-    loglevel = "info"
-    print_logs = False
-    spline_len = 3999
-
-    # processing args
-    opts, arg = getopt.getopt(args, str(), ["log=", "print_logs", "length=", "ros-args"])
-
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == "--log":
-            loglevel = arg
-        elif opt == "--print_logs":
-            print_logs = True
-        elif opt == "--length":
-            spline_len = arg
-    # validating args
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
-    if not isinstance(spline_len, int):
-        raise ValueError("Invalid range: %s. Must be int" % spline_len)
-
-    # setting up logging
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + "/logs"):
-        os.mkdir(path + "/logs")
-
-    date = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    logging.basicConfig(
-        filename=f"{path}/logs/{date}.log",
-        filemode="w",
-        format="%(asctime)s | %(levelname)s:%(name)s: %(message)s",
-        datefmt="%I:%M:%S %p",
-        # encoding='utf-8',
-        level=numeric_level,
-    )
-
-    # terminal stream
-    if print_logs:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        LOGGER.addHandler(stdout_handler)
-
-    LOGGER.info(f"args = {args}")
-
+def main(args=None):
     # begin ros node
     rclpy.init(args=args)
-
-    node = SplineMapper(spline_len)
+    node = SimPathPlanner()
     rclpy.spin(node)
-
     node.destroy_node()
-
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

@@ -18,7 +18,6 @@ from typing import List, Optional, Tuple
 
 Colour = Tuple[int, int, int]
 
-
 cv_bridge = CvBridge()
 
 SCALE = 20
@@ -54,22 +53,21 @@ def cone_to_point(cone: Cone) -> Point:
     )
 
 
-class SimpleControllerNode(Node):
+class ReactiveController(Node):
     def __init__(self):
-        super().__init__("simple_controller")
+        super().__init__("reactive_controller")
 
         # subscribers
-        self.create_subscription(ConeDetectionStamped, "/detector/cone_detection", self.cone_detection_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.cone_detection_callback, 1)
 
         # publishers
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/simple_controller/debug_img", 1)
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/reactive_controller/debug_img", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
-        self.get_logger().info("Simple Controller Node Initalised")
+        self.get_logger().info("---Reactive Controller Node Initalised---")
 
     def cone_detection_callback(self, msg: ConeDetectionStamped):
-        logger = self.get_logger()
-        logger.info("Received detection")
+        self.get_logger().debug("Received detection")
 
         cones: List[Cone] = msg.cones
 
@@ -153,19 +151,14 @@ class SimpleControllerNode(Node):
             steering_msg = AckermannDrive()
             steering_msg.steering_angle = steering_angle
             self.steering_publisher.publish(steering_msg)
-            logger.info(f"Published steering angle: {steering_angle}")
+            self.get_logger().debug(f"Published steering angle: {steering_angle}")
 
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main(args=None):
     rclpy.init(args=args)
-
-    simple_controller_node = SimpleControllerNode()
-
-    rclpy.spin(simple_controller_node)
+    node = ReactiveController()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()

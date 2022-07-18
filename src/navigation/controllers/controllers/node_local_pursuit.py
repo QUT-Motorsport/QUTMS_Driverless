@@ -1,36 +1,23 @@
-import datetime
-import getopt
-import logging
 from math import atan, atan2, cos, pi, sin, sqrt
-import os
-import pathlib
-import sys
-import time
 
+from ackermann_msgs.msg import AckermannDrive
+from builtin_interfaces.msg import Duration
 import cv2
-import numpy as np
-import scipy.interpolate as scipy_interpolate  # for spline calcs
-from transforms3d.euler import quat2euler
-
 from cv_bridge import CvBridge
+from driverless_common.point import Point
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point as ROSPoint
+from nav_msgs.msg import Odometry
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
-from builtin_interfaces.msg import Duration
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from fs_msgs.msg import ControlCommand
-from geometry_msgs.msg import Point as ROSPoint
-from nav_msgs.msg import Odometry
+import scipy.interpolate as scipy_interpolate
 from sensor_msgs.msg import Image
-from visualization_msgs.msg import Marker, MarkerArray
-
-from driverless_common.point import Point
+from transforms3d.euler import quat2euler
+from visualization_msgs.msg import Marker
 
 from typing import List, Optional, Tuple
-
-# initialise logger
-LOGGER = logging.getLogger(__name__)
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
@@ -113,28 +100,27 @@ def midpoint(p1: list, p2: list):
     return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
 
 
-class LocalSpline(Node):
-    def __init__(self, spline_len: int):
-        super().__init__("local_spline")
+class LocalPursuit(Node):
+    def __init__(self):
+        super().__init__("local_pursuit")
 
-        self.create_subscription(ConeDetectionStamped, "/detector/cone_detection", self.callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 10)
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # publishers
         self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/local_spline/path_marker", 1)
-        self.control_publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+        self.get_logger().info("---Local Pursuit Node Initalised---")
 
-        LOGGER.info("---Local Spline Node Initalised---")
-
-        self.spline_len = spline_len
+        self.spline_len = 200
         self.odom_msg = Odometry()
 
     def odom_callback(self, odom_msg: Odometry):
         self.odom_msg = odom_msg
 
     def callback(self, cone_msg: ConeDetectionStamped):
-        LOGGER.info("Received detection")
+        self.get_logger().debug("Received detection")
 
         odom_msg = self.odom_msg
 
@@ -247,8 +233,8 @@ class LocalSpline(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 5)  # 1/3 along
-            target = Point(ty[target_index], -tx[target_index])
+            target_index = round(self.spline_len / 5) # 1/3 along
+            target = Point(ty[target_index], -tx[target_index]) 
 
             # spline visualisation
             path_markers: List[Marker] = []
@@ -318,8 +304,8 @@ class LocalSpline(Node):
             # init constants
             Kp_vel: float = 2
             vel_max: float = 4
-            vel_min = vel_max / 2
-            throttle_max: float = 0.3  # m/s^2
+            vel_min = vel_max/2
+            throttle_max: float = 0.3 # m/s^2
 
             # get car vel
             vel_x: float = odom_msg.twist.twist.linear.x
@@ -330,7 +316,7 @@ class LocalSpline(Node):
             target_vel: float = vel_max - (abs(atan(target.y / target.x))) * Kp_vel
             if target_vel < vel_min:
                 target_vel = vel_min
-            LOGGER.info(f"Target vel: {target_vel}")
+            self.get_logger().debug(f"Target vel: {target_vel}")
 
             # increase proportionally as it approaches target
             throttle_scalar: float = 1 - (vel / target_vel)
@@ -345,14 +331,14 @@ class LocalSpline(Node):
             ang_max: float = 7.0
 
             steering_angle = -((pi / 2) - atan2(target.x, target.y)) * 5
-            LOGGER.info(f"Target angle: {steering_angle}")
+            self.get_logger().debug(f"Target angle: {steering_angle}")
             calc_steering = Kp_ang * steering_angle / ang_max
 
             # publish message
-            control_msg = ControlCommand()
-            control_msg.throttle = float(calc_throttle)
-            control_msg.steering = float(calc_steering)
-            control_msg.brake = 0.0
+            control_msg = AckermannDrive()
+            control_msg.acceleration = float(calc_throttle)
+            control_msg.steering_angle = float(calc_steering)
+            control_msg.jerk = 0.0  # using jerk for brake for now
 
             self.control_publisher.publish(control_msg)
 
@@ -384,65 +370,10 @@ class LocalSpline(Node):
         self.path_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
-def main(args=sys.argv[1:]):
-    # defaults args
-    loglevel = "info"
-    print_logs = False
-    spline_len = 200
-
-    # processing args
-    opts, arg = getopt.getopt(args, str(), ["log=", "print_logs", "length=", "ros-args"])
-
-    # TODO: provide documentation for different options
-    for opt, arg in opts:
-        if opt == "--log":
-            loglevel = arg
-        elif opt == "--print_logs":
-            print_logs = True
-        elif opt == "--length":
-            spline_len = arg
-
-    # validating args
-    numeric_level = getattr(logging, loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
-
-    if not isinstance(spline_len, int):
-        raise ValueError("Invalid range: %s. Must be int" % spline_len)
-
-    # setting up logging
-    path = str(pathlib.Path(__file__).parent.resolve())
-    if not os.path.isdir(path + "/logs"):
-        os.mkdir(path + "/logs")
-
-    date = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    logging.basicConfig(
-        filename=f"{path}/logs/{date}.log",
-        filemode="w",
-        format="%(asctime)s | %(levelname)s:%(name)s: %(message)s",
-        datefmt="%I:%M:%S %p",
-        # encoding='utf-8',
-        level=numeric_level,
-    )
-
-    # terminal stream
-    if print_logs:
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        LOGGER.addHandler(stdout_handler)
-
-    LOGGER.info(f"args = {args}")
-
+def main(args=None):
     # begin ros node
     rclpy.init(args=args)
-
-    node = LocalSpline(spline_len)
+    node = LocalPursuit()
     rclpy.spin(node)
-
     node.destroy_node()
-
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

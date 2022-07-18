@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "sim_translator"
+package_name = "sim_translation"
 
 setup(
     name=package_name,
@@ -14,12 +14,16 @@ setup(
     zip_safe=True,
     maintainer="Alistair English, Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="Translates FS Sim topics to Driverless topics",
+    description="Translates FSDS topics to Driverless topics",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "cone_detection_translator = sim_translator.node_cone_detection_translator:main",
+            "control_to_sim = sim_translation.node_control_to_sim:main",
+            "map_to_cone_detection = sim_translation.node_map_to_cone_detection:main",
+            "map_to_path = sim_translation.node_map_to_path:main",
+            "sim_to_sbg = sim_translation.node_sim_to_sbg:main",
+            "sim_to_zed = sim_translation.node_sim_to_zed:main",
         ],
     },
 )
