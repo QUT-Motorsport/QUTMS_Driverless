@@ -18,7 +18,7 @@ class GUINode(Node):
             ControlCommand, "/control_command", 10
         )  # sending steering values to sim, control command are the messages being sent to the topic
 
-    def publish_command(self, control_message):
+    def publish_command(self, control_message: ControlCommand):
         self.keypress_publisher.publish(control_message)
 
 

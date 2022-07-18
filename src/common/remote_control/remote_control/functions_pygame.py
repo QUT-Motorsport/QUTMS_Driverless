@@ -92,6 +92,7 @@ def brake_steering_deccelerate(steering: float, throttle: float, brake: float):
 
 def game_elements(win, steering: float, throttle: float, brake: float):
     # window dimensions ((400, 300))
+    pygame.init()
     win.fill((0, 0, 0))
     steering_width = 15
     steering_height = 40
@@ -103,7 +104,7 @@ def game_elements(win, steering: float, throttle: float, brake: float):
     throttle_x_loc = 120
     brake_x_loc = 240
     # display bars representing steering, throttle and brake inputs
-    font = pygame.font.SysFont("comicsansms", 20)
+    font = pygame.font.SysFont("calibri", 20)
     text_throttle = font.render("Throttle: " + str(throttle), True, (255, 255, 255))
     if throttle > bar_ratio[0]:
         pygame.draw.rect(win, (0, 255, 0), (throttle_x_loc, base_bar_y_loc, width, height))
@@ -125,7 +126,7 @@ def game_elements(win, steering: float, throttle: float, brake: float):
         pygame.draw.rect(win, (0, 255, 0), (throttle_x_loc, base_bar_y_loc - (8 * height), width, height))
     if throttle == bar_ratio[9]:
         pygame.draw.rect(win, (255, 0, 0), (throttle_x_loc, base_bar_y_loc - (9 * height), width, height))
-    win.blit(text_throttle, (throttle_x_loc - 20, 280))
+    win.blit(text_throttle, (throttle_x_loc - 40, 280))
 
     text_brake = font.render("Brake: " + str(brake), True, (255, 255, 255))
     if brake > bar_ratio[0]:

@@ -28,7 +28,8 @@ class PyGameNode(Node):
         self.keypress_publisher.publish(control_message)
 
 
-def py_game_main(py_game_node: PyGameNode, steering_intensity=1, throttle_intensity=1):
+def py_game_main(py_game_node: PyGameNode, steering_intensity: int = 1, throttle_intensity: int = 1):
+
     pygame.display.set_caption("Car Controller")
     win = pygame.display.set_mode((400, 300))
     clock = pygame.time.Clock()
