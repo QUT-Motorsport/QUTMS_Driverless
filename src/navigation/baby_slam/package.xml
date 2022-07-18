@@ -3,7 +3,7 @@
 <package format="3">
     <name>baby_slam</name>
     <version>0.0.0</version>
-    <description>Plans a target path and waypoint to approach</description>
+    <description>Python approach to SLAM with known car position</description>
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 

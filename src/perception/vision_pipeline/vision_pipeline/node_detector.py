@@ -1,16 +1,8 @@
-import rclpy
-from rclpy.node import Node
-from rclpy.publisher import Publisher
-from cv_bridge import CvBridge
-import message_filters
-
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Point
-
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-
+from math import cos, isinf, isnan, radians, sin, sqrt
 import os
-from math import sin, cos, radians, isnan, isinf, sqrt
+import time
+
+from ament_index_python.packages import get_package_share_directory
 import cv2
 from cv_bridge import CvBridge
 
@@ -19,9 +11,10 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 import message_filters
 import numpy as np
-from typing import List, Tuple, Callable
-import time
-from ament_index_python.packages import get_package_share_directory
+import rclpy
+from rclpy.node import Node
+from rclpy.publisher import Publisher
+from sensor_msgs.msg import CameraInfo, Image
 
 from .rect import Rect, draw_box
 
@@ -51,9 +44,9 @@ ConeMsgColour = int  # define arbitrary variable type
 def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
-) -> Tuple[float, Rect]:
+) -> float:
     # get center as roi
-    y_height = int(colour_frame_cone_bounding_box.height/6)
+    y_height = int(colour_frame_cone_bounding_box.height / 6)
     depth_rect = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
         y=colour_frame_cone_bounding_box.center.y + y_height,
@@ -61,10 +54,10 @@ def cone_distance(
         height=6,
     )
     depth_roi: np.ndarray = depth_rect.as_roi(depth_frame)
-    
+
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
-    return np.mean(depth_roi), depth_rect
+    return np.mean(depth_roi)
 
 
 def cone_bearing(
@@ -99,7 +92,7 @@ def cone_msg(
 
 class DetectorNode(Node):
     def __init__(
-        self, 
+        self,
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
         enable_cv_filters: bool = False,
     ):
@@ -145,8 +138,8 @@ class DetectorNode(Node):
                 # filter by aspect ratio
                 if bounding_box.aspect_ratio > 1.2:
                     continue
-            
-            distance, depth_roi = cone_distance(bounding_box, depth_frame)
+
+            distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
             if isnan(distance) or isinf(distance):
                 continue
@@ -154,8 +147,7 @@ class DetectorNode(Node):
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
-            draw_box(colour_frame, box=depth_roi, colour=(255,255,255)) # for debugging
-            self.get_logger().debug("Range: "+ str(round(distance, 2)) + "\t Bearing: "+ str(round(bearing, 2)))
+            self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
         detection_msg = ConeDetectionStamped(
             header=colour_msg.header,
@@ -165,7 +157,7 @@ class DetectorNode(Node):
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
-        self.get_logger().debug("Time: " + str(time.time() - start) + "\n") # log time
+        self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
 
 
 ## OpenCV thresholding
