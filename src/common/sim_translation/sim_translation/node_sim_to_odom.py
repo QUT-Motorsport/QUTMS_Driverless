@@ -25,6 +25,7 @@ class SimToPose(Node):
 
     def callback(self, odom_msg: Odometry):
         pose_msg = PoseWithCovarianceStamped()
+        pose_msg.header = odom_msg.header
         pose_msg.pose.pose = odom_msg.pose.pose
         cov: np.ndarray = np.diag(np.random.rand(6) * 0.0001)  # so make some noise
         cov = np.reshape(cov, (6, 6))  # should fill in blanks with 0s??
@@ -32,6 +33,7 @@ class SimToPose(Node):
         self.pose_publisher.publish(pose_msg)
 
         vel_msg = TwistWithCovarianceStamped()
+        vel_msg.header = odom_msg.header
         vel_msg.twist.twist = odom_msg.twist.twist
         cov: np.ndarray = np.diag(np.random.rand(6) * 0.0001)
         cov = np.reshape(cov, (6, 6))

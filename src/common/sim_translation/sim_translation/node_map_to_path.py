@@ -11,7 +11,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from builtin_interfaces.msg import Duration
-from driverless_msgs.msg import SplinePoint, SplineStamped
+from driverless_msgs.msg import PathPoint, PathStamped
 from fs_msgs.msg import Cone, Track
 from geometry_msgs.msg import Point
 from std_msgs.msg import ColorRGBA
@@ -84,7 +84,7 @@ class MapPathPlanner(Node):
 
         # publishers
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/path_planner/path_marker_array", 1)
-        self.path_publisher: Publisher = self.create_publisher(SplineStamped, "/path_planner/path", 1)
+        self.path_publisher: Publisher = self.create_publisher(PathStamped, "/path_planner/path", 1)
 
         self.spline_len: int = 3999
         self.track: List[Cone] = None
@@ -152,7 +152,7 @@ class MapPathPlanner(Node):
         VEL_ZONE = 10
         path_markers: List[Point] = []
         path_colours: List[ColorRGBA] = []
-        path: list[SplinePoint] = []
+        path: list[PathPoint] = []
         for i in range(0, self.spline_len - VEL_ZONE, VEL_ZONE):
             # check angle between current and 10th spline point ahead
             th_change = th[i + VEL_ZONE] - th[i]
@@ -168,7 +168,7 @@ class MapPathPlanner(Node):
             col = col_range[round(change_pc)].get_rgb()
 
             for j in range(VEL_ZONE):
-                path_point = SplinePoint()
+                path_point = PathPoint()
                 path_point.location.x = tx[i + j]
                 path_point.location.y = ty[i + j]
                 path_point.location.z = 0.0
@@ -187,7 +187,7 @@ class MapPathPlanner(Node):
                 path_markers.append(line_point)
                 path_colours.append(line_colour)
 
-        path_msg = SplineStamped(path=path)
+        path_msg = PathStamped(path=path)
         self.path_publisher.publish(path_msg)
 
         ## Visualisation marker

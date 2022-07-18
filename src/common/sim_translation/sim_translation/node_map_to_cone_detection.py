@@ -24,13 +24,17 @@ class ConeDetectonTranslator(Node):
 
     def __init__(self) -> None:
         super().__init__("cone_detection_translator")
+
+        # sub to testing only sim topics
         self.create_subscription(Track, "/testing_only/track", self.track_callback, 10)
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # could also be /lidar/cone_detection
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/vision/cone_detection_markers", 1)
-        self.get_logger().info("--- Cone Detection Map Translator Initalised---")
+        self.detection_publisher: Publisher = self.create_publisher(
+            ConeDetectionStamped, "/detection/cone_detection", 1
+        )
+        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/detection/cone_detection_markers", 1)
+        self.get_logger().info("---Cone Detection Map Translator Initalised---")
 
     def track_callback(self, track_msg: Track):
         self.track = track_msg.track

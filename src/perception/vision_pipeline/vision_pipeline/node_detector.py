@@ -90,13 +90,13 @@ def cone_msg(
     )
 
 
-class DetectorNode(Node):
+class VisionProcessor(Node):
     def __init__(
         self,
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
         enable_cv_filters: bool = False,
     ):
-        super().__init__("cone_detector")
+        super().__init__("vision_processor")
 
         # subscribers
         colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")
@@ -189,8 +189,8 @@ def main_cv2(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(get_hsv_bounding_boxes, enable_cv_filters=True)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_hsv_bounding_boxes, enable_cv_filters=True)
+    rclpy.spin(node)
     rclpy.shutdown()
 
 
@@ -222,8 +222,8 @@ def main_torch(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(get_torch_bounding_boxes)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_torch_bounding_boxes)
+    rclpy.spin(node)
     rclpy.shutdown()
 
 
@@ -257,6 +257,6 @@ def main_trt(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(get_trt_bounding_boxes)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_trt_bounding_boxes)
+    rclpy.spin(node)
     rclpy.shutdown()

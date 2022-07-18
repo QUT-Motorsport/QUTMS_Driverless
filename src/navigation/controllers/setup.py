@@ -22,7 +22,7 @@ setup(
             "sine_steering = controllers.node_sine_steering:main",
             "reactive_control = controllers.node_reactive_control:main",
             "path_following = controllers.node_path_following:main",
-            "local_pursuit = controllers.node_local_control:main",
+            "local_pursuit = controllers.node_local_pursuit:main",
         ],
     },
 )

@@ -65,20 +65,20 @@ def predict(pose_msg: PoseWithCovarianceStamped, R: np.ndarray) -> Tuple[np.ndar
     # i, j, k angles in rad
     ai, aj, ak = quat2euler(
         [
-            pose_msg.pose.orientation.w,
-            pose_msg.pose.orientation.x,
-            pose_msg.pose.orientation.y,
-            pose_msg.pose.orientation.z,
+            pose_msg.pose.pose.orientation.w,
+            pose_msg.pose.pose.orientation.x,
+            pose_msg.pose.pose.orientation.y,
+            pose_msg.pose.pose.orientation.z,
         ]
     )
 
-    x = pose_msg.pose.position.x
-    y = pose_msg.pose.position.y
+    x = pose_msg.pose.pose.position.x
+    y = pose_msg.pose.pose.position.y
     theta = ak
 
     muR = np.array([x, y, theta])  # robot mean
 
-    cov = pose_msg.covariance
+    cov = pose_msg.pose.covariance
     cov = np.reshape(cov, (6, 6))
     SigmaR = np.array(
         [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]

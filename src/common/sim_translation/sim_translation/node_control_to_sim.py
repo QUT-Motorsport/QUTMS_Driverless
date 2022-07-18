@@ -12,6 +12,7 @@ class ControlToSim(Node):
     def __init__(self):
         super().__init__("control_to_sim")
 
+        # sub to drive
         self.create_subscription(AckermannDrive, "/driving_command", self.control_callback, 1)
 
         # publish to sim
@@ -21,7 +22,7 @@ class ControlToSim(Node):
 
     def control_callback(self, msg: AckermannDrive):
         sim_control = ControlCommand()
-        sim_control.steering = msg.steering_angle / math.pi / 4
+        sim_control.steering = msg.steering_angle / math.pi
         sim_control.throttle = msg.acceleration  # accel used for throttle
         sim_control.brake = msg.jerk  # jerk used for brake
         self.publisher.publish(sim_control)

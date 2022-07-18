@@ -112,16 +112,45 @@ def target_line_mkr(pose_msg, path_markers):
     marker.type = Marker.LINE_STRIP
     marker.action = Marker.ADD
 
+    marker.pose.position = pose_msg.pose.pose.position
+    marker.pose.orientation.x = 0.0
+    marker.pose.orientation.y = 0.0
+    marker.pose.orientation.z = 0.0
+    marker.pose.orientation.w = 1.0
+    # scale out of 1x1x1m
+    marker.scale.x = 0.2
+    marker.scale.y = 0.0
+    marker.scale.z = 0.0
+
+    marker.points = path_markers
+
+    marker.color.a = 1.0  # alpha
+    marker.color.r = 1.0
+    marker.color.g = 0.0
+    marker.color.b = 0.0
+
+    marker.lifetime = Duration(sec=1, nanosec=0)
+    return marker
+
+
 class LocalPursuit(Node):
+    # init constants
+    spline_len: int = 200
+    Kp_ang: float = 16
+    Kp_vel: float = 2
+    vel_max: float = 5
+    vel_min = vel_max / 2
+    throttle_max: float = 0.3  # m/s^2
+
     def __init__(self):
         super().__init__("local_pursuit")
 
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/detection/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[pose_sub, vel_sub, detection_sub], queue_size=20, slop=0.1
+            fs=[pose_sub, vel_sub, detection_sub], queue_size=30, slop=0.2
         )
         synchronizer.registerCallback(self.callback)
 
@@ -251,7 +280,7 @@ class LocalPursuit(Node):
         # overwrite target if there was a spline target path
         # uses the 2 closest method if not
         if tx != []:
-            target_index = round(self.spline_len / 5)  # 1/3 along
+            target_index = round(self.spline_len / 5)  # 1/5th along
             target = Point(ty[target_index], -tx[target_index])
 
             # spline visualisation
@@ -277,10 +306,10 @@ class LocalPursuit(Node):
                 # i, j, k angles in rad
                 ai, aj, ak = quat2euler(
                     [
-                        pose_msg.pose.orientation.w,
-                        pose_msg.pose.orientation.x,
-                        pose_msg.pose.orientation.y,
-                        pose_msg.pose.orientation.z,
+                        pose_msg.pose.pose.orientation.w,
+                        pose_msg.pose.pose.orientation.x,
+                        pose_msg.pose.pose.orientation.y,
+                        pose_msg.pose.pose.orientation.z,
                     ]
                 )
                 # displacement from car to target element
@@ -326,43 +355,34 @@ class LocalPursuit(Node):
         ## APPROACH TARGET
         if target is not None:
             # velocity control
-            # init constants
-            Kp_vel: float = 2
-            vel_max: float = 4
-            vel_min = vel_max / 2
-            throttle_max: float = 0.3  # m/s^2
-
             # get car vel
-            vel_x: float = odom_msg.twist.twist.linear.x
-            vel_y: float = odom_msg.twist.twist.linear.y
+            vel_x: float = vel_msg.twist.twist.linear.x
+            vel_y: float = vel_msg.twist.twist.linear.y
             vel: float = sqrt(vel_x**2 + vel_y**2)
 
             # target velocity proportional to angle
-            target_vel: float = vel_max - (abs(atan(target.y / target.x))) * Kp_vel
-            if target_vel < vel_min:
-                target_vel = vel_min
+            target_vel: float = self.vel_max - (abs(atan(target.y / target.x))) * self.Kp_vel
+            if target_vel < self.vel_min:
+                target_vel = self.vel_min
             self.get_logger().debug(f"Target vel: {target_vel}")
 
             # increase proportionally as it approaches target
             throttle_scalar: float = 1 - (vel / target_vel)
             if throttle_scalar > 0:
-                calc_throttle = throttle_max * throttle_scalar
+                calc_throttle = self.throttle_max * throttle_scalar
             # if its over maximum, cut throttle
             elif throttle_scalar <= 0:
                 calc_throttle = 0
 
             # steering control
-            Kp_ang: float = 1.25
-            ang_max: float = 7.0
-
-            steering_angle = -((pi / 2) - atan2(target.x, target.y)) * 5
-            self.get_logger().debug(f"Target angle: {steering_angle}")
-            calc_steering = Kp_ang * steering_angle / ang_max
+            steering_angle = pi / 2 - atan2(target.x, target.y)
+            calc_steering = -self.Kp_ang * steering_angle
+            self.get_logger().info(f"Target angle: {calc_steering}")
 
             # publish message
             control_msg = AckermannDrive()
-            control_msg.acceleration = float(calc_throttle)
             control_msg.steering_angle = float(calc_steering)
+            control_msg.acceleration = float(calc_throttle)
             control_msg.jerk = 0.0  # using jerk for brake for now
 
             self.control_publisher.publish(control_msg)
