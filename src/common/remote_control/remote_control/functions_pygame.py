@@ -1,6 +1,5 @@
 import pygame
 
-zero = 0
 bar_ratio = [i / 10 for i in range(1, 11)]
 steering_ratio_right = [i / 20 for i in range(1, 11)]
 steering_ratio_left = [-i for i in steering_ratio_right]
