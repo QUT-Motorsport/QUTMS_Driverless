@@ -160,9 +160,6 @@ class LocalPursuit(Node):
         )
         synchronizer.registerCallback(self.callback)
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 10)
-        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
-
         # publishers
         self.path_img_publisher: Publisher = self.create_publisher(Image, "/local_spline/path_img", 1)
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/local_spline/path_marker", 1)
@@ -263,12 +260,6 @@ class LocalPursuit(Node):
                 )
 
                 # target spline markers for rviz
-                x = odom_msg.pose.pose.position.x
-                y = odom_msg.pose.pose.position.y
-                w = odom_msg.pose.pose.orientation.w
-                i = odom_msg.pose.pose.orientation.x
-                j = odom_msg.pose.pose.orientation.y
-                k = odom_msg.pose.pose.orientation.z
                 # i, j, k angles in rad
                 ai, aj, ak = quat2euler(
                     [
@@ -287,36 +278,8 @@ class LocalPursuit(Node):
                 line_point.y = y_dist
                 line_point.z = 0.0
                 path_markers.append(line_point)
-
-            # add on each cone to published array
-            marker = Marker()
-            marker.header.frame_id = "map"
-            marker.ns = "current_path"
-            marker.id = 0
-            marker.type = Marker.LINE_STRIP
-            marker.action = Marker.ADD
-
-            marker.pose.position = odom_msg.pose.pose.position
-            marker.pose.orientation.x = 0.0
-            marker.pose.orientation.y = 0.0
-            marker.pose.orientation.z = 0.0
-            marker.pose.orientation.w = 1.0
-            # scale out of 1x1x1m
-            marker.scale.x = 0.2
-            marker.scale.y = 0.0
-            marker.scale.z = 0.0
-
-            marker.points = path_markers
-
-            marker.color.a = 1.0  # alpha
-            marker.color.r = 1.0
-            marker.color.g = 0.0
-            marker.color.b = 0.0
-
-            marker.lifetime = Duration(sec=1, nanosec=0)
-
             # create message for all cones on the track
-            self.path_marker_publisher.publish(marker)  # publish marker points data
+            self.path_marker_publisher.publish(target_line_mkr(pose_msg, path_markers))  # publish marker points data
 
         ## ORIGINAL BANG-BANG CODE
         else:

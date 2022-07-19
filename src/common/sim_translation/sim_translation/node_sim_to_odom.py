@@ -8,9 +8,9 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStam
 from nav_msgs.msg import Odometry
 
 
-class SimToPose(Node):
+class SimToOdom(Node):
     def __init__(self):
-        super().__init__("sim_to_pose")
+        super().__init__("sim_to_odom")
 
         # subscriber to odom
         self.create_subscription(Odometry, "/testing_only/odom", self.callback, 1)
@@ -43,7 +43,7 @@ class SimToPose(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SimToPose()
+    node = SimToOdom()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

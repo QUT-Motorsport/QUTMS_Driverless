@@ -72,46 +72,15 @@ def wrap_to_pi(angle: float) -> float:
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
-def get_throttle_and_brake(velocities: List[float], steering_angle: float) -> List[float]:
-    """
-    Decrease velocity proportional to the desired steering angle
-    * param velocities: [x,y] current x & y velocities
-    * param steering_angle: the angle the car needs to turn
-    * return: [calc_throttle, calc_break]
-    """
-    # velocity control
-    # init constants
-    Kp_vel: float = 20
-    vel_max: float = 12
-    vel_min = 1
-    throttle_max: float = 0.5  # m/s^2
-    brake_max = 0.25
-
-    # get car vel
-    vel_x: float = velocities[0]
-    vel_y: float = velocities[1]
-    vel: float = sqrt(vel_x**2 + vel_y**2)
-
-    # target velocity proportional to angle
-    target_vel: float = vel_max - abs(steering_angle) * Kp_vel
-    if target_vel < vel_min:
-        target_vel = vel_min
-
-    # increase proportionally as it approaches target
-    throttle_scalar: float = 1 - (vel / target_vel)
-    calc_brake = 0.0
-    if throttle_scalar > 0:
-        calc_throttle = throttle_max * throttle_scalar
-    # if its over maximum, brake propotionally unless under minimum
-    else:
-        calc_throttle = 0
-        if vel > vel_min:
-            calc_brake = abs(brake_max * throttle_scalar)
-
-    return [calc_throttle, calc_brake]
-
-
 class PurePursuit(Node):
+    path: np.ndarray = []
+    Kp_ang: float = 4.5
+    Kp_vel: float = 4.5
+    vel_max: float = 14  # m/s
+    vel_min: float = 1.0  # m/s
+    throttle_max: float = 0.5
+    brake_max: float = 0.15
+
     def __init__(self):
         super().__init__("pure_pursuit")
 
@@ -126,14 +95,11 @@ class PurePursuit(Node):
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
-        # path is a numpy array with 2 dimensions
-        self.path: np.ndarray = None
-
-        self.get_logger().info("---Spline Controller Node Initalised---")
+        self.get_logger().info("---Path Follower Node Initalised---")
 
     def path_callback(self, spline_path_msg: PathStamped):
         # Only set the desired path once (before the car is moving)
-        if self.path is not None:
+        if self.path != []:
             return
 
         # convert List[PathPoint] to 2D numpy array
@@ -146,50 +112,53 @@ class PurePursuit(Node):
         vel_msg: TwistWithCovarianceStamped,
     ):
         # Only start once the path has been recieved
-        if self.path is None:
+        if self.path == []:
             return
-
-        w = odom_msg.pose.pose.orientation.w
-        i = odom_msg.pose.pose.orientation.x
-        j = odom_msg.pose.pose.orientation.y
-        k = odom_msg.pose.pose.orientation.z
 
         # i, j, k angles in rad
         ai, aj, ak = quat2euler(
             [
-                pose_msg.pose.orientation.w,
-                pose_msg.pose.orientation.x,
-                pose_msg.pose.orientation.y,
-                pose_msg.pose.orientation.z,
+                pose_msg.pose.pose.orientation.w,
+                pose_msg.pose.pose.orientation.x,
+                pose_msg.pose.pose.orientation.y,
+                pose_msg.pose.pose.orientation.z,
             ]
         )
-
-        x = odom_msg.pose.pose.position.x
-        y = odom_msg.pose.pose.position.y
-
         # get the position of the center of gravity
-        position_cog: List[float] = [x, y]
-        position: List[float] = get_wheel_position(position_cog, heading)
+        position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
+        position: List[float] = get_wheel_position(position_cog, ak)
 
         # rvwp control
-        rvwpLookahead = 75
-
+        rvwpLookahead = 70
         rvwp: List[float] = get_RVWP(position, self.path, rvwpLookahead)
 
         # steering control
-        des_heading_ang: float = angle(position, rvwp)
-        steering_angle: float = wrap_to_pi(heading - des_heading_ang)
+        des_heading_ang = angle(position, rvwp)
+        steering_angle = wrap_to_pi(ak - des_heading_ang) * self.Kp_ang
 
-        calc_steering = steering_angle
+        # velocity control
+        vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+        # target velocity proportional to angle
+        target_vel: float = self.vel_max - abs(steering_angle) * self.Kp_vel
+        if target_vel < self.vel_min:
+            target_vel = self.vel_min
 
-        vel: List[float] = [odom_msg.twist.twist.linear.x, odom_msg.twist.twist.linear.y]
-        [calc_throttle, calc_break] = get_throttle_and_brake(vel, steering_angle)
+        # increase proportionally as it approaches target
+        throttle_scalar: float = 1 - (vel / target_vel)
+        calc_brake = 0.0
+        if throttle_scalar > 0:
+            calc_throttle = self.throttle_max * throttle_scalar
+        # if its over maximum, brake propotionally unless under minimum
+        else:
+            calc_throttle = 0.0
+            if vel > self.vel_min:
+                calc_brake = abs(self.brake_max * throttle_scalar)
 
         # publish message
         control_msg = AckermannDrive()
-        control_msg.steering_angle = float(calc_steering)
-        control_msg.acceleration = float(calc_throttle)
-        control_msg.jerk = float(calc_break)  # using jerk for brake for now
+        control_msg.steering_angle = steering_angle
+        control_msg.acceleration = calc_throttle
+        control_msg.jerk = calc_brake  # using jerk for brake for now
 
         self.control_publisher.publish(control_msg)
 

@@ -169,10 +169,6 @@ class EKFSlam(Node):
     def __init__(self):
         super().__init__("ekf_slam")
 
-        # some service call here from simple controller to send when the car has completed a lap
-        # sub to track for all cone locations relative to car start point
-        self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
-
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
@@ -184,8 +180,6 @@ class EKFSlam(Node):
         # publishers
         self.map_img_publisher: Publisher = self.create_publisher(Image, "/slam/map_image", 1)
         self.markers_publisher: Publisher = self.create_publisher(MarkerArray, "/slam/cone_markers", 1)
-        # map cone loc publisher
-        self.real_map_img_publisher: Publisher = self.create_publisher(Image, "/slam/real_map_image", 1)
 
         self.get_logger().info("---SLAM node initialised---")
 
@@ -294,36 +288,10 @@ class EKFSlam(Node):
         self.map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
         self.markers_publisher.publish(mkrs)
 
-    def map_callback(self, track_msg: Track):
-        # track cone list is taken as coords relative to the initial car position
-        track = track_msg.track
-        map_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-        for cone in track:
-            if cone.color == Cone.BLUE:
-                disp_col = (255, 0, 0)
-            elif cone.color == Cone.YELLOW:
-                disp_col = (0, 255, 255)
-            elif cone.color == Cone.ORANGE_BIG:
-                disp_col = (0, 100, 255)
-
-            cv2.drawMarker(
-                map_img,
-                coord_to_img(cone.location.x, cone.location.y).to_tuple(),
-                disp_col,
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=6,
-                thickness=2,
-            )
-        self.real_map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
-
 
 def main(args=None):
-    # begin ros node
     rclpy.init(args=args)
-
     node = EKFSlam()
     rclpy.spin(node)
-
     node.destroy_node()
-
     rclpy.shutdown()

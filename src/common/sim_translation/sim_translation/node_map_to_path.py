@@ -76,6 +76,9 @@ def angle(p1: List[float], p2: List[float]) -> float:
 
 
 class MapPathPlanner(Node):
+    spline_len: int = 3999
+    track: List[Cone] = []
+
     def __init__(self):
         super().__init__("map_path_planner")
 
@@ -86,9 +89,6 @@ class MapPathPlanner(Node):
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/path_planner/path_marker_array", 1)
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/path_planner/path", 1)
 
-        self.spline_len: int = 3999
-        self.track: List[Cone] = None
-
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
     def map_callback(self, track_msg: Track):
@@ -97,7 +97,7 @@ class MapPathPlanner(Node):
         start: float = time.time()
         # track cone list is taken as coords relative to the initial car position
 
-        if self.track == None:
+        if self.track == []:
             self.track = track_msg.track
         elif len(self.track) == len(track_msg.track):
             self.track = track_msg.track
@@ -216,13 +216,13 @@ class MapPathPlanner(Node):
         marker.lifetime = Duration(sec=10, nanosec=100000)
         self.path_marker_publisher.publish(marker)
 
-        self.get_logger().info("Time taken: " + str(time.time() - start))
+        self.get_logger().debug("Time taken: " + str(time.time() - start))
 
 
 def main(args=None):
     # begin ros node
     rclpy.init(args=args)
-    node = SimPathPlanner()
+    node = MapPathPlanner()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
