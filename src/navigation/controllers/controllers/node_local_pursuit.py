@@ -1,3 +1,9 @@
+"""
+This is highly likely going to be unused
+- it's good for getting perfect 'detections' from the sim
+but not much else
+"""
+
 from math import atan, atan2, cos, pi, sin, sqrt
 
 import cv2
@@ -136,7 +142,7 @@ def target_line_mkr(pose_msg, path_markers):
 class LocalPursuit(Node):
     # init constants
     spline_len: int = 200
-    Kp_ang: float = 16
+    Kp_ang: float = 5
     Kp_vel: float = 2
     vel_max: float = 5
     vel_min = vel_max / 2
@@ -148,7 +154,7 @@ class LocalPursuit(Node):
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/detection/cone_detection")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[pose_sub, vel_sub, detection_sub], queue_size=30, slop=0.2
         )
@@ -169,7 +175,11 @@ class LocalPursuit(Node):
     ):
         self.get_logger().debug("Received detection")
 
-        odom_msg = self.odom_msg
+        # safety critical, set to 0 if not good detection
+        control_msg = AckermannDrive()
+        control_msg.steering_angle = 0.0
+        control_msg.acceleration = 0.0
+        control_msg.jerk = 1.0
 
         cones: List[Cone] = cone_msg.cones
         # create black image
@@ -199,11 +209,9 @@ class LocalPursuit(Node):
             )
 
         ## TARGET SPLINE PLANNER
-        tx: List[float] = []
-        ty: List[float] = []
-
-        # can't interpolate with less than 2 points
-        if len(yellow_list) > 1 and len(blue_list) > 1:
+        if len(yellow_list) > 1 and len(blue_list) > 1:  # can't interpolate with less than 2 points
+            tx: List[float] = []
+            ty: List[float] = []
             yellow_x: List[float] = []
             yellow_y: List[float] = []
             blue_x: List[float] = []
@@ -238,48 +246,6 @@ class LocalPursuit(Node):
                 tx.append(mid_x)
                 ty.append(mid_y)
 
-        ## ORIGINAL BANG-BANG CODE
-        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
-        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
-
-        closest_left: Optional[Cone] = None
-        closest_right: Optional[Cone] = None
-        if len(left_cones) > 0:
-            closest_left = min(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
-        if len(right_cones) > 0:
-            closest_right = min(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
-
-        # if we have two cones, check if they are greater than 5 meters apart
-        if closest_left is not None and closest_right is not None:
-            if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
-                # if so - remove the furthest cone from the targeting
-                left_dist = dist(ORIGIN, cone_to_point(closest_left))
-                right_dist = dist(ORIGIN, cone_to_point(closest_right))
-                if left_dist <= right_dist:
-                    closest_right = None
-                else:
-                    closest_left = None
-
-        target: Optional[Point] = None
-        if closest_left is not None and closest_right is not None:
-            target = Point(
-                x=closest_left.location.x + (closest_right.location.x - closest_left.location.x) / 2,
-                y=closest_left.location.y + (closest_right.location.y - closest_left.location.y) / 2,
-            )
-        elif closest_left is not None:
-            target = Point(
-                x=closest_left.location.x,
-                y=closest_left.location.y - 2,
-            )
-        elif closest_right is not None:
-            target = Point(
-                x=closest_right.location.x,
-                y=closest_right.location.y + 2,
-            )
-
-        # overwrite target if there was a spline target path
-        # uses the 2 closest method if not
-        if tx != []:
             target_index = round(self.spline_len / 5)  # 1/5th along
             target = Point(ty[target_index], -tx[target_index])
 
@@ -352,14 +318,50 @@ class LocalPursuit(Node):
             # create message for all cones on the track
             self.path_marker_publisher.publish(marker)  # publish marker points data
 
+        ## ORIGINAL BANG-BANG CODE
+        else:
+            left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
+            right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
+
+            closest_left: Optional[Cone] = None
+            closest_right: Optional[Cone] = None
+            if len(left_cones) > 0:
+                closest_left = min(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+            if len(right_cones) > 0:
+                closest_right = min(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+
+            # if we have two cones, check if they are greater than 5 meters apart
+            if closest_left is not None and closest_right is not None:
+                if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
+                    # if so - remove the furthest cone from the targeting
+                    left_dist = dist(ORIGIN, cone_to_point(closest_left))
+                    right_dist = dist(ORIGIN, cone_to_point(closest_right))
+                    if left_dist <= right_dist:
+                        closest_right = None
+                    else:
+                        closest_left = None
+
+            target: Optional[Point] = None
+            if closest_left is not None and closest_right is not None:
+                target = Point(
+                    x=closest_left.location.x + (closest_right.location.x - closest_left.location.x) / 2,
+                    y=closest_left.location.y + (closest_right.location.y - closest_left.location.y) / 2,
+                )
+            elif closest_left is not None:
+                target = Point(
+                    x=closest_left.location.x,
+                    y=closest_left.location.y - 2,
+                )
+            elif closest_right is not None:
+                target = Point(
+                    x=closest_right.location.x,
+                    y=closest_right.location.y + 2,
+                )
+
         ## APPROACH TARGET
         if target is not None:
             # velocity control
-            # get car vel
-            vel_x: float = vel_msg.twist.twist.linear.x
-            vel_y: float = vel_msg.twist.twist.linear.y
-            vel: float = sqrt(vel_x**2 + vel_y**2)
-
+            vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
             # target velocity proportional to angle
             target_vel: float = self.vel_max - (abs(atan(target.y / target.x))) * self.Kp_vel
             if target_vel < self.vel_min:
@@ -370,28 +372,24 @@ class LocalPursuit(Node):
             throttle_scalar: float = 1 - (vel / target_vel)
             if throttle_scalar > 0:
                 calc_throttle = self.throttle_max * throttle_scalar
-            # if its over maximum, cut throttle
             elif throttle_scalar <= 0:
-                calc_throttle = 0
+                calc_throttle = 0.0  # if its over maximum, cut throttle
 
             # steering control
-            steering_angle = pi / 2 - atan2(target.x, target.y)
-            calc_steering = -self.Kp_ang * steering_angle
-            self.get_logger().info(f"Target angle: {calc_steering}")
+            steering_angle = -((pi / 2) - atan2(target.x, target.y)) * self.Kp_ang
+            self.get_logger().debug(f"Target angle: {steering_angle}")
 
             # publish message
-            control_msg = AckermannDrive()
-            control_msg.steering_angle = float(calc_steering)
-            control_msg.acceleration = float(calc_throttle)
-            control_msg.jerk = 0.0  # using jerk for brake for now
+            control_msg.steering_angle = steering_angle
+            control_msg.acceleration = calc_throttle
+            control_msg.jerk = 0.0
 
-            self.control_publisher.publish(control_msg)
-
+            # visualisations
             # draw target
             target_img_pt = robot_pt_to_img_pt(target.x, target.y)
             cv2.drawMarker(
                 debug_img,
-                robot_pt_to_img_pt(target.x, target.y).to_tuple(),
+                target_img_pt.to_tuple(),
                 (0, 0, 255),
                 markerType=cv2.MARKER_TILTED_CROSS,
                 markerSize=10,
@@ -412,6 +410,7 @@ class LocalPursuit(Node):
             text_vel = "Velocity: " + str(round(target_vel, 2))
             cv2.putText(debug_img, text_vel, (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
+        self.control_publisher.publish(control_msg)
         self.path_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
