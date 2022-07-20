@@ -12,6 +12,7 @@
 #include "driverless_msgs/msg/cone.hpp"
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
 #include "ekf_slam.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/imu.hpp"
@@ -35,14 +36,14 @@ class EKFSLAMNode : public rclcpp::Node {
 
     std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
     std::optional<builtin_interfaces::msg::Time> last_cone_update;
-    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_sub;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
-        vel_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-            "gss", 10, std::bind(&EKFSLAMNode::sensed_control_callback, this, _1));
+        pose_sub = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "zed2i/zed_node/pose_with_covariance", 10, std::bind(&EKFSLAMNode::pose_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
             "sim_translator/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
@@ -50,51 +51,66 @@ class EKFSLAMNode : public rclcpp::Node {
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
 
-    void sensed_control_callback(const geometry_msgs::msg::TwistStamped::SharedPtr vel_msg) {
-        // catch first call where we have no "last update time"
+    void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
+        // catch first call where we have no "last update time"pose_msg->pose.pose.orientation
         if (!this->last_sensed_control_update.has_value()) {
-            this->last_sensed_control_update = vel_msg->header.stamp;
+            this->last_sensed_control_update = pose_msg->header.stamp;
             return;
         }
 
-        double dt = compute_dt(last_sensed_control_update.value(), vel_msg->header.stamp);
-        this->last_sensed_control_update = vel_msg->header.stamp;
+        double dt = compute_dt(last_sensed_control_update.value(), pose_msg->header.stamp);
+        this->last_sensed_control_update = pose_msg->header.stamp;
 
         if (dt == 0) {
             return;
         }
 
         Eigen::Matrix<double, CAR_STATE_SIZE, 1> pred_mu;
-        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
+        tf2::Quaternion q_orientation;
+        tf2::convert(pose_msg->pose.pose.orientation, q_orientation);
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q_orientation).getRPY(roll, pitch, yaw);
+        pred_mu << pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, yaw;
 
-        // this->ekf_slam.position_predict(pred_mu, pred_car_cov);
+        // Covariance from odom
+        // xx, xy, xz, xi, xj, xk
+        // yx, yy, yz, yi, yj, yk
+        // zx, zy, zz, zi, zj, zk
+        // ix, iy, iz, ii, ij, ik
+        // jx, jy, jz, ji, jj, jk
+        // kx, ky, kz, ki, kj, kk
+        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
+        pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,
+            pose_msg->pose.covariance[35];
+
+        this->ekf_slam.position_predict(pred_mu, pred_car_cov);
 
         print_state();
-        publish_visualisations(vel_msg->header.stamp);
+        publish_visualisations(pose_msg->header.stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
-        // catch first call where we have no "last update time"
-        if (!this->last_cone_update.has_value()) {
-            this->last_cone_update = msg->header.stamp;
-            return;
-        }
+        // // catch first call where we have no "last update time"
+        // if (!this->last_cone_update.has_value()) {
+        //     this->last_cone_update = msg->header.stamp;
+        //     return;
+        // }
 
-        double dt = compute_dt(last_cone_update.value(), msg->header.stamp);
-        this->last_cone_update = msg->header.stamp;
+        // double dt = compute_dt(last_cone_update.value(), msg->header.stamp);
+        // this->last_cone_update = msg->header.stamp;
 
-        if (dt == 0) {
-            return;
-        }
+        // if (dt == 0) {
+        //     return;
+        // }
 
-        if (!this->last_sensed_control_update.has_value() ||
-            compute_dt(last_sensed_control_update.value(), last_cone_update.value()) < 0) {
-            return;
-        }
+        // if (!this->last_sensed_control_update.has_value() ||
+        //     compute_dt(last_sensed_control_update.value(), last_cone_update.value()) < 0) {
+        //     return;
+        // }
 
-        std::cout << "Cone Callback" << std::endl;
-        print_state();
-        publish_visualisations(msg->header.stamp);
+        // std::cout << "Cone Callback" << std::endl;
+        // print_state();
+        // publish_visualisations(msg->header.stamp);
     }
 
     void print_matricies() {
@@ -159,7 +175,7 @@ class EKFSLAMNode : public rclcpp::Node {
         car_marker.header.frame_id = "map";
         car_marker.header.stamp = stamp;
         car_marker.ns = "ekf";
-        car_marker.id = -1;  // -1 represents predicted car
+        car_marker.id = -2;  // -2 represents estimated car
         car_marker.type = visualization_msgs::msg::Marker::ARROW;
         car_marker.action = visualization_msgs::msg::Marker::ADD;
         car_marker.pose.position.x = x;
