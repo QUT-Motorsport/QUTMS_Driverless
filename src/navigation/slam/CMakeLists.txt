@@ -16,12 +16,12 @@ find_package(driverless_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
-add_executable(node_ekf src/node_ekf.cpp)
-target_include_directories(node_ekf PUBLIC
+add_executable(node_ekf_slam src/ekf_slam/node_ekf_slam.cpp)
+target_include_directories(node_ekf_slam PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(node_ekf PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(node_ekf
+target_compile_features(node_ekf_slam PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(node_ekf_slam
   rclcpp
   std_msgs
   sensor_msgs
@@ -33,7 +33,7 @@ ament_target_dependencies(node_ekf
 )
 
 
-install(TARGETS node_ekf
+install(TARGETS node_ekf_slam
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
