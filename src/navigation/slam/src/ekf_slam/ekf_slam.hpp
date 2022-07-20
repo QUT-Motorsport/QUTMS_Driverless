@@ -21,18 +21,18 @@ class EKFslam {
     Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
     // clang-format off
-            const Eigen::Matrix3d R = (
-                Eigen::Matrix3d() << 0.01,  0,     0,
-                                        0,     0.01,  0,
-                                        0,     0,     0.01
-            ).finished();
+    const Eigen::Matrix3d R = (
+        Eigen::Matrix3d() << 0.01,  0,     0,
+                                0,     0.01,  0,
+                                0,     0,     0.01
+    ).finished();
 
-            // Q = ( σ_r^2  0         )
-            //     ( 0      σ_theta^2 )
-            const Eigen::Matrix2d Q = (
-                Eigen::Matrix2d() << 100,  0,
-                                        0,    100
-            ).finished();
+    // Q = ( σ_r^2  0         )
+    //     ( 0      σ_theta^2 )
+    const Eigen::Matrix2d Q = (
+        Eigen::Matrix2d() << 100,  0,
+                                0,    100
+    ).finished();
     // clang-format on
 
    public:
