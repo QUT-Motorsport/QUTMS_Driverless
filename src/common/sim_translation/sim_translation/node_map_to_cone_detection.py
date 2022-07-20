@@ -82,7 +82,7 @@ class ConeDetectionTranslator(Node):
 def main():
     # begin ros node
     rclpy.init()
-    node = ConeDetectonTranslator()
+    node = ConeDetectionTranslator()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
