@@ -84,7 +84,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
         this->steering_sub = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-            "steering", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+            "/driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
 
         this->parameter_callback_handle =
             this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));

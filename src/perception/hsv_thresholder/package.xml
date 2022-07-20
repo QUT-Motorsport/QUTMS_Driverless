@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>vision_pipeline</name>
+    <name>hsv_thresholder</name>
     <version>0.0.0</version>
-    <description>Pipeline for managing visual detection of cones.</description>
-    <maintainer email="team@qutmotorsport.com">Alistair English, Alastair Bradford</maintainer>
+    <description>HSV Thresholding package</description>
+    <maintainer email="qutmotorsport.team@gmail.com">Alistair English</maintainer>
     <license>MIT</license>
 
-    <depend>driverless_msgs</depend>
-    <depend>driverless_common</depend>
+    <depend>std_msgs</depend>
     <depend>sensor_msgs</depend>
 
     <export>
