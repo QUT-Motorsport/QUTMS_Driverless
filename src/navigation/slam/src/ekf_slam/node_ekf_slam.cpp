@@ -28,14 +28,9 @@ class EKFSLAMNode : public rclcpp::Node {
    private:
     EKFslam ekf_slam;
 
-    Eigen::MatrixXd pred_mu;   // predicted state (mean, μ bar)
-    Eigen::MatrixXd pred_cov;  // predicted state (covariance, ∑ bar)
-
-    Eigen::MatrixXd mu;   // final state (mean, μ)
-    Eigen::MatrixXd cov;  // final state (covariance, ∑)
-
     std::optional<builtin_interfaces::msg::Time> last_sensed_control_update;
     std::optional<builtin_interfaces::msg::Time> last_cone_update;
+
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
@@ -46,7 +41,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "zed2i/zed_node/pose_with_covariance", 10, std::bind(&EKFSLAMNode::pose_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "sim_translator/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "detection/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
@@ -85,39 +80,31 @@ class EKFSLAMNode : public rclcpp::Node {
 
         this->ekf_slam.position_predict(pred_mu, pred_car_cov);
 
-        print_state();
         publish_visualisations(pose_msg->header.stamp);
     }
 
-    void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
-        // // catch first call where we have no "last update time"
-        // if (!this->last_cone_update.has_value()) {
-        //     this->last_cone_update = msg->header.stamp;
-        //     return;
-        // }
+    void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
+        // catch first call where we have no "last update time"
+        if (!this->last_cone_update.has_value()) {
+            this->last_cone_update = detection_msg->header.stamp;
+            return;
+        }
 
-        // double dt = compute_dt(last_cone_update.value(), msg->header.stamp);
-        // this->last_cone_update = msg->header.stamp;
+        double dt = compute_dt(last_cone_update.value(), detection_msg->header.stamp);
+        this->last_cone_update = detection_msg->header.stamp;
 
-        // if (dt == 0) {
-        //     return;
-        // }
+        if (dt == 0) {
+            return;
+        }
 
-        // if (!this->last_sensed_control_update.has_value() ||
-        //     compute_dt(last_sensed_control_update.value(), last_cone_update.value()) < 0) {
-        //     return;
-        // }
+        if (!this->last_sensed_control_update.has_value() ||
+            compute_dt(last_sensed_control_update.value(), last_cone_update.value()) < 0) {
+            return;
+        }
 
-        // std::cout << "Cone Callback" << std::endl;
-        // print_state();
-        // publish_visualisations(msg->header.stamp);
-    }
+        this->ekf_slam.correct(detection_msg->cones);
 
-    void print_matricies() {
-        std::cout << "pred_mu:\n" << this->pred_mu << "\n" << std::endl;
-        std::cout << "pred_cov:\n" << this->pred_cov << "\n" << std::endl;
-        std::cout << "mu:\n" << this->mu << "\n" << std::endl;
-        std::cout << "cov:\n" << this->cov << "\n" << std::endl;
+        publish_visualisations(detection_msg->header.stamp);
     }
 
     void print_state() {
@@ -191,7 +178,7 @@ class EKFSLAMNode : public rclcpp::Node {
         car_marker.color.a = 1.0;
         marker_array.markers.push_back(car_marker);
 
-        for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
+        for (int i = CAR_STATE_SIZE; i < ekf_slam.get_mu().rows(); i += LANDMARK_STATE_SIZE) {
             auto cone_marker = visualization_msgs::msg::Marker();
             cone_marker.header.frame_id = "map";
             cone_marker.header.stamp = stamp;
@@ -199,8 +186,8 @@ class EKFSLAMNode : public rclcpp::Node {
             cone_marker.id = i;
             cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
             cone_marker.action = visualization_msgs::msg::Marker::ADD;
-            cone_marker.pose.position.x = mu(i, 0);
-            cone_marker.pose.position.y = mu(i + 1, 0);
+            cone_marker.pose.position.x = ekf_slam.get_mu()(i, 0);
+            cone_marker.pose.position.y = ekf_slam.get_mu()(i + 1, 0);
             cone_marker.pose.position.z = 0;
             cone_marker.scale.x = 0.2;
             cone_marker.scale.y = 0.2;
