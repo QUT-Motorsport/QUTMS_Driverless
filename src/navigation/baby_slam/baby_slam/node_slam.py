@@ -13,7 +13,6 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from fs_msgs.msg import Track
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header

@@ -19,7 +19,7 @@ from typing import List
 MAX_CONE_RANGE = 10  # meters
 
 
-class ConeDetectonTranslator(Node):
+class ConeDetectionTranslator(Node):
     track: List[FSCone] = []
 
     def __init__(self) -> None:
