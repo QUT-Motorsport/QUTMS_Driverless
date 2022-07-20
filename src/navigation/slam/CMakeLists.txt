@@ -16,7 +16,12 @@ find_package(driverless_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
-add_executable(node_ekf_slam src/ekf_slam/node_ekf_slam.cpp)
+set (SOURCES
+  src/ekf_slam/ekf_slam.cpp
+)
+
+add_executable(node_ekf_slam src/ekf_slam/node_ekf_slam.cpp ${SOURCES})
+
 target_include_directories(node_ekf_slam PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

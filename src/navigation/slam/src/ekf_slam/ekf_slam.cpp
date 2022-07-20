@@ -1,9 +1,18 @@
 #include "ekf_slam.hpp"
 
-void get_state(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
+void get_state_from_mu(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
     x = mu(0, 0);
     y = mu(1, 0);
     theta = mu(2, 0);
+}
+
+double wrap_pi(double x) {
+    // [-pi, pi)
+    double m = fmod(x + M_PI, M_PI * 2);
+    if (m < 0) {
+        m += M_PI * 2;
+    }
+    return m - M_PI;
 }
 
 void compute_motion_model(double dt, double forward_vel, double theta_dot, const Eigen::MatrixXd& mu,
@@ -13,7 +22,7 @@ void compute_motion_model(double dt, double forward_vel, double theta_dot, const
     // this function is g()
 
     double x, y, theta;
-    get_state(mu, x, y, theta);
+    get_state_from_mu(mu, x, y, theta);
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
@@ -69,7 +78,7 @@ void compute_expected_z(const Eigen::MatrixXd& mu, int landmark_idx, Eigen::Matr
     // this function is h()
 
     double x, y, theta;
-    get_state(mu, x, y, theta);
+    get_state_from_mu(mu, x, y, theta);
 
     double lm_x = mu(landmark_idx);
     double lm_y = mu(landmark_idx + 1);
@@ -116,7 +125,8 @@ EKFslam::EKFslam() {
     cov = pred_cov;
 }
 
-void EKFslam::position_predict(const Eigen::MatrixXd& pred_car_mu, const Eigen::MatrixXd& pred_car_cov) {
+void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu,
+                               const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov) {
     // since we are taking position directly, no need to run motion models
     // or compute jacobians here
     this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) = pred_car_mu;
@@ -127,7 +137,7 @@ void EKFslam::position_predict(const Eigen::MatrixXd& pred_car_mu, const Eigen::
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
     double x, y, theta;
-    get_state(this->pred_mu, x, y, theta);
+    get_state_from_mu(this->pred_mu, x, y, theta);
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
