@@ -16,17 +16,17 @@ def generate_launch_description():
     node_env["PYTHONUNBUFFERED"] = "1"
 
     can_node = Node(
-        package="missions",
+        package="mission_controller",
         executable="dummy_can",
     )
 
     mission_node = Node(
-        package="missions",
+        package="mission_controller",
         executable="mission_control",
         env=node_env,
     )
 
-    mission_pkg = get_package_share_directory("missions")
+    mission_pkg = get_package_share_directory("mission_controller")
 
     return LaunchDescription(
         [

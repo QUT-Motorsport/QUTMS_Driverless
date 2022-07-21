@@ -2,11 +2,12 @@
 # other python modules
 import time
 
-# import custom message libraries
-from driverless_msgs.msg import Can
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
+
+# import custom message libraries
+from driverless_msgs.msg import Can
 
 
 # node class object that gets created
@@ -34,6 +35,7 @@ class NodeName(Node):
             can_msg.data = [1]
             self.publisher.publish(can_msg)
             self.current_msg = 1
+            self.get_logger().info(f"Can msg: {can_msg.id}")
 
         elif self.current_msg == 1:
             can_msg = Can()
@@ -41,6 +43,7 @@ class NodeName(Node):
             can_msg.data = [1]
             self.publisher.publish(can_msg)
             self.current_msg = 0
+            self.get_logger().info(f"Can msg: {can_msg.id}")
 
 
 # main run when script is started in the terminal

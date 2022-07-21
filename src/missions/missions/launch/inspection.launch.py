@@ -6,9 +6,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="sim_pursuit",  # will rename package in refactor
-                executable="local_pursuit",
+                package="controllers",
+                executable="sine",
             ),
-            ## MAPPING NODE
         ]
     )

@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = "missions"
+package_name = "mission_controller"
 
 setup(
     name=package_name,
@@ -23,9 +23,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "mission_control = missions.node_mission_control:main",
-            "gui = missions.node_gui:main",
-            "dummy_can = missions.node_dummy_can:main",
+            "mission_control = mission_controller.node_mission_control:main",
+            "gui = mission_controller.node_gui:main",
+            "dummy_can = mission_controller.node_dummy_can:main",
         ],
     },
 )

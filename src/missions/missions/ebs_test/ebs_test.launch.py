@@ -14,8 +14,8 @@ def generate_launch_description():
                 executable="lidar_processing",
             ),
             Node(
-                package="sim_pursuit", # will rename package in refactor
-                executable="local_pursuit",
+                package="controllers",  # will rename package in refactor
+                executable="reactive_control",
             ),
         ]
     )

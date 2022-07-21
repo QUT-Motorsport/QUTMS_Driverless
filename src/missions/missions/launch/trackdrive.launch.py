@@ -6,9 +6,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="controllers",
-                executable="sine",
+                package="controllers",  # will rename package in refactor
+                executable="reactive_control",
             ),
-            ## SLOW MOTOR ROTATION
+            ## MAPPING NODE
         ]
     )

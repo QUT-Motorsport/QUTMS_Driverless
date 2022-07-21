@@ -1,8 +1,9 @@
 import curses
 
-from driverless_msgs.srv import SelectMission
 import rclpy
 from rclpy.node import Node
+
+from driverless_msgs.srv import SelectMission
 
 from typing import List
 
