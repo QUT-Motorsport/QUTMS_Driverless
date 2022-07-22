@@ -24,11 +24,11 @@ set(msg_files
   "msg/PathStamped.msg"
   "msg/Can.msg"
   "msg/RES.msg"
+  "msg/Reset.msg"
 )
 
 set(srv_files
   "srv/SelectMission.srv"
-  "srv/StartControl.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

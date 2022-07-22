@@ -15,7 +15,6 @@ from geometry_msgs.msg import TwistWithCovarianceStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.point import Point
-from driverless_msgs.srv import StartControl
 
 from typing import List, Optional, Tuple
 
@@ -73,18 +72,11 @@ class ReactiveController(Node):
         synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[vel_sub, detection_sub], queue_size=30, slop=0.2)
         synchronizer.registerCallback(self.callback)
 
-        self.create_service(StartControl, "select_mission", self.start_srv)
-
         # publishers
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/reactive_controller/debug_img", 1)
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/reactive_driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
-
-    def start_srv(self, request, response):
-        self.get_logger().info("Started Controller")
-        self.target_mission = request.start
-        return response
 
     def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

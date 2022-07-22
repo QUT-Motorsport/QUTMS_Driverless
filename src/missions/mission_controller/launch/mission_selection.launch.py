@@ -26,7 +26,7 @@ def generate_launch_description():
         env=node_env,
     )
 
-    mission_pkg = get_package_share_directory("mission_controller")
+    mission_pkg = get_package_share_directory("missions")
 
     return LaunchDescription(
         [

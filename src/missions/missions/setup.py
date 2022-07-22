@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = "mission_controller"
+package_name = "missions"
 
 setup(
     name=package_name,
@@ -18,14 +18,15 @@ setup(
     zip_safe=True,
     maintainer="Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="Mission control node to start driving events",
+    description="Each driving event mission code",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "mission_control = mission_controller.node_mission_control:main",
-            "gui = mission_controller.node_gui:main",
-            "dummy_can = mission_controller.node_dummy_can:main",
+            "ebs_test = missions.node_ebs_test_mission:main",
+            "inspection = missions.node_inspection_mission:main",
+            "manual_driving = missions.node_manual_driving_mission:main",
+            "trackdrive = missions.node_trackdrive_mission:main",
         ],
     },
 )

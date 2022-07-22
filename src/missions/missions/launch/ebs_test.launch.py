@@ -6,13 +6,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="controllers",  # will rename package in refactor
-                executable="reactive_control",
+                package="missions",
+                executable="ebs_test",
             ),
-            # Node(
-            #     package="baby_slam",
-            #     executable="slam",
-            # )
             # Node(
             #     package="vision_pipeline",
             #     executable="trt_detector",
@@ -21,5 +17,9 @@ def generate_launch_description():
             #     package="lidar_pipeline",
             #     executable="lidar_processing",
             # ),
+            Node(
+                package="controllers",
+                executable="reactive_control",
+            ),
         ]
     )

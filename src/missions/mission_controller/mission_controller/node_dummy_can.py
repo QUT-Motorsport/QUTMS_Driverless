@@ -13,7 +13,7 @@ from driverless_msgs.msg import Can
 # node class object that gets created
 class NodeName(Node):
     def __init__(self):
-        super().__init__("node_name")
+        super().__init__("dummy_can")
 
         time.sleep(3)
 
