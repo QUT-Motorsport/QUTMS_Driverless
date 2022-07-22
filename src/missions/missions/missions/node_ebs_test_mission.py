@@ -10,7 +10,6 @@ class EBSTestMission(BaseMission):
     def __init__(self):
         super().__init__()
 
-        # self.create_subscription(Can, "/can_rosbound", self.can_callback, 10)
         self.create_subscription(AckermannDrive, "/reactive_driving_command", self.reactive_callback, 1)
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)

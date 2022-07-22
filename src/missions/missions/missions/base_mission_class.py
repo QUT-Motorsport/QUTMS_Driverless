@@ -1,4 +1,3 @@
-import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
@@ -10,7 +9,7 @@ class BaseMission(Node):
     ebs_ready: bool = False
 
     def __init__(self):
-        super().__init__("base_mission")
+        super().__init__("mission")
 
         self.create_subscription(Can, "/can_rosbound", self.can_callback, 10)
 
@@ -34,7 +33,7 @@ class BaseMission(Node):
         # else its bad, dont continue
         # delay 5s
         # send 'go' ros message to control and perception nodes
-        if can_msg.id == 601 and self.start_pressed:
+        if can_msg.id == 601 and self.start_pressed and not self.ebs_ready:
             if can_msg.data[0]:
                 self.get_logger().info("EBS is ready")
                 self.ebs_ready = True

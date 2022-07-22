@@ -6,6 +6,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
+                package="missions",
+                executable="inspection",
+            ),
+            Node(
                 package="controllers",
                 executable="sine",
             ),

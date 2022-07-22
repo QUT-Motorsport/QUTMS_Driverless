@@ -48,12 +48,8 @@ class NodeName(Node):
 
 # main run when script is started in the terminal
 def main(args=None):
-    # begin ros node
     rclpy.init(args=args)
-
     node = NodeName()
-    rclpy.spin(node)  # starts node operations
-
+    rclpy.spin(node)
     node.destroy_node()
-
     rclpy.shutdown()

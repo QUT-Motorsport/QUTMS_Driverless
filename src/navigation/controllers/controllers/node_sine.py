@@ -15,9 +15,9 @@ class SineController(Node):
         super().__init__("sine_controller")
 
         # timed callback
-        self.create_timer(self.interval, self.timer_cb)
+        self.create_timer(self.interval, self.timer_callback)
 
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/sine_driving_command", 1)
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 
@@ -26,7 +26,7 @@ class SineController(Node):
         self.count += self.interval
         steering_msg = AckermannDrive()
         steering_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        self.get_logger().info("Angle: " + str(steering_msg.steering_angle))
+        self.get_logger().debug("Angle: " + str(steering_msg.steering_angle))
         self.steering_publisher.publish(steering_msg)
 
 

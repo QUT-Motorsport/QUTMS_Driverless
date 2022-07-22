@@ -85,11 +85,7 @@ def gui_main(stdscr, gui_node: GUINode):
 
 def main(args=None):
     rclpy.init(args=args)
-
     node = GUINode()
-
     curses.wrapper(gui_main, gui_node=node)
-
     node.destroy_node()
-
     rclpy.shutdown()
