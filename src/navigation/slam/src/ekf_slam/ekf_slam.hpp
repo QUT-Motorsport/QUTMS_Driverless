@@ -36,8 +36,6 @@ class EKFslam {
     ).finished();
     // clang-format on
 
-    bool new_prediction = false;
-
    public:
     EKFslam();
 
