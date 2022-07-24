@@ -74,10 +74,9 @@ class EKFSLAMNode : public rclcpp::Node {
         // ix, iy, iz, ii, ij, ik
         // jx, jy, jz, ji, jj, jk
         // kx, ky, kz, ki, kj, kk
-        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov =
-            Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>::Zero();
-        // pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,=
-        //     pose_msg->pose.covariance[35];
+        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
+        pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,
+            pose_msg->pose.covariance[35];
 
         this->ekf_slam.position_predict(pred_mu, pred_car_cov);
 
@@ -146,8 +145,8 @@ class EKFSLAMNode : public rclcpp::Node {
         auto pred_car_marker = visualization_msgs::msg::Marker();
         pred_car_marker.header.frame_id = "map";
         pred_car_marker.header.stamp = stamp;
-        pred_car_marker.ns = "ekf";
-        pred_car_marker.id = -1;  // -1 represents predicted car
+        pred_car_marker.ns = "car";
+        pred_car_marker.id = 1;  // 1 represents predicted car
         pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
         pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
         pred_car_marker.pose.position.x = pred_x;
@@ -166,8 +165,8 @@ class EKFSLAMNode : public rclcpp::Node {
         auto car_marker = visualization_msgs::msg::Marker();
         car_marker.header.frame_id = "map";
         car_marker.header.stamp = stamp;
-        car_marker.ns = "ekf";
-        car_marker.id = -2;  // -2 represents estimated car
+        car_marker.ns = "car";
+        car_marker.id = 2;  // 2 represents estimated car
         car_marker.type = visualization_msgs::msg::Marker::ARROW;
         car_marker.action = visualization_msgs::msg::Marker::ADD;
         car_marker.pose.position.x = x;
@@ -182,6 +181,27 @@ class EKFSLAMNode : public rclcpp::Node {
         car_marker.color.b = 0.0f;
         car_marker.color.a = 1.0;
         marker_array.markers.push_back(car_marker);
+
+        std::cout << "x car cov: " << ekf_slam.get_cov()(0, 0) << std::endl;
+        std::cout << "y car cov: " << ekf_slam.get_cov()(1, 1) << std::endl;
+        auto car_cov_marker = visualization_msgs::msg::Marker();
+        car_cov_marker.header.frame_id = "map";
+        car_cov_marker.header.stamp = stamp;
+        car_cov_marker.ns = "car";
+        car_cov_marker.id = 3;  // 3 represents car covariance
+        car_cov_marker.type = visualization_msgs::msg::Marker::SPHERE;
+        car_cov_marker.action = visualization_msgs::msg::Marker::ADD;
+        car_cov_marker.pose.position.x = x;
+        car_cov_marker.pose.position.y = y;
+        car_cov_marker.pose.position.z = 0;
+        car_cov_marker.scale.x = 3 * sqrt(abs(ekf_slam.get_cov()(0, 0)));
+        car_cov_marker.scale.y = 3 * sqrt(abs(ekf_slam.get_cov()(1, 1)));
+        car_cov_marker.scale.z = 0.05;
+        car_cov_marker.color.r = 0.1;
+        car_cov_marker.color.g = 0.1;
+        car_cov_marker.color.b = 0.1;
+        car_cov_marker.color.a = 0.3;
+        marker_array.markers.push_back(car_cov_marker);
 
         for (int i = CAR_STATE_SIZE; i < ekf_slam.get_mu().rows(); i += LANDMARK_STATE_SIZE) {
             auto cone_pos_marker = visualization_msgs::msg::Marker();
