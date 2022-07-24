@@ -131,8 +131,7 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
     // or compute jacobians here
     this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) = pred_car_mu;
 
-    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov;
-    // this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += this->R;
+    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov + this->R;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
