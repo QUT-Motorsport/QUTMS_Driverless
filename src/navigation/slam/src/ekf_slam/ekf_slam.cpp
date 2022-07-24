@@ -132,10 +132,18 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
     this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) = pred_car_mu;
 
     this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov;
-    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += this->R;
+    // this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += this->R;
+
+    this->new_prediction = true;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
+    if (!this->new_prediction) {
+        return;
+    }
+
+    this->new_prediction = false;
+
     double x, y, theta;
     get_state_from_mu(this->pred_mu, x, y, theta);
 
@@ -159,12 +167,17 @@ void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_co
             this->pred_mu(new_lm_idx, 0) = glob_lm_x;
             this->pred_mu(new_lm_idx + 1, 0) = glob_lm_y;
 
-            for (int i = 0; i <= new_lm_idx + 1; i++) {
-                this->pred_cov(i, new_lm_idx) = 0.5;
-                this->pred_cov(i, new_lm_idx + 1) = 0.5;
-                this->pred_cov(new_lm_idx, i) = 0.5;
-                this->pred_cov(new_lm_idx + 1, i) = 0.5;
+            for (int i = 0; i < new_lm_idx; i++) {
+                this->pred_cov(i, new_lm_idx) = 0;
+                this->pred_cov(i, new_lm_idx + 1) = 0;
+                this->pred_cov(new_lm_idx, i) = 0;
+                this->pred_cov(new_lm_idx + 1, i) = 0;
             }
+
+            Eigen::Matrix2d landmark_jacobian;
+            landmark_jacobian << cos(theta + cone.location.y), cone.location.x * -sin(theta + cone.location.y),
+                sin(theta + cone.location.y), cone.location.x * cos(theta + y);
+            this->pred_cov.bottomRightCorner(2, 2) = landmark_jacobian * this->Q * landmark_jacobian.transpose();
 
             associated_idx = new_lm_idx;
         }

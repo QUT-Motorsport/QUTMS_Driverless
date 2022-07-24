@@ -65,7 +65,7 @@ class EKFSLAMNode : public rclcpp::Node {
         tf2::convert(pose_msg->pose.pose.orientation, q_orientation);
         double roll, pitch, yaw;
         tf2::Matrix3x3(q_orientation).getRPY(roll, pitch, yaw);
-        pred_mu << pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, yaw;
+        pred_mu << pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, wrap_pi(yaw);
 
         // Covariance from odom
         // xx, xy, xz, xi, xj, xk
@@ -74,12 +74,15 @@ class EKFSLAMNode : public rclcpp::Node {
         // ix, iy, iz, ii, ij, ik
         // jx, jy, jz, ji, jj, jk
         // kx, ky, kz, ki, kj, kk
-        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
-        pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,
-            pose_msg->pose.covariance[35];
+        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov =
+            Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>::Zero();
+        // pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,=
+        //     pose_msg->pose.covariance[35];
 
         this->ekf_slam.position_predict(pred_mu, pred_car_cov);
 
+        std::cout << "Pose" << std::endl;
+        print_state();
         publish_visualisations(pose_msg->header.stamp);
     }
 
@@ -104,6 +107,8 @@ class EKFSLAMNode : public rclcpp::Node {
 
         this->ekf_slam.correct(detection_msg->cones);
 
+        std::cout << "Cones" << std::endl;
+        print_state();
         publish_visualisations(detection_msg->header.stamp);
     }
 
@@ -179,24 +184,43 @@ class EKFSLAMNode : public rclcpp::Node {
         marker_array.markers.push_back(car_marker);
 
         for (int i = CAR_STATE_SIZE; i < ekf_slam.get_mu().rows(); i += LANDMARK_STATE_SIZE) {
-            auto cone_marker = visualization_msgs::msg::Marker();
-            cone_marker.header.frame_id = "map";
-            cone_marker.header.stamp = stamp;
-            cone_marker.ns = "ekf";
-            cone_marker.id = i;
-            cone_marker.type = visualization_msgs::msg::Marker::CYLINDER;
-            cone_marker.action = visualization_msgs::msg::Marker::ADD;
-            cone_marker.pose.position.x = ekf_slam.get_mu()(i, 0);
-            cone_marker.pose.position.y = ekf_slam.get_mu()(i + 1, 0);
-            cone_marker.pose.position.z = 0;
-            cone_marker.scale.x = 0.2;
-            cone_marker.scale.y = 0.2;
-            cone_marker.scale.z = 0.5;
-            cone_marker.color.r = colours[i].r;
-            cone_marker.color.g = colours[i].g;
-            cone_marker.color.b = colours[i].b;
-            cone_marker.color.a = 1.0;
-            marker_array.markers.push_back(cone_marker);
+            auto cone_pos_marker = visualization_msgs::msg::Marker();
+            cone_pos_marker.header.frame_id = "map";
+            cone_pos_marker.header.stamp = stamp;
+            cone_pos_marker.ns = "cone_pos";
+            cone_pos_marker.id = i;
+            cone_pos_marker.type = visualization_msgs::msg::Marker::CYLINDER;
+            cone_pos_marker.action = visualization_msgs::msg::Marker::ADD;
+            cone_pos_marker.pose.position.x = ekf_slam.get_mu()(i, 0);
+            cone_pos_marker.pose.position.y = ekf_slam.get_mu()(i + 1, 0);
+            cone_pos_marker.pose.position.z = 0;
+            cone_pos_marker.scale.x = 0.2;
+            cone_pos_marker.scale.y = 0.2;
+            cone_pos_marker.scale.z = 0.5;
+            cone_pos_marker.color.r = colours[i].r;
+            cone_pos_marker.color.g = colours[i].g;
+            cone_pos_marker.color.b = colours[i].b;
+            cone_pos_marker.color.a = 1.0;
+            marker_array.markers.push_back(cone_pos_marker);
+
+            auto cone_cov_marker = visualization_msgs::msg::Marker();
+            cone_cov_marker.header.frame_id = "map";
+            cone_cov_marker.header.stamp = stamp;
+            cone_cov_marker.ns = "cone_cov";
+            cone_cov_marker.id = i;
+            cone_cov_marker.type = visualization_msgs::msg::Marker::SPHERE;
+            cone_cov_marker.action = visualization_msgs::msg::Marker::ADD;
+            cone_cov_marker.pose.position.x = ekf_slam.get_mu()(i, 0);
+            cone_cov_marker.pose.position.y = ekf_slam.get_mu()(i + 1, 0);
+            cone_cov_marker.pose.position.z = 0;
+            cone_cov_marker.scale.x = 3 * sqrt(abs(ekf_slam.get_cov()(i, i)));
+            cone_cov_marker.scale.y = 3 * sqrt(abs(ekf_slam.get_cov()(i + 1, i + 1)));
+            cone_cov_marker.scale.z = 0.05;
+            cone_cov_marker.color.r = 0.1;
+            cone_cov_marker.color.g = 0.1;
+            cone_cov_marker.color.b = 0.1;
+            cone_cov_marker.color.a = 0.3;
+            marker_array.markers.push_back(cone_cov_marker);
         }
 
         this->viz_pub->publish(marker_array);
