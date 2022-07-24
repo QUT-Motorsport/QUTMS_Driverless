@@ -133,17 +133,9 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
 
     this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov;
     // this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += this->R;
-
-    this->new_prediction = true;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
-    if (!this->new_prediction) {
-        return;
-    }
-
-    this->new_prediction = false;
-
     double x, y, theta;
     get_state_from_mu(this->pred_mu, x, y, theta);
 
