@@ -11,6 +11,7 @@
 #define LANDMARK_STATE_SIZE 2
 
 void get_state_from_mu(const Eigen::MatrixXd& mu, double& x, double& y, double& theta);
+double wrap_pi(double x);
 
 class EKFslam {
    private:
@@ -22,18 +23,20 @@ class EKFslam {
 
     // clang-format off
     const Eigen::Matrix3d R = (
-        Eigen::Matrix3d() << 0.01,   0,     0,
-                             0,      0.01,  0,
-                             0,      0,     0.01
+        Eigen::Matrix3d() << 0.05,   0,     0,
+                             0,      0.05,  0,
+                             0,      0,     0.05
     ).finished();
 
     // Q = ( σ_r^2  0         )
     //     ( 0      σ_theta^2 )
     const Eigen::Matrix2d Q = (
         Eigen::Matrix2d() << 1,  0,
-                             0,  1
+                             0,  0.36
     ).finished();
     // clang-format on
+
+    bool new_prediction = false;
 
    public:
     EKFslam();
