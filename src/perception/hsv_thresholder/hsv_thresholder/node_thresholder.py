@@ -20,7 +20,7 @@ class ThresholderNode(Node):
         self.create_subscription(String, "hsv_thresholder/threshold", self.threshold_callback, 1)
         self.create_subscription(
             Image,
-            "/zed2i/zed_node/left/image_rect_color",
+            "/zed2i/zed_node/rgb/image_rect_color",
             self.image_callback,
             1,
         )
