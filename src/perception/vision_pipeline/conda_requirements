@@ -1,5 +1,5 @@
-pytorch
-torchvision
+pytorch==1.11.0
+torchvision==0.12.0
 ros-galactic-cv-bridge
 opencv
 numpy==1.21.4
@@ -11,3 +11,5 @@ requests==2.26.0
 tqdm>=4.41.0
 pandas>=1.1.4
 seaborn>=0.11.0
+protobuf<4.21.3
+ipython

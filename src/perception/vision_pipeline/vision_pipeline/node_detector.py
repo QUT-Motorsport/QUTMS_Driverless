@@ -141,7 +141,7 @@ class VisionProcessor(Node):
 
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
-            if isnan(distance) or isinf(distance):
+            if isnan(distance) or isinf(distance) or distance > 10:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
@@ -167,7 +167,7 @@ def main_cv2(args=None):
 
     # HSV threshold constants
     YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
-    BLUE_HSV_THRESH = Threshold(lower=[120, 100, 40], upper=[130, 255, 255])
+    BLUE_HSV_THRESH = Threshold(lower=[100, 100, 110], upper=[120, 255, 145])
     ORANGE_HSV_THRESH = Threshold(lower=[0, 100, 50], upper=[15, 255, 255])
 
     # thresh, cone_colour, display_colour

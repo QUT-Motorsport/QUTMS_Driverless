@@ -41,7 +41,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "zed2i/zed_node/pose_with_covariance", 10, std::bind(&EKFSLAMNode::pose_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "detection/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "vision/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
