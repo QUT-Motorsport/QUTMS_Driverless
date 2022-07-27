@@ -13,7 +13,7 @@ class SimMapControllerNode(Node):
         super().__init__("SineController")
 
         self.create_subscription(ControlCommand, "control_command", self.control_callback, 1)
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "ackermann", 1)
         self.get_logger().info("Sim Map Controller")
 
     def control_callback(self, msg: ControlCommand):
