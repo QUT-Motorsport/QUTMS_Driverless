@@ -29,7 +29,7 @@ CAMERA_FOV = 110  # degrees
 Colour = Tuple[int, int, int]
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
-ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
+ORANGE_DISP_COLOUR: Colour = (0, 80, 255)  # bgr - orange
 
 # display_colour
 CONE_DISPLAY_PARAMETERS = [

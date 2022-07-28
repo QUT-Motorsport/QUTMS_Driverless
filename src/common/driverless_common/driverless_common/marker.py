@@ -10,6 +10,32 @@ MARKER_HEIGHT = 0.3
 MAX_NUM_CONES = 50
 
 
+# def marker_array_from_slam(detection: ConeDetectionStamped) -> MarkerArray:
+#     cones: List[Cone] = detection.cones
+
+#     markers = []
+#     for i in range(MAX_NUM_CONES):
+#         if i < len(cones):
+#             markers.append(
+#                 marker_msg(
+#                     x=cones[i].location.x,
+#                     y=cones[i].location.y,
+#                     id_=i,
+#                     header=detection.header,
+#                     cone_colour=cones[i].color,
+#                 )
+#             )
+#         else:
+#             markers.append(
+#                 clear_marker_msg(
+#                     id_=i,
+#                     header=detection.header,
+#                 )
+#             )
+
+#     return MarkerArray(markers=markers)
+
+
 def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerArray:
     cones: List[Cone] = detection.cones
 
@@ -39,8 +65,8 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
 CONE_TO_RGB_MAP = {
     Cone.BLUE: ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),
     Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
-    Cone.ORANGE_BIG: ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),
-    Cone.ORANGE_SMALL: ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),
+    Cone.ORANGE_BIG: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
+    Cone.ORANGE_SMALL: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
 }
 
 
@@ -52,8 +78,10 @@ def marker_msg(
     cone_colour: int,
     name_space: str = "current_scan",
 ) -> Marker:
+    new_header = Header(stamp=header.stamp, frame_id="map")
+
     return Marker(
-        header=header,
+        header=new_header,
         ns=name_space,
         id=id_,
         type=Marker.CYLINDER,
@@ -66,8 +94,10 @@ def marker_msg(
 
 
 def clear_marker_msg(id_: int, header: Header, name_space: str = "current_scan") -> Marker:
+    new_header = Header(stamp=header.stamp, frame_id="map")
+
     return Marker(
-        header=header,
+        header=new_header,
         ns=name_space,
         id=id_,
         action=Marker.DELETE,
