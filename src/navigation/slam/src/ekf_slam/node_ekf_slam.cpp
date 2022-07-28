@@ -49,7 +49,6 @@ class EKFSLAMNode : public rclcpp::Node {
 
     void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
         this->pose_msgs.push_back(pose_msg);
-        publish_visualisations(pose_msg->header.stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
