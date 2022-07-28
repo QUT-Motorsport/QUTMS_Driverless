@@ -66,7 +66,7 @@ def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
     marker.color.b = 0.0
     marker.color.a = 1.0
 
-    marker.lifetime = Duration(sec=0, nanosec=100000000)
+    marker.lifetime = Duration(sec=0, nanosec=200000000)
 
     return marker
 
@@ -114,7 +114,7 @@ class ConeSensingNode(Node):
         self.pc_subscription = self.create_subscription(PointCloud2, pc_node, self.pc_callback, 2)
         self.pc_subscription  # Prevent unused variable warning
 
-        self.cone_publisher = self.create_publisher(ConeDetectionStamped, "cone_sensing/cones", 5)
+        self.cone_publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 5)
 
         self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "lidar/debug_cones_array", 1)
 
@@ -144,7 +144,7 @@ class ConeSensingNode(Node):
 
         LOGGER.info("Waiting for PointCloud2 data ...")
 
-    def pc_callback(self, pc_msg):
+    def pc_callback(self, pc_msg: PointCloud2):
         timestamp = create_timestamp()
         LOGGER.info("PointCloud2 message received at " + timestamp)
 
@@ -511,9 +511,6 @@ def main(args=sys.argv[1:]):
         cone_sensing_node.destroy_node()
         rclpy.shutdown()
 
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 
 # Notes
 # 1. Intead of rounding the point cloud, see if setting the dtype to
