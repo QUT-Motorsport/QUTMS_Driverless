@@ -12,6 +12,8 @@ from driverless_msgs.msg import Can
 
 # node class object that gets created
 class NodeName(Node):
+    current_msg: int = 0
+
     def __init__(self):
         super().__init__("dummy_can")
 
@@ -26,24 +28,29 @@ class NodeName(Node):
 
         self.get_logger().info("---Dummy can msg node initialised---")
 
-        self.current_msg = 0
-
     def callback(self):
         if self.current_msg == 0:
             can_msg = Can()
-            can_msg.id = 600  # "res_start"
-            can_msg.data = [1]
+            can_msg.id = 0
+            can_msg.data = [0]  # state '0' not ready
             self.publisher.publish(can_msg)
             self.current_msg = 1
-            self.get_logger().info(f"Can msg: {can_msg.id}")
+            self.get_logger().info("Car state: not ready")
 
         elif self.current_msg == 1:
             can_msg = Can()
-            can_msg.id = 601  # "ebs_ready"
-            can_msg.data = [1]
+            can_msg.id = 0
+            can_msg.data = [1]  # state '1' r2d button pressed
             self.publisher.publish(can_msg)
-            self.current_msg = 0
-            self.get_logger().info(f"Can msg: {can_msg.id}")
+            self.current_msg = 2
+            self.get_logger().info("Car state: ready")
+
+        elif self.current_msg == 2:
+            can_msg = Can()
+            can_msg.id = 0
+            can_msg.data = [1]  # state '1' r2d button pressed
+            self.publisher.publish(can_msg)
+            self.get_logger().info("Car state: driving")
 
 
 # main run when script is started in the terminal

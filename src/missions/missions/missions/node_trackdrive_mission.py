@@ -19,13 +19,15 @@ class TrackdriveMission(BaseMission):
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
+        self.get_logger().info("---Trackdrive mission node initialised---")
+
     # logic for switching reactive and following drive commands needed
     def reactive_callback(self, reactive_control_msg: AckermannDrive):
-        if self.ebs_ready and not self.loop_closed:
+        if self.r2d and not self.loop_closed:
             self.drive_publisher.publish(reactive_control_msg)
 
     def following_callback(self, following_control_msg: AckermannDrive):
-        if self.ebs_ready and self.loop_closed:
+        if self.r2d and self.loop_closed:
             self.drive_publisher.publish(following_control_msg)
 
 

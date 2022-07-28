@@ -5,8 +5,7 @@ from driverless_msgs.msg import Can
 
 
 class BaseMission(Node):
-    start_pressed: bool = False
-    ebs_ready: bool = False
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("mission")
@@ -16,31 +15,12 @@ class BaseMission(Node):
         self.publisher: Publisher = self.create_publisher(Can, "/can_carbound", 10)
 
     def can_callback(self, can_msg: Can):
-        # listen to EBS check success
-        # else its bad, dont continue
-        # delay 5s
-        # send 'go' ros message to control and perception nodes
-        if can_msg.id == 600:
-            self.get_logger().info("HELLOW???")
-            if can_msg.data[0]:
-                self.get_logger().info("EBS is ready")
-                self.ebs_ready = True
-                # out_can = Can()
-                # out_can.id = "r2d"
-                # out_can.data = 1
-                # # any other CAN data??
-                # self.publisher.publish(out_can)
-                # this should send srv to start controlling
+        # listen to EBS check success state
+        if can_msg.data[0] == 0:  # 'state' id not ready
+            self.get_logger().info("waiting on r2d")
 
-        # next, listen to the RES 'start' button CAN msg.
+        # next, listen to the RES 'go' state CAN msg.
         # send can msg to EBS VCU
-        # VCU side: go thru ebs checks
-        if can_msg.id == 601 and self.ebs_ready and not self.start_pressed:
-            if can_msg.data[0]:
-                self.get_logger().info("Start pressed")
-                self.start_pressed = True
-                # out_can = Can()
-                # out_can.id = "check_ebs"
-                # out_can.data = 1
-                # # any other CAN data??
-                # self.publisher.publish(out_can)
+        elif can_msg.data[0] == 1 and not self.r2d:  # state id ready and haven't previously set r2d
+            self.get_logger().info("r2d pressed")
+            self.r2d = True

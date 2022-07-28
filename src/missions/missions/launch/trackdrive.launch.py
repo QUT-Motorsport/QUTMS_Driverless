@@ -6,6 +6,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
+                package="missions",
+                executable="trackdrive",
+            ),
+            Node(
                 package="controllers",  # will rename package in refactor
                 executable="reactive_control",
             ),
