@@ -14,6 +14,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
 
+from driverless_common.marker import marker_array_from_cone_detection
 from driverless_common.point import Point
 
 from typing import List, Tuple
@@ -67,6 +68,8 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
             colour = YELLOW_DISP_COLOUR
         elif cone.color == Cone.BLUE:
             colour = BLUE_DISP_COLOUR
+        elif cone.color == Cone.ORANGE_SMALL:
+            colour = ORANGE_DISP_COLOUR
         else:
             colour = (255, 255, 255)
 
@@ -82,15 +85,52 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
     return debug_img
 
 
+def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
+    marker = Marker()
+    marker.header = head
+    marker.ns = "current_scan"
+    marker.id = ID
+    marker.type = Marker.CYLINDER
+    marker.action = Marker.ADD
+
+    marker.pose.position.x = x_coord
+    marker.pose.position.y = y_coord
+    marker.pose.position.z = 0.0
+    marker.pose.orientation.x = 0.0
+    marker.pose.orientation.y = 0.0
+    marker.pose.orientation.z = 0.0
+    marker.pose.orientation.w = 1.0
+
+    # scale out of 1x1x1m
+    marker.scale.x = 0.228
+    marker.scale.y = 0.228
+    marker.scale.z = 0.325
+
+    marker.color.r = 0.0
+    marker.color.g = 1.0
+    marker.color.b = 0.0
+    marker.color.a = 1.0
+
+    marker.lifetime = Duration(sec=0, nanosec=200000000)
+
+    return marker
+
+
 class DisplayDetections(Node):
     def __init__(self):
         super().__init__("display_detections")
 
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/sim_cones/cone_detection", self.sim_cones_callback, 1)
 
-        self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/display/vision_detection", 1)
-        self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/display/lidar_detection", 1)
+        self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/display/vision_det_img", 1)
+        self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/display/lidar_det_img", 1)
+        self.sim_cones_disp_publisher: Publisher = self.create_publisher(Image, "/sim_cones/lidar_det_img", 1)
+
+        self.vision_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/vision_markers", 1)
+        self.lidar_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/lidar_markers", 1)
+        self.sim_cones_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/sim_cones_markers", 1)
 
         self.get_logger().info("---Cone display node initialised---")
 
@@ -102,6 +142,8 @@ class DisplayDetections(Node):
         debug_img = draw_markers(cones)
         self.vision_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
+        self.vision_mkr_publisher.publish(marker_array_from_cone_detection(msg))
+
     def lidar_callback(self, msg: ConeDetectionStamped):
         logger = self.get_logger()
         logger.debug("Received lidar detection")
@@ -110,11 +152,22 @@ class DisplayDetections(Node):
         debug_img = draw_markers(cones)
         self.lidar_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
+        self.lidar_mkr_publisher.publish(marker_array_from_cone_detection(msg))
+
+    def sim_cones_callback(self, msg: ConeDetectionStamped):
+        logger = self.get_logger()
+        logger.debug("Received sim cones detection")
+
+        cones: List[Cone] = msg.cones
+        debug_img = draw_markers(cones)
+        self.sim_cones_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+        self.sim_cones_mkr_publisher.publish(marker_array_from_cone_detection(msg))
+
 
 def main():
     rclpy.init()
-
     node = DisplayDetections()
-
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()

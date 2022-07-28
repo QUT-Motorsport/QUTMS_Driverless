@@ -149,10 +149,7 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
-        detection_msg = ConeDetectionStamped(
-            header=colour_msg.header,
-            cones=detected_cones,
-        )
+        detection_msg = ConeDetectionStamped(header=colour_msg.header, cones=detected_cones)
 
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
@@ -191,6 +188,7 @@ def main_cv2(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
@@ -224,6 +222,7 @@ def main_torch(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_torch_bounding_boxes)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
@@ -259,4 +258,5 @@ def main_trt(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_trt_bounding_boxes)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
