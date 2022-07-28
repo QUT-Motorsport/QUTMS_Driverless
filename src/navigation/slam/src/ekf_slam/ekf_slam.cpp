@@ -130,8 +130,14 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
     // since we are taking position directly, no need to run motion models
     // or compute jacobians here
     this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) = pred_car_mu;
-
     this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov + this->R;
+}
+
+void EKFslam::position_delta_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu_delta,
+                                     const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov) {
+    this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) += pred_car_mu_delta;
+    // 0.1 is arbitrary
+    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += 0.1 * pred_car_cov + this->R;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {

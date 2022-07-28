@@ -31,6 +31,7 @@ class EKFSLAMNode : public rclcpp::Node {
     EKFslam ekf_slam;
 
     std::vector<geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr> pose_msgs;
+    std::optional<Eigen::Matrix<double, CAR_STATE_SIZE, 1>> last_pred_mu;
 
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
@@ -62,7 +63,7 @@ class EKFSLAMNode : public rclcpp::Node {
             return;
         }
 
-        this->pose_update(*result);
+        this->pose_delta_update(*result);
         this->cone_update(detection_msg);
 
         std::cout << "Cones" << std::endl;
@@ -89,6 +90,33 @@ class EKFSLAMNode : public rclcpp::Node {
             pose_msg->pose.covariance[35];
 
         this->ekf_slam.position_predict(pred_mu, pred_car_cov);
+    }
+
+    void pose_delta_update(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
+        Eigen::Matrix<double, CAR_STATE_SIZE, 1> pred_mu;
+        tf2::Quaternion q_orientation;
+        tf2::convert(pose_msg->pose.pose.orientation, q_orientation);
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q_orientation).getRPY(roll, pitch, yaw);
+        pred_mu << pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, wrap_pi(yaw);
+
+        if (!last_pred_mu.has_value()) {
+            last_pred_mu = pred_mu;
+        }
+
+        // Covariance from odom
+        // xx, xy, xz, xi, xj, xk
+        // yx, yy, yz, yi, yj, yk
+        // zx, zy, zz, zi, zj, zk
+        // ix, iy, iz, ii, ij, ik
+        // jx, jy, jz, ji, jj, jk
+        // kx, ky, kz, ki, kj, kk
+        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
+        pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,
+            pose_msg->pose.covariance[35];
+
+        this->ekf_slam.position_delta_predict(pred_mu - last_pred_mu.value(), pred_car_cov);
+        last_pred_mu = pred_mu;
     }
 
     void cone_update(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
@@ -118,37 +146,38 @@ class EKFSLAMNode : public rclcpp::Node {
     }
 
     void publish_visualisations(builtin_interfaces::msg::Time stamp) {
-        double x, y, theta, pred_x, pred_y, pred_theta;
-        this->ekf_slam.get_state(x, y, theta);
-        this->ekf_slam.get_pred_state(pred_x, pred_y, pred_theta);
-
-        tf2::Quaternion pred_heading;
+        double x, y, theta;
         tf2::Quaternion heading;
-        pred_heading.setRPY(0, 0, pred_theta);
+        this->ekf_slam.get_state(x, y, theta);
         heading.setRPY(0, 0, theta);
+
+        // double pred_x, pred_y, pred_theta;
+        // tf2::Quaternion pred_heading;
+        // this->ekf_slam.get_pred_state(pred_x, pred_y, pred_theta);
+        // pred_heading.setRPY(0, 0, pred_theta);
 
         auto marker_array = visualization_msgs::msg::MarkerArray();
 
         // car
-        auto pred_car_marker = visualization_msgs::msg::Marker();
-        pred_car_marker.header.frame_id = "map";
-        pred_car_marker.header.stamp = stamp;
-        pred_car_marker.ns = "car";
-        pred_car_marker.id = 1;
-        pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
-        pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
-        pred_car_marker.pose.position.x = pred_x;
-        pred_car_marker.pose.position.y = pred_y;
-        pred_car_marker.pose.position.z = 0;
-        tf2::convert(pred_heading, pred_car_marker.pose.orientation);
-        pred_car_marker.scale.x = 1.0;
-        pred_car_marker.scale.y = 0.2;
-        pred_car_marker.scale.z = 0.2;
-        pred_car_marker.color.r = 0.0f;
-        pred_car_marker.color.g = 1.0f;
-        pred_car_marker.color.b = 0.0f;
-        pred_car_marker.color.a = 1.0;
-        marker_array.markers.push_back(pred_car_marker);
+        // auto pred_car_marker = visualization_msgs::msg::Marker();
+        // pred_car_marker.header.frame_id = "map";
+        // pred_car_marker.header.stamp = stamp;
+        // pred_car_marker.ns = "car";
+        // pred_car_marker.id = 1;
+        // pred_car_marker.type = visualization_msgs::msg::Marker::ARROW;
+        // pred_car_marker.action = visualization_msgs::msg::Marker::ADD;
+        // pred_car_marker.pose.position.x = pred_x;
+        // pred_car_marker.pose.position.y = pred_y;
+        // pred_car_marker.pose.position.z = 0;
+        // tf2::convert(pred_heading, pred_car_marker.pose.orientation);
+        // pred_car_marker.scale.x = 1.0;
+        // pred_car_marker.scale.y = 0.2;
+        // pred_car_marker.scale.z = 0.2;
+        // pred_car_marker.color.r = 0.0f;
+        // pred_car_marker.color.g = 1.0f;
+        // pred_car_marker.color.b = 0.0f;
+        // pred_car_marker.color.a = 1.0;
+        // marker_array.markers.push_back(pred_car_marker);
 
         auto car_marker = visualization_msgs::msg::Marker();
         car_marker.header.frame_id = "map";
@@ -170,24 +199,24 @@ class EKFSLAMNode : public rclcpp::Node {
         car_marker.color.a = 1.0;
         marker_array.markers.push_back(car_marker);
 
-        auto car_pred_cov_marker = visualization_msgs::msg::Marker();
-        car_pred_cov_marker.header.frame_id = "map";
-        car_pred_cov_marker.header.stamp = stamp;
-        car_pred_cov_marker.ns = "car";
-        car_pred_cov_marker.id = 3;
-        car_pred_cov_marker.type = visualization_msgs::msg::Marker::SPHERE;
-        car_pred_cov_marker.action = visualization_msgs::msg::Marker::ADD;
-        car_pred_cov_marker.pose.position.x = x;
-        car_pred_cov_marker.pose.position.y = y;
-        car_pred_cov_marker.pose.position.z = 0;
-        car_pred_cov_marker.scale.x = 3 * sqrt(abs(ekf_slam.get_pred_cov()(0, 0)));
-        car_pred_cov_marker.scale.y = 3 * sqrt(abs(ekf_slam.get_pred_cov()(1, 1)));
-        car_pred_cov_marker.scale.z = 0.05;
-        car_pred_cov_marker.color.r = 0.1;
-        car_pred_cov_marker.color.g = 0.1;
-        car_pred_cov_marker.color.b = 0.1;
-        car_pred_cov_marker.color.a = 0.3;
-        marker_array.markers.push_back(car_pred_cov_marker);
+        // auto car_pred_cov_marker = visualization_msgs::msg::Marker();
+        // car_pred_cov_marker.header.frame_id = "map";
+        // car_pred_cov_marker.header.stamp = stamp;
+        // car_pred_cov_marker.ns = "car";
+        // car_pred_cov_marker.id = 3;
+        // car_pred_cov_marker.type = visualization_msgs::msg::Marker::SPHERE;
+        // car_pred_cov_marker.action = visualization_msgs::msg::Marker::ADD;
+        // car_pred_cov_marker.pose.position.x = x;
+        // car_pred_cov_marker.pose.position.y = y;
+        // car_pred_cov_marker.pose.position.z = 0;
+        // car_pred_cov_marker.scale.x = 3 * sqrt(abs(ekf_slam.get_pred_cov()(0, 0)));
+        // car_pred_cov_marker.scale.y = 3 * sqrt(abs(ekf_slam.get_pred_cov()(1, 1)));
+        // car_pred_cov_marker.scale.z = 0.05;
+        // car_pred_cov_marker.color.r = 0.1;
+        // car_pred_cov_marker.color.g = 0.1;
+        // car_pred_cov_marker.color.b = 0.1;
+        // car_pred_cov_marker.color.a = 0.3;
+        // marker_array.markers.push_back(car_pred_cov_marker);
 
         auto car_cov_marker = visualization_msgs::msg::Marker();
         car_cov_marker.header.frame_id = "map";
