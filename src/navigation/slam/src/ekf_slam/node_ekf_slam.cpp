@@ -53,11 +53,12 @@ class EKFSLAMNode : public rclcpp::Node {
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
-        auto less_than = [detection_msg](geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
-            return compute_dt(pose_msg->header.stamp, detection_msg->header.stamp) >= 0;
-        };
+        auto earlier_than_detection =
+            [detection_msg](geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
+                return compute_dt(pose_msg->header.stamp, detection_msg->header.stamp) >= 0;
+            };
 
-        auto result = std::find_if(std::rbegin(pose_msgs), std::rend(pose_msgs), less_than);
+        auto result = std::find_if(std::rbegin(pose_msgs), std::rend(pose_msgs), earlier_than_detection);
         if (result == std::rend(pose_msgs)) {
             return;
         }
