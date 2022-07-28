@@ -2,6 +2,7 @@ from math import sqrt
 
 import cv2
 import numpy as np
+from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
 import rclpy
@@ -10,6 +11,7 @@ from rclpy.publisher import Publisher
 
 from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, MarkerArray
@@ -85,41 +87,15 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
     return debug_img
 
 
-def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
-    marker = Marker()
-    marker.header = head
-    marker.ns = "current_scan"
-    marker.id = ID
-    marker.type = Marker.CYLINDER
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x_coord
-    marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # scale out of 1x1x1m
-    marker.scale.x = 0.228
-    marker.scale.y = 0.228
-    marker.scale.z = 0.325
-
-    marker.color.r = 0.0
-    marker.color.g = 1.0
-    marker.color.b = 0.0
-    marker.color.a = 1.0
-
-    marker.lifetime = Duration(sec=0, nanosec=200000000)
-
-    return marker
-
-
 class DisplayDetections(Node):
+    car_x: float = 0.0
+    car_y: float = 0.0
+    car_theta: float = 0.0
+
     def __init__(self):
         super().__init__("display_detections")
 
+        # cone detection subscribers
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/sim_cones/cone_detection", self.sim_cones_callback, 1)

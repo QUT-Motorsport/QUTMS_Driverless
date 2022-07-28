@@ -1,10 +1,12 @@
+from math import cos, degrees, radians, sin
+
 from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker, MarkerArray
 
-from typing import List
+from typing import List, Tuple
 
 MARKER_HEIGHT = 0.3
 MAX_NUM_CONES = 50
@@ -78,7 +80,7 @@ def marker_msg(
     cone_colour: int,
     name_space: str = "current_scan",
 ) -> Marker:
-    new_header = Header(stamp=header.stamp, frame_id="map")
+    new_header = Header(stamp=header.stamp, frame_id="car")
 
     return Marker(
         header=new_header,
@@ -94,7 +96,7 @@ def marker_msg(
 
 
 def clear_marker_msg(id_: int, header: Header, name_space: str = "current_scan") -> Marker:
-    new_header = Header(stamp=header.stamp, frame_id="map")
+    new_header = Header(stamp=header.stamp, frame_id="car")
 
     return Marker(
         header=new_header,
