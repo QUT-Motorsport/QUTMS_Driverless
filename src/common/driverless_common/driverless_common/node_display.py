@@ -32,7 +32,7 @@ Colour = Tuple[int, int, int]
 
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
-ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
+ORANGE_DISP_COLOUR: Colour = (0, 80, 255)  # bgr - orange
 UNKNOWN_DISP_COLOUR: Colour = (255, 255, 255)  # bgr - white
 
 LEFT_CONE_COLOUR = Cone.YELLOW
@@ -68,7 +68,7 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
             colour = YELLOW_DISP_COLOUR
         elif cone.color == Cone.BLUE:
             colour = BLUE_DISP_COLOUR
-        elif cone.color == Cone.ORANGE_SMALL:
+        elif cone.color == Cone.ORANGE_BIG:
             colour = ORANGE_DISP_COLOUR
         else:
             colour = (255, 255, 255)
@@ -124,13 +124,13 @@ class DisplayDetections(Node):
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/sim_cones/cone_detection", self.sim_cones_callback, 1)
 
-        self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/display/vision_det_img", 1)
-        self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/display/lidar_det_img", 1)
-        self.sim_cones_disp_publisher: Publisher = self.create_publisher(Image, "/sim_cones/lidar_det_img", 1)
+        self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/vision/vision_det_img", 1)
+        self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/lidar/lidar_det_img", 1)
+        self.sim_cones_disp_publisher: Publisher = self.create_publisher(Image, "/sim_cones/sim_cones_det_img", 1)
 
-        self.vision_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/vision_markers", 1)
-        self.lidar_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/lidar_markers", 1)
-        self.sim_cones_mkr_publisher: Publisher = self.create_publisher(Image, "/markers/sim_cones_markers", 1)
+        self.vision_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/vision_markers", 1)
+        self.lidar_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/lidar_markers", 1)
+        self.sim_cones_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/sim_cones_markers", 1)
 
         self.get_logger().info("---Cone display node initialised---")
 
