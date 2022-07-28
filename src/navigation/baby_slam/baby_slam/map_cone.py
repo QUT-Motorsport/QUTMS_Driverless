@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 import math
-from turtle import color
 
 from driverless_msgs.msg import Cone
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 
 @dataclass
