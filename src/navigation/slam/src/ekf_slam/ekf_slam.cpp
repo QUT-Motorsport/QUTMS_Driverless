@@ -54,7 +54,7 @@ void update_pred_motion_cov(const Eigen::MatrixXd& motion_jacobian,  // G_x
 std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double search_x, double search_y) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 3 * 3;  // m, threshold^2
+    double min_distance = 2 * 2;  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
