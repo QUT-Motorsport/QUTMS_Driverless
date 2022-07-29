@@ -73,7 +73,7 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
 
         cv2.drawMarker(
             debug_img,
-            loc_to_img(cone.location.x, cone.location.y).to_tuple(),
+            loc_to_img_pt(cone.location.x, cone.location.y).to_tuple(),
             colour,
             markerType=cv2.MARKER_SQUARE,
             markerSize=5,
