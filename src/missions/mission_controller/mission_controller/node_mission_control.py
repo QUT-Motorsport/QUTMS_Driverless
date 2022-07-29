@@ -7,9 +7,7 @@ from driverless_msgs.msg import Can
 
 from driverless_msgs.srv import SelectMission
 
-from typing import List
-
-missions: List[str] = ["manual_driving", "inspection", "ebs_test", "trackdrive"]
+from .mission_constants import CAN_TO_MISSION_TYPE
 
 
 class MissionControl(Node):
@@ -35,8 +33,8 @@ class MissionControl(Node):
         # save target mission
         if can_msg.id == "mission_selection":  # idk about what can IDs are
             mission: int = can_msg.data  # extract msg data
-            if mission >= 0 and mission < 4:  # check if its an actual value
-                self.target_mission = missions[mission]
+            if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
+                self.target_mission = CAN_TO_MISSION_TYPE[mission]
                 print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
 
 

@@ -15,7 +15,7 @@ class EBSTestMission(BaseMission):
         self.drive_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
     def reactive_callback(self, reactive_control_msg: AckermannDrive):
-        if self.ebs_ready:
+        if self.r2d:
             self.drive_publisher.publish(reactive_control_msg)
 
 

@@ -14,6 +14,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
     node_env = os.environ.copy()
     node_env["PYTHONUNBUFFERED"] = "1"
+    # ros2 print by default is cleared from std out, hence would not be picked up as an std i/o.
+    # to overcome this, the host terminal environment is saved and python is set to an 'unbuffered' std out
+    # which allows ros2 print statements to be registered in std out.
+    # this is then piped into the 'mission_control' node.
 
     can_node = Node(
         package="mission_controller",
