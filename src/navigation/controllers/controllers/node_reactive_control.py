@@ -168,6 +168,7 @@ class ReactiveController(Node):
 
             # publish message
             control_msg.steering_angle = steering_angle
+            control_msg.speed = target_vel
             control_msg.acceleration = calc_throttle
             control_msg.jerk = 0.0
 

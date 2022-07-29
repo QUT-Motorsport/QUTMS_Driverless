@@ -1,5 +1,3 @@
-from math import cos, degrees, radians, sin
-
 from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
