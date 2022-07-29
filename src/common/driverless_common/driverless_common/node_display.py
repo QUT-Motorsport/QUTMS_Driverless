@@ -21,8 +21,8 @@ from typing import List, Tuple
 cv_bridge = CvBridge()
 
 SCALE = 20
-WIDTH = 30 * SCALE  # 15m either side
-HEIGHT = 30 * SCALE  # 30m forward
+WIDTH = 20 * SCALE  # 15m either side
+HEIGHT = 20 * SCALE  # 30m forward
 
 ORIGIN = Point(0, 0)
 IMG_ORIGIN = Point(int(WIDTH / 2), HEIGHT)
@@ -38,14 +38,13 @@ LEFT_CONE_COLOUR = Cone.YELLOW
 RIGHT_CONE_COLOUR = Cone.BLUE
 
 
-def cone_pt_to_img_pt(x: float, y: float) -> Point:
-    return Point(
-        int(round(WIDTH / 2 - y * SCALE)),
-        int(round(HEIGHT - x * SCALE)),
-    )
-
-
-def cone_pt_to_img_pt(x: float, y: float) -> Point:
+def loc_to_img_pt(x: float, y: float) -> Point:
+    """
+    Converts a relative depth from the camera into image coords
+    * param x: x coord
+    * param y: y coord
+    * return: Point int pixel coords
+    """
     return Point(
         int(round(WIDTH / 2 - y * SCALE)),
         int(round(HEIGHT - x * SCALE)),
@@ -74,7 +73,7 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
 
         cv2.drawMarker(
             debug_img,
-            cone_pt_to_img_pt(cone.location.x, cone.location.y).to_tuple(),
+            loc_to_img(cone.location.x, cone.location.y).to_tuple(),
             colour,
             markerType=cv2.MARKER_SQUARE,
             markerSize=5,
@@ -91,27 +90,30 @@ def robot_pt_to_img_pt(x: float, y: float) -> Point:
     )
 
 
-def draw_steering(debug_img: np.ndarray, ackermann: AckermannDrive):
+def draw_steering(debug_img: np.ndarray, steering_angle: float, velocity: float):
     # draw angle line
     cv2.line(
         debug_img,
         (
-            int(50 * cos(ackermann.steering_angle) + IMG_ORIGIN.x),
-            int(50 * sin(ackermann.steering_angle) + IMG_ORIGIN.y),
+            int(50 * cos(steering_angle / 4 - pi / 2) + IMG_ORIGIN.x),
+            int(50 * sin(steering_angle / 4 - pi / 2) + IMG_ORIGIN.y),
         ),
         IMG_ORIGIN.to_tuple(),
         (0, 0, 255),
     )
     # add text for targets data
     cv2.putText(debug_img, "Targets", (10, HEIGHT - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-    text_angle = "Steering: " + str(round(ackermann.steering_angle, 2))
+    text_angle = "Steering: " + str(round(steering_angle, 2))
     cv2.putText(debug_img, text_angle, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-    text_vel = "Velocity: " + str(round(ackermann.speed, 2))
+    text_vel = "Velocity: " + str(round(velocity, 2))
     cv2.putText(debug_img, text_vel, (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+    return debug_img
 
 
 class DisplayDetections(Node):
     steering_angle: float = 0.0
+    velocity: float = 0.0
 
     def __init__(self):
         super().__init__("display_detections")
@@ -138,6 +140,7 @@ class DisplayDetections(Node):
 
     def steering_callback(self, msg: AckermannDrive):
         self.steering_angle = msg.steering_angle
+        self.velocity = msg.speed
 
     def vision_callback(self, msg: ConeDetectionStamped):
         logger = self.get_logger()
@@ -145,7 +148,7 @@ class DisplayDetections(Node):
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
-        debug_img = draw_steering(debug_img, self.steering_angle)
+        debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.vision_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.vision_mkr_publisher.publish(marker_array_from_cone_detection(msg))
@@ -156,6 +159,7 @@ class DisplayDetections(Node):
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
+        debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.lidar_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.lidar_mkr_publisher.publish(marker_array_from_cone_detection(msg))
@@ -166,6 +170,7 @@ class DisplayDetections(Node):
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
+        debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.sim_cones_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.sim_cones_mkr_publisher.publish(marker_array_from_cone_detection(msg))
