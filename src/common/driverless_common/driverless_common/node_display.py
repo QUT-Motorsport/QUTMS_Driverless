@@ -1,20 +1,17 @@
-from math import sqrt
+from math import cos, pi, sin, sqrt
 
 import cv2
 import numpy as np
-from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from builtin_interfaces.msg import Duration
+from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
-from std_msgs.msg import Header
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import MarkerArray
 
 from driverless_common.marker import marker_array_from_cone_detection
 from driverless_common.point import Point
@@ -87,10 +84,34 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
     return debug_img
 
 
+def robot_pt_to_img_pt(x: float, y: float) -> Point:
+    return Point(
+        int(round(WIDTH / 2 - y * SCALE)),
+        int(round(HEIGHT - x * SCALE)),
+    )
+
+
+def draw_steering(debug_img: np.ndarray, ackermann: AckermannDrive):
+    # draw angle line
+    cv2.line(
+        debug_img,
+        (
+            int(50 * cos(ackermann.steering_angle) + IMG_ORIGIN.x),
+            int(50 * sin(ackermann.steering_angle) + IMG_ORIGIN.y),
+        ),
+        IMG_ORIGIN.to_tuple(),
+        (0, 0, 255),
+    )
+    # add text for targets data
+    cv2.putText(debug_img, "Targets", (10, HEIGHT - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    text_angle = "Steering: " + str(round(ackermann.steering_angle, 2))
+    cv2.putText(debug_img, text_angle, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    text_vel = "Velocity: " + str(round(ackermann.speed, 2))
+    cv2.putText(debug_img, text_vel, (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+
 class DisplayDetections(Node):
-    car_x: float = 0.0
-    car_y: float = 0.0
-    car_theta: float = 0.0
+    steering_angle: float = 0.0
 
     def __init__(self):
         super().__init__("display_detections")
@@ -100,15 +121,23 @@ class DisplayDetections(Node):
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/sim_cones/cone_detection", self.sim_cones_callback, 1)
 
+        # steering angle target sub
+        self.create_subscription(AckermannDrive, "/driving_command", self.steering_callback, 1)
+
+        # cv2 rosboard image pubs
         self.vision_disp_publisher: Publisher = self.create_publisher(Image, "/vision/vision_det_img", 1)
         self.lidar_disp_publisher: Publisher = self.create_publisher(Image, "/lidar/lidar_det_img", 1)
         self.sim_cones_disp_publisher: Publisher = self.create_publisher(Image, "/sim_cones/sim_cones_det_img", 1)
 
+        # rviz marker pubs
         self.vision_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/vision_markers", 1)
         self.lidar_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/lidar_markers", 1)
         self.sim_cones_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/sim_cones_markers", 1)
 
         self.get_logger().info("---Cone display node initialised---")
+
+    def steering_callback(self, msg: AckermannDrive):
+        self.steering_angle = msg.steering_angle
 
     def vision_callback(self, msg: ConeDetectionStamped):
         logger = self.get_logger()
@@ -116,6 +145,7 @@ class DisplayDetections(Node):
 
         cones: List[Cone] = msg.cones
         debug_img = draw_markers(cones)
+        debug_img = draw_steering(debug_img, self.steering_angle)
         self.vision_disp_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.vision_mkr_publisher.publish(marker_array_from_cone_detection(msg))
