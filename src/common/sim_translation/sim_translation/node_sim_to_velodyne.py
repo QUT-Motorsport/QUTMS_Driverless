@@ -1,5 +1,3 @@
-from turtle import pu
-
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
