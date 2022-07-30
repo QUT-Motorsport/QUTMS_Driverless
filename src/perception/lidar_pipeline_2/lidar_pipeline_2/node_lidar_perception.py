@@ -31,7 +31,7 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
     location: Point = Point(
         x=x_coord,
         y=y_coord,
-        z=0.0,
+        z=0.15,
     )
 
     return Cone(

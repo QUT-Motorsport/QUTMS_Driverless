@@ -152,7 +152,9 @@ class VisionProcessor(Node):
         detection_msg = ConeDetectionStamped(header=colour_msg.header, cones=detected_cones)
 
         self.detection_publisher.publish(detection_msg)
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
+        debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
+        debug_msg.header = colour_msg.header
+        self.debug_img_publisher.publish(debug_msg)
 
         self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
 
