@@ -16,7 +16,8 @@ class ControlToSim(Node):
         self.create_subscription(AckermannDrive, "/driving_command", self.control_callback, 1)
 
         # publish to sim
-        self.publisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 1)
+        self.oldpublisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 1)
+        self.publisher: Publisher = self.create_publisher(ControlCommand, "/fsds/control_command", 1)
 
         self.get_logger().info("---Sim control translator initialised---")
 
@@ -26,6 +27,7 @@ class ControlToSim(Node):
         sim_control.throttle = msg.acceleration  # accel used for throttle
         sim_control.brake = msg.jerk  # jerk used for brake
         self.publisher.publish(sim_control)
+        self.oldpublisher.publish(sim_control)
 
 
 def main(args=None):
