@@ -3,12 +3,12 @@
     <!-- =================================================================== -->
     <!--                         Properties (in METERS)                      -->
     <!-- =================================================================== -->
-    <xacro:property name="chassis_width" value="0.4" />
-    <xacro:property name="chassis_length" value="1.5" />
-    <xacro:property name="chassis_height" value="0.2" />
+    <xacro:property name="chassis_width" value="0.64" />
+    <xacro:property name="chassis_length" value="2.51" />
+    <xacro:property name="chassis_height" value="0.55" />
 
     <xacro:property name="wheel_diameter" value="0.381" />
-    <xacro:property name="wheel_thickness" value="0.05" />
+    <xacro:property name="wheel_thickness" value="0.2" />
 
     <xacro:property name="velodyne_diameter" value="0.1" />
     <xacro:property name="velodyne_height" value="0.0869" />
@@ -38,7 +38,7 @@
     <!-- Base link (chassis) -->
     <link name="base_link">
         <visual>
-            <origin xyz="0 0 ${chassis_height/2}" rpy="0 0 0" />
+            <origin xyz="${chassis_length/6} 0 ${chassis_height/6}" rpy="0 0 0" />
             <geometry>
                 <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
             </geometry>
@@ -47,7 +47,7 @@
     </link>
 
     <!-- Wheels -->
-    <xacro:macro name="wheel" params="name side direction">
+    <xacro:macro name="wheel" params="name loc">
         <!-- side is 1, -1 for left, right -->
         <!-- direction is 1, -1 for front, back -->
         <link name="${name}_wheel">
@@ -63,14 +63,14 @@
             <axis xyz="0 1 0" rpy="0 0 0" />
             <parent link="base_link"/>
             <child link="${name}_wheel"/>
-            <origin xyz="${direction*chassis_length/4} ${side*chassis_width/2 + 0.1*side} ${chassis_height / 4}" rpy="0 0 0"/>
+            <origin xyz="${loc}" rpy="0 0 0"/>
         </joint>
     </xacro:macro>
 
-    <xacro:wheel name="fl" side="1" direction="1"/>
-    <xacro:wheel name="fr" side="-1" direction="1"/>
-    <xacro:wheel name="bl" side="1" direction="-1"/>
-    <xacro:wheel name="br" side="-1" direction="-1"/>
+    <xacro:wheel name="fl" loc="0.67 -0.6 -0.05"/>
+    <xacro:wheel name="fr" loc="0.67 0.6 -0.05"/>
+    <xacro:wheel name="rl" loc="-0.68 -0.6 -0.05"/>
+    <xacro:wheel name="rr" loc="-0.68 0.6 -0.05"/>
 
     <!-- Velodyne -->
     <link name="velodyne">
@@ -85,7 +85,7 @@
     <joint name="velodyne_joint" type="fixed">
         <parent link="base_link"/>
         <child link="velodyne"/>
-        <origin xyz="${chassis_length/2 + velodyne_diameter/2} 0 ${velodyne_height/2}" rpy="0 0 0"/>
+        <origin xyz="1.65 0 -0.15" rpy="0 0 0"/>
     </joint>
 
     <!-- ZED2i -->
@@ -101,7 +101,7 @@
     <joint name="zed2i_joint" type="fixed">
         <parent link="base_link"/>
         <child link="zed2i"/>
-        <origin xyz="-0.1 0 ${2*chassis_height}" rpy="0 0 0"/>
+        <origin xyz="-0.1 0 0.6" rpy="0 0 0"/>
     </joint>
 
 </robot>

@@ -50,11 +50,15 @@ class CamSimulator(Node):
         new_depth = np.divide(depth_frame, 2)  # for some reason, depth is 2x in the depth camera
         depth_msg = cv_bridge.cv2_to_imgmsg(new_depth, encoding="32FC1")
         depth_msg.header.stamp = colour_msg.header.stamp
+        depth_msg.header.frame_id = "zed2i"
 
         camera_info = CameraInfo()
         camera_info.height = 360
         camera_info.width = 640
         camera_info.header = colour_msg.header
+        camera_info.header.frame_id = "zed2i"
+
+        colour_msg.header.frame_id = "zed2i"
 
         self.depth_publisher.publish(depth_msg)
         self.rgb_img_info_publisher.publish(camera_info)

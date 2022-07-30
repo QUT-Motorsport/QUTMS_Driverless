@@ -46,6 +46,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
                 marker_msg(
                     x=cones[i].location.x,
                     y=cones[i].location.y,
+                    z=cones[i].location.z,
                     id_=i,
                     header=detection.header,
                     cone_colour=cones[i].color,
@@ -73,20 +74,19 @@ CONE_TO_RGB_MAP = {
 def marker_msg(
     x: float,
     y: float,
+    z: float,
     id_: int,
     header: Header,
     cone_colour: int,
     name_space: str = "current_scan",
 ) -> Marker:
-    new_header = Header(stamp=header.stamp, frame_id="car")
-
     return Marker(
-        header=new_header,
+        header=header,
         ns=name_space,
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
-        pose=Pose(position=Point(x=x, y=y, z=MARKER_HEIGHT / 2), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        pose=Pose(position=Point(x=x, y=y, z=z), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
         scale=Vector3(x=0.2, y=0.2, z=MARKER_HEIGHT),
         color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
         lifetime=Duration(sec=1, nanosec=0),
@@ -94,10 +94,8 @@ def marker_msg(
 
 
 def clear_marker_msg(id_: int, header: Header, name_space: str = "current_scan") -> Marker:
-    new_header = Header(stamp=header.stamp, frame_id="car")
-
     return Marker(
-        header=new_header,
+        header=header,
         ns=name_space,
         id=id_,
         action=Marker.DELETE,

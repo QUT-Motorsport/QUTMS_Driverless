@@ -67,6 +67,8 @@ class ConeDetectionTranslator(Node):
                     detected_cones.append(detected_cone)
 
         # create message with cones
+        det_header = odom_msg.header
+        det_header.frame_id = "base_link"
         detection_msg = ConeDetectionStamped(
             header=odom_msg.header,
             cones=detected_cones,

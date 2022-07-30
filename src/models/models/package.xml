@@ -11,6 +11,8 @@
 
     <depend>robot_state_publisher</depend>
     <depend>xacro</depend>
+    <depend>driverless_common</depend>
+    <depend>transforms</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

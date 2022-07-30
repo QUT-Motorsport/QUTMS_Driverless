@@ -20,7 +20,7 @@ class SimToVelodyne(Node):
 
     def callback(self, pointcloud_msg: PointCloud2):
         pub_msg = pointcloud_msg
-        pub_msg.header.frame_id = "car"  # for now, using the "car" will have better urdf tree later
+        pub_msg.header.frame_id = "velodyne"
         self.pointcloud_publisher.publish(pub_msg)
 
 
