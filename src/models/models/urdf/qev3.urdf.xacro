@@ -63,7 +63,7 @@
             <axis xyz="0 1 0" rpy="0 0 0" />
             <parent link="base_link"/>
             <child link="${name}_wheel"/>
-            <origin xyz="${direction*chassis_length/3} ${side*chassis_width/2 + 0.1*side} ${chassis_height / 2}" rpy="0 0 0"/>
+            <origin xyz="${direction*chassis_length/4} ${side*chassis_width/2 + 0.1*side} ${chassis_height / 4}" rpy="0 0 0"/>
         </joint>
     </xacro:macro>
 
