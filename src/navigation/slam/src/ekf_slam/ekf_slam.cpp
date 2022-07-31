@@ -54,7 +54,7 @@ void update_pred_motion_cov(const Eigen::MatrixXd& motion_jacobian,  // G_x
 std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double search_x, double search_y) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 3 * 3;  // m, threshold^2
+    double min_distance = 2 * 2;  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -130,8 +130,14 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
     // since we are taking position directly, no need to run motion models
     // or compute jacobians here
     this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) = pred_car_mu;
-
     this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov + this->R;
+}
+
+void EKFslam::position_delta_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu_delta,
+                                     const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov) {
+    this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) += pred_car_mu_delta;
+    // 0.1 is arbitrary
+    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += 0.1 * pred_car_cov + this->R;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
