@@ -4,11 +4,10 @@ This is highly likely going to be unused
 but not much else
 """
 
-from math import atan, atan2, cos, pi, sin, sqrt
+from math import atan, atan2, pi, sqrt
 
 import numpy as np
 import scipy.interpolate as scipy_interpolate
-from transforms3d.euler import quat2euler
 
 import message_filters
 import rclpy
@@ -16,11 +15,9 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
-from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point as ROSPoint
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
-from visualization_msgs.msg import Marker
 
 from driverless_common.point import Point
 
@@ -80,35 +77,6 @@ def midpoint(p1: list, p2: list):
     return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
 
 
-def target_line_mkr(pose_msg, path_markers):
-    marker = Marker()
-    marker.header.frame_id = "map"
-    marker.ns = "current_path"
-    marker.id = 0
-    marker.type = Marker.LINE_STRIP
-    marker.action = Marker.ADD
-
-    marker.pose.position = pose_msg.pose.pose.position
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-    # scale out of 1x1x1m
-    marker.scale.x = 0.2
-    marker.scale.y = 0.0
-    marker.scale.z = 0.0
-
-    marker.points = path_markers
-
-    marker.color.a = 1.0  # alpha
-    marker.color.r = 1.0
-    marker.color.g = 0.0
-    marker.color.b = 0.0
-
-    marker.lifetime = Duration(sec=1, nanosec=0)
-    return marker
-
-
 class LocalPursuit(Node):
     # init constants
     spline_len: int = 200
@@ -131,7 +99,6 @@ class LocalPursuit(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/local_spline/path_marker", 1)
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
         self.get_logger().info("---Local Pursuit Node Initalised---")
@@ -198,31 +165,6 @@ class LocalPursuit(Node):
 
             target_index = round(self.spline_len / 5)  # 1/5th along
             target = Point(ty[target_index], -tx[target_index])
-
-            # spline visualisation
-            path_markers: List[Marker] = []
-            for t in range(len(tx)):
-                # target spline markers for rviz
-                # i, j, k angles in rad
-                ai, aj, ak = quat2euler(
-                    [
-                        pose_msg.pose.pose.orientation.w,
-                        pose_msg.pose.pose.orientation.x,
-                        pose_msg.pose.pose.orientation.y,
-                        pose_msg.pose.pose.orientation.z,
-                    ]
-                )
-                # displacement from car to target element
-                x_dist = tx[t] * sin(ak) + ty[t] * cos(ak)
-                y_dist = ty[t] * sin(ak) - tx[t] * cos(ak)
-
-                line_point = ROSPoint()
-                line_point.x = x_dist
-                line_point.y = y_dist
-                line_point.z = 0.0
-                path_markers.append(line_point)
-            # create message for all cones on the track
-            self.path_marker_publisher.publish(target_line_mkr(pose_msg, path_markers))  # publish marker points data
 
         ## ORIGINAL BANG-BANG CODE
         else:
