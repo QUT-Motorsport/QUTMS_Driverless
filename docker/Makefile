@@ -33,7 +33,6 @@ all:
 	@echo "    roscube_terminal (requires IMAGE_TYPE=1804)"
 	@echo "    jetson (requires IMAGE_TYPE=l4t)"
 	@echo "    jetson_terminal (requires IMAGE_TYPE=l4t)"
-	@echo "    unreal_sim (standalone - Launches FSDS bridge)"
 	@echo "    zed_camera_driver (standalone - Launches ZED2i ROS2 wrapper)"
 	@echo
 

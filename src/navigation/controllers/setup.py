@@ -19,9 +19,10 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "simple = controllers.node_simple:main",
             "sine = controllers.node_sine:main",
-            "sim_map = controllers.node_sim_map:main",
+            "reactive_control = controllers.node_reactive_control:main",
+            "path_following = controllers.node_path_following:main",
+            "local_pursuit = controllers.node_local_pursuit:main",
         ],
     },
 )

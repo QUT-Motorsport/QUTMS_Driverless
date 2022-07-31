@@ -2,3 +2,6 @@ opencv
 numpy==1.21.4
 dataclasses>=0.7
 ros-galactic-ackermann-msgs
+scipy
+transforms3d
+colour

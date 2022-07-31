@@ -1,0 +1,6 @@
+opencv
+numpy==1.21.4
+dataclasses>=0.7
+scikit-learn
+transforms3d
+matplotlib

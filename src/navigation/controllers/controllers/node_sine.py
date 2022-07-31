@@ -1,40 +1,38 @@
 import math
 
-from ackermann_msgs.msg import AckermannDrive
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from rclpy.timer import Timer
 
-interval = 0.02
+from ackermann_msgs.msg import AckermannDrive
 
 
-class SineControllerNode(Node):
+class SineController(Node):
+    count = 0
+    interval = 0.02
+
     def __init__(self):
-        super().__init__("SineController")
+        super().__init__("sine_controller")
 
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "steering", 1)
-        self.get_logger().info("Sine Controller")
-        self.create_timer(interval, self.timer_cb)
-        self.count = 0
+        # timed callback
+        self.create_timer(self.interval, self.timer_callback)
 
-    def timer_cb(self):
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/sine_driving_command", 1)
+
+        self.get_logger().info("---Sine Controller Node Initalised---")
+
+    def timer_callback(self):
         self.translate = 2 * math.pi / 5
-        self.count += interval
+        self.count += self.interval
         steering_msg = AckermannDrive()
         steering_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        # self.get_logger().info(f"angle: {steering_msg.steering_angle}")
+        self.get_logger().debug("Angle: " + str(steering_msg.steering_angle))
         self.steering_publisher.publish(steering_msg)
 
 
 def main(args=None):
     rclpy.init(args=args)
-
-    sine_controller_node = SineControllerNode()
-
-    rclpy.spin(sine_controller_node)
+    node = SineController()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()

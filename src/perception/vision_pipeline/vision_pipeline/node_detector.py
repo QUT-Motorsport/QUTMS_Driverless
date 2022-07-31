@@ -1,28 +1,21 @@
-# import ROS2 libraries
-import enum
-from math import cos, isinf, isnan, radians, sin
-
-# other python libraries
+from math import cos, isinf, isnan, radians, sin, sqrt
 import os
 import time
 
 from ament_index_python.packages import get_package_share_directory
 import cv2
-from cv_bridge import CvBridge
-
-# import custom message libraries
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point
-import message_filters
 import numpy as np
+
+from cv_bridge import CvBridge
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-# import ROS2 message libraries
+from driverless_msgs.msg import Cone, ConeDetectionStamped
+from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
 
-# import required sub modules
 from .rect import Rect, draw_box
 
 from typing import Callable, List, Tuple
@@ -53,16 +46,17 @@ def cone_distance(
     depth_frame: np.ndarray,
 ) -> float:
     # get center as roi
-    depth_roi: np.ndarray = Rect(
+    y_height = int(colour_frame_cone_bounding_box.height / 6)
+    depth_rect = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
-        y=colour_frame_cone_bounding_box.center.y - 5,
+        y=colour_frame_cone_bounding_box.center.y + y_height,
         width=6,
         height=6,
-    ).as_roi(depth_frame)
+    )
+    depth_roi: np.ndarray = depth_rect.as_roi(depth_frame)
 
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
-
     return np.mean(depth_roi)
 
 
@@ -96,20 +90,13 @@ def cone_msg(
     )
 
 
-class ModeEnum(enum.Enum):
-    cv_thresholding = 0
-    torch_inference = 1
-    trt_inference = 2
-
-
-class DetectorNode(Node):
+class VisionProcessor(Node):
     def __init__(
         self,
-        mode: ModeEnum,  # mode of detection. 0==cv2, 1==torch, 2==trt
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
         enable_cv_filters: bool = False,
     ):
-        super().__init__("cone_detector")
+        super().__init__("vision_processor")
 
         # subscribers
         colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")
@@ -127,14 +114,12 @@ class DetectorNode(Node):
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img", 1)
 
         # set which cone detection this will be using
-        self.get_logger().info("Selected detection mode. 0==cv2, 1==torch, 2==trt")
-        self.get_logger().info(f"Initialised Detector Node with mode: {mode}")
         self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
+        self.get_logger().info("---Initialised Detector Node---")
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
-        logger = self.get_logger()
-        logger.debug("Received image")
+        self.get_logger().debug("Received image")
 
         start: float = time.time()  # begin a timer
 
@@ -156,12 +141,13 @@ class DetectorNode(Node):
 
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
-            if isnan(distance) or isinf(distance):
+            if isnan(distance) or isinf(distance) or distance > 10:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
+            self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
         detection_msg = ConeDetectionStamped(
             header=colour_msg.header,
@@ -171,7 +157,7 @@ class DetectorNode(Node):
         self.detection_publisher.publish(detection_msg)
         self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
 
-        logger.debug("Time: " + str(time.time() - start) + "\n")  # log time
+        self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
 
 
 ## OpenCV thresholding
@@ -181,7 +167,7 @@ def main_cv2(args=None):
 
     # HSV threshold constants
     YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
-    BLUE_HSV_THRESH = Threshold(lower=[120, 100, 40], upper=[130, 255, 255])
+    BLUE_HSV_THRESH = Threshold(lower=[100, 100, 110], upper=[120, 255, 145])
     ORANGE_HSV_THRESH = Threshold(lower=[0, 100, 50], upper=[15, 255, 255])
 
     # thresh, cone_colour, display_colour
@@ -203,8 +189,8 @@ def main_cv2(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(ModeEnum.cv_thresholding, get_hsv_bounding_boxes, enable_cv_filters=True)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_hsv_bounding_boxes, enable_cv_filters=True)
+    rclpy.spin(node)
     rclpy.shutdown()
 
 
@@ -236,8 +222,8 @@ def main_torch(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(ModeEnum.torch_inference, get_torch_bounding_boxes)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_torch_bounding_boxes)
+    rclpy.spin(node)
     rclpy.shutdown()
 
 
@@ -271,6 +257,6 @@ def main_trt(args=None):
         return bounding_boxes
 
     rclpy.init(args=args)
-    detector_node = DetectorNode(ModeEnum.trt_inference, get_trt_bounding_boxes)
-    rclpy.spin(detector_node)
+    node = VisionProcessor(get_trt_bounding_boxes)
+    rclpy.spin(node)
     rclpy.shutdown()
