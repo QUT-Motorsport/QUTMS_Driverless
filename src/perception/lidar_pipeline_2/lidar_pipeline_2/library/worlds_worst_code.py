@@ -55,9 +55,11 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
     # print(distance, point_count, x_n, closest_point, dist)
     # and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count
     # and closest_point <= point_count * 1.5
-    if dist <= 2.5 and x_n >= distance * 0.85:
+    if dist <= 3 and x_n >= distance * 0.65 and x_n <= distance * 1.4:
         return True
     else:
+        print(round(dist, 2), round(x_n, 2), round(distance * 0.85))
+        print(dist <= 2.5, x_n >= distance * 0.85)
         return False
 
 
