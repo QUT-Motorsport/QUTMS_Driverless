@@ -43,8 +43,8 @@ class DisplayDetections(Node):
         self.create_subscription(PathStamped, "/path_planner/path", self.path_callback, 1)
 
         # track subs
-        self.create_subscription(TrackDetectionStamped, "/sim_track/map", self.sim_track_callback, 1)
-        self.create_subscription(TrackDetectionStamped, "/slam_track", self.slam_callback, 1)
+        self.create_subscription(TrackDetectionStamped, "/sim_map/track", self.sim_track_callback, 1)
+        self.create_subscription(TrackDetectionStamped, "/slam/track", self.slam_callback, 1)
 
         # cv2 rosboard image pubs
         self.vision_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img", 1)

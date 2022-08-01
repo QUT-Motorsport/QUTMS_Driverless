@@ -12,7 +12,7 @@ class MapCone:
 
     x: float
     y: float
-    colour: Tuple[int, int, int]
+    colour: int
     range: float
     bearing: float
 
