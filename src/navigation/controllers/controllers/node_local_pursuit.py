@@ -16,7 +16,6 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import Point as ROSPoint
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 
 from driverless_common.point import Point
