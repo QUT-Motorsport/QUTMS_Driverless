@@ -158,7 +158,7 @@ def detect_cones(
     LOGGER.info(f"Object points extracted and stacked in {end_time - start_time}s")
 
     start_time = time.perf_counter()
-    object_centers = op.group_points(object_points)
+    object_centers, objects = op.group_points(object_points)
     end_time = time.perf_counter()
 
     if create_figures:
@@ -170,6 +170,7 @@ def detect_cones(
     reconstructed_objects = op.reconstruct_objects(
         np.column_stack((point_cloud["x"], point_cloud["y"], point_cloud["z"])),
         object_centers,
+        objects,
         DELTA_ALPHA,
         0.4,
         BIN_SIZE,
