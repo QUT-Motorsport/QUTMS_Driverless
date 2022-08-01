@@ -85,7 +85,7 @@
     <joint name="velodyne_joint" type="fixed">
         <parent link="base_link"/>
         <child link="velodyne"/>
-        <origin xyz="1.65 0 -0.15" rpy="0 0 0"/>
+        <origin xyz="1.65 0 -0.2" rpy="0 0 0"/>
     </joint>
 
     <!-- ZED2i -->
