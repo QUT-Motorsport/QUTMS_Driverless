@@ -15,6 +15,7 @@ from rclpy.publisher import Publisher
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
+from std_msgs.msg import Header
 
 from .rect import Rect, draw_box
 
@@ -91,6 +92,8 @@ def cone_msg(
 
 
 class VisionProcessor(Node):
+    start: float = 0.0
+
     def __init__(
         self,
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
@@ -105,7 +108,7 @@ class VisionProcessor(Node):
 
         synchronizer = message_filters.TimeSynchronizer(
             fs=[colour_sub, colour_camera_info_sub, depth_sub],
-            queue_size=30,
+            queue_size=20,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -121,6 +124,7 @@ class VisionProcessor(Node):
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")
 
+        self.get_logger().debug("Wait time: " + str(time.time() - self.start) + "\n")  # log time
         start: float = time.time()  # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
@@ -149,14 +153,17 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
-        detection_msg = ConeDetectionStamped(header=colour_msg.header, cones=detected_cones)
-
+        detection_msg = ConeDetectionStamped(
+            header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),
+            cones=detected_cones,
+        )
         self.detection_publisher.publish(detection_msg)
         debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
         debug_msg.header = colour_msg.header
         self.debug_img_publisher.publish(debug_msg)
 
         self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
+        self.start = time.time()
 
 
 ## OpenCV thresholding
