@@ -55,6 +55,9 @@ class TractiveSystemController : public rclcpp::Node, public CanInterface {
 
    public:
 	TractiveSystemController() : Node("tractive_system_controller") {
+		// Configure logger level
+		this->get_logger().set_level(rclcpp::Logger::Level::Debug);
+
 		// Can
 		RCLCPP_DEBUG(this->get_logger(), "Initalising can interactants...");
 		this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
