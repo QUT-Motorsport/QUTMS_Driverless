@@ -4,8 +4,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from fs_msgs.msg import ControlCommand
 from ackermann_msgs.msg import AckermannDrive
+from fs_msgs.msg import ControlCommand
 
 
 class SimMapControllerNode(Node):
@@ -18,7 +18,7 @@ class SimMapControllerNode(Node):
 
     def control_callback(self, msg: ControlCommand):
         steering_msg = AckermannDrive()
-        steering_msg.steering_angle = msg.steering*math.pi*3
+        steering_msg.steering_angle = msg.steering * math.pi * 3
         self.steering_publisher.publish(steering_msg)
 
 
