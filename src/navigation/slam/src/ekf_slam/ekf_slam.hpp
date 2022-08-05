@@ -42,6 +42,8 @@ class EKFslam {
     // pred_car_mu is column vector [x, y, theta]^T
     void position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu,
                           const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov);
+    void position_delta_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu_delta,
+                                const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov);
     void correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones);
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
