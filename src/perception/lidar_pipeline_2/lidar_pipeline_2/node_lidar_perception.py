@@ -13,12 +13,9 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from builtin_interfaces.msg import Duration
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2
-from std_msgs.msg import Header
-from visualization_msgs.msg import Marker, MarkerArray
 
 import ros2_numpy as rnp
 
@@ -31,44 +28,13 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
     location: Point = Point(
         x=x_coord,
         y=y_coord,
-        z=0.0,
+        z=0.15,
     )
 
     return Cone(
         location=location,
         color=4,
     )
-
-
-def marker_msg(x_coord: float, y_coord: float, ID: int, head: Header) -> Marker:
-    marker = Marker()
-    marker.header = head
-    marker.ns = "current_scan"
-    marker.id = ID
-    marker.type = Marker.CYLINDER
-    marker.action = Marker.ADD
-
-    marker.pose.position.x = x_coord
-    marker.pose.position.y = y_coord
-    marker.pose.position.z = 0.0
-    marker.pose.orientation.x = 0.0
-    marker.pose.orientation.y = 0.0
-    marker.pose.orientation.z = 0.0
-    marker.pose.orientation.w = 1.0
-
-    # scale out of 1x1x1m
-    marker.scale.x = 0.228
-    marker.scale.y = 0.228
-    marker.scale.z = 0.325
-
-    marker.color.r = 0.0
-    marker.color.g = 1.0
-    marker.color.b = 0.0
-    marker.color.a = 1.0
-
-    marker.lifetime = Duration(sec=0, nanosec=100000000)
-
-    return marker
 
 
 # Import Logging
@@ -111,12 +77,10 @@ class ConeSensingNode(Node):
         super().__init__("cone_sensing")
         LOGGER.info("Initialising ConeSensingNode")
 
-        self.pc_subscription = self.create_subscription(PointCloud2, pc_node, self.pc_callback, 2)
+        self.pc_subscription = self.create_subscription(PointCloud2, pc_node, self.pc_callback, 1)
         self.pc_subscription  # Prevent unused variable warning
 
-        self.cone_publisher = self.create_publisher(ConeDetectionStamped, "cone_sensing/cones", 5)
-
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "lidar/debug_cones_array", 1)
+        self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
 
         self.count = 0
 
@@ -144,7 +108,7 @@ class ConeSensingNode(Node):
 
         LOGGER.info("Waiting for PointCloud2 data ...")
 
-    def pc_callback(self, pc_msg):
+    def pc_callback(self, pc_msg: PointCloud2):
         timestamp = create_timestamp()
         LOGGER.info("PointCloud2 message received at " + timestamp)
 
@@ -225,7 +189,6 @@ class ConeSensingNode(Node):
 
         # define message component - list of Cone type messages
         detected_cones = []  # List of Cones
-        markers_list = []  # List of Markers
         for i in range(len(cones)):
             # add cone to msg list
             detected_cones.append(
@@ -234,21 +197,10 @@ class ConeSensingNode(Node):
                     cones[i][1],
                 )
             )
-            markers_list.append(
-                marker_msg(
-                    cones[i][0],
-                    cones[i][1],
-                    i,
-                    pc_msg.header,
-                )
-            )
 
         detection_msg = ConeDetectionStamped(header=pc_msg.header, cones=detected_cones)
 
-        markers_msg = MarkerArray(markers=markers_list)
-
         self.cone_publisher.publish(detection_msg)  # publish cone data
-        self.marker_publisher.publish(markers_msg)  # publish marker points data
 
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
@@ -511,9 +463,6 @@ def main(args=sys.argv[1:]):
         cone_sensing_node.destroy_node()
         rclpy.shutdown()
 
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 
 # Notes
 # 1. Intead of rounding the point cloud, see if setting the dtype to

@@ -10,9 +10,6 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from fs_msgs.msg import Cone as FSCone
 from fs_msgs.msg import Track
 from nav_msgs.msg import Odometry
-from visualization_msgs.msg import MarkerArray
-
-from driverless_common.marker import marker_array_from_cone_detection
 
 from typing import List
 
@@ -31,9 +28,9 @@ class ConeDetectionTranslator(Node):
 
         # could also be /lidar/cone_detection
         self.detection_publisher: Publisher = self.create_publisher(
-            ConeDetectionStamped, "/detection/cone_detection", 1
+            ConeDetectionStamped, "/sim_cones/cone_detection", 1
         )
-        self.marker_publisher: Publisher = self.create_publisher(MarkerArray, "/detection/cone_detection_markers", 1)
+
         self.get_logger().info("---Cone Detection Map Translator Initalised---")
 
     def track_callback(self, track_msg: Track):
@@ -70,13 +67,14 @@ class ConeDetectionTranslator(Node):
                     detected_cones.append(detected_cone)
 
         # create message with cones
+        det_header = odom_msg.header
+        det_header.frame_id = "base_link"
         detection_msg = ConeDetectionStamped(
             header=odom_msg.header,
             cones=detected_cones,
         )
 
         self.detection_publisher.publish(detection_msg)
-        self.marker_publisher.publish(marker_array_from_cone_detection(detection_msg))
 
 
 def main():

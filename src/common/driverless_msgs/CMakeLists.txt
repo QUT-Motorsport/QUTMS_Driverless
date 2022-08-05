@@ -25,6 +25,8 @@ set(msg_files
   "msg/Can.msg"
   "msg/RES.msg"
   "msg/Reset.msg"
+  "msg/ConeWithCovariance.msg"
+  "msg/TrackDetectionStamped.msg"
 )
 
 set(srv_files

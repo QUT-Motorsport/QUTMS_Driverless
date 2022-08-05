@@ -3,9 +3,9 @@
     <!-- =================================================================== -->
     <!--                         Properties (in METERS)                      -->
     <!-- =================================================================== -->
-    <xacro:property name="trolley_width" value="0.8" />
-    <xacro:property name="trolley_length" value="1" />
-    <xacro:property name="trolley_height" value="0.05" />
+    <xacro:property name="trolley_width" value="0.59" />
+    <xacro:property name="trolley_length" value="0.89" />
+    <xacro:property name="trolley_height" value="0.19" />
 
     <xacro:property name="velodyne_diameter" value="0.1" />
     <xacro:property name="velodyne_height" value="0.0869" />
@@ -52,7 +52,7 @@
     <joint name="velodyne_joint" type="fixed">
         <parent link="base_link"/>
         <child link="velodyne"/>
-        <origin xyz="${trolley_length/2} 0 ${trolley_height + velodyne_height/2}" rpy="0 0 0"/>
+        <origin xyz="${trolley_length/2} 0 ${trolley_height + velodyne_height/2 + 0.02}" rpy="0 0 0"/>
     </joint>
 
     <!-- ZED2i -->
@@ -68,7 +68,7 @@
     <joint name="zed2i_joint" type="fixed">
         <parent link="base_link"/>
         <child link="zed2i"/>
-        <origin xyz="${-trolley_length/2} 0 ${0.5}" rpy="0 0 0"/>
+        <origin xyz="${-trolley_length/2 + zed2i_length/2} 0 ${0.8 - zed2i_height/2}" rpy="0 0 0"/>
     </joint>
 
 </robot>

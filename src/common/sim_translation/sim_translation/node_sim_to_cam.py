@@ -17,10 +17,24 @@ class CamSimulator(Node):
     def __init__(self):
         super().__init__("cam_simulator")
 
+        # OLD FSDS BUILD sync sub to depth and camera
+        colour_sub_old = message_filters.Subscriber(self, Image, "/fsds/camera/image_rect_color")
+        depth_sub_old = message_filters.Subscriber(self, Image, "/fsds/camera/depth_registered")
+        synchronizer_old = message_filters.ApproximateTimeSynchronizer(
+            fs=[colour_sub_old, depth_sub_old],
+            queue_size=20,
+            slop=0.1,
+        )
+        synchronizer_old.registerCallback(self.callback)
+
         # sync sub to depth and camera
-        colour_sub = message_filters.Subscriber(self, Image, "/fsds/camera/image_rect_color")
-        depth_sub = message_filters.Subscriber(self, Image, "/fsds/camera/depth_registered")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[colour_sub, depth_sub], queue_size=20, slop=0.1)
+        colour_sub = message_filters.Subscriber(self, Image, "/fsds/image_rect_color/image_color")
+        depth_sub = message_filters.Subscriber(self, Image, "/fsds/depth_registered/image_color")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[colour_sub, depth_sub],
+            queue_size=20,
+            slop=0.1,
+        )
         synchronizer.registerCallback(self.callback)
 
         self.depth_publisher: Publisher = self.create_publisher(Image, "/zed2i/zed_node/depth/depth_registered", 1)
@@ -36,11 +50,15 @@ class CamSimulator(Node):
         new_depth = np.divide(depth_frame, 2)  # for some reason, depth is 2x in the depth camera
         depth_msg = cv_bridge.cv2_to_imgmsg(new_depth, encoding="32FC1")
         depth_msg.header.stamp = colour_msg.header.stamp
+        depth_msg.header.frame_id = "zed2i_left_camera_optical_frame"
 
         camera_info = CameraInfo()
         camera_info.height = 360
         camera_info.width = 640
         camera_info.header = colour_msg.header
+        camera_info.header.frame_id = "zed2i_left_camera_optical_frame"
+
+        colour_msg.header.frame_id = "zed2i_left_camera_optical_frame"
 
         self.depth_publisher.publish(depth_msg)
         self.rgb_img_info_publisher.publish(camera_info)
