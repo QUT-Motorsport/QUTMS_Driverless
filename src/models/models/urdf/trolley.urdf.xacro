@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<robot name="qev3" xmlns:xacro="http://ros.org/wiki/xacro">
+    <!-- =================================================================== -->
+    <!--                         Properties (in METERS)                      -->
+    <!-- =================================================================== -->
+    <xacro:property name="trolley_width" value="0.59" />
+    <xacro:property name="trolley_length" value="0.89" />
+    <xacro:property name="trolley_height" value="0.19" />
+
+    <xacro:property name="velodyne_diameter" value="0.1" />
+    <xacro:property name="velodyne_height" value="0.0869" />
+
+    <xacro:property name="zed2i_width" value="0.17525" />
+    <xacro:property name="zed2i_length" value="0.0373" />
+    <xacro:property name="zed2i_height" value="0.03025" />
+
+    <!-- =================================================================== -->
+    <!--                             Materials                               -->
+    <!-- =================================================================== -->
+    <material name="trolley">
+        <color rgba="0.54 0.27 0.075 1"/>
+    </material>
+
+    <material name="sensor">
+        <color rgba="0.85 0.85 0.85 1"/>
+    </material>
+
+    <!-- =================================================================== -->
+    <!--                           Links & Joints                            -->
+    <!-- =================================================================== -->
+    <!-- Base link (chassis) -->
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 ${trolley_height/2}" rpy="0 0 0" />
+            <geometry>
+                <box size="${trolley_length} ${trolley_width} ${trolley_height}"/>
+            </geometry>
+            <material name="trolley"/>
+        </visual>
+    </link>
+
+    <!-- Velodyne -->
+    <link name="velodyne">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="${velodyne_diameter/2}" length="${velodyne_height}"/>
+            </geometry>
+            <material name="sensor"/>
+        </visual>
+    </link>
+    <joint name="velodyne_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="velodyne"/>
+        <origin xyz="${trolley_length/2} 0 ${trolley_height + velodyne_height/2 + 0.02}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ZED2i -->
+    <link name="zed2i">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="${zed2i_length} ${zed2i_width} ${zed2i_height}"/>
+            </geometry>
+            <material name="sensor"/>
+        </visual>
+    </link>
+    <joint name="zed2i_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="zed2i"/>
+        <origin xyz="${-trolley_length/2 + zed2i_length/2} 0 ${0.8 - zed2i_height/2}" rpy="0 0 0"/>
+    </joint>
+
+</robot>

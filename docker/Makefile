@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson_pytorch build run
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build run
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -29,12 +29,11 @@ all:
 	@echo "        - run a target (see ENVIRONMENT_TARGET options)"
 	@echo
 	@echo "ENVIRONMENT_TARGET options:"
-	@echo "    roscube (requires TYPE=l4t. Launches sensor nodes, ROSBoard, and control package)"
-	@echo "    roscube_terminal (requires TYPE=l4t)"
-	@echo "    jetson (requires TYPE=1804. Launches vision processing package)"
-	@echo "    jetson_terminal (requires TYPE=1804)"
-	@echo "    unreal_sim (standalone. Launches FSDS bridge)"
-	@echo "    zed_camera_driver (standalone. Launches ZED2i ROS2 wrapper)"
+	@echo "    roscube (requires IMAGE_TYPE=1804)"
+	@echo "    roscube_terminal (requires IMAGE_TYPE=1804)"
+	@echo "    jetson (requires IMAGE_TYPE=l4t)"
+	@echo "    jetson_terminal (requires IMAGE_TYPE=l4t)"
+	@echo "    zed_camera_driver (standalone - Launches ZED2i ROS2 wrapper)"
 	@echo
 
 help: all
@@ -46,19 +45,13 @@ build_docker_base_1804:
 	--build-arg BASE_IMAGE=ubuntu:18.04 \
 	..
 
-build_docker_base_l4t: # check Issue#50 for info on why the l4t base needs ROS2 from source
-	docker build -f Dockerfile.ros_source -t qutms_driverless_base:l4t-r32.6.1 \
+build_docker_base_l4t:
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.0.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-base:r32.6.1 \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime \
+	--build-arg PYTHON_VERSION_OVERRIDE=3.8 \
 	..
-
-# build_docker_base_jetson_pytorch:
-# 	docker build -f Dockerfile.ros_source -t qutms_driverless_ros_source:pytorch \
-# 	--build-arg USERNAME=$(USERNAME) \
-# 	--build-arg HOST_UID=$(HOST_UID) \
-# 	--build-arg BASE_IMAGE=dustynv/jetson-inference:r32.6.1 \
-# 	..
 
 # use make build target=<value>
 build:

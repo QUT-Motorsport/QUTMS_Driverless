@@ -1,2 +1,2 @@
 tornado
-# TODO: simplejpeg (optional for rosboard, but not provided by conda)
+# pip install simplejpeg

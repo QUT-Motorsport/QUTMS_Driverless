@@ -11,3 +11,9 @@
 	path = src/common/fs_msgs
 	url = https://github.com/FS-Driverless/fs_msgs.git
 	branch = ros2
+[submodule "src/hardware/sbg_ros2_driver"]
+	path = src/hardware/sbg_ros2_driver
+	url = https://github.com/QUT-Motorsport/sbg_ros2_driver.git
+[submodule "src/hardware/QUTMS_Embedded_Common"]
+	path = src/hardware/QUTMS_Embedded_Common
+	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common

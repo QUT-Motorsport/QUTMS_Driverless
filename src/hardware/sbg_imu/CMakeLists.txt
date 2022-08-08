@@ -14,10 +14,13 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/../QUTMS_Embedded_Common/Inc/)
 
 set (SOURCES
-  src/sbg_can.cpp
+  ${CMAKE_SOURCE_DIR}/../QUTMS_Embedded_Common/Src/CAN_SBG.c
 )
+
+SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(sbg src/node_sbg_imu.cpp ${SOURCES})
 ament_target_dependencies(sbg rclcpp driverless_msgs sensor_msgs)

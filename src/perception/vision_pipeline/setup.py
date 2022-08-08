@@ -26,7 +26,6 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "models"), glob("models/*")),
-        (os.path.join("share", package_name), glob("launch/*.launch.py")),
     ]
     + generate_yolov5_data_files(),
     install_requires=["setuptools"],
@@ -41,7 +40,6 @@ setup(
             "cv2_detector = vision_pipeline.node_detector:main_cv2",
             "torch_detector = vision_pipeline.node_detector:main_torch",
             "trt_detector = vision_pipeline.node_detector:main_trt",
-            "zed_simulator = vision_pipeline.node_zed_simulator:main",
             "annotator = vision_pipeline.node_annotator:main",
         ],
     },

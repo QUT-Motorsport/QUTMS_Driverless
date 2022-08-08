@@ -1,9 +1,11 @@
+#include <stdint.h>
+
 #include <iostream>
 
+#include "CAN_SBG.h"
 #include "driverless_msgs/msg/can.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "sbg_can.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "sensor_msgs/msg/temperature.hpp"
@@ -177,8 +179,6 @@ class SBGIMU : public rclcpp::Node {
                 uint32_t id;
                 Parse_SBG_ECAN_MSG_UTC_1(const_cast<uint8_t *>(msg.data.data()), &id, &year, &month, &day, &hour, &min,
                                          &sec, &micro_sec);
-
-                this->utc_buffer_msg.time_ref.sec;
             } break;
         }
     }

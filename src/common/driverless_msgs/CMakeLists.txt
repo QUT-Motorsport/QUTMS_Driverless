@@ -20,14 +20,22 @@ find_package(geometry_msgs REQUIRED)
 set(msg_files
   "msg/Cone.msg"
   "msg/ConeDetectionStamped.msg"
-  "msg/SplinePoint.msg"
-  "msg/SplineStamped.msg"
+  "msg/PathPoint.msg"
+  "msg/PathStamped.msg"
   "msg/Can.msg"
   "msg/RES.msg"
+  "msg/Reset.msg"
+  "msg/ConeWithCovariance.msg"
+  "msg/TrackDetectionStamped.msg"
+)
+
+set(srv_files
+  "srv/SelectMission.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
     ${msg_files}
+    ${srv_files}
     DEPENDENCIES std_msgs geometry_msgs
 )
 

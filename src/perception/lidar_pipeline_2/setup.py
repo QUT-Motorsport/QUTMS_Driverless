@@ -18,6 +18,6 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["lidar_perception = lidar_pipeline_2.lidar_perception:main"],
+        "console_scripts": ["lidar_perception = lidar_pipeline_2.node_lidar_perception:main"],
     },
 )
