@@ -22,9 +22,10 @@ class Config:
         
         # Misc
         self._timestamp, self._datestamp, self._datetimestamp = self.get_timestamp()
-        self._runtime_dir = const.OUTPUT_DIR + '/' + self.timestamp
+        self._runtime_dir = const.OUTPUT_DIR + '/' + self.datetimestamp
         
         self.setup_output_dir()
+        self.setup_runtime_dir()
     
     @property
     def pc_node(self) -> str:
