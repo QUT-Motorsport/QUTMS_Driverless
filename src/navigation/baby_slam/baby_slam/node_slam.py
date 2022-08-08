@@ -189,7 +189,6 @@ class EKFSlam(Node):
         # process detected cones
         cones: List[Cone] = detection_msg.cones
         for cone in cones:
-            # if cone.color==2: cone.color = 1 # count orange as yellow cause simplicity
             det = MapCone(cone)  # detection with properties
             if det.range > 12:
                 continue  # out of range dont care
@@ -201,7 +200,7 @@ class EKFSlam(Node):
 
             same_track = []  # start empty for this colour
             if self.track != []:
-                same_track = self.track[self.track[:, 2] == det.colour]  # extract same colours
+                same_track: np.ndarray = self.track[self.track[:, 2] == det.colour]  # extract same colours
 
             if len(same_track) != 0:  # this spline has been populated with cones
                 neighbourhood = KDTree(same_track[:, :2], leaf_size=self.leaf)
