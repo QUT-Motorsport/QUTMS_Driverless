@@ -1,9 +1,9 @@
 # Import Custom Modules
+import logging
 import math
 
 # Import Python Modules
 import time
-import logging
 
 import matplotlib.pyplot as plt
 
