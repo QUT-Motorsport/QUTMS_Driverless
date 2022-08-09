@@ -11,6 +11,7 @@ Panels:
         - /MarkerArray3
         - /MarkerArray4
         - /MarkerArray5
+        - /MarkerArray6
         - /Marker1
         - /Marker1/Namespaces1
         - /Image1
@@ -86,7 +87,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        zed2i_left_camera_optical_frame:
+        zed2i:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -125,7 +126,7 @@ Visualization Manager:
           Value: true
         velodyne:
           Value: true
-        zed2i_left_camera_optical_frame:
+        zed2i:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -145,23 +146,22 @@ Visualization Manager:
               {}
             velodyne:
               {}
-            zed2i_left_camera_optical_frame:
+            zed2i:
               {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: MarkerArray
       Namespaces:
-        cov_markers: true
-        current_scan: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /markers/sim_track
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: MarkerArray
@@ -202,6 +202,18 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /markers/slam_with_cov
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
         cov_markers: true
         current_scan: true
       Topic:
@@ -209,7 +221,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /markers/slam_with_cov
+        Value: /markers/fusion_markers
       Value: true
     - Class: rviz_default_plugins/Marker
       Enabled: false
@@ -357,5 +369,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1908
-  X: 0
-  Y: 0
+  X: 1951
+  Y: 31

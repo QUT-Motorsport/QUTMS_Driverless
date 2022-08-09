@@ -42,8 +42,15 @@ def marker_array_from_map(detection: TrackDetectionStamped) -> MarkerArray:
     return MarkerArray(markers=markers)
 
 
-def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerArray:
-    cones: List[Cone] = detection.cones
+def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance: bool = False) -> MarkerArray:
+    if not covariance:
+        cones: List[Cone] = detection.cones
+    else:
+        cones: List[Cone] = []
+        covs: List[float] = []
+        for cone_with_cov in detection.cones_with_cov:
+            cones.append(cone_with_cov.cone)
+            covs.append(cone_with_cov.covariance)
 
     markers = []
     for i in range(MAX_NUM_CONES):
@@ -62,6 +69,17 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
             markers.append(
                 clear_marker_msg(
                     id_=i,
+                    header=detection.header,
+                )
+            )
+        if covariance and i < len(cones):
+            markers.append(
+                cov_marker_msg(
+                    x=cones[i].location.x,
+                    y=cones[i].location.y,
+                    id_=i,
+                    x_scale=3 * sqrt(abs(covs[i][0])),
+                    y_scale=3 * sqrt(abs(covs[i][3])),
                     header=detection.header,
                 )
             )
@@ -100,8 +118,8 @@ def cov_marker_msg(
     x_scale: float,  # x sigma
     y_scale: float,  # y sigma
     lifetime=Duration(sec=1, nanosec=0),
+    header=Header(frame_id="map"),
 ) -> Marker:
-    header = Header(frame_id="map")
     return Marker(
         header=header,
         ns="cov_markers",

@@ -1,4 +1,5 @@
-# import ros2 libraries
+import time
+
 import numpy as np
 from sklearn.neighbors import KDTree
 
@@ -7,16 +8,19 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-# import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance
+from geometry_msgs.msg import Point
+from std_msgs.msg import Header
+
+from driverless_common.cone_props import ConeProps
 
 from typing import List, Tuple
 
 
 # node class object that gets created
 class PerceptionFusion(Node):
-    leaf = 30  # nodes per tree before it starts brute forcing?
-    radius = 3  # nn kdtree nearch
+    leaf = 10  # nodes per tree before it starts brute forcing?
+    radius = 2  # nn kdtree nearch
 
     def __init__(self):
         super().__init__("perception_fusion")
@@ -29,29 +33,82 @@ class PerceptionFusion(Node):
         # potentially sub to odom to correct for motion between vision and lidar
         # may use a msg cache for storing a number of odom msg then match one to vision stamp and one to lidar stamp
 
+        self.fusion_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/fusion/cone_detection", 1)
+
     # function that is called each time the subscriber reads a new message on the topic
-    def callback_function_name(self, vision_msg: ConeDetectionStamped, lidar_msg: ConeDetectionStamped):
+    def callback(self, lidar_msg: ConeDetectionStamped, vision_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+        start: float = time.time()
 
         # process detected cones
         vision_cones: List[Cone] = vision_msg.cones
         lidar_cones: List[Cone] = lidar_msg.cones
 
         # get list of lidar cone locations
-        # make a neighbourhood
-        # get list of vision cone locations + colours
-        # transform to lidar location
-        # query for closest lidar point
-        # if found, make a new point with covariance, with lidar position weighted higher
-        #   assign colour from vision
-        # not found, make
+        # make each cone with covariance (lidar is pretty accurate) with UNKNOWN colour
+        # make a neighbourhood?? need to work out better way to query distance
+        # transform vision detection to lidar location
+        # query for closest lidar cone
+        # found closest lidar cone
+        #   update assign colour from vision
+        #   update to some combined position between vision and lidar, with lidar position weighted higher
+        # not found
+        #   make a cone with covariance (less accurate from vision) with colour
 
-        # get lidar cones into a KDtree neighbourhood
-        # lidar_nn: np.ndarray = []
-        # for cone in lidar_cones:
+        cones_with_cov: np.ndarray = []
+        for lidar_cone in lidar_cones:
+            lidar_cone.location.x = lidar_cone.location.x + 1.65
+            # this is the distance between lidar and baselink hard-coded
+            # process a covariance
+            cone = ConeProps(lidar_cone)
+            cov = [cone.range * 0.01, cone.range * 0.02]  # xx,yy covariances
+            cone_with_cov = [lidar_cone.location.x, lidar_cone.location.y, lidar_cone.color, cov[0], cov[1]]
 
-        # for cone in vision_cones:
-        #     neighbourhood = KDTree(, leaf_size=self.leaf)
+            if cones_with_cov == []:  # first in this list
+                cones_with_cov = np.array(cone_with_cov)
+                cones_with_cov = np.reshape(cones_with_cov, (1, -1))  # turn 2D
+            else:
+                cones_with_cov = np.vstack([cones_with_cov, cone_with_cov])
+
+        if len(cones_with_cov) != 0:
+            neighbourhood = KDTree(cones_with_cov[:, :2], leaf_size=self.leaf)
+
+        for vision_cone in vision_cones:
+            vision_cone.location.x = vision_cone.location.x - 0.1
+            # this is the distance between vision and baselink hard-coded
+            # TODO: better way of transforming?
+
+            check = np.reshape([vision_cone.location.x, vision_cone.location.y], (1, -1))  # turn into a 2D row array
+            data = neighbourhood.query_radius(check, r=self.radius)  # check neighbours in radius
+            index = data[0]  # index from the single colour list
+
+            if index.size != 0:
+                cones_with_cov[index, 2] = vision_cone.color
+                dist_x = cones_with_cov[index, 0] - vision_cone.location.x
+                dist_y = cones_with_cov[index, 1] - vision_cone.location.y
+                # xx,yy covariances
+                cones_with_cov[index, 3] = dist_x * 1
+                cones_with_cov[index, 4] = dist_y * 1
+
+            else:
+                cone = ConeProps(vision_cone)
+                cov = [cone.range * 0.3**1.5, cone.bearing * 0.4**1.5]  # xx,yy covariances
+                cone_with_cov = [vision_cone.location.x, vision_cone.location.y, vision_cone.color, cov[0], cov[1]]
+                cones_with_cov = np.vstack([cones_with_cov, cone_with_cov])
+
+        cone_detection_msg = ConeDetectionStamped(header=Header(frame_id="base_link", stamp=vision_msg.header.stamp))
+        for cone_with_cov in cones_with_cov:
+            cone_with_cov_msg = ConeWithCovariance()
+            cone_with_cov_msg.cone = Cone(
+                location=Point(x=cone_with_cov[0], y=cone_with_cov[1], z=0.0), color=int(cone_with_cov[2])
+            )
+            cone_with_cov_msg.covariance = [cone_with_cov[3], 0.0, 0.0, cone_with_cov[4]]  # diagonal square matrix
+
+            cone_detection_msg.cones_with_cov.append(cone_with_cov_msg)
+
+        self.fusion_publisher.publish(cone_detection_msg)
+
+        self.get_logger().debug(f"Total time: {str(time.time() - start)}")
 
 
 def main(args=None):
