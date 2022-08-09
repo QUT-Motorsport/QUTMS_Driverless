@@ -149,7 +149,7 @@ class DisplayDetections(Node):
         map_img = draw_map(msg)
 
         self.sim_track_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
-        self.sim_track_mkr_publisher.publish(marker_array_from_map(msg))
+        self.sim_track_mkr_publisher.publish(marker_array_from_map(msg, ground_truth=True))
 
     def slam_callback(self, msg: TrackDetectionStamped):
         # subscribed to slam map

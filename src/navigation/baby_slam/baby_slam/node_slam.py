@@ -166,7 +166,7 @@ class EKFSlam(Node):
 
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/fusion/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
         )
@@ -186,10 +186,9 @@ class EKFSlam(Node):
         self.Sigma[0:3, 0:3] = SigmaR
 
         # process detected cones
-        cones: List[Cone] = detection_msg.cones
-        for cone in cones:
-            det = ConeProps(cone)  # detection with properties
-            if det.range > 12:
+        for cone in detection_msg.cones_with_cov:
+            det = ConeProps(cone.cone)  # detection with properties
+            if det.range > 12 or det.colour == Cone.UNKNOWN:
                 continue  # out of range dont care
 
             mapx = self.mu[0] + det.range * cos(self.mu[2] + det.bearing)
