@@ -16,9 +16,8 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, 
 from geometry_msgs.msg import Point as ROSPoint
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
+from driverless_common.cone_props import ConeProps
 from driverless_common.point import Point
-
-from .map_cone import MapCone
 
 from typing import List, Tuple
 
@@ -189,7 +188,7 @@ class EKFSlam(Node):
         # process detected cones
         cones: List[Cone] = detection_msg.cones
         for cone in cones:
-            det = MapCone(cone)  # detection with properties
+            det = ConeProps(cone)  # detection with properties
             if det.range > 12:
                 continue  # out of range dont care
 
