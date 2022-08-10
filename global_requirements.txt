@@ -1,0 +1,17 @@
+opencv
+numpy==1.21.4
+dataclasses
+scipy
+transforms3d
+colour
+tornado
+matplotlib
+scikit-learn
+eigen
+cython
+ros-galactic-ackermann-msgs
+ros-galactic-ament-cmake-nose
+ros-galactic-joint-state-publisher
+ros-galactic-xacro
+
+# pip install simplejpeg pygame
