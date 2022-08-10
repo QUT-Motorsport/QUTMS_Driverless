@@ -1,7 +1,6 @@
 from math import atan2, cos, hypot, sin
 import time
 
-import cv2
 import numpy as np
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
