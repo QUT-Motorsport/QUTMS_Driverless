@@ -12,7 +12,7 @@ dependencies:
   - ca-certificates
   - openssl
   - compilers
-  - cmake
+  - cmake=3.21
   - pkg-config
   - make
   - ninja
