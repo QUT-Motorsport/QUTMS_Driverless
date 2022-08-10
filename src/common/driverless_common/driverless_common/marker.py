@@ -71,6 +71,17 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                     cone_colour=cones[i].color,
                 )
             )
+            if covariance:
+                markers.append(
+                    cov_marker_msg(
+                        x=cones[i].location.x,
+                        y=cones[i].location.y,
+                        id_=i,
+                        x_scale=3 * sqrt(abs(covs[i][0])),
+                        y_scale=3 * sqrt(abs(covs[i][3])),
+                        header=detection.header,
+                    )
+                )
         else:
             markers.append(
                 clear_marker_msg(
@@ -78,18 +89,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                     header=detection.header,
                 )
             )
-        if covariance and i < len(cones):
-            markers.append(
-                cov_marker_msg(
-                    x=cones[i].location.x,
-                    y=cones[i].location.y,
-                    id_=i,
-                    x_scale=3 * sqrt(abs(covs[i][0])),
-                    y_scale=3 * sqrt(abs(covs[i][3])),
-                    header=detection.header,
-                )
-            )
-
+            markers.append(clear_marker_msg(id_=i, header=detection.header, name_space="cov_markers"))
     return MarkerArray(markers=markers)
 
 
