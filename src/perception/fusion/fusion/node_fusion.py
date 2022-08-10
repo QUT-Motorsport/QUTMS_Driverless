@@ -20,7 +20,7 @@ from typing import List, Tuple
 # node class object that gets created
 class PerceptionFusion(Node):
     leaf = 10  # nodes per tree before it starts brute forcing?
-    radius = 1  # nn kdtree nearch
+    radius = 1.3  # nn kdtree nearch
 
     def __init__(self):
         super().__init__("perception_fusion")
