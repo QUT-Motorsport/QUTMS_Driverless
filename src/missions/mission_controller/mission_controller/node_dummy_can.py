@@ -1,14 +1,17 @@
+# import ros2 libraries
+# other python modules
 import time
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
+# import custom message libraries
 from driverless_msgs.msg import Can
 
 
 # node class object that gets created
-class DummyCAN(Node):
+class NodeName(Node):
     current_msg: int = 0
 
     def __init__(self):
@@ -53,7 +56,7 @@ class DummyCAN(Node):
 # main run when script is started in the terminal
 def main(args=None):
     rclpy.init(args=args)
-    node = DummyCAN()
+    node = NodeName()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
