@@ -1,11 +1,8 @@
-# import ROS2 libraries
-# import tf2
 from tf2_ros import TransformBroadcaster
 
 import rclpy
 from rclpy.node import Node
 
-# import ROS2 message libraries
 from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped
 
 
