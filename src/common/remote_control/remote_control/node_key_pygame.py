@@ -1,9 +1,11 @@
+import math
+
 import pygame
 
 import rclpy
 from rclpy.node import Node
 
-from fs_msgs.msg import ControlCommand
+from ackermann_msgs.msg import AckermannDrive
 
 from .functions_pygame import bounds, game_elements
 
@@ -12,16 +14,14 @@ class PyGameNode(Node):
     def __init__(self):
         super().__init__("gui")
         self.get_logger().info("PyGame Node Initalised")
-        self.keypress_publisher = self.create_publisher(
-            ControlCommand, "/control_command", 10
-        )  # sending steering values to sim, control command are the messages being sent to the topic
+        self.keypress_publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
-    def publish_command(self, control_message: ControlCommand):
+    def publish_command(self, control_message: AckermannDrive):
         self.keypress_publisher.publish(control_message)
 
 
 def py_game_main(py_game_node: PyGameNode, steering_intensity: float = 0.1, throttle_intensity: float = 0.1):
-
+    pygame.init()
     pygame.display.set_caption("Car Controller")
     win = pygame.display.set_mode((400, 320))
     clock = pygame.time.Clock()
@@ -44,6 +44,12 @@ def py_game_main(py_game_node: PyGameNode, steering_intensity: float = 0.1, thro
                 throttle -= throttle_intensity
 
         if keys[pygame.K_s]:
+            throttle -= throttle_intensity
+        else:
+            if throttle < 0:
+                throttle += throttle_intensity
+
+        if keys[pygame.K_SPACE]:
             brake += throttle_intensity
         else:
             if brake > 0:
@@ -64,10 +70,10 @@ def py_game_main(py_game_node: PyGameNode, steering_intensity: float = 0.1, thro
         steering, throttle, brake = bounds(steering, throttle, brake)  # returns floats to publish
         game_elements(win, steering, throttle, brake)
 
-        msg = ControlCommand()
-        msg.throttle = throttle
-        msg.steering = steering
-        msg.brake = brake
+        msg = AckermannDrive()
+        msg.acceleration = throttle
+        msg.steering_angle = steering * math.pi
+        msg.jerk = brake
 
         py_game_node.publish_command(msg)
 
