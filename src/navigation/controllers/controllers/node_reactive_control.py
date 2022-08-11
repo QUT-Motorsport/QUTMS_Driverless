@@ -37,12 +37,20 @@ class ReactiveController(Node):
     Kp_ang: float = 5
     Kp_vel: float = 2
     vel_max: float = 5  # m/s
-    vel_min = vel_max / 2  # m/s
+    vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.3
     ang_max: float = pi / 2
 
     def __init__(self):
         super().__init__("reactive_controller")
+
+        ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
+        self.get_logger().info("EBS Control: " + str(ebs_test))
+        if ebs_test:
+            self.Kp_ang = 1  # shallow steering, straight line
+            self.vel_max = 50 / 3.6  # 40km/h in m/s
+            self.Kp_vel = 1
+            self.vel_min = self.vel_max / 2  # m/s
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
@@ -57,6 +65,8 @@ class ReactiveController(Node):
 
     def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+
+        # TODO: implement orange cone counter for loop closure (SLAM) and braking zone (EBS)
 
         # safety critical, set to 0 if not good detection
         control_msg = AckermannDrive()
@@ -106,13 +116,18 @@ class ReactiveController(Node):
             )
 
         if target is not None:
+            # steering control
+            steering_angle = -self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
+            self.get_logger().info(f"Target angle: {steering_angle}")
+
             # velocity control
             vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+
             # target velocity proportional to angle
-            target_vel: float = self.vel_max - (abs(atan2(target.x, target.y))) * self.Kp_vel
+            target_vel: float = self.vel_max - (abs(steering_angle)) * self.Kp_vel
             if target_vel < self.vel_min:
                 target_vel = self.vel_min
-            self.get_logger().debug(f"Target vel: {target_vel}")
+            self.get_logger().info(f"Target vel: {target_vel}")
 
             # increase proportionally as it approaches target
             throttle_scalar: float = 1 - (vel / target_vel)
@@ -120,10 +135,6 @@ class ReactiveController(Node):
                 calc_throttle = self.throttle_max * throttle_scalar
             elif throttle_scalar <= 0:
                 calc_throttle = 0.0  # if its over maximum, cut throttle
-
-            # steering control
-            steering_angle = -self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
-            self.get_logger().debug(f"Target angle: {steering_angle}")
 
             # publish message
             control_msg.steering_angle = steering_angle

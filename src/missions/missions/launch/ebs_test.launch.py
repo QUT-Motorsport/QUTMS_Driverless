@@ -10,18 +10,27 @@ def generate_launch_description():
     return LaunchDescription(
         [
             testing,
-            Node(package="missions", executable="ebs_test", parameters=[{"testing": LaunchConfiguration("testing")}]),
+            Node(
+                package="missions",
+                executable="ebs_test",
+                parameters=[{"testing": LaunchConfiguration("testing")}],
+            ),
             # Node(
             #     package="vision_pipeline",
-            #     executable="trt_detector",
+            #     executable="torch_detector",
             # ),
             # Node(
-            #     package="lidar_pipeline",
+            #     package="lidar_pipeline_2",
             #     executable="lidar_processing",
+            # ),
+            # Node(
+            #     package="fusion",
+            #     executable="fusion",
             # ),
             Node(
                 package="controllers",
                 executable="reactive_control",
+                parameters=[{"ebs_control": True}],
             ),
         ]
     )
