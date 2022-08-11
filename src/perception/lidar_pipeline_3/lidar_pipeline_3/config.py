@@ -5,7 +5,7 @@ import os
 
 from . import constants as const
 
-from typing import Any
+from typing import Any, Tuple
 
 class Config:
     def __init__(self) -> None:
@@ -21,6 +21,9 @@ class Config:
         self._export_data: bool = False
         
         # Misc
+        self._timestamp: str
+        self._datestamp: str
+        self._datetimestamp: str
         self._timestamp, self._datestamp, self._datetimestamp = self.get_timestamp()
         self._runtime_dir = const.OUTPUT_DIR + '/' + self.datetimestamp
         
@@ -227,6 +230,8 @@ class Config:
             elif opt == '--print_logs':
                 self.print_logs = True
     
-    def get_timestamp(self) -> tuple:
-        curr_datetime = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
-        return (curr_datetime[:10], curr_datetime[11:], curr_datetime)
+    def get_timestamp(self) -> Tuple[str, str, str]:
+        datetimestamp: str = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+        timestamp: str = datetimestamp[:10]
+        datestamp: str = datetimestamp[11:]
+        return (timestamp, datestamp, datetimestamp)
