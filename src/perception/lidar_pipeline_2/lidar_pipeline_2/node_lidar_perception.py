@@ -51,7 +51,7 @@ def create_timestamp():
     return datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S_%f")[:-3]
 
 
-class ConeSensingNode(Node):
+class LiDARProcessor(Node):
     def __init__(
         self,
         pc_node,
@@ -74,8 +74,8 @@ class ConeSensingNode(Node):
         _stdout_handler,
         _working_dir,
     ):
-        super().__init__("cone_sensing")
-        LOGGER.info("Initialising ConeSensingNode")
+        super().__init__("lidar_processor")
+        LOGGER.info("Initialising LiDAR Processor")
 
         self.pc_subscription = self.create_subscription(PointCloud2, pc_node, self.pc_callback, 1)
         self.pc_subscription  # Prevent unused variable warning
@@ -204,6 +204,7 @@ class ConeSensingNode(Node):
 
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
+        self.get_logger().info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
 
 
 def main(args=sys.argv[1:]):
@@ -435,7 +436,7 @@ def main(args=sys.argv[1:]):
         # Setting up node
         rclpy.init(args=args)
 
-        cone_sensing_node = ConeSensingNode(
+        cone_sensing_node = LiDARProcessor(
             pc_node,
             LIDAR_RANGE,
             DELTA_ALPHA,

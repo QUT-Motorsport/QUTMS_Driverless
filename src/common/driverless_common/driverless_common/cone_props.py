@@ -7,7 +7,7 @@ from typing import Tuple
 
 
 @dataclass
-class MapCone:
+class ConeProps:
     """Creates a datatype for storing and converting cones recorded"""
 
     x: float

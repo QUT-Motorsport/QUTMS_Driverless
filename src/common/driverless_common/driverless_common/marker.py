@@ -12,8 +12,13 @@ MARKER_HEIGHT = 0.3
 MAX_NUM_CONES = 50
 
 
-def marker_array_from_map(detection: TrackDetectionStamped) -> MarkerArray:
+def marker_array_from_map(detection: TrackDetectionStamped, ground_truth: bool = False) -> MarkerArray:
     cones: List[ConeWithCovariance] = detection.cones
+
+    if ground_truth:
+        alpha: float = 0.35
+    else:
+        alpha: float = 1.0
 
     markers = []
     for i, cone in enumerate(cones):
@@ -26,6 +31,7 @@ def marker_array_from_map(detection: TrackDetectionStamped) -> MarkerArray:
                 header=detection.header,
                 cone_colour=cone.cone.color,
                 lifetime=Duration(sec=10, nanosec=100000),
+                alpha=alpha,
             )
         )
         markers.append(
@@ -42,8 +48,15 @@ def marker_array_from_map(detection: TrackDetectionStamped) -> MarkerArray:
     return MarkerArray(markers=markers)
 
 
-def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerArray:
-    cones: List[Cone] = detection.cones
+def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance: bool = False) -> MarkerArray:
+    if not covariance:
+        cones: List[Cone] = detection.cones
+    else:
+        cones: List[Cone] = []
+        covs: List[float] = []
+        for cone_with_cov in detection.cones_with_cov:
+            cones.append(cone_with_cov.cone)
+            covs.append(cone_with_cov.covariance)
 
     markers = []
     for i in range(MAX_NUM_CONES):
@@ -58,6 +71,17 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
                     cone_colour=cones[i].color,
                 )
             )
+            if covariance:
+                markers.append(
+                    cov_marker_msg(
+                        x=cones[i].location.x,
+                        y=cones[i].location.y,
+                        id_=i,
+                        x_scale=3 * sqrt(abs(covs[i][0])),
+                        y_scale=3 * sqrt(abs(covs[i][3])),
+                        header=detection.header,
+                    )
+                )
         else:
             markers.append(
                 clear_marker_msg(
@@ -65,7 +89,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped) -> MarkerA
                     header=detection.header,
                 )
             )
-
+            markers.append(clear_marker_msg(id_=i, header=detection.header, name_space="cov_markers"))
     return MarkerArray(markers=markers)
 
 
@@ -78,9 +102,16 @@ CONE_TO_RGB_MAP = {
 
 
 def marker_msg(
-    x: float, y: float, z: float, id_: int, header: Header, cone_colour: int, lifetime=Duration(sec=1, nanosec=0)
+    x: float,
+    y: float,
+    z: float,
+    id_: int,
+    header: Header,
+    cone_colour: int,
+    lifetime=Duration(sec=1, nanosec=0),
+    alpha: float = 1.0,
 ) -> Marker:
-    return Marker(
+    marker = Marker(
         header=header,
         ns="current_scan",
         id=id_,
@@ -91,6 +122,8 @@ def marker_msg(
         color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
         lifetime=lifetime,
     )
+    marker.color.a = alpha  # yes, i had to do this
+    return marker
 
 
 def cov_marker_msg(
@@ -100,8 +133,8 @@ def cov_marker_msg(
     x_scale: float,  # x sigma
     y_scale: float,  # y sigma
     lifetime=Duration(sec=1, nanosec=0),
+    header=Header(frame_id="map"),
 ) -> Marker:
-    header = Header(frame_id="map")
     return Marker(
         header=header,
         ns="cov_markers",

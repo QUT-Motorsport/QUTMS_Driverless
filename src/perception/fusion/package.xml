@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>baby_slam</name>
+    <name>fusion</name>
     <version>0.0.0</version>
-    <description>Python approach to SLAM with known car position</description>
+    <description>Fuses camera and lidar detections</description>
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
+    <depend>driverless_common</depend>
     <depend>driverless_msgs</depend>
     <depend>geometry_msgs</depend>
-    <depend>driverless_common</depend>
+    <depend>std_msgs</depend>
 
     <export>
         <build_type>ament_python</build_type>

@@ -89,7 +89,7 @@
     </joint>
 
     <!-- ZED2i -->
-    <link name="zed2i_left_camera_optical_frame">
+    <link name="zed2i">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
@@ -100,7 +100,7 @@
     </link>
     <joint name="zed2i_joint" type="fixed">
         <parent link="base_link"/>
-        <child link="zed2i_left_camera_optical_frame"/>
+        <child link="zed2i"/>
         <origin xyz="-0.1 0 0.6" rpy="0 0 0"/>
     </joint>
 

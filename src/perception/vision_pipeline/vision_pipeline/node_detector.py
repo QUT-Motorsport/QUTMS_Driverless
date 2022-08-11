@@ -159,10 +159,12 @@ class VisionProcessor(Node):
         )
         self.detection_publisher.publish(detection_msg)
         debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
-        debug_msg.header = colour_msg.header
+        debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
 
-        self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
+        self.get_logger().info(
+            f"Total Time: {str(time.time() - start)}s | Est. Hz: {str(1 / (time.time() - start))}"
+        )  # log time
         self.start = time.time()
 
 

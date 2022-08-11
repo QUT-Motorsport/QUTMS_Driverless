@@ -1,7 +1,6 @@
 from math import atan2, cos, hypot, sin
 import time
 
-import cv2
 import numpy as np
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
@@ -16,9 +15,8 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, 
 from geometry_msgs.msg import Point as ROSPoint
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
+from driverless_common.cone_props import ConeProps
 from driverless_common.point import Point
-
-from .map_cone import MapCone
 
 from typing import List, Tuple
 
@@ -167,7 +165,7 @@ class EKFSlam(Node):
 
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/fusion/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
         )
@@ -187,11 +185,9 @@ class EKFSlam(Node):
         self.Sigma[0:3, 0:3] = SigmaR
 
         # process detected cones
-        cones: List[Cone] = detection_msg.cones
-        for cone in cones:
-            # if cone.color==2: cone.color = 1 # count orange as yellow cause simplicity
-            det = MapCone(cone)  # detection with properties
-            if det.range > 12:
+        for cone in detection_msg.cones_with_cov:
+            det = ConeProps(cone.cone)  # detection with properties
+            if det.range > 12 or det.colour == Cone.UNKNOWN:
                 continue  # out of range dont care
 
             mapx = self.mu[0] + det.range * cos(self.mu[2] + det.bearing)
@@ -201,7 +197,7 @@ class EKFSlam(Node):
 
             same_track = []  # start empty for this colour
             if self.track != []:
-                same_track = self.track[self.track[:, 2] == det.colour]  # extract same colours
+                same_track: np.ndarray = self.track[self.track[:, 2] == det.colour]  # extract same colours
 
             if len(same_track) != 0:  # this spline has been populated with cones
                 neighbourhood = KDTree(same_track[:, :2], leaf_size=self.leaf)
