@@ -56,7 +56,11 @@ class ReactiveController(Node):
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/sim_cones/cone_detection")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[vel_sub, detection_sub], queue_size=30, slop=0.3)
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[vel_sub, detection_sub],
+            queue_size=30,
+            slop=0.3,
+        )
         synchronizer.registerCallback(self.callback)
 
         # publishers

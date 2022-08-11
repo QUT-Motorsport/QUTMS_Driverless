@@ -89,11 +89,12 @@ class LocalPursuit(Node):
         super().__init__("local_pursuit")
 
         # sync subscribers
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[pose_sub, vel_sub, detection_sub], queue_size=30, slop=0.2
+            fs=[vel_sub, detection_sub],
+            queue_size=30,
+            slop=0.2,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -102,9 +103,7 @@ class LocalPursuit(Node):
 
         self.get_logger().info("---Local Pursuit Node Initalised---")
 
-    def callback(
-        self, pose_msg: PoseWithCovarianceStamped, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped
-    ):
+    def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
