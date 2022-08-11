@@ -131,16 +131,20 @@ class DisplayDetections(Node):
 
         for point in msg.path:
             # set colour proportional to angle
-            col = col_range[round(point.turn_intensity)].get_rgb()
+            try:
+                col = col_range[round(point.turn_intensity)].get_rgb()
 
-            line_point = point.location
-            line_colour = ColorRGBA()
-            line_colour.a = 1.0  # alpha
-            line_colour.r = col[0]
-            line_colour.g = col[1]
-            line_colour.b = col[2]
-            path_markers.append(line_point)
-            path_colours.append(line_colour)
+                line_point = point.location
+                line_colour = ColorRGBA()
+                line_colour.a = 1.0  # alpha
+                line_colour.r = col[0]
+                line_colour.g = col[1]
+                line_colour.b = col[2]
+                path_markers.append(line_point)
+                path_colours.append(line_colour)
+
+            except:
+                continue
 
         self.path_marker_publisher.publish(line_marker_msg(path_markers, path_colours))
 
