@@ -100,7 +100,7 @@ class DisplayDetections(Node):
         self.lidar_mkr_publisher.publish(marker_array_from_cone_detection(msg))
 
     def fusion_callback(self, msg: ConeDetectionStamped):
-        # subscribed to lidar cone detections
+        # subscribed to fused cone detections
         self.get_logger().debug("Received fusion detection")
 
         cones: List[Cone] = []

@@ -14,7 +14,7 @@ from std_msgs.msg import Header
 
 from driverless_common.cone_props import ConeProps
 
-from typing import List, Tuple
+from typing import List
 
 
 # node class object that gets created
@@ -27,7 +27,11 @@ class PerceptionFusion(Node):
         # cone detection subscribers
         vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[lidar_sub, vision_sub], queue_size=3, slop=0.2)
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[lidar_sub, vision_sub],
+            queue_size=3,
+            slop=0.2,
+        )
         synchronizer.registerCallback(self.callback)
 
         # potentially sub to odom to correct for motion between vision and lidar
@@ -39,13 +43,6 @@ class PerceptionFusion(Node):
 
     # TODO: implement redundancy to run on just vision if required (cant do just lidar)
     def callback(self, lidar_msg: ConeDetectionStamped, vision_msg: ConeDetectionStamped):
-        self.get_logger().debug("Received detection")
-        start: float = time.time()
-
-        # process detected cones
-        vision_cones: List[Cone] = vision_msg.cones
-        lidar_cones: List[Cone] = lidar_msg.cones
-
         # get list of lidar cone locations
         # make each cone with covariance (lidar is pretty accurate) with UNKNOWN colour
         # make a neighbourhood?? need to work out better way to query distance
@@ -56,6 +53,13 @@ class PerceptionFusion(Node):
         #   update to some combined position between vision and lidar, with lidar position weighted higher
         # not found
         #   make a cone with covariance (less accurate from vision) with colour
+
+        self.get_logger().debug("Received detection")
+        start: float = time.time()
+
+        # process detected cones
+        vision_cones: List[Cone] = vision_msg.cones
+        lidar_cones: List[Cone] = lidar_msg.cones
 
         cones_with_cov: np.ndarray = []
         for lidar_cone in lidar_cones:

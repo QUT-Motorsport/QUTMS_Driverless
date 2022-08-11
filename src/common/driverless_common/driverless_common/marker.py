@@ -15,7 +15,7 @@ MAX_NUM_CONES = 50
 def marker_array_from_map(detection: TrackDetectionStamped, ground_truth: bool = False) -> MarkerArray:
     cones: List[ConeWithCovariance] = detection.cones
 
-    if ground_truth:
+    if ground_truth:  # ground truth markers out of the sim are translucent
         alpha: float = 0.35
     else:
         alpha: float = 1.0
@@ -49,14 +49,14 @@ def marker_array_from_map(detection: TrackDetectionStamped, ground_truth: bool =
 
 
 def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance: bool = False) -> MarkerArray:
-    if not covariance:
-        cones: List[Cone] = detection.cones
-    else:
+    if covariance:  # is a cone with covariance list
         cones: List[Cone] = []
         covs: List[float] = []
         for cone_with_cov in detection.cones_with_cov:
             cones.append(cone_with_cov.cone)
             covs.append(cone_with_cov.covariance)
+    else:
+        cones: List[Cone] = detection.cones
 
     markers = []
     for i in range(MAX_NUM_CONES):
@@ -89,7 +89,14 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                     header=detection.header,
                 )
             )
-            markers.append(clear_marker_msg(id_=i, header=detection.header, name_space="cov_markers"))
+            if covariance:
+                markers.append(
+                    clear_marker_msg(
+                        id_=i,
+                        header=detection.header,
+                        name_space="cov_markers",
+                    )
+                )
     return MarkerArray(markers=markers)
 
 
@@ -152,9 +159,8 @@ def line_marker_msg(
     path_markers: list,
     path_colours: list,
 ) -> Marker:
-    header = Header(frame_id="map")
     return Marker(
-        header=header,
+        header=Header(frame_id="map"),
         ns="current_path",
         id=0,
         type=Marker.LINE_STRIP,
@@ -167,7 +173,11 @@ def line_marker_msg(
     )
 
 
-def clear_marker_msg(id_: int, header: Header, name_space: str = "current_scan") -> Marker:
+def clear_marker_msg(
+    id_: int,
+    header: Header,
+    name_space: str = "current_scan",
+) -> Marker:
     return Marker(
         header=header,
         ns=name_space,

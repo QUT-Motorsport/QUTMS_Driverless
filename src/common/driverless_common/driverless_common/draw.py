@@ -115,7 +115,11 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
     return debug_img
 
 
-def draw_steering(debug_img: np.ndarray, steering_angle: float, velocity: float):
+def draw_steering(
+    debug_img: np.ndarray,
+    steering_angle: float,
+    velocity: float,
+) -> np.ndarray:
     # draw angle line
     cv2.line(
         debug_img,
