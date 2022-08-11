@@ -40,11 +40,16 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
     * return: RVWP position as [x,y]
     """
     _pos = np.array([[car_pos[0], car_pos[1]]])
-    dists: np.ndarray = scipy.spatial.distance.cdist(path, _pos, "euclidean")
+    dists: np.ndarray = scipy.spatial.distance.cdist(
+        path[:, :2],  # search all path points for x,y cols up to 3rd col (intensity)
+        _pos,
+        "euclidean",
+    )
     min_index: int = np.where(dists == np.amin(dists))[0][0]
 
     rvwp_index: int = (min_index + rvwp_lookahead) % len(path)
     rvwp: List[float] = path[rvwp_index]
+    print(rvwp)
 
     return rvwp
 
@@ -74,12 +79,14 @@ def wrap_to_pi(angle: float) -> float:
 
 class PurePursuit(Node):
     path: np.ndarray = []
-    Kp_ang: float = 4.5
-    Kp_vel: float = 4.5
-    vel_max: float = 14  # m/s
-    vel_min: float = 1.0  # m/s
-    throttle_max: float = 0.5
-    brake_max: float = 0.15
+    Kp_ang: float = 12
+    Kp_vel: float = 0.1
+    vel_max: float = 19  # m/s
+    vel_min: float = 0.5  # m/s
+    throttle_max: float = 0.2
+    brake_max: float = 0.12
+    Kp_brake: float = 0.05
+    rvwpLookahead: float = 45
 
     def __init__(self):
         super().__init__("pure_pursuit")
@@ -103,7 +110,7 @@ class PurePursuit(Node):
             return
 
         # convert List[PathPoint] to 2D numpy array
-        self.path = np.array([[p.location.x, p.location.y] for p in spline_path_msg.path])
+        self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
     def callback(
@@ -129,17 +136,18 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, ak)
 
         # rvwp control
-        rvwpLookahead = 70
-        rvwp: List[float] = get_RVWP(position, self.path, rvwpLookahead)
-
+        rvwp: List[float] = get_RVWP(position, self.path, self.rvwpLookahead)
         # steering control
-        des_heading_ang = angle(position, rvwp)
+        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         steering_angle = wrap_to_pi(ak - des_heading_ang) * self.Kp_ang
 
         # velocity control
+        rvwp: List[float] = get_RVWP(position, self.path, self.rvwpLookahead + 30)
+        intensity = rvwp[2]
         vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+
         # target velocity proportional to angle
-        target_vel: float = self.vel_max - abs(steering_angle) * self.Kp_vel
+        target_vel: float = self.vel_max - intensity * self.Kp_vel
         if target_vel < self.vel_min:
             target_vel = self.vel_min
 
@@ -152,7 +160,7 @@ class PurePursuit(Node):
         else:
             calc_throttle = 0.0
             if vel > self.vel_min:
-                calc_brake = abs(self.brake_max * throttle_scalar)
+                calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
 
         # publish message
         control_msg = AckermannDrive()

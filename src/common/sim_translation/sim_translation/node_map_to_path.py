@@ -145,7 +145,7 @@ class MapPathPlanner(Node):
             # angle of tangent at midpoint
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
-        VEL_ZONE = 10
+        VEL_ZONE = 15
         path: list[PathPoint] = []
         for i in range(0, self.spline_len - VEL_ZONE, VEL_ZONE):
             # check angle between current and 10th spline point ahead
