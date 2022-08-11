@@ -1,3 +1,6 @@
+# map paths
+maps/paths.txt
+
 # Colcon build
 build/
 install/
