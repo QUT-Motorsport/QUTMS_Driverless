@@ -14,6 +14,8 @@ class InspectionMission(BaseMission):
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
+        self.get_logger().info("---Inspection Mission Node Initialised---")
+
     def sine_callback(self, inspection_control_msg: AckermannDrive):
         if self.r2d:
             self.drive_publisher.publish(inspection_control_msg)
