@@ -11,8 +11,8 @@ def main(args=sys.argv[1:]):
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename=f'{config.runtime_dir}/output.log',
                         filemode='w',
-                        format='%(asctime)s | %(levelname)s: %(message)s',
-                        datefmt='%I:%M:%S %p',
+                        format='%(asctime)s.%(msecs)03d | %(levelname)s | %(filename)s %(lineno)s: %(message)s',
+                        datefmt='%H:%M:%S',
                         # encoding='utf-8',
                         level=config.numeric_loglevel)
     
@@ -23,7 +23,7 @@ def main(args=sys.argv[1:]):
         stdout_handler = logging.StreamHandler(sys.stdout)
         logger.addHandler(stdout_handler)
     
-    logger.info(f'lidar_pipeline_3 initialised at {config.datetimestamp}')
+    logger.info(f'initialised at {config.datetimestamp}')
     logger.info(f'args = {args}')
 
 if __name__ == '__main__':
