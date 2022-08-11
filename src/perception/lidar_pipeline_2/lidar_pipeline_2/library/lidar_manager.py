@@ -53,7 +53,7 @@ def detect_cones(
     BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
     if create_figures:
-        #vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
+        vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
         #vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car)
         pass
 
@@ -148,7 +148,7 @@ def detect_cones(
     end_time = time.perf_counter()
 
     if create_figures:
-        #vis.plot_object_points_2D(object_points)
+        vis.plot_object_points_2D(object_points)
         pass
 
     LOGGER.info(f"Object points extracted and stacked in {end_time - start_time}s")
@@ -158,7 +158,7 @@ def detect_cones(
     end_time = time.perf_counter()
 
     if create_figures:
-        #vis.plot_object_centers_2D(object_points, object_centers)
+        vis.plot_object_centers_2D(object_points, object_centers)
         pass
 
     LOGGER.info(f"Object centers computed in {end_time - start_time}s")
@@ -175,7 +175,7 @@ def detect_cones(
     end_time = time.perf_counter()
 
     if create_figures:
-        #vis.plot_reconstructed_objects_2D(reconstructed_objects)
+        vis.plot_reconstructed_objects_2D(reconstructed_objects)
         pass
 
     LOGGER.info(f"Objects reconstructed in {end_time - start_time}s")

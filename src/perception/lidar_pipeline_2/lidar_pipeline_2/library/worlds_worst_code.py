@@ -12,7 +12,7 @@ CONE_WIDTH = 0.15  # m
 
 
 def F_3(x):
-    return 1.05 * x - 7.3
+    return 1 * x - 7.235
 
 
 def newtons_method(x, x1, y1):
@@ -33,7 +33,7 @@ def cone_filter(distance: float) -> float:
 
 
 # A = 307.7506
-A = 1181.7633
+A = 1515
 A_2 = A * A
 
 
