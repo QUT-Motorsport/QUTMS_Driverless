@@ -1,5 +1,5 @@
 # map paths
-maps/paths.txt
+paths.txt
 
 # Colcon build
 build/
