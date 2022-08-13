@@ -1,5 +1,5 @@
 # map paths
-paths.store
+maps.store
 
 # Colcon build
 build/
