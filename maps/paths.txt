@@ -1,0 +1,3 @@
+It's recommended you copy this folder to a place on your local machine and enter the file paths of any csv maps you wish to use.
+This saves having to type out a whole directory path. eg:
+C:\Users\QUTMS\maps\example.csv
