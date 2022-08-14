@@ -6,6 +6,15 @@ import os
 from . import constants as const
 
 from typing import Any, Tuple
+from logging import Logger # For typing
+
+
+def get_timestamp() -> Tuple[str, str, str]:
+    datetimestamp: str = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
+    timestamp: str = datetimestamp[:10]
+    datestamp: str = datetimestamp[11:]
+    return (timestamp, datestamp, datetimestamp)
+
 
 class Config:
     def __init__(self) -> None:
@@ -24,11 +33,15 @@ class Config:
         self._timestamp: str
         self._datestamp: str
         self._datetimestamp: str
-        self._timestamp, self._datestamp, self._datetimestamp = self.get_timestamp()
+        self._timestamp, self._datestamp, self._datetimestamp = get_timestamp()
         self._runtime_dir = const.OUTPUT_DIR + '/' + self.datetimestamp
+        
+        # Logger
+        self._logger: Logger = logging.getLogger(__name__)
         
         self.setup_output_dir()
         self.setup_runtime_dir()
+        self.setup_logging()
     
     @property
     def pc_node(self) -> str:
@@ -182,6 +195,14 @@ class Config:
         """
         return self._runtime_dir
     
+    @property
+    def logger(self) -> Logger:
+        """
+        Returns:
+            Logger: Initialised logger
+        """
+        return self._logger
+    
     def setup_output_dir(self):
         """Create output directory if it does not exist
         """
@@ -193,6 +214,16 @@ class Config:
         """
         if not os.path.isdir(self.runtime_dir):
             os.mkdir(self.runtime_dir)
+    
+    def setup_logging(self):
+        """Initialise logging parameters and log format
+        """
+        logging.basicConfig(filename=f'{self.runtime_dir}/output.log',
+                        filemode='w',
+                        format='%(asctime)s.%(msecs)03d | %(levelname)s | %(filename)s %(lineno)s: %(message)s',
+                        datefmt='%H:%M:%S',
+                        # encoding='utf-8',
+                        level=self.numeric_loglevel)
     
     def update(self, args: list) -> None:
         """Update config values with user input
@@ -229,9 +260,3 @@ class Config:
                 self.export_data = True
             elif opt == '--print_logs':
                 self.print_logs = True
-    
-    def get_timestamp(self) -> Tuple[str, str, str]:
-        datetimestamp: str = datetime.datetime.now().strftime('%d_%m_%Y_%H_%M_%S_%f')[:-3]
-        timestamp: str = datetimestamp[:10]
-        datestamp: str = datetimestamp[11:]
-        return (timestamp, datestamp, datetimestamp)
