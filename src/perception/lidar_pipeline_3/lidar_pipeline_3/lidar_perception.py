@@ -1,11 +1,14 @@
 import sys
 import logging
-LOGGER = logging.getLogger(__name__)
 
 import rclpy
 
-from .config import Config
-from .ConeDetectionNode import ConeDetectionNode
+from .utils import Config
+from .cone_detection_node import ConeDetectionNode
+
+
+def local_data_stream():
+    raise NotImplementedError()
 
 
 def real_time_stream(args: list, config: Config) -> None:
@@ -23,31 +26,23 @@ def main(args=sys.argv[1:]):
     # Init config
     config: Config = Config()
     config.update(args)
-
-    # Init logging
-    logging.basicConfig(filename=f'{config.runtime_dir}/output.log',
-                        filemode='w',
-                        format='%(asctime)s,%(msecs)03d | %(levelname)s | %(filename)s %(lineno)s: %(message)s',
-                        datefmt='%H:%M:%S',
-                        # encoding='utf-8',
-                        level=config.numeric_loglevel)
     
+    # Check if logs should be printed 
     if not config.print_logs:
         print("WARNING: --print_logs flag not specified")
-        print("Running lidar_perception without printing to terminal ...")
+        print("Running lidar_perception without printing to terminal...")
     else:
         stdout_handler = logging.StreamHandler(sys.stdout)
-        LOGGER.addHandler(stdout_handler)
+        config.logger.addHandler(stdout_handler)
     
-    LOGGER.info(f'initialised at {config.datetimestamp}')
-    LOGGER.info(f'args = {args}')
-    
-    print(__name__)
+    # Log time and arguments provided
+    config.logger.info(f'initialised at {config.datetimestamp}')
+    config.logger.info(f'args = {args}')
     
     # Init data stream
     if config.data_path:
         # Utilise local data source
-        raise NotImplementedError()
+        local_data_stream()
     else:
         # Utilise real-time source
         real_time_stream(args, config)
