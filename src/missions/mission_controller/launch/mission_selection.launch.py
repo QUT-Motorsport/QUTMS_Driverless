@@ -31,8 +31,9 @@ def generate_launch_description():
     )
 
     model_pkg = get_package_share_directory("models")
-    robot_model = IncludeLaunchDescription(PythonLaunchDescriptionSource(
-                model_pkg + '/launch/robot_description.launch.py'))
+    robot_model = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(model_pkg + "/launch/robot_description.launch.py")
+    )
 
     mission_pkg = get_package_share_directory("missions")
 
