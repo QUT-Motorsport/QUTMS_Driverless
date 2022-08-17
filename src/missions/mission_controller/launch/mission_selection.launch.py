@@ -30,10 +30,15 @@ def generate_launch_description():
         env=node_env,
     )
 
+    model_pkg = get_package_share_directory("models")
+    robot_model = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+                model_pkg + '/launch/robot_description.launch.py'))
+
     mission_pkg = get_package_share_directory("missions")
 
     return LaunchDescription(
         [
+            robot_model,
             can_node,
             mission_node,
             RegisterEventHandler(
