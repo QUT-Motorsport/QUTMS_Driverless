@@ -19,21 +19,21 @@ def generate_launch_description():
                 package="controllers",
                 executable="reactive_control",
             ),
-            # Node(
-            #     package="baby_slam",
-            #     executable="slam",
-            # )
-            # Node(
-            #     package="vision_pipeline",
-            #     executable="torch_detector",
-            # ),
-            # Node(
-            #     package="lidar_pipeline_2",
-            #     executable="lidar_processing",
-            # ),
-            # Node(
-            #     package="fusion",
-            #     executable="fusion",
-            # ),
+            Node(
+                package="baby_slam",
+                executable="slam",
+            ),
+            Node(
+                package="vision_pipeline",
+                executable="torch_detector",
+            ),
+            Node(
+                package="lidar_pipeline_2",
+                executable="lidar_processing",
+            ),
+            Node(
+                package="fusion",
+                executable="fusion",
+            ),
         ]
     )
