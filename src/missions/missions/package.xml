@@ -13,6 +13,7 @@
     <!-- Custom packages -->
     <depend>controllers</depend>
     <depend>fusion</depend>
+    <depend>baby_slam</depend>
     <depend>models</depend>
 
     <export>

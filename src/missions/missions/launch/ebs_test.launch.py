@@ -21,7 +21,7 @@ def generate_launch_description():
             ),
             Node(
                 package="lidar_pipeline_2",
-                executable="lidar_processing",
+                executable="lidar_perception",
             ),
             Node(
                 package="fusion",
