@@ -52,6 +52,8 @@ def create_timestamp():
 
 
 class LiDARProcessor(Node):
+    start: float = 0.0
+
     def __init__(
         self,
         pc_node,
@@ -109,6 +111,9 @@ class LiDARProcessor(Node):
         LOGGER.info("Waiting for PointCloud2 data ...")
 
     def pc_callback(self, pc_msg: PointCloud2):
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        start: float = time.perf_counter()  # begin a timer
+
         timestamp = create_timestamp()
         LOGGER.info("PointCloud2 message received at " + timestamp)
 
@@ -204,7 +209,9 @@ class LiDARProcessor(Node):
 
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
-        self.get_logger().info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
+
+        self.get_logger().info(f"Total Time: {str(time.perf_counter() - self.start)}\n")  # log time
+        self.start = time.perf_counter()
 
 
 def main(args=sys.argv[1:]):

@@ -19,7 +19,7 @@ class TrackdriveMission(BaseMission):
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
-        self.get_logger().info("---Trackdrive mission node initialised---")
+        self.get_logger().info("---Trackdrive Mission Node Initialised---")
 
     # logic for switching reactive and following drive commands needed
     def reactive_callback(self, reactive_control_msg: AckermannDrive):

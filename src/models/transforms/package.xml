@@ -7,7 +7,9 @@
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
+    <!-- Messages -->
     <depend>geometry_msgs</depend>
+    <!-- Packages -->
     <depend>tf2_ros</depend>
 
     <export>
