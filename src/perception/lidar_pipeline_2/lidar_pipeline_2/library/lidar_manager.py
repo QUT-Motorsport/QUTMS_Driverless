@@ -54,7 +54,7 @@ def detect_cones(
 
     if create_figures:
         vis.plot_point_cloud_2D(point_cloud, point_count, working_dir, timestamp)
-        vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car)
+        # vis.plot_point_cloud_3D(point_cloud, point_count, working_dir, timestamp, animate_figures, model_car)
         pass
 
     # Discretise point cloud for real-time performance
@@ -133,9 +133,9 @@ def detect_cones(
     end_time = time.perf_counter()
 
     if create_figures:
-        vis.plot_labelled_points_2D(
-            point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp
-        )
+        # vis.plot_labelled_points_2D(
+        #    point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp
+        # )
         # vis.plot_labelled_points_3D(point_cloud[seg_bin_z_ind], point_labels, ground_plane, DELTA_ALPHA, working_dir, timestamp, animate_figures)
         pass
 
@@ -149,6 +149,7 @@ def detect_cones(
 
     if create_figures:
         vis.plot_object_points_2D(object_points)
+        pass
 
     LOGGER.info(f"Object points extracted and stacked in {end_time - start_time}s")
 
@@ -158,6 +159,7 @@ def detect_cones(
 
     if create_figures:
         vis.plot_object_centers_2D(object_points, object_centers)
+        pass
 
     LOGGER.info(f"Object centers computed in {end_time - start_time}s")
 
@@ -174,6 +176,7 @@ def detect_cones(
 
     if create_figures:
         vis.plot_reconstructed_objects_2D(reconstructed_objects)
+        pass
 
     LOGGER.info(f"Objects reconstructed in {end_time - start_time}s")
 
@@ -191,6 +194,10 @@ def detect_cones(
         plt.show()
 
     return identified_cones
+
+
+# DROP THE POINTS BEHIND THE CAR
+# CHECK HEIGHT OF CLUSTERS ABOVE GROUND AS THEY SHOULD BE RELATED TO CONE HEIGHT
 
 
 # Look into numpy views and see if they could be used instead of creating

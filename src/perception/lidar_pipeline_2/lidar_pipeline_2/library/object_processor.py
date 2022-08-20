@@ -5,7 +5,7 @@ from . import point_cloud_processor as pcp
 
 
 def group_points(object_points):
-    EPSILON = 0.4  # Neighbourhood Scan Size
+    EPSILON = 0.6  # Neighbourhood Scan Size
     MIN_POINTS = 2  # Number of points required to form a neighbourhood
 
     # Cluster object points
