@@ -30,7 +30,7 @@ class PerceptionFusion(Node):
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[lidar_sub, vision_sub],
             queue_size=3,
-            slop=0.2,
+            slop=0.3,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -117,7 +117,7 @@ class PerceptionFusion(Node):
 
         self.fusion_publisher.publish(cone_detection_msg)
 
-        self.get_logger().debug(f"Total time: {str(time.time() - start)}")
+        self.get_logger().info(f"Total time: {str(time.time() - start)}")
 
 
 def main(args=None):

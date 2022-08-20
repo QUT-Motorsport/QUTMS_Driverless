@@ -12,6 +12,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
+from builtin_interfaces.msg import Time
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
@@ -124,8 +125,8 @@ class VisionProcessor(Node):
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")
 
-        self.get_logger().debug("Wait time: " + str(time.time() - self.start) + "\n")  # log time
-        start: float = time.time()  # begin a timer
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        start: float = time.perf_counter()  # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
@@ -153,8 +154,14 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
+        fix_my_stamp_nano = colour_msg.header.stamp.nanosec + 500000000
+        fix_my_stamp_sec = colour_msg.header.stamp.sec + 60108
+        if fix_my_stamp_nano > 1000000000:
+            fix_my_stamp_nano -= 1000000000
+            fix_my_stamp_sec += 1
+
         detection_msg = ConeDetectionStamped(
-            header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),
+            header=Header(frame_id="zed2i", stamp=Time(sec=fix_my_stamp_sec, nanosec=fix_my_stamp_nano)),
             cones=detected_cones,
         )
         self.detection_publisher.publish(detection_msg)
@@ -162,10 +169,8 @@ class VisionProcessor(Node):
         debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
 
-        self.get_logger().info(
-            f"Total Time: {str(time.time() - start)}s | Est. Hz: {str(1 / (time.time() - start))}"
-        )  # log time
-        self.start = time.time()
+        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.start = time.perf_counter()
 
 
 ## OpenCV thresholding

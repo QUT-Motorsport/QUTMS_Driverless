@@ -109,7 +109,7 @@ def get_cones(reconstructed_clusters):
             # z_mean  = sum(y_cluster) / len(y_cluster)
             distance = meth.sqrt(x_mean**2 + y_mean**2)
 
-            print(round(x_mean, 2), "\t", round(y_mean, 2), "\t", round(distance, 4), "\t", point_count)
+            # print(round(x_mean, 2), "\t", round(y_mean, 2), "\t", round(distance, 4), "\t", point_count)
 
             # only checks centre of scan for cones - noise filter (delete if needed)
             if abs(x_mean) < FAR_X:
