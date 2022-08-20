@@ -59,9 +59,10 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
     if dist <= 3 and x_n >= distance * 0.65 and x_n <= distance * 1.4:
         return True
     else:
-        #print(round(dist, 2), round(x_n, 2), round(distance * 0.85))
-        #print(dist <= 2.5, x_n >= distance * 0.85)
+        # print(round(dist, 2), round(x_n, 2), round(distance * 0.85))
+        # print(dist <= 2.5, x_n >= distance * 0.85)
         return False
+
 
 def new_cone_filter_old(distance: float, point_count: int) -> bool:
     ERROR_MARGIN = 0.95
@@ -85,8 +86,8 @@ def new_cone_filter_old(distance: float, point_count: int) -> bool:
     if dist <= 3 and x_n >= distance * 0.65 and x_n <= distance * 1.4:
         return True
     else:
-        #print(round(dist, 2), round(x_n, 2), round(distance * 0.85))
-        #print(dist <= 2.5, x_n >= distance * 0.85)
+        # print(round(dist, 2), round(x_n, 2), round(distance * 0.85))
+        # print(dist <= 2.5, x_n >= distance * 0.85)
         return False
 
 
@@ -98,7 +99,7 @@ def get_cones(reconstructed_clusters):
     ERROR_MARGIN = 0.20  # Constant
     for i in range(len(reconstructed_clusters)):
         point_count = len(reconstructed_clusters[i])
-        if point_count >= 1: # MAKE THIS MORE THAN 1?
+        if point_count >= 1:  # MAKE THIS MORE THAN 1?
             x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
             y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
             # Univserity of melbourne used z as well
@@ -109,12 +110,13 @@ def get_cones(reconstructed_clusters):
             distance = meth.sqrt(x_mean**2 + y_mean**2)
 
             print(round(x_mean, 2), "\t", round(y_mean, 2), "\t", round(distance, 4), "\t", point_count)
-            
+
             # only checks centre of scan for cones - noise filter (delete if needed)
             if abs(x_mean) < FAR_X:
                 # print("    ", x_mean, y_mean, point_count, distance)
                 if new_cone_filter(distance, point_count):
                     cones.append([x_mean, y_mean])
     return cones
+
 
 # DROP THE POINTS BEHIND THE CAR
