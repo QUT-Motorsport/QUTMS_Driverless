@@ -89,10 +89,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->parameter_callback_handle =
             this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
 
-        uint32_t _d_acceleration;
-        uint32_t _d_current;
-        uint32_t _d_limits;
-        int32_t _d_velocity;
+        uint32_t _d_acceleration = 0;
+        uint32_t _d_current = 0;
+        uint32_t _d_limits = 0;
+        int32_t _d_velocity = 0;
         this->get_parameter("d_acceleration", _d_acceleration);
         this->get_parameter("d_current", _d_current);
         this->get_parameter("d_limits", _d_limits);
