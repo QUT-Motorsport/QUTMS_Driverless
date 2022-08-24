@@ -34,7 +34,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
-    rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr steering_sub;
+    rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
 
     void canbus_callback(const driverless_msgs::msg::Can msg) { this->_frame = msg; }
 
@@ -83,16 +83,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
-        this->steering_sub = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-            "/driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+        this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
+            "ackermann", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
 
         this->parameter_callback_handle =
             this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
 
-        uint32_t _d_acceleration = 0;
-        uint32_t _d_current = 0;
-        uint32_t _d_limits = 0;
-        int32_t _d_velocity = 0;
+        uint32_t _d_acceleration;
+        uint32_t _d_current;
+        uint32_t _d_limits;
+        int32_t _d_velocity;
         this->get_parameter("d_acceleration", _d_acceleration);
         this->get_parameter("d_current", _d_current);
         this->get_parameter("d_limits", _d_limits);

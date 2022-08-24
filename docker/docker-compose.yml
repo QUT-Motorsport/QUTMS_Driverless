@@ -29,10 +29,6 @@ x-devices: &devices
     devices:
        - /dev/dri:/dev/dri
 
-x-env-file: &env-file
-    env_file:
-        - .env
-
 x-network: &network
     network_mode: "host"
     privileged: true
@@ -68,7 +64,6 @@ services:
             - /tmp/.X11-unix:/tmp/.X11-unix
             # mount in the relevant source
             - ../src/hardware/zed_driver:/driverless_ws/src/zed_driver
-        <<: *env-file
         <<: *devices
         <<: *network
         <<: *interactive
@@ -81,7 +76,6 @@ services:
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
         <<: *volumes-jetson
         <<: *user
         <<: *devices
@@ -97,7 +91,6 @@ services:
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
         <<: *volumes-roscube
         <<: *user
         <<: *devices
@@ -112,7 +105,6 @@ services:
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
         <<: *volumes-jetson
         <<: *user
         <<: *devices
@@ -128,7 +120,6 @@ services:
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *env-file
         <<: *volumes-roscube
         <<: *user
         <<: *devices

@@ -7,12 +7,11 @@
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
+    <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>geometry_msgs</depend>
+    <!-- Custom packages -->
     <depend>driverless_common</depend>
-    <depend>sensor_msgs</depend>
-    <depend>std_msgs</depend>
-    <depend>visualization_msgs</depend>
 
     <export>
         <build_type>ament_python</build_type>

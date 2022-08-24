@@ -1,8 +1,5 @@
 from math import atan2, pi
-import time
 
-from colour import Color
-import cv2
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 
@@ -10,20 +7,13 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from builtin_interfaces.msg import Duration
-from driverless_msgs.msg import PathPoint, PathStamped
+from driverless_msgs.msg import ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
 from fs_msgs.msg import Cone, Track
-from geometry_msgs.msg import Point
-from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker
 
 from typing import List, Tuple
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
-red = Color("red")
-blue = Color("blue")
-col_range = list(blue.range_to(red, 100))
 
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int = 3) -> Tuple[list, list]:
@@ -86,7 +76,7 @@ class MapPathPlanner(Node):
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
 
         # publishers
-        self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/path_planner/path_marker_array", 1)
+        self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim_map/track", 1)
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/path_planner/path", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
@@ -94,9 +84,7 @@ class MapPathPlanner(Node):
     def map_callback(self, track_msg: Track):
         self.get_logger().debug("Received map")
 
-        start: float = time.time()
         # track cone list is taken as coords relative to the initial car position
-
         if self.track == []:
             self.track = track_msg.track
         elif len(self.track) == len(track_msg.track):
@@ -107,6 +95,8 @@ class MapPathPlanner(Node):
         blue_x: List[float] = []
         blue_y: List[float] = []
         oranges: List[Cone] = []
+
+        sim_track: List[ConeWithCovariance] = []
         for cone in self.track:
             if cone.color == Cone.YELLOW:
                 yellow_x.append(cone.location.x)
@@ -116,6 +106,12 @@ class MapPathPlanner(Node):
                 blue_y.append(cone.location.y)
             elif cone.color == Cone.ORANGE_BIG:
                 oranges.append(cone)
+
+            new_cone = ConeWithCovariance()
+            new_cone.cone.location = cone.location
+            new_cone.cone.color = cone.color
+            new_cone.covariance = [0.0, 0.0, 0.0, 0.0]
+            sim_track.append(new_cone)
 
         # 4 orange cones: 2 blue side, 2 yellow side
         for cone in oranges:
@@ -149,9 +145,7 @@ class MapPathPlanner(Node):
             # angle of tangent at midpoint
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
-        VEL_ZONE = 10
-        path_markers: List[Point] = []
-        path_colours: List[ColorRGBA] = []
+        VEL_ZONE = 15
         path: list[PathPoint] = []
         for i in range(0, self.spline_len - VEL_ZONE, VEL_ZONE):
             # check angle between current and 10th spline point ahead
@@ -164,9 +158,6 @@ class MapPathPlanner(Node):
 
             # angle relative to max angle on track
             change_pc = abs(th_change) / MAX_ANGLE * 100
-            # set colour proportional to angle
-            col = col_range[round(change_pc)].get_rgb()
-
             for j in range(VEL_ZONE):
                 path_point = PathPoint()
                 path_point.location.x = tx[i + j]
@@ -175,48 +166,12 @@ class MapPathPlanner(Node):
                 path_point.turn_intensity = change_pc
                 path.append(path_point)
 
-                line_point = Point()
-                line_point.x = tx[i + j]
-                line_point.y = ty[i + j]
-                line_point.z = 0.0
-                line_colour = ColorRGBA()
-                line_colour.a = 1.0  # alpha
-                line_colour.r = col[0]
-                line_colour.g = col[1]
-                line_colour.b = col[2]
-                path_markers.append(line_point)
-                path_colours.append(line_colour)
-
         path_msg = PathStamped(path=path)
         self.path_publisher.publish(path_msg)
-
-        ## Visualisation marker
-        marker = Marker()
-        marker.header.frame_id = "map"
-        marker.ns = "current_path"
-        marker.id = 0
-        marker.type = Marker.LINE_STRIP
-        marker.action = Marker.ADD
-
-        marker.pose.position.x = 0.0
-        marker.pose.position.y = 0.0
-        marker.pose.position.z = 0.0
-        marker.pose.orientation.x = 0.0
-        marker.pose.orientation.y = 0.0
-        marker.pose.orientation.z = 0.0
-        marker.pose.orientation.w = 1.0
-        # scale out of 1x1x1m
-        marker.scale.x = 0.2
-        marker.scale.y = 0.0
-        marker.scale.z = 0.0
-
-        marker.points = path_markers
-        marker.colors = path_colours
-
-        marker.lifetime = Duration(sec=10, nanosec=100000)
-        self.path_marker_publisher.publish(marker)
-
-        self.get_logger().debug("Time taken: " + str(time.time() - start))
+        sim_track_msg = TrackDetectionStamped()
+        sim_track_msg.header.frame_id = "map"
+        sim_track_msg.cones = sim_track
+        self.track_publisher.publish(sim_track_msg)
 
 
 def main(args=None):

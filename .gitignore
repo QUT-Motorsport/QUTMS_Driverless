@@ -1,3 +1,6 @@
+# map paths
+maps.store
+
 # Colcon build
 build/
 install/

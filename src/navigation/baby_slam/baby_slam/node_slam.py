@@ -1,7 +1,6 @@
-from math import atan2, cos, hypot, sin, sqrt
+from math import atan2, cos, hypot, sin
 import time
 
-import cv2
 import numpy as np
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
@@ -12,16 +11,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, TrackDetectionStamped
+from geometry_msgs.msg import Point as ROSPoint
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from sensor_msgs.msg import Image
-from std_msgs.msg import Header
-from visualization_msgs.msg import Marker, MarkerArray
 
+from driverless_common.cone_props import ConeProps
 from driverless_common.point import Point
-
-from .map_cone import MapCone
-from .rviz_marker import cone_marker, cov_marker
 
 from typing import List, Tuple
 
@@ -154,13 +149,13 @@ def update(
 
 class EKFSlam(Node):
     R = np.diag([0.05, 0.05, 0.05])  # very confident of odom (cause its OP)
-    Q = np.diag([1, 0.6]) ** 2  # detections are a bit meh
+    Q = np.diag([1, 0.8]) ** 2  # detections are a bit meh
     radius = 3  # nn kdtree nearch
     leaf = 30  # nodes per tree before it starts brute forcing?
 
     mu = np.array([3.0, 0.0, 0.0])  # initial pose
     Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
-    track: List[int] = []
+    track: np.ndarray = []
     blue_indexes: List[int] = []
     yellow_indexes: List[int] = []
     orange_indexes: List[int] = []
@@ -170,19 +165,18 @@ class EKFSlam(Node):
 
         # sync subscribers
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/fusion/cone_detection")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
         )
         synchronizer.registerCallback(self.callback)
 
-        # publishers
-        self.map_img_publisher: Publisher = self.create_publisher(Image, "/slam/map_image", 1)
-        self.markers_publisher: Publisher = self.create_publisher(MarkerArray, "/slam/cone_markers", 1)
+        # slam publisher
+        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def callback(self, pose_msg: PoseWithCovarianceStamped, cone_msg: ConeDetectionStamped):
+    def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # predict car location (pretty accurate odom)
@@ -191,11 +185,9 @@ class EKFSlam(Node):
         self.Sigma[0:3, 0:3] = SigmaR
 
         # process detected cones
-        cones: List[Cone] = cone_msg.cones
-        for cone in cones:
-            # if cone.color==2: cone.color = 1 # count orange as yellow cause simplicity
-            det = MapCone(cone)  # detection with properties
-            if det.range > 12:
+        for cone in detection_msg.cones_with_cov:
+            det = ConeProps(cone.cone)  # detection with properties
+            if det.range > 12 or det.colour == Cone.UNKNOWN:
                 continue  # out of range dont care
 
             mapx = self.mu[0] + det.range * cos(self.mu[2] + det.bearing)
@@ -205,7 +197,7 @@ class EKFSlam(Node):
 
             same_track = []  # start empty for this colour
             if self.track != []:
-                same_track = self.track[self.track[:, 2] == det.colour]  # extract same colours
+                same_track: np.ndarray = self.track[self.track[:, 2] == det.colour]  # extract same colours
 
             if len(same_track) != 0:  # this spline has been populated with cones
                 neighbourhood = KDTree(same_track[:, :2], leaf_size=self.leaf)
@@ -244,48 +236,23 @@ class EKFSlam(Node):
                 # initialise new landmark
                 self.mu, self.Sigma = init_landmark(det.sense_rb, self.Q, self.mu, self.Sigma)
 
-        # Plotting
-        map_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-        cone_markers: List[Marker] = []
-        header = Header()
-        header.stamp = cone_msg.header.stamp
-        header.frame_id = "map"
+        # TODO: Ordering track boundary cone lines from start to finish
 
-        cv2.drawMarker(
-            map_img,
-            coord_to_img(muR[0], muR[1]).to_tuple(),
-            (255, 255, 255),
-            markerType=cv2.MARKER_SQUARE,
-            markerSize=4,
-            thickness=2,
-        )
+        # publish track msg
+        track_msg = TrackDetectionStamped()
+        track_msg.header.stamp = pose_msg.header.stamp
+        track_msg.header.frame_id = "map"
         for i, cone in enumerate(self.track):
-            if cone[2] == 0:
-                colour = (255, 0, 0)
-            elif cone[2] == 1:
-                colour = (0, 255, 255)
-            elif cone[2] == 2:
-                colour = (0, 100, 255)
-            cv2.drawMarker(
-                map_img,
-                coord_to_img(cone[0], cone[1]).to_tuple(),
-                colour,
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=6,
-                thickness=2,
-            )
-
-            cone_markers.append(cone_marker(cone[0], cone[1], i, header, colour))
             cov_i = i * 2 + 3
-            curr_cov = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
-            cone_markers.append(
-                cov_marker(cone[0], cone[1], i, header, 3 * sqrt(abs(curr_cov[0, 0])), 3 * sqrt(abs(curr_cov[1, 1])))
-            )
 
-        mkrs = MarkerArray()
-        mkrs.markers = cone_markers
-        self.map_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
-        self.markers_publisher.publish(mkrs)
+            curr_cov: np.ndarray = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
+
+            cone_msg = Cone(location=ROSPoint(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
+            cone_cov = curr_cov.flatten().tolist()
+
+            track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+
+        self.slam_publisher.publish(track_msg)
 
 
 def main(args=None):

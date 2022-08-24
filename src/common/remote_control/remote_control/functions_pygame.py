@@ -6,14 +6,14 @@ steering_ratio_left = [-i for i in steering_ratio_right]
 
 
 def bounds(steering: float, throttle: float, brake: float):
-    if steering > 0.5:
-        steering = 0.5
-    if steering < -0.5:
-        steering = -0.5
+    if steering > 1:
+        steering = 1
+    if steering < -1:
+        steering = -1
     if throttle > 1:
         throttle = 1
-    if throttle < 0:
-        throttle = 0
+    if throttle < -1:
+        throttle = -1
     if brake > 1:
         brake = 1
     if brake < 0:
@@ -23,7 +23,6 @@ def bounds(steering: float, throttle: float, brake: float):
 
 def game_elements(win, steering: float, throttle: float, brake: float):
     # window dimensions ((400, 300))
-    pygame.init()
     win.fill((0, 0, 0))
     steering_width = 15
     steering_height = 40

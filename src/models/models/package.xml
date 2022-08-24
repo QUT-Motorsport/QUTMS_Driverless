@@ -9,8 +9,12 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
+    <!-- Packages -->
     <depend>robot_state_publisher</depend>
     <depend>xacro</depend>
+    <!-- Custom packages -->
+    <depend>driverless_common</depend>
+    <depend>transforms</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

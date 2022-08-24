@@ -25,5 +25,9 @@ def generate_launch_description():
                 package="sim_translation",
                 executable="sim_to_cam",
             ),
+            Node(
+                package="sim_translation",
+                executable="sim_to_velodyne",
+            ),
         ]
     )

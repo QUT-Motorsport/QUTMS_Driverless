@@ -17,7 +17,8 @@ class SineController(Node):
         # timed callback
         self.create_timer(self.interval, self.timer_callback)
 
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/sine_driving_command", 1)
+        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "ackermann", 1)
+        self.count = 0
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 

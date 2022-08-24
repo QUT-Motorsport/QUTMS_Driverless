@@ -26,16 +26,18 @@ class SimToOdom(Node):
     def callback(self, odom_msg: Odometry):
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header = odom_msg.header
+        pose_msg.header.frame_id = "base_link"
         pose_msg.pose.pose = odom_msg.pose.pose
-        cov: np.ndarray = np.diag(np.random.rand(6) * 0.0001)  # so make some noise
+        cov: np.ndarray = np.diag(np.random.rand(6) * 0.1)  # so make some noise
         cov = np.reshape(cov, (6, 6))  # should fill in blanks with 0s??
         pose_msg.pose.covariance = cov.flatten()  # 1x36
         self.pose_publisher.publish(pose_msg)
 
         vel_msg = TwistWithCovarianceStamped()
         vel_msg.header = odom_msg.header
+        vel_msg.header.frame_id = "base_link"
         vel_msg.twist.twist = odom_msg.twist.twist
-        cov: np.ndarray = np.diag(np.random.rand(6) * 0.0001)
+        cov: np.ndarray = np.diag(np.random.rand(6) * 0.1)
         cov = np.reshape(cov, (6, 6))
         vel_msg.twist.covariance = cov.flatten()
         self.vel_publisher.publish(vel_msg)

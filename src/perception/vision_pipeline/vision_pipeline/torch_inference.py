@@ -16,6 +16,8 @@ def torch_init(conf_thresh: float, model_path: str, repo_path: str):
         # force_reload=True, # for fixing bad cache
     )
     model.conf = conf_thresh
+    model.iou = 0.1
+    model.agnostic = True
     return model
 
 

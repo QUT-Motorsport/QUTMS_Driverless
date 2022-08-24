@@ -12,9 +12,11 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
+from builtin_interfaces.msg import Time
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
+from std_msgs.msg import Header
 
 from .rect import Rect, draw_box
 
@@ -29,7 +31,7 @@ CAMERA_FOV = 110  # degrees
 Colour = Tuple[int, int, int]
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
-ORANGE_DISP_COLOUR: Colour = (0, 165, 255)  # bgr - orange
+ORANGE_DISP_COLOUR: Colour = (0, 80, 255)  # bgr - orange
 
 # display_colour
 CONE_DISPLAY_PARAMETERS = [
@@ -81,7 +83,7 @@ def cone_msg(
     location = Point(
         x=distance * cos(radians(bearing)),
         y=distance * sin(radians(bearing)),
-        z=0.0,
+        z=-0.6,
     )
 
     return Cone(
@@ -91,6 +93,8 @@ def cone_msg(
 
 
 class VisionProcessor(Node):
+    start: float = 0.0
+
     def __init__(
         self,
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
@@ -105,7 +109,7 @@ class VisionProcessor(Node):
 
         synchronizer = message_filters.TimeSynchronizer(
             fs=[colour_sub, colour_camera_info_sub, depth_sub],
-            queue_size=30,
+            queue_size=20,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -121,7 +125,8 @@ class VisionProcessor(Node):
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")
 
-        start: float = time.time()  # begin a timer
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        start: float = time.perf_counter()  # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
@@ -149,15 +154,23 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
+        fix_my_stamp_nano = colour_msg.header.stamp.nanosec + 500000000
+        fix_my_stamp_sec = colour_msg.header.stamp.sec + 60108
+        if fix_my_stamp_nano > 1000000000:
+            fix_my_stamp_nano -= 1000000000
+            fix_my_stamp_sec += 1
+
         detection_msg = ConeDetectionStamped(
-            header=colour_msg.header,
+            header=Header(frame_id="zed2i", stamp=Time(sec=fix_my_stamp_sec, nanosec=fix_my_stamp_nano)),
             cones=detected_cones,
         )
-
         self.detection_publisher.publish(detection_msg)
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8"))
+        debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
+        debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
+        self.debug_img_publisher.publish(debug_msg)
 
-        self.get_logger().debug("Time: " + str(time.time() - start) + "\n")  # log time
+        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.start = time.perf_counter()
 
 
 ## OpenCV thresholding
@@ -191,6 +204,7 @@ def main_cv2(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_hsv_bounding_boxes, enable_cv_filters=True)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
@@ -224,6 +238,7 @@ def main_torch(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_torch_bounding_boxes)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
@@ -259,4 +274,5 @@ def main_trt(args=None):
     rclpy.init(args=args)
     node = VisionProcessor(get_trt_bounding_boxes)
     rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
