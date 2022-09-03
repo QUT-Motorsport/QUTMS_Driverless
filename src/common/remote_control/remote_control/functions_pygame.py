@@ -6,10 +6,10 @@ steering_ratio_left = [-i for i in steering_ratio_right]
 
 
 def bounds(steering: float, throttle: float, brake: float):
-    if steering > 1:
-        steering = 1
-    if steering < -1:
-        steering = -1
+    if steering > 0.5:
+        steering = 0.5
+    if steering < -0.5:
+        steering = -0.5
     if throttle > 1:
         throttle = 1
     if throttle < -1:

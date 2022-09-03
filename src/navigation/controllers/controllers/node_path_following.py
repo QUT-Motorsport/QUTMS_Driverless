@@ -79,9 +79,9 @@ def wrap_to_pi(angle: float) -> float:
 
 class PurePursuit(Node):
     path: np.ndarray = []
-    Kp_ang: float = 12
-    Kp_vel: float = 0.1
-    vel_max: float = 19  # m/s
+    Kp_ang: float = 6
+    Kp_vel: float = 0.08
+    vel_max: float = 18  # m/s
     vel_min: float = 0.5  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
