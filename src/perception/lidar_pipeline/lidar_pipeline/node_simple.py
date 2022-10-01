@@ -36,7 +36,7 @@ class LidarProcessing(Node):
     def __init__(self):
         super().__init__("lidar_processor")
 
-        self.create_subscription(PointCloud2, "fsds/lidar/Lidar1", self.callback, 10)
+        self.create_subscription(PointCloud2, "/lidar/Lidar1", self.callback, 10)
 
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
 
