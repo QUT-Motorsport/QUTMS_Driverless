@@ -81,7 +81,7 @@ def cone_msg(
 ) -> Cone:
 
     location = Point(
-        x=distance * cos(radians(bearing)),
+        x=distance * cos(radians(bearing)) - 0.1,  # offset distance from camera to centre of car
         y=distance * sin(radians(bearing)),
         z=-0.6,
     )
@@ -146,7 +146,7 @@ class VisionProcessor(Node):
 
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
-            if isnan(distance) or isinf(distance) or distance > 10:
+            if isnan(distance) or isinf(distance) or distance > 10 or distance < 0.5:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
@@ -187,7 +187,7 @@ def main_cv2(args=None):
     HSV_CONE_DETECTION_PARAMETERS = [
         (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
         (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
-        (ORANGE_HSV_THRESH, Cone.ORANGE_SMALL, ORANGE_DISP_COLOUR),
+        (ORANGE_HSV_THRESH, Cone.ORANGE_BIG, ORANGE_DISP_COLOUR),
     ]
 
     def get_hsv_bounding_boxes(

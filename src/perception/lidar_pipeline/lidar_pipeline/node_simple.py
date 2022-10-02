@@ -21,7 +21,7 @@ from typing import List
 def cone_msg(x_coord: float, y_coord: float) -> Cone:
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location: Point = Point(
-        x=x_coord,
+        x=x_coord + 1.65,  # offset distance from lidar to centre of car
         y=y_coord,
         z=0.0,
     )
