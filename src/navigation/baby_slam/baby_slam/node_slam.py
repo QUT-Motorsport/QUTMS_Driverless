@@ -134,40 +134,27 @@ class EKFSlam(Node):
     mu = np.array([3.0, 0.0, 0.0])  # initial pose
     Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
     track: np.ndarray = []
-    # blue_indexes: List[int] = []
-    # yellow_indexes: List[int] = []
-    # orange_indexes: List[int] = []
 
     def __init__(self):
         super().__init__("ekf_slam")
 
         # sync subscribers
-        # pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
-        # vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        # lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
-        # vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
-        # )
-        # vision_synchronizer.registerCallback(self.callback)
-        # lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[pose_sub, detection_sub], queue_size=20, slop=0.2
-        # )
-        # lidar_synchronizer.registerCallback(self.callback)
-
-        self.create_subscription(
-            PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance", self.pose_callback, 1
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
+        vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[pose_sub, vision_sub], queue_size=20, slop=0.3
         )
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        self.last_pose = PoseWithCovarianceStamped()
+        vision_synchronizer.registerCallback(self.callback)
+        lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[pose_sub, lidar_sub], queue_size=20, slop=0.2
+        )
+        lidar_synchronizer.registerCallback(self.callback)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
 
         self.get_logger().info("---SLAM node initialised---")
-
-    def pose_callback(self, pose_msg: PoseWithCovarianceStamped):
-        self.last_pose = pose_msg
 
     # remove landmarks we haven't seen in a while
     def flush_map(self):
@@ -205,24 +192,7 @@ class EKFSlam(Node):
             # remove landmarks from track
             self.track = np.delete(self.track, duplicated_idxs, axis=0)
 
-    def get_neighbourhood(self, det: ConeProps, mapx: float, mapy: float) -> bool:
-        on_map = False
-
-        neighbourhood = KDTree(self.track[:, :2], leaf_size=self.leaf)
-        check = np.reshape([mapx, mapy], (1, -1))  # turn into a 2D row array
-        ind = neighbourhood.query_radius(check, r=self.radius)  # check neighbours in radius
-        close = ind[0]  # index from the single colour list
-        if close.size != 0:
-            on_map = True
-            self.mu, self.Sigma, self.track = update(self.track, close[0], det.sense_rb, self.Q, self.mu, self.Sigma)
-            if det.colour != Cone.UNKNOWN:  # updated cone was not a lidar detection
-                self.track[close[0]][2] = det.colour  # override colour
-
-        return on_map
-
-    # def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
-    def callback(self, detection_msg: ConeDetectionStamped):
-        pose_msg = self.last_pose
+    def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # predict car location (pretty accurate odom)
@@ -240,7 +210,17 @@ class EKFSlam(Node):
             on_map = False  # by default its a new detection
 
             if len(self.track) != 0:
-                on_map = self.get_neighbourhood(det, mapx, mapy)
+                neighbourhood = KDTree(self.track[:, :2], leaf_size=self.leaf)
+                check = np.reshape([mapx, mapy], (1, -1))  # turn into a 2D row array
+                ind = neighbourhood.query_radius(check, r=self.radius)  # check neighbours in radius
+                close = ind[0]  # index from the single colour list
+                if close.size != 0:
+                    on_map = True
+                    self.mu, self.Sigma, self.track = update(
+                        self.track, close[0], det.sense_rb, self.Q, self.mu, self.Sigma
+                    )
+                    if det.colour != Cone.UNKNOWN:  # updated cone was not a lidar detection
+                        self.track[close[0]][2] = det.colour  # override colour
 
             if not on_map:
                 if self.track == []:  # first in this list
