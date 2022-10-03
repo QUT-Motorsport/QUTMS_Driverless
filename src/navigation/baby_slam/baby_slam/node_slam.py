@@ -130,7 +130,7 @@ class EKFSlam(Node):
     Q = np.diag([1, 0.8]) ** 2  # detections are a bit meh
     radius = 1.5  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-
+    in_frames = 15  # minimum frames that cones have to be seen in
     mu = np.array([3.0, 0.0, 0.0])  # initial pose
     Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
     track: np.ndarray = []
@@ -143,7 +143,7 @@ class EKFSlam(Node):
         vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[pose_sub, vision_sub], queue_size=20, slop=0.3
+            fs=[pose_sub, vision_sub], queue_size=20, slop=0.2
         )
         vision_synchronizer.registerCallback(self.callback)
         lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
@@ -174,7 +174,7 @@ class EKFSlam(Node):
         behind_idxs = np.where(dot_products < 0)[0]
 
         # get indexes of landmarks we haven't seen in a while
-        noisy_idxs = np.where(self.track[:, 3] < 10)[0]
+        noisy_idxs = np.where(self.track[:, 3] < self.in_frames)[0]
 
         # remove noisy and behind landmarks
         idxs_to_remove = np.concatenate((behind_idxs, noisy_idxs))  # gets any indexes behind and noisy
