@@ -107,9 +107,10 @@ class VisionProcessor(Node):
         colour_camera_info_sub = message_filters.Subscriber(self, CameraInfo, "/zed2i/zed_node/rgb/camera_info")
         depth_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/depth/depth_registered")
 
-        synchronizer = message_filters.TimeSynchronizer(
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[colour_sub, colour_camera_info_sub, depth_sub],
-            queue_size=20,
+            queue_size=10,
+            slop=0.1,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -154,14 +155,8 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
-        fix_my_stamp_nano = colour_msg.header.stamp.nanosec + 500000000
-        fix_my_stamp_sec = colour_msg.header.stamp.sec + 60108
-        if fix_my_stamp_nano > 1000000000:
-            fix_my_stamp_nano -= 1000000000
-            fix_my_stamp_sec += 1
-
         detection_msg = ConeDetectionStamped(
-            header=Header(frame_id="zed2i", stamp=Time(sec=fix_my_stamp_sec, nanosec=fix_my_stamp_nano)),
+            header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),
             cones=detected_cones,
         )
         self.detection_publisher.publish(detection_msg)
