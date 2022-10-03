@@ -49,7 +49,6 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
 
     rvwp_index: int = (min_index + rvwp_lookahead) % len(path)
     rvwp: List[float] = path[rvwp_index]
-    print(rvwp)
 
     return rvwp
 
@@ -86,8 +85,8 @@ class PurePursuit(Node):
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
-    pos_RVWP_LAD: float = 45.0
-    vel_RVWP_LAD: float = pos_RVWP_LAD + 30.0
+    pos_RVWP_LAD: int = 45
+    vel_RVWP_LAD: int = pos_RVWP_LAD + 30
 
     def __init__(self):
         super().__init__("pure_pursuit")
