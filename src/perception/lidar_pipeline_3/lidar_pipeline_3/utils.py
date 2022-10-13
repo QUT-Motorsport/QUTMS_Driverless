@@ -1,3 +1,4 @@
+from codecs import utf_16_be_decode
 import datetime
 import getopt
 import logging
@@ -11,9 +12,14 @@ from typing import Any, Tuple
 
 def get_timestamp() -> Tuple[str, str, str]:
     datetimestamp: str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
-    timestamp: str = datetimestamp[:10]
-    datestamp: str = datetimestamp[11:]
+    datestamp: str = datetimestamp[:10]
+    timestamp: str = datetimestamp[11:]
     return (timestamp, datestamp, datetimestamp)
+
+
+def create_dir(dir) -> None:
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
 
 
 class Config:
@@ -34,7 +40,9 @@ class Config:
         self._datestamp: str
         self._datetimestamp: str
         self._timestamp, self._datestamp, self._datetimestamp = get_timestamp()
-        self._runtime_dir = const.OUTPUT_DIR + "/" + self.datetimestamp
+        self._runtime_dir: str = const.OUTPUT_DIR + "/" + self.datetimestamp
+        self._figures_dir: str = self.runtime_dir + const.FIGURES_DIR
+        self._image_dir: str = ""
 
         # Logger
         self._logger: Logger = logging.getLogger(__name__)
@@ -102,6 +110,8 @@ class Config:
     @create_figures.setter
     def create_figures(self, value) -> None:
         self._create_figures = value
+        if value:
+            self.setup_figures_dir()
 
     @property
     def show_figures(self) -> bool:
@@ -196,6 +206,22 @@ class Config:
         return self._runtime_dir
 
     @property
+    def figures_dir(self) -> str:
+        """
+        Returns:
+            str: Figures directory
+        """
+        return self._figures_dir
+
+    @property
+    def image_dir(self) -> str:
+        """
+        Returns:
+            str: Image directory
+        """
+        return self._image_dir
+
+    @property
     def logger(self) -> Logger:
         """
         Returns:
@@ -205,13 +231,21 @@ class Config:
 
     def setup_output_dir(self):
         """Create output directory if it does not exist"""
-        if not os.path.isdir(const.OUTPUT_DIR):
-            os.mkdir(const.OUTPUT_DIR)
+        create_dir(const.OUTPUT_DIR)
 
     def setup_runtime_dir(self):
         """Create runtime directory if it does not exist"""
-        if not os.path.isdir(self.runtime_dir):
-            os.mkdir(self.runtime_dir)
+        create_dir(self.runtime_dir)
+
+    def setup_figures_dir(self):
+        """Create figures directory if it does not exist"""
+        create_dir(self.figures_dir)
+
+    def setup_image_dir(self):
+        """Create image directory if it does not exist"""
+        image_path = f"{self.figures_dir}/{get_timestamp()[0]}"
+        create_dir(image_path)
+        self._image_dir = image_path
 
     def setup_logging(self):
         """Initialise logging parameters and log format"""
@@ -256,8 +290,10 @@ class Config:
             elif opt == "--create_figures":
                 self.create_figures = True
             elif opt == "--show_figures":
+                self.create_figures = True
                 self.show_figures = True
             elif opt == "--animate_figures":
+                self.create_figures = True
                 self.animate_figures = True
             elif opt == "--plot_car":
                 self.plot_car = True
