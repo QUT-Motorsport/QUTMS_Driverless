@@ -16,6 +16,7 @@ import ros2_numpy as rnp
 
 from . import constants as const
 from . import utils
+from .library import lidar_manager
 
 # For typing
 from .utils import Config
@@ -44,20 +45,7 @@ class ConeDetectionNode(Node):
         dtype_list = rnp.point_cloud2.fields_to_dtype(pc_msg.fields, pc_msg.point_step)  # x y z intensity ring
         point_cloud = np.frombuffer(pc_msg.data, dtype_list)
 
-        # Remove points behind car
-        point_cloud = point_cloud[point_cloud["x"] > 0]
-
-        # Compute point normals
-        point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
-
-        # Remove points that are outside of range, have a norm of 0, or are behind the car
-        mask = point_norms <= const.LIDAR_RANGE  # & (point_norms != 0) # & (point_cloud['x'] < 0)
-        point_norms = point_norms[mask]
-        point_cloud = point_cloud[mask]
-
-        # Number of points in point_cloud
-        point_count = point_cloud.shape[0]
-        self.config.logger.info(f"{point_count} points remain after processing point cloud")
+        cone_locations = lidar_manager.locate_cones(self.config, point_cloud)
 
         duration = time.perf_counter() - start_time
         self.average_runtime = (self.average_runtime * (self.iteration - 1) + duration) / self.iteration
@@ -100,10 +88,10 @@ def main(args=sys.argv[1:]):
 
     # Init data stream
     if config.data_path:
-        # Utilise local data source
+        # Use local data source
         local_data_stream()
     else:
-        # Utilise real-time source
+        # Use real-time source
         real_time_stream(args, config)
 
 
