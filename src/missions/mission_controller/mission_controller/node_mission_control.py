@@ -40,11 +40,13 @@ class MissionControl(Node):
             if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
                 self.target_mission = CAN_TO_MISSION_TYPE[mission]
                 print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
-                # WE WANT TO CHANGE THIS TO A SUBPROCESS
+                # WE WANT TO CHANGE THIS TO A SUBPROCESS?
 
         if can_msg.data == "ready_to_drive":
             self.get_logger().info("Ready to drive")
-            self.publisher.publish(State(1))
+            self.publisher.publish(State(r2d=True))
+            self.publisher.publish(Reset(reset=True))
+            # START TRACTIVE SYSTEM CONTROLLER AS SUBPROCESS?
 
 
 def main(args=None):
