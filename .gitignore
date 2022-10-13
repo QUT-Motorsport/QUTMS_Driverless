@@ -168,3 +168,4 @@ cython_debug/
 /src/perception/lidar_pipeline_2/lidar_pipeline_2/exports/*
 /src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library/total_least_squares.html
 /src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library/total_least_squares.c
+/src/perception/lidar_pipeline_3/lidar_pipeline_3/output
