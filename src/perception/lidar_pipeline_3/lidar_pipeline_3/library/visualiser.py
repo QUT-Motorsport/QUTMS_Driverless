@@ -1,19 +1,20 @@
+import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .. import constants as const
 from .. import utils
-from ..constants import Colour
 
 
 def init_plot_2D(
     title,
     xlabel,
     ylabel,
-    background_c=Colour.LIGHT_GREY.value,
-    title_c=Colour.BLUE.value,
-    face_c=Colour.DARK_GREY.value,
-    label_c=Colour.BLUE.value,
-    tick_c=Colour.MINT.value,
+    background_c=const.light_grey,
+    title_c=const.blue,
+    face_c=const.dark_grey,
+    label_c=const.blue,
+    tick_c=const.mint,
 ):
 
     # Initialise figure
@@ -62,7 +63,47 @@ def plot_point_cloud_2D(config, point_cloud, name):
     ax.set_xlim([-max_limit, max_limit])
     ax.set_ylim([-max_limit, max_limit])
 
-    add_colourbar(fig, plot, "Point Intensity", Colour.BLUE.value, Colour.MINT.value)
+    add_colourbar(fig, plot, "Point Intensity", const.blue, const.mint)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_segments_2D(config, point_cloud, segments, name):
+    fig, ax = init_plot_2D(
+        f"Point Cloud Discretised into {abs(segments.min()) + segments.max() + 1} Segments", "X", "Y"
+    )
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=(segments % len(const.colours_01)),
+        cmap=mpl_colors.ListedColormap(const.colours_01),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_bins_2D(config, point_cloud, bins, name):
+    fig, ax = init_plot_2D(f"Segments Discretised into a Maximum of {bins.max()} Bins", "X", "Y")
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=(bins % len(const.colours_01)),
+        cmap=mpl_colors.ListedColormap(const.colours_01),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
 
     # Save Figure
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)

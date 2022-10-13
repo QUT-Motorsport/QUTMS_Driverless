@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from .. import constants as const
 from ..utils import Config  # For typing
@@ -8,7 +9,6 @@ from ..utils import Config  # For typing
 
 def locate_cones(config, point_cloud):
     config.logger.info(f"Point Cloud received with {point_cloud.shape[0]} points")
-
     if config.create_figures:
         config.setup_image_dir()
         vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
@@ -23,12 +23,17 @@ def locate_cones(config, point_cloud):
     mask = point_norms <= const.LIDAR_RANGE  # & (point_norms != 0)
     point_norms = point_norms[mask]
     point_cloud = point_cloud[mask]
-
-    # Number of points in point_cloud
     config.logger.info(f"{point_cloud.shape[0]} points remain after filtering point cloud")
+
+    segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
+    config.logger.info(f"DONE: Segments and Bins")
 
     if config.create_figures:
         vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
+        vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
+        vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
+        # vis.plot_segments_3D(config, point_cloud, segments, name)
+        # vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
 
-    if config.show_figures:
-        plt.show()
+        if config.show_figures:
+            plt.show()
