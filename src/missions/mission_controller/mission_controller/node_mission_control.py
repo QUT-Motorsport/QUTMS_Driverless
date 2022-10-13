@@ -2,6 +2,8 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from ament_index_python import get_package_share_directory
+from ros2launch.api.api import launch_a_launch_file 
 
 from driverless_msgs.msg import Can, Reset, State
 
@@ -10,8 +12,11 @@ from driverless_msgs.srv import SelectMission
 from .mission_constants import CAN_TO_MISSION_TYPE
 
 
+mission_pkg = get_package_share_directory("missions")  # path to the missions package
+# ts_controller_pkg = get_package_share_directory("tractive_system_controller")  # path to the tractive_system_controller package    
+
 class MissionControl(Node):
-    target_mission: str
+    target_mission: str = "inspection"  # default mission
 
     def __init__(self):
         super().__init__("mission_control")
@@ -24,11 +29,11 @@ class MissionControl(Node):
         self.create_service(SelectMission, "select_mission", self.gui_srv)
 
         self.get_logger().info("---Mission Control node initialised---")
-
+        
     def gui_srv(self, request, response):  # service callback from terminal selection
         self.get_logger().info("Selected mission: " + request.mission)
-        self.target_mission = request.mission
-        print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
+        self.target_mission = request.mission       
+        launch_a_launch_file(launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={})
         return response
 
     def callback(self, can_msg: Can):
@@ -39,14 +44,14 @@ class MissionControl(Node):
             mission: int = can_msg.data  # extract msg data
             if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
                 self.target_mission = CAN_TO_MISSION_TYPE[mission]
-                print(str(self.target_mission))  # triggers a 'I/O' event in the launch file
-                # WE WANT TO CHANGE THIS TO A SUBPROCESS?
-
+                launch_a_launch_file(launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={})
+        
         if can_msg.data == "ready_to_drive":
             self.get_logger().info("Ready to drive")
             self.publisher.publish(State(r2d=True))
             self.publisher.publish(Reset(reset=True))
-            # START TRACTIVE SYSTEM CONTROLLER AS SUBPROCESS?
+
+            # launch_a_launch_file(ts_controller_pkg + "/ts_controller.launch.py")
 
 
 def main(args=None):
