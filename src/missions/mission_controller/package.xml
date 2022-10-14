@@ -12,6 +12,8 @@
     <!-- Custom packages -->
     <depend>missions</depend>
     <depend>models</depend>
+    <depend>steering_actuator</depend>
+    <depend>tractive_system_controller</depend>
 
     <export>
         <build_type>ament_python</build_type>
