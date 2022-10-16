@@ -18,6 +18,7 @@ mission_controller_pkg = get_package_share_directory("mission_controller")  # pa
 
 class MissionControl(Node):
     target_mission: str = "inspection"  # default mission
+    mission_launched: bool = False
 
     def __init__(self):
         super().__init__("mission_control")
@@ -32,12 +33,14 @@ class MissionControl(Node):
         self.get_logger().info("---Mission Control node initialised---")
 
     def gui_srv(self, request, response):  # service callback from terminal selection
-        self.get_logger().info("Selected mission: " + request.mission)
-        self.target_mission = request.mission
-        launch_a_launch_file(
-            launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
-        )
-        return response
+        self.get_logger().info("Selected: " + request.mission)
+        if request.mission != "R2D":
+            self.target_mission = request.mission
+            launch_a_launch_file(
+                launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
+            )
+            return response
+       
 
     def callback(self, can_msg: Can):
         # first, listen to CAN steering wheel buttons to select mission from steering wheel display
@@ -47,11 +50,12 @@ class MissionControl(Node):
             mission: int = can_msg.data[2]  # extract msg data
             if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
                 self.target_mission = CAN_TO_MISSION_TYPE[mission]
+                self.mission_launched = True
                 launch_a_launch_file(
                     launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
                 )
         
-        if can_msg.id == "VCU_Heartbeat_ID":
+        if can_msg.id == "VCU_Heartbeat_ID" and self.mission_launched:
             if can_msg.data[0] == "VCU_STATE_RTD_BTN_DVL":
                 self.get_logger().info("Ready to drive")
                 self.publisher.publish(State(r2d=True))
