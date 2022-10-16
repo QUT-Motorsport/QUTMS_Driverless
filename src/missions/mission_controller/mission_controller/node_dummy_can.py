@@ -29,26 +29,17 @@ class DummyCAN(Node):
         if self.current_msg == 0:
             can_msg = Can()
             can_msg.id = 0
-            can_msg.data = [0]  # state '0' not ready
+            can_msg.data = [0,0,2] 
             self.publisher.publish(can_msg)
             self.current_msg = 1
-            self.get_logger().info("Car state: not ready")
+            self.get_logger().info("Mission selected: " + str(can_msg.data[2]))
 
         elif self.current_msg == 1:
             can_msg = Can()
-            can_msg.id = 0
-            can_msg.data = [1]  # state '1' r2d button pressed
+            can_msg.id = 1
+            can_msg.data = [0]  # state '1' r2d button pressed
             self.publisher.publish(can_msg)
-            self.current_msg = 2
             self.get_logger().info("Car state: ready")
-
-        elif self.current_msg == 2:
-            can_msg = Can()
-            can_msg.id = 0
-            can_msg.data = [1]  # state '1' r2d button pressed
-            self.publisher.publish(can_msg)
-            self.get_logger().info("Car state: driving")
-
 
 # main run when script is started in the terminal
 def main(args=None):
