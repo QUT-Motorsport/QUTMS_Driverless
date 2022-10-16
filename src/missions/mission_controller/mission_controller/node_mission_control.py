@@ -6,6 +6,9 @@ from ros2launch.api.api import launch_a_launch_file
 import rclpy
 from rclpy.node import Node
 
+from std_msgs.msg import Header
+from builtin_interfaces.msg import Time
+
 from driverless_msgs.msg import Can, Reset, State
 
 from driverless_msgs.srv import SelectMission
@@ -46,23 +49,25 @@ class MissionControl(Node):
         # first, listen to CAN steering wheel buttons to select mission from steering wheel display
         # check for ID of steering wheel data
         # save target mission
-        if can_msg.id == "SW_Heartbeat_ID":  # idk about what can IDs are
+        if can_msg.id == 0:  # idk about what can IDs are
             mission: int = can_msg.data[2]  # extract msg data
+            print(mission)
             if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
-                self.target_mission = CAN_TO_MISSION_TYPE[mission]
+                self.target_mission = CAN_TO_MISSION_TYPE[mission].value
                 self.mission_launched = True
                 launch_a_launch_file(
                     launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
                 )
         
-        if can_msg.id == "VCU_Heartbeat_ID" and self.mission_launched:
+        if can_msg.id == 1 and self.mission_launched:
             if can_msg.data[0] == "VCU_STATE_RTD_BTN_DVL":
                 self.get_logger().info("Ready to drive")
-                self.publisher.publish(State(r2d=True))
-                self.publisher.publish(Reset(reset=True))
-
+                self.publisher.publish(Reset(
+                    header=Header(timestamp=Time(sec=time.time())),
+                    reset=True))
                 launch_a_launch_file(mission_controller_pkg + "/hardware_control.launch.py")
 
+        self.get_logger().info("State: " + self.target_mission)
 
 def main(args=None):
     rclpy.init(args=args)
