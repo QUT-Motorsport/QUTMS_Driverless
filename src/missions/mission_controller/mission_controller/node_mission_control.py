@@ -43,20 +43,21 @@ class MissionControl(Node):
         # first, listen to CAN steering wheel buttons to select mission from steering wheel display
         # check for ID of steering wheel data
         # save target mission
-        if can_msg.data == "mission_selection":  # idk about what can IDs are
-            mission: int = can_msg.data  # extract msg data
+        if can_msg.id == "SW_Heartbeat_ID":  # idk about what can IDs are
+            mission: int = can_msg.data[2]  # extract msg data
             if mission in CAN_TO_MISSION_TYPE:  # check if its an actual value
                 self.target_mission = CAN_TO_MISSION_TYPE[mission]
                 launch_a_launch_file(
                     launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
                 )
+        
+        if can_msg.id == "VCU_Heartbeat_ID":
+            if can_msg.data[0] == "VCU_STATE_RTD_BTN_DVL":
+                self.get_logger().info("Ready to drive")
+                self.publisher.publish(State(r2d=True))
+                self.publisher.publish(Reset(reset=True))
 
-        if can_msg.data == "ready_to_drive":
-            self.get_logger().info("Ready to drive")
-            self.publisher.publish(State(r2d=True))
-            self.publisher.publish(Reset(reset=True))
-
-            launch_a_launch_file(mission_controller_pkg + "/hardware_control.launch.py")
+                launch_a_launch_file(mission_controller_pkg + "/hardware_control.launch.py")
 
 
 def main(args=None):
