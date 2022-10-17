@@ -1,3 +1,6 @@
+#define QUTMS_CAN_VCU
+#define QUTMS_CAN_DVL
+
 #include <iostream>
 
 #include "CAN_DVL.h"
@@ -46,6 +49,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
+        bool update = false;  // check if we need to update state
+
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -59,6 +64,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 */
                 uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
                 this->can_pub->publish(this->_d_2_f(0x00, false, p));
+                //
+                this->run_fsm();
 
             } break;
 
@@ -79,23 +86,32 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // 			this->res_status.radio_quality);
             } break;
 
-                // case (SW_Heartbeat_ID): { // IDK how to get this properly
-                //     // Steering Wheel CAN msg
-                //     if (ros_state.state == DVL_STATES::DVL_STATE_SELECT_MISSION) {
-                //         // Only send mission if it's in START state
-                //         this->ros_state.mission = msg.data[2]; // not sure which data byte the mission is
-                //         ros_state.state = DVL_STATES::DVL_STATE_CHECK_EBS;
-                //     }
-                // } break;
+            case (SW_Heartbeat_ID): {  // IDK how to get this properly
+                // Steering Wheel CAN msg
+                if (ros_state.state == DVL_STATES::DVL_STATE_SELECT_MISSION) {
+                    // Only send mission if it's in START state
+                    this->ros_state.mission = msg.data[2];  // not sure which data byte the mission is
+                    ros_state.state = DVL_STATES::DVL_STATE_CHECK_EBS;
+                }
+            } break;
 
-                // case(VCU_Heartbeat_ID & ~(0xF)): { // No idea which VCU ID this is
-                //     // VCU CAN msg
-                //     uint8_t vcu_state = msg.data[0];
+            case (VCU_Heartbeat_ID & ~(0xF)): {
+                // ignore type
+                uint8_t VCU_ID = msg.id & 0xF;
+                // data vector to uint8_t array
+                uint8_t data[8];
+                for (int i = 0; i < 8; i++) {
+                    data[i] = msg.data[i];
+                }
 
-                //     // LOGIC HERE TO UPDATE AS STATE
-                //     //  not this->as_status.state = vcu_state;
-
-                // } break;
+                if (VCU_ID == VCU_ID_CTRL) {
+                    Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
+                    this->run_fsm();
+                } else if (VCU_ID == VCU_ID_EBS) {
+                    Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
+                    this->run_fsm();
+                }
+            } break;
 
             default:
                 break;
@@ -104,62 +120,63 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
         // Validate driving state
-        if (this->ros_state.state == DVL_STATES::DVL_STATE_DRIVING) {
-            this->DVL_heartbeat.torqueRequest = msg.acceleration;  // Chaos
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
+            this->DVL_heartbeat.torqueRequest = msg.acceleration;
         } else {
-            this->DVL_heartbeat.torqueRequest = 0;
+            this->DVL_heartbeat.torqueRequest = 0.0;
         }
     }
 
     void heartbeat_callback() {
+        // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
-
+        // ROScube publisher
+        this->ros_state.header.stamp = this->now();
         this->state_pub->publish(this->ros_state);
     }
 
     void run_fsm() {
-        if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
-            DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
             /*
             SW heartbeat shit here
             */
-
             // MANUAL
             // DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
             // SELECTED
-            DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
-
-            DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
-            if (CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
-                DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
+            this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
+            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
-            if (RES_status.bt_k3) {
-                DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
+            if (this->RES_status.bt_k3) {
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
             }
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
-            if (EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
-                DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
             // if (stationary || time elapsed) {
             //     DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             // }
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
             // whatever
-        } else if (DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
+        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
             // whatever
         }
     }
 
    public:
     ASSupervisor() : Node("tractive_system_controller") {
-        // setup states
+        // Setup states
         this->ros_state.state = DVL_STATES::DVL_STATE_START;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
+        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
@@ -172,14 +189,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         if (this->can_pub == nullptr || this->can_sub == nullptr) {
             RCLCPP_ERROR(this->get_logger(), "Failed to create CAN topic interactants");
-        } else {
-            RCLCPP_DEBUG(this->get_logger(), "Done");
         }
 
         // State
         RCLCPP_DEBUG(this->get_logger(), "Initalising state interactants...");
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("as_status", 10);
-        RCLCPP_DEBUG(this->get_logger(), "Done");
 
         // RES
         RCLCPP_INFO(this->get_logger(), "Initialising RES receiver...");
@@ -196,14 +210,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Ackermann
         RCLCPP_DEBUG(this->get_logger(), "Initalising ackermann interactants...");
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-            "ackermann", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
-        RCLCPP_DEBUG(this->get_logger(), "Done");
+            "/driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         RCLCPP_DEBUG(this->get_logger(), "Creating heartbeat timer...");
         this->timer_ =
             this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::heartbeat_callback, this));
-        RCLCPP_DEBUG(this->get_logger(), "Done");
     }
 };
 

@@ -1,3 +1,5 @@
+std_msgs/Header header
+
 uint8 state
 # use enum below
 uint8 START=0
