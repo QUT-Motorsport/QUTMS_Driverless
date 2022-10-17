@@ -2,6 +2,7 @@
 #include "can_interface.hpp"
 #include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -30,21 +31,28 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::pair<uint32_t, uint32_t> accelerations;
     std::pair<int32_t, int32_t> limits;
     c5e_config_t defaults;
-    driverless_msgs::msg::Can _frame;
 
-    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
 
-    void canbus_callback(const driverless_msgs::msg::Can msg) { this->_frame = msg; }
+    driverless_msgs::msg::State state;
+
+    void state_callback(const driverless_msgs::msg::State msg) {this->state = msg;}
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
-        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
-        int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
+        // Validate driving state
+        if (this->state.state == driverless_msgs::msg::State::DRIVING) {
+            float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
+            int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
-        RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-        RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
-        this->target_position(steeringDemandStepper);
+            RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
+            RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+            this->target_position(steeringDemandStepper);
+        }
+        else {
+            this->target_position(0);
+        }
     }
 
     rcl_interfaces::msg::SetParametersResult parameter_callback(const std::vector<rclcpp::Parameter> &parameters) {
@@ -81,8 +89,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->declare_parameter<int>("d_velocity", 0);
 
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
-        this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "canbus_rosbound", 10, std::bind(&SteeringActuator::canbus_callback, this, _1));
+        this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
+            "as_status", 10, std::bind(&SteeringActuator::state_callback, this, _1));
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
             "driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
 
