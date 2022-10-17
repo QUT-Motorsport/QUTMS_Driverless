@@ -17,7 +17,7 @@ using std::placeholders::_1;
 
 class ASSupervisor : public rclcpp::Node, public CanInterface {
    private:
-    DVL_HeartbeatState_t state;
+    DVL_HeartbeatState_t can_state;
 
     // Can publisher and subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
@@ -26,8 +26,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
+    
+    rclcpp::TimerBase::SharedPtr timer_;
 
-    driverless_msgs::msg::State as_status;
+    driverless_msgs::msg::State ros_state;
     driverless_msgs::msg::RES res_status;
 
     rclcpp::Time _internal_status_time;
@@ -74,8 +76,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             case (SW_Heartbeat_ID): { // IDK how to get this properly
                 // Steering Wheel CAN msg
-                this->as_status.mission = msg.data[2]; // not sure which data byte the mission is
-
+                if (ros_state.state == DVL_STATES::DVL_STATE_SELECT_MISSION) {
+                    // Only send mission if it's in START state
+                    this->ros_state.mission = msg.data[2]; // not sure which data byte the mission is
+                    ros_state.state = DVL_STATES::DVL_STATE_CHECK_EBS;
+                }
             } break;
 
             case(VCU_Heartbeat_ID | id): { // No idea which VCU ID this is
@@ -94,22 +99,20 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
         // Validate driving state
-        if (this->as_status.state == driverless_msgs::msg::State::AS_DRIVING){
-            this->state.torqueRequest = msg.acceleration;  // Chaos
+        if (this->ros_state.state == DVL_STATES::DVL_STATE_DRIVING){
+            this->can_state.torqueRequest = msg.acceleration;  // Chaos
         }
         else{
-            this->state.torqueRequest = 0;
+            this->can_state.torqueRequest = 0;
         }
     }
 
     void heartbeat_callback() {
-        auto heartbeat = Compose_DVL_Heartbeat(&this->state);
+        auto heartbeat = Compose_DVL_Heartbeat(&this->can_state);
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
 
-        this->state_pub->publish(this->as_status);
+        this->state_pub->publish(this->ros_state);
     }
-
-    rclcpp::TimerBase::SharedPtr timer_;
 
    public:
     ASSupervisor() : Node("tractive_system_controller") {
@@ -156,6 +159,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
                                                std::bind(&ASSupervisor::heartbeat_callback, this));
         RCLCPP_DEBUG(this->get_logger(), "Done");
+
+        this->ros_state.state = DVL_STATES::DVL_STATE_START;
+        this->can_state.stateID = DVL_STATES::DVL_STATE_START;
     }
 };
 

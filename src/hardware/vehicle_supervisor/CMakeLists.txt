@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(as_supervisor)
+project(vehicle_supervisor)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
@@ -29,14 +29,14 @@ set (SOURCES
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
-add_executable(as_supervisor src/node_supervisor.cpp ${SOURCES})
-ament_target_dependencies(as_supervisor rclcpp driverless_msgs ackermann_msgs)
+add_executable(vehicle_supervisor src/node_supervisor.cpp ${SOURCES})
+ament_target_dependencies(vehicle_supervisor rclcpp driverless_msgs ackermann_msgs)
 
-target_include_directories(as_supervisor PUBLIC
+target_include_directories(vehicle_supervisor PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS as_supervisor
+install(TARGETS vehicle_supervisor
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

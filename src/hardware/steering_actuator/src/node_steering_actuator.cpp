@@ -36,13 +36,13 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
 
-    driverless_msgs::msg::State as_status;
+    driverless_msgs::msg::State state;
 
-    void state_callback(const driverless_msgs::msg::State msg) {this->as_status = msg;}
+    void state_callback(const driverless_msgs::msg::State msg) {this->state = msg;}
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
-        if (this->as_status.state == driverless_msgs::msg::State::AS_DRIVING) {
+        if (this->state.state == driverless_msgs::msg::State::DRIVING) {
             float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
             int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
