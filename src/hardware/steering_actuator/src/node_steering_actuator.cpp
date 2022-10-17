@@ -38,7 +38,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     driverless_msgs::msg::State state;
 
-    void state_callback(const driverless_msgs::msg::State msg) {this->state = msg;}
+    void state_callback(const driverless_msgs::msg::State msg) { this->state = msg; }
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
@@ -49,8 +49,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
             RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
             this->target_position(steeringDemandStepper);
-        }
-        else {
+        } else {
             this->target_position(0);
         }
     }

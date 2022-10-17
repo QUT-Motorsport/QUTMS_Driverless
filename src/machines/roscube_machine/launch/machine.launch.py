@@ -19,7 +19,7 @@ def generate_launch_description():
                 package="rosboard",
                 executable="rosboard_node",
             ),
-            # AS SUPERVISOR NODE HERE
+            # VEHICLE SUPERVISOR NODE HERE
             # MISSION CONTROL NODE HERE
             # STEERING ACTUATOR NODE HERE
             IncludeLaunchDescription(

@@ -66,7 +66,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 */
                 uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
                 this->can_pub->publish(this->_d_2_f(0x00, false, p));
-                
+
                 // run state machine (will update state from "start" to "select mission")
                 this->run_fsm();
                 break;
@@ -99,7 +99,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->run_fsm();
                 break;
 
-            case (VCU_Heartbeat_ID & ~(0xF)): // make sure mask is correct?
+            case (VCU_Heartbeat_ID & ~(0xF)):  // make sure mask is correct?
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
                 // data vector to uint8_t array
@@ -109,13 +109,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 }
 
                 // update heartbeat data for this specific VCU
-                if (VCU_ID == VCU_ID_CTRL) 
-                {
+                if (VCU_ID == VCU_ID_CTRL) {
                     Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
                     this->run_fsm();
-                } 
-                else if (VCU_ID == VCU_ID_EBS) 
-                {
+                } else if (VCU_ID == VCU_ID_EBS) {
                     Parse_VCU_Heartbeat(data, &this->EBS_VCU_heartbeat);
                     this->run_fsm();
                 }
@@ -149,15 +146,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void run_fsm() {
         // Starting state
-        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) 
-        {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             // Changes to Select Mission state when RES is ready
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
-        } 
+        }
         // Select Mission state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) 
-        {
-            // if (this->SW_heartbeat.flags. == 1) 
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
+            // if (this->SW_heartbeat.flags. == 1)
             // {
             //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             // }
@@ -169,27 +164,22 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
         }
         // Check EBS state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) 
-        {
-            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) 
-            {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
+            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
                 // transition to Ready state when VCU reports EBS checks complete
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
         }
         // Ready state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) 
-        {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
             if (this->RES_status.bt_k3) {
                 // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
             }
-        } 
+        }
         // Driving state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) 
-        {
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) 
-            {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
                 // transition to EBS Braking state when VCU reports EBS is braking
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
@@ -198,23 +188,20 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
 
-        } 
+        }
         // EBS Activated state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) 
-        {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
             // if (stationary || time elapsed) {
             //     DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             // }
-        } 
+        }
         // Finished state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) 
-        {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
             // Do lights
             // Gracefully terminate nodes
-        } 
+        }
         // Emergency state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) 
-        {
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
             // Do lights and siren
             // Gracefully terminate nodes
         }
