@@ -1,14 +1,18 @@
 uint8 state
 # use enum below
-uint8 AS_OFF=0
-uint8 AS_READY=1
-uint8 AS_DRIVING=2
-uint8 AS_EMERGENCY=3
-uint8 AS_FINISHED=4
+uint8 START=0
+uint8 SELECT_MISSION=1
+uint8 CHECK_EBS=2
+uint8 READY=3
+uint8 DRIVING=4
+uint8 ACTIVATE_EBS=10
+uint8 FINISHED=15
+uint8 EMEGENCY=255
 
 uint8 mission
 # use enum below
-uint8 MANUAL_DRIVING=0
-uint8 INSPECTION=1
-uint8 EBS_TEST=2
-uint8 TRACKDRIVE=3
+uint8 MISSION_NONE=0
+uint8 MANUAL_DRIVING=1
+uint8 INSPECTION=2
+uint8 EBS_TEST=3
+uint8 TRACKDRIVE=4
