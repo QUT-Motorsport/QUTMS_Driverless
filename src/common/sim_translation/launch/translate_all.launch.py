@@ -32,7 +32,7 @@ def generate_launch_description():
                 package="sim_translation",
                 executable="sim_to_velodyne",
             ),
-            Node(  # Mission control node when vehicle supervisor replaced launch 
+            Node(  # Mission control node when vehicle supervisor replaced launch
                 package="mission_controller",
                 executable="mission_control",
             ),
