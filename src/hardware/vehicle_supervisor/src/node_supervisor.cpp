@@ -1,5 +1,6 @@
 #define QUTMS_CAN_VCU
 #define QUTMS_CAN_DVL
+#define QUTMS_CAN_SW
 
 #include <iostream>
 
