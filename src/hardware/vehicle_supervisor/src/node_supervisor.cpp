@@ -88,12 +88,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             } break;
 
             case (SW_Heartbeat_ID): {  // IDK how to get this properly
-                // Steering Wheel CAN msg
-                if (ros_state.state == DVL_STATES::DVL_STATE_SELECT_MISSION) {
-                    // Only send mission if it's in START state
-                    this->ros_state.mission = msg.data[2];  // not sure which data byte the mission is
-                    ros_state.state = DVL_STATES::DVL_STATE_CHECK_EBS;
-                }
+                this->run_fsm();
             } break;
 
             case (VCU_Heartbeat_ID & ~(0xF)): {
