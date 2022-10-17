@@ -32,6 +32,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     DVL_HeartbeatState_t DVL_heartbeat;
     VCU_HeartbeatState_t CTRL_VCU_heartbeat;
     VCU_HeartbeatState_t EBS_VCU_heartbeat;
+    SW_HeartbeatState_t SW_heartbeat;
     RES_Status_t RES_status;
 
     // Can publisher and subscriber
@@ -53,7 +54,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         bool update = false;  // check if we need to update state
 
         switch (msg.id) {
-            case (0x700 + RES_NODE_ID): {
+            case (0x700 + RES_NODE_ID):
                 /*
                 RES has reported in, request state change to enable it
 
@@ -65,12 +66,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 */
                 uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
                 this->can_pub->publish(this->_d_2_f(0x00, false, p));
-                //
+                
+                // run state machine (will update state from "start" to "select mission")
                 this->run_fsm();
+                break;
 
-            } break;
-
-            case (0x180 + RES_NODE_ID): {
+            case (0x180 + RES_NODE_ID):
                 // RES Reciever Status Packet
                 this->_internal_status_time = this->now();  // Debug information
 
@@ -85,13 +86,20 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
                 // 			this->res_status.sw_k2, this->res_status.bt_k3, this->res_status.estop,
                 // 			this->res_status.radio_quality);
-            } break;
-
-            case (SW_Heartbeat_ID): {  // IDK how to get this properly
                 this->run_fsm();
-            } break;
+                break;
 
-            case (VCU_Heartbeat_ID & ~(0xF)): {
+            case (SW_Heartbeat_ID):
+                // data vector to uint8_t array
+                uint8_t data[8];
+                for (int i = 0; i < 8; i++) {
+                    data[i] = msg.data[i];
+                }
+                Parse_SW_Heartbeat(data, &this->SW_heartbeat);
+                this->run_fsm();
+                break;
+
+            case (VCU_Heartbeat_ID & ~(0xF)): // make sure mask is correct?
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
                 // data vector to uint8_t array
@@ -100,14 +108,21 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     data[i] = msg.data[i];
                 }
 
-                if (VCU_ID == VCU_ID_CTRL) {
+                // update heartbeat data for this specific VCU
+                if (VCU_ID == VCU_ID_CTRL) 
+                {
                     Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
                     this->run_fsm();
-                } else if (VCU_ID == VCU_ID_EBS) {
-                    Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
+                } 
+                else if (VCU_ID == VCU_ID_EBS) 
+                {
+                    Parse_VCU_Heartbeat(data, &this->EBS_VCU_heartbeat);
                     this->run_fsm();
                 }
-            } break;
+
+                // SEEMS LIKE A GOOD IDEA TO ADD A TIMER TO MAKE SURE THE VCUs ARE CHECKING IN
+                // ELSE EMERGENCY
+                break;
 
             default:
                 break;
@@ -133,37 +148,75 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void run_fsm() {
-        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
+        // Starting state
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) 
+        {
+            // Changes to Select Mission state when RES is ready
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
-            /*
-            SW heartbeat shit here
-            */
-            // MANUAL
-            // DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
-            // SELECTED
+        } 
+        // Select Mission state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) 
+        {
+            // if (this->SW_heartbeat.flags. == 1) 
+            // {
+            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
+            // }
+
+            // MANUAL HARD CODED FOR NOW
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
+            this->ros_state.mission = driverless_msgs::msg::State::MANUAL_DRIVING;
+            // transition to Check EBS state when mission is selected
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
-            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
+        }
+        // Check EBS state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) 
+        {
+            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) 
+            {
+                // transition to Ready state when VCU reports EBS checks complete
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
+        }
+        // Ready state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) 
+        {
             if (this->RES_status.bt_k3) {
+                // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
             }
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
+        } 
+        // Driving state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) 
+        {
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) 
+            {
+                // transition to EBS Braking state when VCU reports EBS is braking
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
+            if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
+                // transition to E-Stop state when RES reports E-Stop or loss of signal
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            }
+
+        } 
+        // EBS Activated state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) 
+        {
             // if (stationary || time elapsed) {
             //     DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             // }
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
-            // whatever
-        } else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
-            // whatever
+        } 
+        // Finished state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) 
+        {
+            // Do lights
+            // Gracefully terminate nodes
+        } 
+        // Emergency state
+        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) 
+        {
+            // Do lights and siren
+            // Gracefully terminate nodes
         }
     }
 
