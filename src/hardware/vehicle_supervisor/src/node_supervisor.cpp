@@ -49,6 +49,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     rclcpp::Time _internal_status_time;
 
+    float last_torque = 0;
+
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
         bool update = false;  // check if we need to update state
@@ -127,12 +129,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
-        // Validate driving state
-        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
-            this->DVL_heartbeat.torqueRequest = msg.acceleration;
-        } else {
-            this->DVL_heartbeat.torqueRequest = 0.0;
-        }
+        this->last_torque = msg.acceleration * 100;  // convert to percentage
     }
 
     void heartbeat_callback() {
@@ -145,6 +142,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void run_fsm() {
+        // by default, no torque
+        this->DVL_heartbeat.torqueRequest = 0.0;
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             // Changes to Select Mission state when RES is ready
@@ -160,8 +159,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // MANUAL HARD CODED FOR NOW
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
             this->ros_state.mission = driverless_msgs::msg::State::MANUAL_DRIVING;
-            // transition to Check EBS state when mission is selected
-            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+            if (ros_state.mission != driverless_msgs::msg::State::MANUAL_DRIVING) {
+                // transition to Check EBS state when mission is selected
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+            }
         }
         // Check EBS state
         else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
@@ -180,14 +181,21 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Driving state
         else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
             if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
-                // transition to EBS Braking state when VCU reports EBS is braking
+                // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
             if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
                 // transition to E-Stop state when RES reports E-Stop or loss of signal
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
+            // update torque with last saved value
+            if (this->last_torque > 30.0) {
+                this->DVL_heartbeat.torqueRequest = 30.0;
+            } else {
+                this->DVL_heartbeat.torqueRequest = this->last_torque;
+            }
 
+            // LOGIC UPON FINISHING MISSION
         }
         // EBS Activated state
         else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
@@ -217,7 +225,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
 
-        // Can
+        // CAN
         RCLCPP_DEBUG(this->get_logger(), "Initalising CAN interactants...");
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
