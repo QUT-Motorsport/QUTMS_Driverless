@@ -1,11 +1,7 @@
-#define QUTMS_CAN_VCU
-#define QUTMS_CAN_DVL
-#define QUTMS_CAN_SW
-
 #include <iostream>
 
 #include "CAN_DVL.h"
-#include "CAN_SW.h"
+// #include "CAN_SW.h"
 #include "CAN_VCU.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
@@ -32,7 +28,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     DVL_HeartbeatState_t DVL_heartbeat;
     VCU_HeartbeatState_t CTRL_VCU_heartbeat;
     VCU_HeartbeatState_t EBS_VCU_heartbeat;
-    SW_HeartbeatState_t SW_heartbeat;
+    // SW_HeartbeatState_t SW_heartbeat;
     RES_Status_t RES_status;
 
     // Can publisher and subscriber
@@ -56,7 +52,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         bool update = false;  // check if we need to update state
 
         switch (msg.id) {
-            case (0x700 + RES_NODE_ID):
+            case (0x700 + RES_NODE_ID): {
                 /*
                 RES has reported in, request state change to enable it
 
@@ -72,8 +68,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // run state machine (will update state from "start" to "select mission")
                 this->run_fsm();
                 break;
+            }
 
-            case (0x180 + RES_NODE_ID):
+            case (0x180 + RES_NODE_ID): {
                 // RES Reciever Status Packet
                 this->_internal_status_time = this->now();  // Debug information
 
@@ -90,18 +87,20 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // 			this->res_status.radio_quality);
                 this->run_fsm();
                 break;
+            }
 
-            case (SW_Heartbeat_ID):
-                // data vector to uint8_t array
-                uint8_t data[8];
-                for (int i = 0; i < 8; i++) {
-                    data[i] = msg.data[i];
-                }
-                Parse_SW_Heartbeat(data, &this->SW_heartbeat);
-                this->run_fsm();
-                break;
+                // case (SW_Heartbeat_ID):
+                //     // data vector to uint8_t array
+                //     uint8_t data[8];
+                //     for (int i = 0; i < 8; i++) {
+                //         data[i] = msg.data[i];
+                //     }
+                //     Parse_SW_Heartbeat(data, &this->SW_heartbeat);
+                //     this->run_fsm();
+                //     break;
 
             case (VCU_Heartbeat_ID & ~(0xF)):  // make sure mask is correct?
+            {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
                 // data vector to uint8_t array
@@ -122,6 +121,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // SEEMS LIKE A GOOD IDEA TO ADD A TIMER TO MAKE SURE THE VCUs ARE CHECKING IN
                 // ELSE EMERGENCY
                 break;
+            }
 
             default:
                 break;

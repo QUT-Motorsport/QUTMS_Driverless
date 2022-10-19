@@ -32,7 +32,7 @@ class TractiveSystemController : public rclcpp::Node, public CanInterface {
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
         // Update speed request in heartbeat
-        this->state.speed = msg.speed;  // Chaos
+        this->state.torqueRequest = msg.speed;  // Chaos
     }
 
     void res_callback(const driverless_msgs::msg::RES msg) {
