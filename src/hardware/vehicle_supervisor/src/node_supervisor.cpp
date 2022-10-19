@@ -49,6 +49,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
+        RCLCPP_INFO(this->get_logger(), "Canbus msg id: %ui", msg.id);
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
