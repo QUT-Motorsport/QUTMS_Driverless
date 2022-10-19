@@ -80,9 +80,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->RES_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);  // LoSSN = PDO 2007 Bit 6
 
                 // Log RES state
-                RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-                            this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
-                            this->RES_status.radio_quality);
+                // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
+                //             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
+                //             this->RES_status.radio_quality);
                 this->run_fsm();
                 break;
             }
@@ -101,6 +101,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
+
+                RCLCPP_INFO(this->get_logger(), "VCU ID: %ui STATE: %02x", VCU_ID, msg.data[0]);
+
                 // data vector to uint8_t array
                 uint8_t data[8];
                 for (int i = 0; i < 8; i++) {
