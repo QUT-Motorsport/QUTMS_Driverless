@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>tractive_system_controller</name>
+    <name>vehicle_supervisor</name>
     <version>0.0.1</version>
-    <description>Driverless CAN Heartbeat publisher</description>
-    <maintainer email="team@qutmotorsport.com">Thomas Fraser, Alistair English</maintainer>
+    <description>Autonomous System CAN Heartbeat publisher</description>
+    <maintainer email="team@qutmotorsport.com">Thomas Fraser, Alistair English, Alastair Bradford</maintainer>
     <license>MIT</license>
 
     <!-- Messages -->

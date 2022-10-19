@@ -19,6 +19,9 @@ def generate_launch_description():
                 package="rosboard",
                 executable="rosboard_node",
             ),
+            # VEHICLE SUPERVISOR NODE HERE
+            # MISSION CONTROL NODE HERE
+            # STEERING ACTUATOR NODE HERE
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("sensors") / "launch" / "sensors.launch.py")

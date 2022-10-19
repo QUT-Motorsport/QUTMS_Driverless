@@ -8,7 +8,7 @@ class MissionType(Enum):
     TRACKDRIVE = "trackdrive"
 
 
-CAN_TO_MISSION_TYPE = {
+INT_MISSION_TYPE = {
     1: MissionType.MANUAL_DRIVING,
     2: MissionType.EBS_TEST,
     3: MissionType.INSPECTION,

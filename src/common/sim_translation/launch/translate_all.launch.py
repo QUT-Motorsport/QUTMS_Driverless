@@ -1,4 +1,7 @@
+from ament_index_python import get_package_share_path
 from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
 
@@ -28,6 +31,18 @@ def generate_launch_description():
             Node(
                 package="sim_translation",
                 executable="sim_to_velodyne",
+            ),
+            Node(  # Mission control node when vehicle supervisor replaced launch
+                package="mission_controller",
+                executable="mission_control",
+            ),
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    launch_file_path=str(get_package_share_path("models") / "launch" / "robot_description.launch.py")
+                ),
+                launch_arguments=[
+                    ("urdf_model", "qev3.urdf.xacro"),
+                ],
             ),
         ]
     )

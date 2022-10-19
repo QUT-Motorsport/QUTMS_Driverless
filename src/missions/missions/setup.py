@@ -21,12 +21,4 @@ setup(
     description="Each driving event mission code",
     license="MIT",
     tests_require=["pytest"],
-    entry_points={
-        "console_scripts": [
-            "ebs_test = missions.node_ebs_test_mission:main",
-            "inspection = missions.node_inspection_mission:main",
-            "manual_driving = missions.node_manual_driving_mission:main",
-            "trackdrive = missions.node_trackdrive_mission:main",
-        ],
-    },
 )

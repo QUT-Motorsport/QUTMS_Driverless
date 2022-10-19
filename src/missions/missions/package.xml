@@ -7,14 +7,11 @@
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
-    <!-- Messages -->
-    <depend>ackermann_msgs</depend>
-    <depend>driverless_msgs</depend>
     <!-- Custom packages -->
     <depend>controllers</depend>
-    <depend>fusion</depend>
     <depend>baby_slam</depend>
-    <depend>models</depend>
+    <depend>vision_pipeline</depend>
+    <depend>lidar_pipeline_2</depend>
 
     <export>
         <build_type>ament_python</build_type>

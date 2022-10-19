@@ -17,18 +17,22 @@ class SineController(Node):
         # timed callback
         self.create_timer(self.interval, self.timer_callback)
 
-        self.steering_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
-        self.count = 0
+        self.sine_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 
     def timer_callback(self):
         self.translate = 2 * math.pi / 5
         self.count += self.interval
-        steering_msg = AckermannDrive()
-        steering_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        self.get_logger().debug("Angle: " + str(steering_msg.steering_angle))
-        self.steering_publisher.publish(steering_msg)
+        control_msg = AckermannDrive()
+        control_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
+        control_msg.acceleration = (
+            math.sin(self.count / 2) / 6 + 0.17
+        )  # max torque is 1. this occilates between 0 and 0.4
+        self.get_logger().info(
+            "Angle: " + str(control_msg.steering_angle) + "\tAcceleration: " + str(control_msg.acceleration)
+        )
+        self.sine_publisher.publish(control_msg)
 
 
 def main(args=None):
