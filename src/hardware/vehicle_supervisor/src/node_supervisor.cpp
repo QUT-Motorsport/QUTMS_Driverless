@@ -184,14 +184,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
         // Driving state
         else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
-                // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
-                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            }
-            if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
-                // transition to E-Stop state when RES reports E-Stop or loss of signal
-                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            }
+            // if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
+            //     // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
+            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            // }
+            // if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
+            //     // transition to E-Stop state when RES reports E-Stop or loss of signal
+            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            // }
             // update torque with last saved value
             if (this->last_torque > 30.0) {
                 this->DVL_heartbeat.torqueRequest = 30.0;
