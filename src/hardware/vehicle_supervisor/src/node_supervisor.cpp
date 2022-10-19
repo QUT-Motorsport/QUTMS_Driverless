@@ -49,6 +49,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
+        uint32_t maskedId = msg.id & ~0xF;
+
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -87,19 +89,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 break;
             }
 
-                // case (SW_Heartbeat_ID):
-                //     // data vector to uint8_t array
-                //     uint8_t data[8];
-                //     for (int i = 0; i < 8; i++) {
-                //         data[i] = msg.data[i];
-                //     }
-                //     Parse_SW_Heartbeat(data, &this->SW_heartbeat);
-                //     this->run_fsm();
-                //     break;
+            default:
+                break;
+        }
 
-            // either one of these will drop into the switch case
-            case (VCU_Heartbeat_ID | 0x01):
-            case (VCU_Heartbeat_ID | 0x03): {
+        switch (maskedId) {
+            case (VCU_Heartbeat_ID): {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
 
@@ -137,9 +132,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void heartbeat_callback() {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
-        for (int i = 0; i < 6; i++) {
-            RCLCPP_INFO(this->get_logger(), "Data[%i]: %i", i, heartbeat.data[i]);
-        }
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
@@ -149,7 +141,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
-        RCLCPP_INFO(this->get_logger(), "STATE: %i", this->DVL_heartbeat.stateID);
+        RCLCPP_INFO(this->get_logger(), "DVL STATE: %i", this->DVL_heartbeat.stateID);
 
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
