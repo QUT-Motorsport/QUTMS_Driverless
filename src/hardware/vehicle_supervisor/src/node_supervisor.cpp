@@ -49,7 +49,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
-        RCLCPP_INFO(this->get_logger(), "Canbus msg id: %ui", msg.id);
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -219,9 +218,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
    public:
     ASSupervisor() : Node("tractive_system_controller") {
         // Setup states
-        this->ros_state.state = DVL_STATES::DVL_STATE_START;
-        this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
-        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
+        this->ros_state.state = driverless_msgs::msg::State::CHECK_EBS;
+        this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
