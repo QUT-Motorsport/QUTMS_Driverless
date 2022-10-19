@@ -49,8 +49,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
-        bool update = false;  // check if we need to update state
-
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -82,9 +80,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->RES_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);  // LoSSN = PDO 2007 Bit 6
 
                 // Log RES state
-                // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-                // 			this->res_status.sw_k2, this->res_status.bt_k3, this->res_status.estop,
-                // 			this->res_status.radio_quality);
+                RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
+                            this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
+                            this->RES_status.radio_quality);
                 this->run_fsm();
                 break;
             }
@@ -144,6 +142,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
+        RCLCPP_INFO(this->get_logger(), "STATE: %i", this->DVL_heartbeat.stateID);
+
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             // Changes to Select Mission state when RES is ready
@@ -166,7 +166,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
         // Check EBS state
         else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
-            if (this->CTRL_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
                 // transition to Ready state when VCU reports EBS checks complete
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
