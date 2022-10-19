@@ -97,8 +97,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 //     this->run_fsm();
                 //     break;
 
-            case (VCU_Heartbeat_ID & ~(0xF)):  // make sure mask is correct?
-            {
+            // either one of these will drop into the switch case
+            case (VCU_Heartbeat_ID | 0x01):
+            case (VCU_Heartbeat_ID | 0x03): {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
 
