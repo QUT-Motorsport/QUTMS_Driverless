@@ -103,7 +103,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
 
-                RCLCPP_INFO(this->get_logger(), "VCU ID: %ui STATE: %02x", VCU_ID, msg.data[0]);
+                RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
                 // data vector to uint8_t array
                 uint8_t data[8];
@@ -220,7 +220,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    ASSupervisor() : Node("tractive_system_controller") {
+    ASSupervisor() : Node("vehicle_supervisor") {
         // Setup states
         this->ros_state.state = driverless_msgs::msg::State::CHECK_EBS;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
