@@ -11,7 +11,6 @@ from driverless_msgs.srv import SelectMission
 from .mission_constants import INT_MISSION_TYPE
 
 mission_pkg = get_package_share_directory("missions")  # path to the missions package
-mission_controller_pkg = get_package_share_directory("mission_controller")  # path to the mission_controller package
 
 
 class MissionControl(Node):
