@@ -137,6 +137,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void heartbeat_callback() {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
+        for (int i = 0; i < 6; i++) {
+            RCLCPP_INFO(this->get_logger(), "Data[%i]: %i", i, heartbeat.data[i]);
+        }
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
