@@ -188,11 +188,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             // }
             // update torque with last saved value
-            if (this->last_torque > 30.0) {
-                this->DVL_heartbeat.torqueRequest = 30.0;
-            } else {
-                this->DVL_heartbeat.torqueRequest = this->last_torque;
-            }
+            this->DVL_heartbeat.torqueRequest = this->last_torque;
 
             // LOGIC UPON FINISHING MISSION
         }
