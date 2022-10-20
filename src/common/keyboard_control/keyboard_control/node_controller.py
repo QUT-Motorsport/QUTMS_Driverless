@@ -22,7 +22,7 @@ class KeyboardControllerNode(Node):
     def __init__(self):
         super().__init__("keyboard_controller")
 
-        self.drive_command_publisher: Publisher = self.create_publisher(AckermannDrive, "drive_command", 1)
+        self.drive_command_publisher: Publisher = self.create_publisher(AckermannDrive, "driving_command", 1)
 
     def publish_drive_command(self, torque: float, steering_angle: float):
         self.drive_command_publisher.publish(AckermannDrive(acceleration=torque, steering_angle=steering_angle))
