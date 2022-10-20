@@ -31,12 +31,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
-# keyboard control
-COPY ./src/common/keyboard_control/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
-
 # steering actuator
 COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
@@ -63,6 +57,12 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 
 # models
 COPY ./src/models/models/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# keyboard control
+COPY ./src/common/keyboard_control/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
