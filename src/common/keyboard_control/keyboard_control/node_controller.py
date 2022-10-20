@@ -35,7 +35,7 @@ def print_state(stdscr):
     stdscr.addstr(0, 0, f"Torque: {torque}           ")
     stdscr.addstr(1, 0, f"Steering Angle: {steering_angle}     ")
     stdscr.addstr(3, 0, f"[Space] to zero torque")
-    stdscr.addstr(4, 0, f"[Backspace] to zero steering")
+    stdscr.addstr(4, 0, f"[g] to zero steering")
     stdscr.addstr(5, 0, f"[Enter] to zero everything")
 
 
@@ -53,12 +53,12 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
         if c == ord("s"):
             torque -= TORQUE_INCREMENT
         if c == ord("a"):
-            steering_angle += STEER_INCREMENT
-        if c == ord("d"):
             steering_angle -= STEER_INCREMENT
+        if c == ord("d"):
+            steering_angle += STEER_INCREMENT
         if c == ord(" "):
             torque = 0.0
-        if c == curses.KEY_BACKSPACE:
+        if c == ord("g"):
             steering_angle = 0.0
         if c == ord("\n"):
             torque = 0.0
