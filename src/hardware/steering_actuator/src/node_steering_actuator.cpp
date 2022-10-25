@@ -9,6 +9,9 @@ using std::placeholders::_1;
 
 const int C5_E_ID = 0x70;
 
+#define OP_EN_MASK 0b0000000001101111
+#define OP_EN 0b0000000000100111
+
 typedef struct c5e_config {
     int32_t default_velocity;
     uint32_t default_accelerations;
@@ -43,34 +46,33 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
-        if (this->state.state == driverless_msgs::msg::State::DRIVING) {
-            float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
-            int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
+	    float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
+	    int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
-            // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-            // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+	    // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
+	    // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
 
-            // Send a request for a statusword packet
-            uint32_t statusword_id;
-            uint8_t statusword_data[8];
-            sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
-            this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
+	    // Send a request for a statusword packet
+	    uint32_t statusword_id;
+	    uint8_t statusword_data[8];
+	    sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
+	    this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
+		RCLCPP_INFO(this->get_logger(), "Sending status req");
 
-            this->target_position(steeringDemandStepper);
-        } else {
-            this->target_position(0);
-        }
+	    this->target_position(steeringDemandStepper);
     }
 
     void can_callback(const driverless_msgs::msg::Can msg) {
+	//RCLCPP_INFO(this->get_logger(), "canmsg: %i", msg.id);
         switch (msg.id) {
-            case (0x600 + C5_E_ID):
+            case (0x5F0):
                 // Can message from the steering actuator
                 {
-                    if (msg.data[7] == 0x4B && msg.data[6] == 0x41 && msg.data[5] == 0x60) {
+                    if (msg.data[0] == 0x4B && msg.data[1] == 0x41 && msg.data[2] == 0x60) {
                         // Status Word
                         RCLCPP_INFO(this->get_logger(), "Got Steering Status Word");
-                        RCLCPP_INFO(this->get_logger(), "%X", msg.data[0]);
+			uint16_t state = (msg.data[3] << 8 | msg.data[4]);
+                        RCLCPP_INFO(this->get_logger(), "%X", (state & OP_EN_MASK) == OP_EN);
                     }
                 }
                 break;
