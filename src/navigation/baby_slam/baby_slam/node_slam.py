@@ -22,7 +22,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-def predict(pose_msg: PoseWithCovarianceStamped, R: np.ndarray) -> Tuple[np.ndarray]:
+def predict(pose_msg: PoseWithCovarianceStamped, R: np.ndarray, init_pose: list) -> Tuple[np.ndarray]:
     """Covariance from odom
     xx, xy, xz, xi, xj, xk
     yx, yy, yz, yi, yj, yk
@@ -42,9 +42,9 @@ def predict(pose_msg: PoseWithCovarianceStamped, R: np.ndarray) -> Tuple[np.ndar
         ]
     )
 
-    x = pose_msg.pose.pose.position.x
-    y = pose_msg.pose.pose.position.y
-    theta = ak
+    x = pose_msg.pose.pose.position.x - init_pose[0]
+    y = pose_msg.pose.pose.position.y - init_pose[1]
+    theta = wrap_to_pi(ak - init_pose[2])
 
     muR = np.array([x, y, theta])  # robot mean
 
@@ -130,10 +130,14 @@ class EKFSlam(Node):
     Q = np.diag([1, 0.8]) ** 2  # detections are a bit meh
     radius = 1.5  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 15  # minimum frames that cones have to be seen in
+    in_frames = 7  # minimum frames that cones have to be seen in
     mu = np.array([3.0, 0.0, 0.0])  # initial pose
     Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
     track: np.ndarray = []
+
+    # init pose on first odom message
+    init_pose: list = [0.0, 0.0, 0.0]
+    pose_zeroed = True  # cant get zeroing to work, skipping for now
 
     def __init__(self):
         super().__init__("ekf_slam")
@@ -153,6 +157,7 @@ class EKFSlam(Node):
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
+        self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
 
         self.get_logger().info("---SLAM node initialised---")
 
@@ -192,11 +197,48 @@ class EKFSlam(Node):
             # remove landmarks from track
             self.track = np.delete(self.track, duplicated_idxs, axis=0)
 
+    # get cones within view of the cars
+    def get_local_map(self) -> np.ndarray:
+        # global to local
+        local_xs = (self.track[:, 0] - self.mu[0]) * cos(self.mu[2]) + (self.track[:, 1] - self.mu[1]) * sin(self.mu[2])
+        local_ys = -(self.track[:, 0] - self.mu[0]) * sin(self.mu[2]) + (self.track[:, 1] - self.mu[1]) * cos(
+            self.mu[2]
+        )
+
+        local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3]), axis=1)
+
+        # get any cones that are within -10m to 10m beside cars
+        side_idxs = np.where(np.logical_and(local_ys > -10, local_ys < 10))[0]
+        # get any cones that are within 10m in front of cars
+        forward_idxs = np.where(np.logical_and(local_xs > 0, local_xs < 10))[0]
+
+        # combine indexes
+        idxs = np.intersect1d(side_idxs, forward_idxs)
+
+        # get local map
+        return local_track[idxs]
+
     def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+        start: float = time.perf_counter()
+
+        # check if zeroed pose - on first detection
+        if not self.pose_zeroed:
+            init_x = pose_msg.pose.pose.position.x
+            init_y = pose_msg.pose.pose.position.y
+            _, _, init_theta = quat2euler(
+                [
+                    pose_msg.pose.pose.orientation.w,
+                    pose_msg.pose.pose.orientation.x,
+                    pose_msg.pose.pose.orientation.y,
+                    pose_msg.pose.pose.orientation.z,
+                ]
+            )
+            self.init_pose = [init_x, init_y, init_theta]
+            self.pose_zeroed = True
 
         # predict car location (pretty accurate odom)
-        muR, SigmaR = predict(pose_msg, self.R)
+        muR, SigmaR = predict(pose_msg, self.R, self.init_pose)
         self.mu[0:3] = muR
         self.Sigma[0:3, 0:3] = SigmaR
 
@@ -231,22 +273,37 @@ class EKFSlam(Node):
                 # initialise new landmark
                 self.mu, self.Sigma = init_landmark(det.sense_rb, self.Q, self.mu, self.Sigma)
 
+        # remove noise
+        self.flush_map()
+
+        # get local map
+        local_map = self.get_local_map()
+
         # publish track msg
         track_msg = TrackDetectionStamped()
         track_msg.header.stamp = pose_msg.header.stamp
         track_msg.header.frame_id = "map"
         for i, cone in enumerate(self.track):
             cov_i = i * 2 + 3
-
             curr_cov: np.ndarray = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
-
             cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
             cone_cov = curr_cov.flatten().tolist()
-
             track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
-
         self.slam_publisher.publish(track_msg)
-        self.flush_map()
+
+        # publish local map msg
+        local_map_msg = TrackDetectionStamped()
+        local_map_msg.header.stamp = pose_msg.header.stamp
+        local_map_msg.header.frame_id = "base_link"
+        for i, cone in enumerate(local_map):
+            cov_i = i * 2 + 3
+            curr_cov: np.ndarray = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
+            cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
+            cone_cov = curr_cov.flatten().tolist()
+            local_map_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+        self.local_publisher.publish(local_map_msg)
+
+        # self.get_logger().info(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
 
 def main(args=None):
