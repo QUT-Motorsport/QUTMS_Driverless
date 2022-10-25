@@ -35,6 +35,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
     driverless_msgs::msg::State state;
 
@@ -46,11 +47,35 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
             int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
-            RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-            RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+            // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
+            // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+
+            // Send a request for a statusword packet
+            uint32_t statusword_id;
+            uint8_t statusword_data[8];
+            sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
+            this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
+
             this->target_position(steeringDemandStepper);
         } else {
             this->target_position(0);
+        }
+    }
+
+    void can_callback(const driverless_msgs::msg::Can msg) {
+        switch (msg.id) {
+            case (0x600 + C5_E_ID):
+                // Can message from the steering actuator
+                {
+                    if (msg.data[7] == 0x4B && msg.data[6] == 0x41 && msg.data[5] == 0x60) {
+                        // Status Word
+                        RCLCPP_INFO(this->get_logger(), "Got Steering Status Word");
+                        RCLCPP_INFO(this->get_logger(), "%X", msg.data[0]);
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -92,6 +117,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             "as_status", 10, std::bind(&SteeringActuator::state_callback, this, _1));
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
             "driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+        this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
+            "canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
 
         this->parameter_callback_handle =
             this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
