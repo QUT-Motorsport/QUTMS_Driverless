@@ -115,13 +115,15 @@ class LocalPursuit(Node):
         cones: List[Cone] = cone_msg.cones
 
         ## PROCESS DETECTED CONES
-        yellow_list: List[float] = []
-        blue_list: List[float] = []
-        for cone in cones:
-            if cone.color == Cone.YELLOW:
-                yellow_list.append([cone.location.x, cone.location.y])
-            elif cone.color == Cone.BLUE:
-                blue_list.append([cone.location.x, cone.location.y])
+        # yellow_list: List[float] = []
+        # blue_list: List[float] = []
+        # for cone in cones:
+        #     if cone.color == Cone.YELLOW:
+        #         yellow_list.append([cone.location.x, cone.location.y])
+        #     elif cone.color == Cone.BLUE:
+        #         blue_list.append([cone.location.x, cone.location.y])
+        yellow_list = [[c.location.x, c.location.y] for c in cones if c.color == Cone.YELLOW]
+        blue_list = [[c.location.x, c.location.y] for c in cones if c.color == Cone.BLUE]
 
         ## TARGET SPLINE PLANNER
         if len(yellow_list) > 1 and len(blue_list) > 1:  # can't interpolate with less than 2 points
@@ -136,10 +138,8 @@ class LocalPursuit(Node):
             y_degree = len(yellow_list) - 1
             b_degree = len(blue_list) - 1
             # cubic (3rd degree) maximum
-            if y_degree > 3:
-                y_degree = 3
-            if b_degree > 3:
-                b_degree = 3
+            y_degree = min(y_degree, 3)
+            b_degree = min(b_degree, 3)
 
             # sort by closest cones to join waypoints
             yellow_sort = sorted(yellow_list, key=lambda x: (x[0], x[1]))
@@ -151,6 +151,7 @@ class LocalPursuit(Node):
             for i in blue_sort:
                 blue_x.append(-i[1])
                 blue_y.append(i[0])
+
             # retrieves spline lists (x,y)
             yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len, degree=y_degree)
             bx, by = approximate_b_spline_path(blue_x, blue_y, self.spline_len, degree=b_degree)
