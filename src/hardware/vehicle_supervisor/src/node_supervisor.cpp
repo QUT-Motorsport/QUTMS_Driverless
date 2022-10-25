@@ -78,7 +78,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->_internal_status_time = this->now();  // Debug information
 
                 // Store in local state
-                this->RES_status.estop = msg.data[0] & (1 << 0);                           // ESTOP = PDO 2000 Bit 0
+                this->RES_status.estop = !(msg.data[0] & (1 << 0));                        // ESTOP = PDO 2000 Bit 0
                 this->RES_status.sw_k2 = msg.data[0] & (1 << 1);                           // K2 = PDO 2000 Bit 1
                 this->RES_status.bt_k3 = msg.data[0] & (1 << 2);                           // K3 = PDO 2000 Bit 2
                 this->RES_status.radio_quality = msg.data[6];                              // Radio Quality = PDO 2006
@@ -166,7 +166,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
         }
 
-        if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
+        if (this->RES_status.estop) {
             // transition to E-Stop state when RES reports E-Stop or loss of signal
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
         }
