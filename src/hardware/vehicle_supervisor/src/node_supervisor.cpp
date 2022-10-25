@@ -145,7 +145,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->DVL_heartbeat.torqueRequest = 0.0;
         RCLCPP_INFO(this->get_logger(), "DVL STATE: %i", this->DVL_heartbeat.stateID);
 
-        if (this->RES_status.sw_k2) {
+        if (!this->RES_status.sw_k2) {
             // transition to finished when RES swtiched is pressed
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
         }
@@ -210,8 +210,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
             // Do lights
             // Gracefully terminate nodes
-            // Not
-            if (!this->RES_status.sw_k2) {
+
+            if (this->RES_status.sw_k2) {
                 // transition to finished when RES swtiched is changed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
             }
