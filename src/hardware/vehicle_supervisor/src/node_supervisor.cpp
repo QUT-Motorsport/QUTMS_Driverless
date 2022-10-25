@@ -39,12 +39,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
 
-    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr heartbeat_timer;
+    rclcpp::TimerBase::SharedPtr res_alive_timer;
 
     driverless_msgs::msg::State ros_state;
 
     rclcpp::Time _internal_status_time;
 
+    bool res_alive = 0;
     float last_torque = 0;
 
     // Called when a new can message is recieved
@@ -65,6 +67,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
                 this->can_pub->publish(this->_d_2_f(0x00, false, p));
 
+                this->res_alive = 1;
                 // run state machine (will update state from "start" to "select mission")
                 this->run_fsm();
                 break;
@@ -75,12 +78,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->_internal_status_time = this->now();  // Debug information
 
                 // Store in local state
-                this->RES_status.estop = msg.data[0] & (1 << 0);                           // ESTOP = PDO 2000 Bit 0
+                this->RES_status.estop = !(msg.data[0] & (1 << 0));                        // ESTOP = PDO 2000 Bit 0
                 this->RES_status.sw_k2 = msg.data[0] & (1 << 1);                           // K2 = PDO 2000 Bit 1
                 this->RES_status.bt_k3 = msg.data[0] & (1 << 2);                           // K3 = PDO 2000 Bit 2
                 this->RES_status.radio_quality = msg.data[6];                              // Radio Quality = PDO 2006
                 this->RES_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);  // LoSSN = PDO 2007 Bit 6
 
+                this->res_alive = 1;
                 // Log RES state
                 // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
                 //             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
@@ -140,6 +144,18 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->state_pub->publish(this->ros_state);
     }
 
+    void res_alive_callback() {
+        if (!this->res_alive) {
+            RCLCPP_INFO(this->get_logger(), "Attemping to start RES");
+            uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            this->can_pub->publish(this->_d_2_f(0x00, false, p));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            this->can_pub->publish(this->_d_2_f(0x00, false, p2));
+        }
+        this->res_alive = 0;
+    }
+
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
@@ -150,16 +166,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
         }
 
+        if (this->RES_status.estop) {
+            // transition to E-Stop state when RES reports E-Stop or loss of signal
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+        }
+
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
-            RCLCPP_INFO(this->get_logger(), "Attemping to start RES");
-            uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            this->can_pub->publish(this->_d_2_f(0x00, false, p));
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            this->can_pub->publish(this->_d_2_f(0x00, false, p2));
-            RCLCPP_INFO(this->get_logger(), "RES startup complete");
-
             // Changes to Select Mission state when RES is ready
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
         }
@@ -196,10 +209,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
             if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
                 // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
-                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            }
-            if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
-                // transition to E-Stop state when RES reports E-Stop or loss of signal
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
 
@@ -266,8 +275,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Heartbeat
         RCLCPP_DEBUG(this->get_logger(), "Creating heartbeat timer...");
-        this->timer_ =
+        this->heartbeat_timer =
             this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::heartbeat_callback, this));
+
+        // RES Alive
+        RCLCPP_DEBUG(this->get_logger(), "Creating RES alive timer...");
+        this->res_alive_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
+                                                        std::bind(&ASSupervisor::res_alive_callback, this));
     }
 };
 
