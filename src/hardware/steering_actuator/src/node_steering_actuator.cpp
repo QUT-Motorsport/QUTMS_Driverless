@@ -27,9 +27,6 @@ std::tuple<std::string, int, int> states[8] = {
     {"Operation enabled", 0b0000000001101111, OE},         {"Quick stop active", 0b0000000001101111, QSA},
     {"Fault reaction active", 0b0000000001001111, FRA},    {"Fault", 0b0000000001001111, F}};
 
-#define OP_EN_MASK 0b0000000001101111
-#define OP_EN 0b0000000000100111
-
 typedef struct c5e_config {
     int32_t default_velocity;
     uint32_t default_accelerations;
@@ -54,6 +51,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     c5e_config_t defaults;
 
     std::tuple<std::string, int, int> c5e_state;
+    rclcpp::TimerBase::SharedPtr c5e_state_timer;
 
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
@@ -69,22 +67,18 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
         int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
-        // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-        // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+        this->target_position(steeringDemandStepper);
+    }
 
+    void c5e_state_callback() {
         // Send a request for a statusword packet
         uint32_t statusword_id;
         uint8_t statusword_data[8];
         sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
         this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
-        RCLCPP_INFO(this->get_logger(), "Sending status req");
-
-        // this->target_position(steeringDemandStepper);
-        this->shutdown();
     }
 
     void can_callback(const driverless_msgs::msg::Can msg) {
-        // RCLCPP_INFO(this->get_logger(), "canmsg: %i", msg.id);
         switch (msg.id) {
             case (0x5F0):
                 // Can message from the steering actuator
@@ -96,7 +90,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                         RCLCPP_INFO(this->get_logger(), "Got Steering Status Word");
                         uint16_t state = (msg.data[3] << 8 | msg.data[4]);
                         auto parsed_state = this->parse_state(state);
-                        RCLCPP_INFO(this->get_logger(), "%s", std::get<0>(parsed_state).c_str());
                     }
                 }
                 break;
@@ -139,12 +132,18 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->declare_parameter<int>("d_velocity", 0);
 
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
+
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "as_status", 10, std::bind(&SteeringActuator::state_callback, this, _1));
+
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
             "driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
+
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
+
+        this->c5e_state_timer = this->create_wall_timer(std::chrono::milliseconds(50),
+                                                        std::bind(&SteeringActuator::c5e_state_callback, this));
 
         this->parameter_callback_handle =
             this->add_on_set_parameters_callback(std::bind(&SteeringActuator::parameter_callback, this, _1));
@@ -347,11 +346,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void shutdown() {
         uint32_t id;
         uint8_t out[8];
+        RCLCPP_INFO(this->get_logger(), "Attempting to return c5e to switched on...");
+        while (std::get<2>(this->c5e_state) != SO) {
+            uint16_t control_word = 6;
+            sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
+            this->can_pub->publish(_d_2_f(id, 0, out));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
 
-        uint16_t control_word = 6;
-        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-        this->can_pub->publish(_d_2_f(id, 0, out));
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        RCLCPP_INFO(this->get_logger(), "Successfully switched c5e to switched on!");
     }
 
     void set_c5e_config(c5e_config_t config) {
@@ -384,9 +387,7 @@ int main(int argc, char *argv[]) {
     auto x = std::make_shared<SteeringActuator>();
     signal(SIGINT, signal_handler);
     handler = [x](int signal) {
-        for (int i = 0; i < 10; i++) {
-            x->shutdown();
-        }
+        x->shutdown();
         RCLCPP_INFO(x->get_logger(), "Motor shutdown, exiting node.");
         rclcpp::shutdown();
         return signal;
