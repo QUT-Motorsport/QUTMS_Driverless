@@ -169,7 +169,7 @@ class VisionProcessor(Node):
         debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
 
-        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
         self.start = time.perf_counter()
 
 
