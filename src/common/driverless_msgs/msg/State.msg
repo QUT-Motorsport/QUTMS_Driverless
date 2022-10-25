@@ -9,7 +9,7 @@ uint8 READY=3
 uint8 DRIVING=4
 uint8 ACTIVATE_EBS=10
 uint8 FINISHED=15
-uint8 EMEGENCY=255
+uint8 EMERGENCY=255
 
 uint8 mission
 # use enum below

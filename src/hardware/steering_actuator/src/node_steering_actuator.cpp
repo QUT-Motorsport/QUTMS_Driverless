@@ -60,7 +60,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     driverless_msgs::msg::State state;
 
-    void state_callback(const driverless_msgs::msg::State msg) { this->state = msg; }
+    void state_callback(const driverless_msgs::msg::State msg) { 
+        this->state = msg; 
+        if(msg.state == driverless_msgs::msg::State::READY || msg.state == driverless_msgs::msg::State::DRIVING || msg.state == driverless_msgs::msg::State::ACTIVATE_EBS || msg.state == driverless_msgs::msg::State::EMERGENCY) {
+            // Enable motor
+            this->enable();
+        } else {
+            this->shutdown();
+        }
+    }
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
@@ -87,7 +95,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     if (msg.data[0] == 0x4B && msg.data[1] == (statusword_id & 0xFF) &&
                         msg.data[2] == ((statusword_id >> 8) & 0xFF)) {
                         // Status Word
-                        RCLCPP_INFO(this->get_logger(), "Got Steering Status Word");
                         uint16_t state = (msg.data[3] << 8 | msg.data[4]);
                         auto parsed_state = this->parse_state(state);
                     }
@@ -240,25 +247,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         sdo_write(C5_E_ID, 0x6060, 0x00, (uint8_t *)&ppm, 1, &id, out);  // Modes of Operation
         this->can_pub->publish(_d_2_f(id, 0, out));
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        uint16_t control_word = 6;
-        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-        this->can_pub->publish(_d_2_f(id, 0, out));
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        control_word = 7;
-        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Switched On
-        this->can_pub->publish(_d_2_f(id, 0, out));
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-        control_word = 15;
-        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Op Enabled
-        this->can_pub->publish(_d_2_f(id, 0, out));
-
-        std::cout << "Done (Operation Enabled)" << std::endl;
+        std::cout << "Done (Motor Configured)" << std::endl;
     }
 
     void target_position(int32_t target) {
@@ -346,15 +335,34 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void shutdown() {
         uint32_t id;
         uint8_t out[8];
-        RCLCPP_INFO(this->get_logger(), "Attempting to return c5e to switched on...");
-        while (std::get<2>(this->c5e_state) != SO) {
-            uint16_t control_word = 6;
-            sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-            this->can_pub->publish(_d_2_f(id, 0, out));
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        }
+        if (std::get<2>(this->c5e_state) == SO) return;
+        uint16_t control_word = 6;
+        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
+        this->can_pub->publish(_d_2_f(id, 0, out));
+        while (std::get<2>(this->c5e_state) != SO);
+    }
 
-        RCLCPP_INFO(this->get_logger(), "Successfully switched c5e to switched on!");
+    void enable() {
+        uint32_t id;     // Packet id out
+        uint8_t out[8];  // Data out
+        if (std::get<2>(this->c5e_state) == OE) return;
+        uint16_t control_word = 6;
+        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
+        this->can_pub->publish(_d_2_f(id, 0, out));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        control_word = 7;
+        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Switched On
+        this->can_pub->publish(_d_2_f(id, 0, out));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        control_word = 15;
+        sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Op Enabled
+        this->can_pub->publish(_d_2_f(id, 0, out));
+
+        while (std::get<2>(this->c5e_state) != OE);
     }
 
     void set_c5e_config(c5e_config_t config) {
@@ -367,6 +375,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::tuple<std::string, int, int> parse_state(uint16_t msg) {
         for (int i = 0; i < 8; i++) {
             if ((msg & std::get<1>(states[i])) == std::get<2>(states[i])) {
+                if(this->c5e_state != states[i]) {
+                    RCLCPP_INFO(this->get_logger(), "%s >>>> %s", std::get<0>(this->c5e_state).c_str(), std::get<0>(states[i]).c_str());
+                }
                 this->c5e_state = states[i];
                 return states[i];
             }
@@ -394,6 +405,6 @@ int main(int argc, char *argv[]) {
     };
 
     rclcpp::spin(x);
-    // rclcpp::shutdown();
+    rclcpp::shutdown();
     return 0;
 }
