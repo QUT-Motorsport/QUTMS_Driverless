@@ -43,12 +43,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
-# tractive_system_controller
-COPY ./src/hardware/tractive_system_controller/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
-
 # vehicle_supervisor
 COPY ./src/hardware/vehicle_supervisor/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
@@ -85,7 +79,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         steering_actuator \
         canbus \
         models \
-        tractive_system_controller \
         vehicle_supervisor \
         keyboard_control \
     && rm -rf ./src
