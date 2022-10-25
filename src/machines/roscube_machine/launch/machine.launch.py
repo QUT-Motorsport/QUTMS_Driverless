@@ -19,9 +19,18 @@ def generate_launch_description():
                 package="rosboard",
                 executable="rosboard_node",
             ),
-            # VEHICLE SUPERVISOR NODE HERE
+            Node(
+                package="steering_actuator",
+                executable="steering_actuator",
+                parameters=[
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
+            ),
+            Node(
+                package="vehicle_supervisor",
+                executable="vehicle_supervisor",
+            ),
             # MISSION CONTROL NODE HERE
-            # STEERING ACTUATOR NODE HERE
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("sensors") / "launch" / "sensors.launch.py")
