@@ -9,16 +9,23 @@ using std::placeholders::_1;
 
 const int C5_E_ID = 0x70;
 
+typedef enum c5e_state_id {
+    NRTSO = 0b0000000000000000,
+    SOD = 0b0000000001000000,
+    RTSO = 0b0000000000100001,
+    SO = 0b0000000000100011,
+    OE = 0b0000000000100111,
+    QSA = 0b0000000000000111,
+    FRA = 0b0000000000001111,
+    F = 0b0000000001001000
+} c53_state_id_t;
+
 std::tuple<std::string, int, int> states[8] = {
     // Name, mask, stateid
-    {"Not ready to switch on", 0b0000000001001111, 0b0000000000000000},
-    {"Switch on disabled", 0b0000000001001111, 0b0000000001000000},
-    {"Ready to switch on", 0b0000000001101111, 0b0000000000100001},
-    {"Switched on", 0b0000000001101111, 0b0000000000100011},
-    {"Operation enabled", 0b0000000001101111, 0b0000000000100111},
-    {"Quick stop active", 0b0000000001101111, 0b0000000000000111},
-    {"Fault reaction active", 0b0000000001001111, 0b0000000000001111},
-    {"Fault", 0b0000000001001111, 0b0000000001001000}};
+    {"Not ready to switch on", 0b0000000001001111, NRTSO}, {"Switch on disabled", 0b0000000001001111, SOD},
+    {"Ready to switch on", 0b0000000001101111, RTSO},      {"Switched on", 0b0000000001101111, SO},
+    {"Operation enabled", 0b0000000001101111, OE},         {"Quick stop active", 0b0000000001101111, QSA},
+    {"Fault reaction active", 0b0000000001001111, FRA},    {"Fault", 0b0000000001001111, F}};
 
 #define OP_EN_MASK 0b0000000001101111
 #define OP_EN 0b0000000000100111
@@ -72,7 +79,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
         RCLCPP_INFO(this->get_logger(), "Sending status req");
 
-        this->target_position(steeringDemandStepper);
+        // this->target_position(steeringDemandStepper);
+        this->shutdown();
     }
 
     void can_callback(const driverless_msgs::msg::Can msg) {
