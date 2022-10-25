@@ -139,8 +139,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
+
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
+        this->ros_state.state = this->DVL_heartbeat.stateID;
         this->state_pub->publish(this->ros_state);
     }
 
@@ -159,7 +161,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
-        RCLCPP_INFO(this->get_logger(), "DVL STATE: %i", this->DVL_heartbeat.stateID);
+        // RCLCPP_INFO(this->get_logger(), "DVL STATE: %i", this->DVL_heartbeat.stateID);
 
         if (!this->RES_status.sw_k2) {
             // transition to finished when RES swtiched is pressed
