@@ -60,9 +60,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     driverless_msgs::msg::State state;
 
-    void state_callback(const driverless_msgs::msg::State msg) { 
-        this->state = msg; 
-        if(msg.state == driverless_msgs::msg::State::READY || msg.state == driverless_msgs::msg::State::DRIVING || msg.state == driverless_msgs::msg::State::ACTIVATE_EBS || msg.state == driverless_msgs::msg::State::EMERGENCY) {
+    void state_callback(const driverless_msgs::msg::State msg) {
+        this->state = msg;
+        if (msg.state == driverless_msgs::msg::State::READY || msg.state == driverless_msgs::msg::State::DRIVING ||
+            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
+            msg.state == driverless_msgs::msg::State::EMERGENCY) {
             // Enable motor
             this->enable();
         } else {
@@ -339,7 +341,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint16_t control_word = 6;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
         this->can_pub->publish(_d_2_f(id, 0, out));
-        while (std::get<2>(this->c5e_state) != SO);
+        while (std::get<2>(this->c5e_state) != SO)
+            ;
     }
 
     void enable() {
@@ -362,7 +365,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Op Enabled
         this->can_pub->publish(_d_2_f(id, 0, out));
 
-        while (std::get<2>(this->c5e_state) != OE);
+        while (std::get<2>(this->c5e_state) != OE)
+            ;
     }
 
     void set_c5e_config(c5e_config_t config) {
@@ -375,8 +379,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::tuple<std::string, int, int> parse_state(uint16_t msg) {
         for (int i = 0; i < 8; i++) {
             if ((msg & std::get<1>(states[i])) == std::get<2>(states[i])) {
-                if(this->c5e_state != states[i]) {
-                    RCLCPP_INFO(this->get_logger(), "%s >>>> %s", std::get<0>(this->c5e_state).c_str(), std::get<0>(states[i]).c_str());
+                if (this->c5e_state != states[i]) {
+                    RCLCPP_INFO(this->get_logger(), "%s >>>> %s", std::get<0>(this->c5e_state).c_str(),
+                                std::get<0>(states[i]).c_str());
                 }
                 this->c5e_state = states[i];
                 return states[i];
