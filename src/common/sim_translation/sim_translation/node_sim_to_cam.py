@@ -1,6 +1,7 @@
+import time
+
 import cv2
 import numpy as np
-import time
 
 from cv_bridge import CvBridge
 import message_filters
@@ -49,7 +50,7 @@ class CamSimulator(Node):
     def callback(self, colour_msg: Image, depth_msg: Image):
         self.get_logger().debug("Received sim camera data")
 
-        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
         start: float = time.perf_counter()  # begin a timer
 
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
@@ -71,7 +72,7 @@ class CamSimulator(Node):
         self.rgb_img_publisher.publish(colour_msg)
 
         self.get_logger().debug("Published RBG, Info, Depth")
-        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
         self.start = time.perf_counter()
 
 
