@@ -18,8 +18,10 @@ find_package(geometry_msgs REQUIRED)
 
 # messages
 set(msg_files
+  "msg/BrickData.msg"
   "msg/Cone.msg"
   "msg/ConeDetectionStamped.msg"
+  "msg/CarStatus.msg"
   "msg/PathPoint.msg"
   "msg/PathStamped.msg"
   "msg/Can.msg"
