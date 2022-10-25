@@ -25,7 +25,6 @@ setup(
         "console_scripts": [
             "mission_control = mission_controller.node_mission_control:main",
             "gui = mission_controller.node_gui:main",
-            "dummy_can = mission_controller.node_dummy_can:main",
         ],
     },
 )

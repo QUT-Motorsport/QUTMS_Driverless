@@ -10,8 +10,10 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <!-- Custom packages -->
-    <depend>missions</depend>
-    <depend>models</depend>
+    <depend>controllers</depend>
+    <depend>baby_slam</depend>
+    <depend>vision_pipeline</depend>
+    <depend>lidar_pipeline_2</depend>
 
     <export>
         <build_type>ament_python</build_type>

@@ -32,10 +32,10 @@ def generate_launch_description():
                 package="sim_translation",
                 executable="sim_to_velodyne",
             ),
-            Node(  # Mission control node when vehicle supervisor replaced launch
-                package="mission_controller",
-                executable="mission_control",
-            ),
+            # Node(  # Mission control node when vehicle supervisor replaced launch
+            #     package="mission_controller",
+            #     executable="mission_control",
+            # ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("models") / "launch" / "robot_description.launch.py")
@@ -43,6 +43,11 @@ def generate_launch_description():
                 launch_arguments=[
                     ("urdf_model", "qev3.urdf.xacro"),
                 ],
+            ),
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    launch_file_path=str(get_package_share_path("driverless_common") / "launch" / "display.launch.py")
+                ),
             ),
         ]
     )

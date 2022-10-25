@@ -18,6 +18,8 @@
     <depend>builtin_interfaces</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>
+    <!-- <depend>mission_controller</depend> -->
+    <depend>models</depend>
 
     <export>
         <build_type>ament_python</build_type>
