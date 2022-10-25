@@ -145,13 +145,18 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->DVL_heartbeat.torqueRequest = 0.0;
         RCLCPP_INFO(this->get_logger(), "DVL STATE: %i", this->DVL_heartbeat.stateID);
 
+        if (this->RES_status.sw_k2) {
+            // transition to finished when RES swtiched is pressed
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+        }
+
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             // Changes to Select Mission state when RES is ready
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
         }
         // Select Mission state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
             // if (this->SW_heartbeat.flags. == 1)
             // {
             //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
@@ -159,54 +164,60 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             // MANUAL HARD CODED FOR NOW
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
-            this->ros_state.mission = driverless_msgs::msg::State::MANUAL_DRIVING;
-            if (ros_state.mission != driverless_msgs::msg::State::MANUAL_DRIVING) {
+            this->ros_state.mission = driverless_msgs::msg::State::TRACKDRIVE;
+            if (ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
                 // transition to Check EBS state when mission is selected
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
             }
         }
         // Check EBS state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
             if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY) {
                 // transition to Ready state when VCU reports EBS checks complete
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
         }
         // Ready state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
             if (this->RES_status.bt_k3) {
                 // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
             }
         }
         // Driving state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
-            // if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
-            //     // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
-            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            // }
-            // if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
-            //     // transition to E-Stop state when RES reports E-Stop or loss of signal
-            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            // }
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATE_EBS_BRAKING) {
+                // transition to EBS Braking state when VCU reports EBS is braking (when it shouldn't be)
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            }
+            if (this->RES_status.estop || this->RES_status.loss_of_signal_shutdown_notice) {
+                // transition to E-Stop state when RES reports E-Stop or loss of signal
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            }
+
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
 
             // LOGIC UPON FINISHING MISSION
         }
         // EBS Activated state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
             // if (stationary || time elapsed) {
             //     DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             // }
         }
         // Finished state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
             // Do lights
             // Gracefully terminate nodes
+            // Not
+            if (!this->RES_status.sw_k2) {
+                // transition to finished when RES swtiched is changed
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
+            }
         }
         // Emergency state
-        else if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
             // Do lights and siren
             // Gracefully terminate nodes
         }
@@ -216,7 +227,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     ASSupervisor() : Node("vehicle_supervisor") {
         // Setup states
         this->ros_state.state = driverless_msgs::msg::State::CHECK_EBS;
-        this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+        this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
         this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
 
         // Configure logger level
