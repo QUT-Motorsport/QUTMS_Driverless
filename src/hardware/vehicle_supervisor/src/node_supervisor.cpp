@@ -152,6 +152,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
+            RCLCPP_INFO(this->get_logger(), "Attemping to start RES");
+            uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            this->can_pub->publish(this->_d_2_f(0x00, false, p));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            this->can_pub->publish(this->_d_2_f(0x00, false, p2));
+            RCLCPP_INFO(this->get_logger(), "RES startup complete");
+
             // Changes to Select Mission state when RES is ready
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
         }
@@ -250,14 +258,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // RES
         RCLCPP_INFO(this->get_logger(), "Initialising RES receiver...");
         this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
-
-        RCLCPP_INFO(this->get_logger(), "Attemping to start RES");
-        uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        this->can_pub->publish(this->_d_2_f(0x00, false, p));
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        this->can_pub->publish(this->_d_2_f(0x00, false, p2));
-        RCLCPP_INFO(this->get_logger(), "RES startup complete");
 
         // Ackermann
         RCLCPP_DEBUG(this->get_logger(), "Initalising ackermann interactants...");
