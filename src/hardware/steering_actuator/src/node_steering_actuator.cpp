@@ -9,6 +9,17 @@ using std::placeholders::_1;
 
 const int C5_E_ID = 0x70;
 
+std::tuple<std::string, int, int> states[8] = {
+    // Name, mask, stateid
+    {"Not ready to switch on", 0b0000000001001111, 0b0000000000000000},
+    {"Switch on disabled", 0b0000000001001111, 0b0000000001000000},
+    {"Ready to switch on", 0b0000000001101111, 0b0000000000100001},
+    {"Switched on", 0b0000000001101111, 0b0000000000100011},
+    {"Operation enabled", 0b0000000001101111, 0b0000000000100111},
+    {"Quick stop active", 0b0000000001101111, 0b0000000000000111},
+    {"Fault reaction active", 0b0000000001001111, 0b0000000000001111},
+    {"Fault", 0b0000000001001111, 0b0000000001001000}};
+
 #define OP_EN_MASK 0b0000000001101111
 #define OP_EN 0b0000000000100111
 
@@ -35,6 +46,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::pair<int32_t, int32_t> limits;
     c5e_config_t defaults;
 
+    std::tuple<std::string, int, int> c5e_state;
+
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
@@ -46,33 +59,36 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
-	    float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
-	    int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
+        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
+        int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
 
-	    // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
-	    // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
+        // RCLCPP_INFO(this->get_logger(), "Stepper: %i", steeringDemandStepper);
+        // RCLCPP_INFO(this->get_logger(), "Radians: %f", cappedAngle);
 
-	    // Send a request for a statusword packet
-	    uint32_t statusword_id;
-	    uint8_t statusword_data[8];
-	    sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
-	    this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
-		RCLCPP_INFO(this->get_logger(), "Sending status req");
+        // Send a request for a statusword packet
+        uint32_t statusword_id;
+        uint8_t statusword_data[8];
+        sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
+        this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
+        RCLCPP_INFO(this->get_logger(), "Sending status req");
 
-	    this->target_position(steeringDemandStepper);
+        this->target_position(steeringDemandStepper);
     }
 
     void can_callback(const driverless_msgs::msg::Can msg) {
-	//RCLCPP_INFO(this->get_logger(), "canmsg: %i", msg.id);
+        // RCLCPP_INFO(this->get_logger(), "canmsg: %i", msg.id);
         switch (msg.id) {
             case (0x5F0):
                 // Can message from the steering actuator
                 {
-                    if (msg.data[0] == 0x4B && msg.data[1] == 0x41 && msg.data[2] == 0x60) {
+                    uint16_t statusword_id = 0x6041;
+                    if (msg.data[0] == 0x4B && msg.data[1] == (statusword_id & 0xFF) &&
+                        msg.data[2] == ((statusword_id >> 8) & 0xFF)) {
                         // Status Word
                         RCLCPP_INFO(this->get_logger(), "Got Steering Status Word");
-			uint16_t state = (msg.data[3] << 8 | msg.data[4]);
-                        RCLCPP_INFO(this->get_logger(), "%X", (state & OP_EN_MASK) == OP_EN);
+                        uint16_t state = (msg.data[3] << 8 | msg.data[4]);
+                        auto parsed_state = this->parse_state(state);
+                        RCLCPP_INFO(this->get_logger(), "%s", std::get<0>(parsed_state).c_str());
                     }
                 }
                 break;
@@ -335,6 +351,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->defaults.default_current = config.default_current;
         this->defaults.default_limits = config.default_limits;
         this->defaults.default_velocity = config.default_velocity;
+    }
+
+    std::tuple<std::string, int, int> parse_state(uint16_t msg) {
+        for (int i = 0; i < 8; i++) {
+            if ((msg & std::get<1>(states[i])) == std::get<2>(states[i])) {
+                this->c5e_state = states[i];
+                return states[i];
+            }
+        }
+        return states[7];
     }
 
     c5e_config_t get_c5e_config() { return this->defaults; }
