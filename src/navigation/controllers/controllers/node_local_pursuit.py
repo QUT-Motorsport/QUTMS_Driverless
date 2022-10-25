@@ -6,36 +6,40 @@ but not much else
 
 from math import atan, atan2, pi, sqrt
 
+import cv2
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 
+from cv_bridge import CvBridge
 import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import ConeWithCovariance
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
+from sensor_msgs.msg import Image
 
+from driverless_common.draw import *
 from driverless_common.point import Point
 
 from typing import List, Optional, Tuple
 
-ORIGIN = Point(0, 0)
+# translate ROS image messages to OpenCV
+cv_bridge = CvBridge()
 
-LEFT_CONE_COLOUR = Cone.BLUE
-RIGHT_CONE_COLOUR = Cone.YELLOW
+ORIGIN = Point(0, 0)
 
 
 def dist(a: Point, b: Point) -> float:
     return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
 
 
-def cone_to_point(cone: Cone) -> Point:
+def cone_to_point(cone: ConeWithCovariance) -> Point:
     return Point(
-        cone.location.x,
-        cone.location.y,
+        cone.cone.location.x,
+        cone.cone.location.y,
     )
 
 
@@ -79,7 +83,7 @@ def midpoint(p1: list, p2: list):
 class LocalPursuit(Node):
     # init constants
     spline_len: int = 200
-    Kp_ang: float = 5
+    Kp_ang: float = 3.5
     Kp_vel: float = 2
     vel_max: float = 5
     vel_min = vel_max / 2
@@ -90,7 +94,7 @@ class LocalPursuit(Node):
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        detection_sub = message_filters.Subscriber(self, TrackDetectionStamped, "/slam/local")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, detection_sub],
             queue_size=30,
@@ -100,10 +104,11 @@ class LocalPursuit(Node):
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 
         self.get_logger().info("---Local Pursuit Node Initalised---")
 
-    def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
+    def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: TrackDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
@@ -112,18 +117,34 @@ class LocalPursuit(Node):
         control_msg.acceleration = 0.0
         control_msg.jerk = 1.0
 
-        cones: List[Cone] = cone_msg.cones
+        cones: List[ConeWithCovariance] = cone_msg.cones
+
+        # create black image
+        debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
 
         ## PROCESS DETECTED CONES
-        # yellow_list: List[float] = []
-        # blue_list: List[float] = []
-        # for cone in cones:
-        #     if cone.color == Cone.YELLOW:
-        #         yellow_list.append([cone.location.x, cone.location.y])
-        #     elif cone.color == Cone.BLUE:
-        #         blue_list.append([cone.location.x, cone.location.y])
-        yellow_list = [[c.location.x, c.location.y] for c in cones if c.color == Cone.YELLOW]
-        blue_list = [[c.location.x, c.location.y] for c in cones if c.color == Cone.BLUE]
+        yellow_list = [c for c in cones if c.cone.color == Cone.YELLOW]
+        blue_list = [c for c in cones if c.cone.color == Cone.BLUE]
+        for yellow in yellow_list:
+            # draws location of cone w/ colour
+            cv2.drawMarker(
+                debug_img,
+                loc_to_img_pt(yellow.cone.location.x, yellow.cone.location.y).to_tuple(),
+                YELLOW_DISP_COLOUR,
+                markerType=cv2.MARKER_SQUARE,
+                markerSize=5,
+                thickness=5,
+            )
+        for blue in blue_list:
+            # draws location of cone w/ colour
+            cv2.drawMarker(
+                debug_img,
+                loc_to_img_pt(blue.cone.location.x, blue.cone.location.y).to_tuple(),
+                BLUE_DISP_COLOUR,
+                markerType=cv2.MARKER_SQUARE,
+                markerSize=5,
+                thickness=5,
+            )
 
         ## TARGET SPLINE PLANNER
         if len(yellow_list) > 1 and len(blue_list) > 1:  # can't interpolate with less than 2 points
@@ -142,15 +163,16 @@ class LocalPursuit(Node):
             b_degree = min(b_degree, 3)
 
             # sort by closest cones to join waypoints
-            yellow_sort = sorted(yellow_list, key=lambda x: (x[0], x[1]))
-            blue_sort = sorted(blue_list, key=lambda x: (x[0], x[1]))
-            for i in yellow_sort:  # each cone coord
+            yellow_sort = sorted(yellow_list, key=lambda c: (c.cone.location.x, c.cone.location.y))
+            blue_sort = sorted(blue_list, key=lambda c: (c.cone.location.x, c.cone.location.y))
+
+            for yellow in yellow_sort:  # each cone coord
                 # ref frame so x is forward from the car (this is graph axis y)
-                yellow_x.append(-i[1])  # negative because we mixed up yellow/blue track sides
-                yellow_y.append(i[0])
+                yellow_x.append(yellow.cone.location.y)  # negative because we mixed up yellow/blue track sides
+                yellow_y.append(yellow.cone.location.x)
             for i in blue_sort:
-                blue_x.append(-i[1])
-                blue_y.append(i[0])
+                blue_x.append(blue.cone.location.y)
+                blue_y.append(blue.cone.location.x)
 
             # retrieves spline lists (x,y)
             yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len, degree=y_degree)
@@ -162,47 +184,56 @@ class LocalPursuit(Node):
                 tx.append(mid_x)
                 ty.append(mid_y)
 
+                # draw each element in target spline
+                cv2.drawMarker(
+                    debug_img,
+                    loc_to_img_pt(mid_y, mid_x).to_tuple(),
+                    (0, 0, 255),
+                    markerType=cv2.MARKER_SQUARE,
+                    markerSize=1,
+                    thickness=2,
+                )
+
             target_index = round(self.spline_len / 5)  # 1/5th along
-            target = Point(ty[target_index], -tx[target_index])
+            target = Point(ty[target_index], tx[target_index])
 
         ## ORIGINAL BANG-BANG CODE
         else:
-            left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
-            right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
-
-            closest_left: Optional[Cone] = None
-            closest_right: Optional[Cone] = None
-            if len(left_cones) > 0:
-                closest_left = min(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
-            if len(right_cones) > 0:
-                closest_right = min(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+            closest_blue: Optional[ConeWithCovariance] = None
+            closest_yellow: Optional[ConeWithCovariance] = None
+            if len(blue_list) > 0:
+                closest_blue = min(blue_list, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+            if len(yellow_list) > 0:
+                closest_yellow = min(yellow_list, key=lambda c: dist(ORIGIN, cone_to_point(c)))
 
             # if we have two cones, check if they are greater than 5 meters apart
-            if closest_left is not None and closest_right is not None:
-                if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
+            if closest_blue is not None and closest_yellow is not None:
+                if dist(cone_to_point(closest_blue), cone_to_point(closest_yellow)) > 5:
                     # if so - remove the furthest cone from the targeting
-                    left_dist = dist(ORIGIN, cone_to_point(closest_left))
-                    right_dist = dist(ORIGIN, cone_to_point(closest_right))
+                    left_dist = dist(ORIGIN, cone_to_point(closest_blue))
+                    right_dist = dist(ORIGIN, cone_to_point(closest_yellow))
                     if left_dist <= right_dist:
-                        closest_right = None
+                        closest_yellow = None
                     else:
-                        closest_left = None
+                        closest_blue = None
 
             target: Optional[Point] = None
-            if closest_left is not None and closest_right is not None:
+            if closest_blue is not None and closest_yellow is not None:
                 target = Point(
-                    x=closest_left.location.x + (closest_right.location.x - closest_left.location.x) / 2,
-                    y=closest_left.location.y + (closest_right.location.y - closest_left.location.y) / 2,
+                    x=closest_blue.cone.location.x
+                    + (closest_yellow.cone.location.x - closest_blue.cone.location.x) / 2,
+                    y=closest_blue.cone.location.y
+                    + (closest_yellow.cone.location.y - closest_blue.cone.location.y) / 2,
                 )
-            elif closest_left is not None:
+            elif closest_blue is not None:
                 target = Point(
-                    x=closest_left.location.x,
-                    y=closest_left.location.y - 2,
+                    x=closest_blue.cone.location.x,
+                    y=closest_blue.cone.location.y - 2,
                 )
-            elif closest_right is not None:
+            elif closest_yellow is not None:
                 target = Point(
-                    x=closest_right.location.x,
-                    y=closest_right.location.y + 2,
+                    x=closest_yellow.cone.location.x,
+                    y=closest_yellow.cone.location.y + 2,
                 )
 
         ## APPROACH TARGET
@@ -226,12 +257,23 @@ class LocalPursuit(Node):
             steering_angle = -((pi / 2) - atan2(target.x, target.y)) * self.Kp_ang
             self.get_logger().debug(f"Target angle: {steering_angle}")
 
+            target_img_pt = loc_to_img_pt(target.x, target.y)
+            target_img_angle = atan2(target_img_pt.y - IMG_ORIGIN.y, target_img_pt.x - IMG_ORIGIN.x)
+            # draw angle line
+            cv2.line(
+                debug_img,
+                (int(50 * cos(target_img_angle) + IMG_ORIGIN.x), int(50 * sin(target_img_angle) + IMG_ORIGIN.y)),
+                IMG_ORIGIN.to_tuple(),
+                (0, 0, 255),
+            )
+
             # publish message
             control_msg.steering_angle = steering_angle
             control_msg.acceleration = calc_throttle
             control_msg.jerk = 0.0
 
         self.control_publisher.publish(control_msg)
+        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main(args=None):
