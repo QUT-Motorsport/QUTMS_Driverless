@@ -39,7 +39,6 @@ class ReactiveController(Node):
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.3
-    ang_max: float = pi / 2
 
     def __init__(self):
         super().__init__("reactive_controller")
