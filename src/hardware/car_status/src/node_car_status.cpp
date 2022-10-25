@@ -40,6 +40,8 @@ class CarStatusNode : public rclcpp::Node, public CanInterface {
             default:
                 break;
         }
+
+        this->car_status_pub->publish(this->car_status);
     }
 
    public:
