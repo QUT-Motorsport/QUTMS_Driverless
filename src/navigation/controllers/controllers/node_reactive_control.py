@@ -34,7 +34,7 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = -0.5
+    Kp_ang: float = -1.5
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
@@ -122,7 +122,7 @@ class ReactiveController(Node):
         if target is not None:
             # steering control
             steering_angle = self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
-            self.get_logger().info(f"Target angle: {steering_angle}")
+            self.get_logger().debug(f"Target angle: {steering_angle}")
 
             # # velocity control
             # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
