@@ -8,7 +8,6 @@
 const int NUM_CMUS = 8;
 const int NUM_VOLTAGES = 14;
 const int NUM_TEMPERATURES = 16;
-const int RES_NODE_ID = 0x011;
 
 using std::placeholders::_1;
 
