@@ -55,6 +55,7 @@ class CarStatusNode : public rclcpp::Node, public CanInterface {
 
         this->car_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
         for (int i = 0; i < NUM_CMUS; i++) {
+            this->car_status.brick_data[i].id = i + 1;
             this->car_status.brick_data[i].voltages = std::vector<uint16_t>(NUM_VOLTAGES);
             this->car_status.brick_data[i].temperatures = std::vector<uint8_t>(NUM_TEMPERATURES);
         }
