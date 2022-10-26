@@ -50,24 +50,26 @@ class ReactiveController(Node):
             self.vel_max = 45 / 3.6  # 40km/h in m/s
             self.Kp_vel = 1
             self.vel_min = self.vel_max / 2  # m/s
-            self.throttle_max = 0.5
+            self.throttle_max = 0.2
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[vel_sub, detection_sub],
-            queue_size=30,
-            slop=0.3,
-        )
-        synchronizer.registerCallback(self.callback)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+
+        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        # synchronizer = message_filters.ApproximateTimeSynchronizer(
+        #     fs=[vel_sub, detection_sub],
+        #     queue_size=30,
+        #     slop=0.3,
+        # )
+        # synchronizer.registerCallback(self.callback)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/reactive_driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
 
-    def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
+    def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
