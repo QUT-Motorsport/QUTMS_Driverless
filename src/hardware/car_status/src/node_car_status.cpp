@@ -36,7 +36,7 @@ class CarStatusNode : public rclcpp::Node, public CanInterface {
                 uint8_t temps[6];
                 // https://stackoverflow.com/a/2923290
                 Parse_BMU_TransmitTemperatures((uint8_t *)&msg.data[0], &cmu_id, &packet_id, temps);
-                for (int i = 0; i < 6 && (packet_id * 6 + i) < NUM_TEMPERATURES i++) {
+                for (int i = 0; i < 6 && (packet_id * 6 + i) < NUM_TEMPERATURES; i++) {
                     car_status.brick_data[cmu_id].temperatures[packet_id * 6 + i] = temps[i];
                 }
                 break;
