@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "CAN_DVL.h"
-// #include "CAN_SW.h"
+#include "CAN_RES.h"
 #include "CAN_VCU.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
@@ -11,17 +11,7 @@
 #include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-const int RES_NODE_ID = 0x011;
-
 using std::placeholders::_1;
-
-typedef struct {
-    bool sw_k2;
-    bool bt_k3;
-    bool estop;
-    bool loss_of_signal_shutdown_notice;
-    uint8_t radio_quality;
-} RES_Status_t;
 
 class ASSupervisor : public rclcpp::Node, public CanInterface {
    private:
@@ -77,12 +67,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // RES Reciever Status Packet
                 this->_internal_status_time = this->now();  // Debug information
 
-                // Store in local state
-                this->RES_status.estop = !(msg.data[0] & (1 << 0));                        // ESTOP = PDO 2000 Bit 0
-                this->RES_status.sw_k2 = msg.data[0] & (1 << 1);                           // K2 = PDO 2000 Bit 1
-                this->RES_status.bt_k3 = msg.data[0] & (1 << 2);                           // K3 = PDO 2000 Bit 2
-                this->RES_status.radio_quality = msg.data[6];                              // Radio Quality = PDO 2006
-                this->RES_status.loss_of_signal_shutdown_notice = msg.data[7] & (1 << 6);  // LoSSN = PDO 2007 Bit 6
+                Parse_RES_Heartbeat((uint8_t*)&msg.data[0], &this->RES_status);
 
                 this->res_alive = 1;
                 // Log RES state
