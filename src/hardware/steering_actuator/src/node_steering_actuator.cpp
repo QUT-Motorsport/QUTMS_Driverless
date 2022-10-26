@@ -253,6 +253,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
     void target_position(int32_t target) {
+        if (std::get<2>(this->c5e_state) != OE) {
+            return;
+        }
         // Set Target
         this->target = target;
 
