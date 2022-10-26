@@ -38,7 +38,7 @@ class ReactiveController(Node):
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
-    throttle_max: float = 0.3
+    throttle_max: float = 0.2
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -65,7 +65,7 @@ class ReactiveController(Node):
         # synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/reactive_driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
 
