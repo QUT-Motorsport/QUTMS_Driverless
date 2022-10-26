@@ -8,11 +8,11 @@ from ackermann_msgs.msg import AckermannDrive
 
 TORQUE_MIN = 0.0
 TORQUE_MAX = 1.0
-TORQUE_INCREMENT = 0.1
+TORQUE_INCREMENT = 0.05
 
-STEER_MIN = -3.1
-STEER_MAX = 3.1
-STEER_INCREMENT = 0.1
+STEER_MIN = -1.0
+STEER_MAX = 1.0
+STEER_INCREMENT = 0.05
 
 torque: float = 0.0
 steering_angle: float = 0.0

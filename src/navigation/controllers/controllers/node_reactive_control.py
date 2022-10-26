@@ -34,7 +34,7 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = 10
+    Kp_ang: float = -0.5
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
@@ -46,7 +46,7 @@ class ReactiveController(Node):
         ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(ebs_test))
         if ebs_test:
-            self.Kp_ang = 0.5  # shallow steering, straight line
+            self.Kp_ang = -0.1  # shallow steering, straight line
             self.vel_max = 45 / 3.6  # 40km/h in m/s
             self.Kp_vel = 1
             self.vel_min = self.vel_max / 2  # m/s
@@ -121,7 +121,7 @@ class ReactiveController(Node):
 
         if target is not None:
             # steering control
-            steering_angle = -self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
+            steering_angle = self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
             self.get_logger().info(f"Target angle: {steering_angle}")
 
             # # velocity control

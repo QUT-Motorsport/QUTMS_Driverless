@@ -74,8 +74,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
-        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, M_PI), -M_PI);
-        int32_t steeringDemandStepper = cappedAngle * this->limits.first / M_PI;
+        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, 1), -1);
+        int32_t steeringDemandStepper = cappedAngle * this->limits.first;
 
         this->target_position(steeringDemandStepper);
     }
@@ -263,7 +263,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out));
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // sus
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
         this->can_pub->publish(_d_2_f(id, 0, out));
