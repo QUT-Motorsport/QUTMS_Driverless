@@ -65,7 +65,7 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
             steering_angle = 0.0
 
         torque = round(max(min(torque, TORQUE_MAX), TORQUE_MIN), 1)
-        steering_angle = round(max(min(steering_angle, STEER_MAX), STEER_MIN), 1)
+        steering_angle = round(max(min(steering_angle, STEER_MAX), STEER_MIN), 2)
 
         print_state(stdscr)
         keyboard_controller_node.publish_drive_command(torque, steering_angle)
