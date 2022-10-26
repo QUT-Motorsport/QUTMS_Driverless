@@ -34,7 +34,7 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = -1.5
+    Kp_ang: float = -2
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
