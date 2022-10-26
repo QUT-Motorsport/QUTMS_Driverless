@@ -141,14 +141,9 @@ class ReactiveController(Node):
             # elif throttle_scalar <= 0:
             #     calc_throttle = 0.0  # if its over maximum, cut throttle
 
-            target_vel = self.vel_max
-            calc_throttle = self.throttle_max
-
             # publish message
             control_msg.steering_angle = steering_angle
-            control_msg.speed = target_vel
-            control_msg.acceleration = calc_throttle
-            control_msg.jerk = 0.0
+            control_msg.acceleration = self.throttle_max
 
         self.control_publisher.publish(control_msg)
 
