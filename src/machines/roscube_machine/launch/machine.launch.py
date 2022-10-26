@@ -30,6 +30,10 @@ def generate_launch_description():
                 package="vehicle_supervisor",
                 executable="vehicle_supervisor",
             ),
+            Node(
+                package="car_status",
+                executable="car_status_node",
+            ),
             # MISSION CONTROL NODE HERE
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
