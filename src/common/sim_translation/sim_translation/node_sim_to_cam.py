@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 
@@ -14,6 +16,8 @@ cv_bridge = CvBridge()
 
 
 class CamSimulator(Node):
+    start: float = 0.0
+
     def __init__(self):
         super().__init__("cam_simulator")
 
@@ -32,8 +36,8 @@ class CamSimulator(Node):
         depth_sub = message_filters.Subscriber(self, Image, "/fsds/depth_registered/image_color")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[colour_sub, depth_sub],
-            queue_size=20,
-            slop=0.1,
+            queue_size=40,
+            slop=0.4,
         )
         synchronizer.registerCallback(self.callback)
 
@@ -45,6 +49,9 @@ class CamSimulator(Node):
 
     def callback(self, colour_msg: Image, depth_msg: Image):
         self.get_logger().debug("Received sim camera data")
+
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        start: float = time.perf_counter()  # begin a timer
 
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
         new_depth = np.divide(depth_frame, 2)  # for some reason, depth is 2x in the depth camera
@@ -65,6 +72,8 @@ class CamSimulator(Node):
         self.rgb_img_publisher.publish(colour_msg)
 
         self.get_logger().debug("Published RBG, Info, Depth")
+        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.start = time.perf_counter()
 
 
 def main(args=None):

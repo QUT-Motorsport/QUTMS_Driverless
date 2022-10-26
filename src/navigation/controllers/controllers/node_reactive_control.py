@@ -36,10 +36,9 @@ def cone_to_point(cone: Cone) -> Point:
 class ReactiveController(Node):
     Kp_ang: float = 5
     Kp_vel: float = 2
-    vel_max: float = 5  # m/s
+    vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.3
-    ang_max: float = pi / 2
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -70,8 +69,6 @@ class ReactiveController(Node):
 
     def callback(self, vel_msg: TwistWithCovarianceStamped, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
-
-        # TODO: implement orange cone counter for loop closure (SLAM) and braking zone (EBS)
 
         # safety critical, set to 0 if not good detection
         control_msg = AckermannDrive()
@@ -125,22 +122,25 @@ class ReactiveController(Node):
             steering_angle = -self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
             self.get_logger().info(f"Target angle: {steering_angle}")
 
-            # velocity control
-            vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
-            self.get_logger().info(f"True vel: {vel}")
+            # # velocity control
+            # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+            # self.get_logger().info(f"True vel: {vel}")
 
-            # target velocity proportional to angle
-            target_vel: float = self.vel_max - (abs(steering_angle)) * self.Kp_vel
-            if target_vel < self.vel_min:
-                target_vel = self.vel_min
-            self.get_logger().info(f"Target vel: {target_vel}")
+            # # target velocity proportional to angle
+            # target_vel: float = self.vel_max - (abs(steering_angle)) * self.Kp_vel
+            # if target_vel < self.vel_min:
+            #     target_vel = self.vel_min
+            # self.get_logger().info(f"Target vel: {target_vel}")
 
-            # increase proportionally as it approaches target
-            throttle_scalar: float = 1 - (vel / target_vel)
-            if throttle_scalar > 0:
-                calc_throttle = self.throttle_max * throttle_scalar
-            elif throttle_scalar <= 0:
-                calc_throttle = 0.0  # if its over maximum, cut throttle
+            # # increase proportionally as it approaches target
+            # throttle_scalar: float = 1 - (vel / target_vel)
+            # if throttle_scalar > 0:
+            #     calc_throttle = self.throttle_max * throttle_scalar
+            # elif throttle_scalar <= 0:
+            #     calc_throttle = 0.0  # if its over maximum, cut throttle
+
+            target_vel = self.vel_max
+            calc_throttle = self.throttle_max
 
             # publish message
             control_msg.steering_angle = steering_angle

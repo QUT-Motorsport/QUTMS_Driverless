@@ -9,7 +9,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    rviz_path = os.path.join(get_package_share_path("driverless_common"), "display.rviz")
+    rviz_path = os.path.join(get_package_share_path("driverless_common"), "rviz/display.rviz")
 
     return LaunchDescription(
         [

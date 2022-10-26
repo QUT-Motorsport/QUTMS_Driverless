@@ -49,7 +49,6 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
 
     rvwp_index: int = (min_index + rvwp_lookahead) % len(path)
     rvwp: List[float] = path[rvwp_index]
-    print(rvwp)
 
     return rvwp
 
@@ -79,14 +78,15 @@ def wrap_to_pi(angle: float) -> float:
 
 class PurePursuit(Node):
     path: np.ndarray = []
-    Kp_ang: float = 12
-    Kp_vel: float = 0.1
-    vel_max: float = 19  # m/s
-    vel_min: float = 0.5  # m/s
+    Kp_ang: float = 6
+    Kp_vel: float = 0.08
+    vel_max: float = 7  # m/s
+    vel_min: float = 5  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
-    Kp_brake: float = 0.05
-    rvwpLookahead: float = 45
+    Kp_brake: float = 0.0
+    pos_RVWP_LAD: int = 45
+    vel_RVWP_LAD: int = pos_RVWP_LAD + 30
 
     def __init__(self):
         super().__init__("pure_pursuit")
@@ -136,13 +136,13 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, ak)
 
         # rvwp control
-        rvwp: List[float] = get_RVWP(position, self.path, self.rvwpLookahead)
+        rvwp: List[float] = get_RVWP(position, self.path, self.pos_RVWP_LAD)
         # steering control
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         steering_angle = wrap_to_pi(ak - des_heading_ang) * self.Kp_ang
 
         # velocity control
-        rvwp: List[float] = get_RVWP(position, self.path, self.rvwpLookahead + 30)
+        rvwp: List[float] = get_RVWP(position, self.path, self.vel_RVWP_LAD)
         intensity = rvwp[2]
         vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
 
