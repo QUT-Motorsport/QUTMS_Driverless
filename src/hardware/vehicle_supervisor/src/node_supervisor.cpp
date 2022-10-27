@@ -234,7 +234,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Setup states
         this->ros_state.state = driverless_msgs::msg::State::CHECK_EBS;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
-        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
+        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
