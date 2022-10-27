@@ -9,6 +9,8 @@ from ..utils import Config  # For typing
 
 def locate_cones(config, point_cloud):
     config.logger.info(f"Point Cloud received with {point_cloud.shape[0]} points")
+
+    # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
         vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
@@ -28,6 +30,7 @@ def locate_cones(config, point_cloud):
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
     config.logger.info(f"DONE: Segments and Bins")
 
+    # Create visualisations
     if config.create_figures:
         vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
         vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
