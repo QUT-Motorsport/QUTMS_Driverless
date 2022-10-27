@@ -2,6 +2,7 @@
 
 #include "CAN_DVL.h"
 #include "CAN_RES.h"
+#include "CAN_SW.h"
 #include "CAN_VCU.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
@@ -18,7 +19,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     DVL_HeartbeatState_t DVL_heartbeat;
     VCU_HeartbeatState_t CTRL_VCU_heartbeat;
     VCU_HeartbeatState_t EBS_VCU_heartbeat;
-    // SW_HeartbeatState_t SW_heartbeat;
+    SW_HeartbeatState_t SW_heartbeat;
     RES_Status_t RES_status;
 
     // Can publisher and subscriber
@@ -124,6 +125,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
+
+        auto sw_heartbeat = Compose_SW_Heartbeat(&this->SW_heartbeat);
+        this->can_pub->publish(this->_d_2_f(sw_heartbeat.id, true, sw_heartbeat.data));
 
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
@@ -235,6 +239,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->ros_state.state = driverless_msgs::msg::State::CHECK_EBS;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
         this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
+        this->SW_heartbeat.flags._SW_Flags.FAN_ENABLE = 1;
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
