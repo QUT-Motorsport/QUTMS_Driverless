@@ -13,7 +13,7 @@ def torch_init(conf_thresh: float, model_path: str, repo_path: str):
         "custom",
         source="local",
         path=model_path,
-        # force_reload=True, # for fixing bad cache
+        force_reload=True,  # for fixing bad cache
     )
     model.conf = conf_thresh
     model.iou = 0.1

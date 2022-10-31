@@ -32,12 +32,15 @@ Colour = Tuple[int, int, int]
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 80, 255)  # bgr - orange
+UNKNOWN_DISP_COLOUR: Colour = (0, 0, 0)  # bgr - black
 
 # display_colour
 CONE_DISPLAY_PARAMETERS = [
     BLUE_DISP_COLOUR,
-    YELLOW_DISP_COLOUR,
+    UNKNOWN_DISP_COLOUR,
     ORANGE_DISP_COLOUR,
+    ORANGE_DISP_COLOUR,
+    YELLOW_DISP_COLOUR,
 ]
 
 ConeMsgColour = int  # define arbitrary variable type
@@ -126,7 +129,7 @@ class VisionProcessor(Node):
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")
 
-        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
         start: float = time.perf_counter()  # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
@@ -164,7 +167,7 @@ class VisionProcessor(Node):
         debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
 
-        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
         self.start = time.perf_counter()
 
 
@@ -208,7 +211,7 @@ def main_torch(args=None):
     from .torch_inference import infer, torch_init
 
     # loading Pytorch model
-    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBOV1.pt")
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
     CONFIDENCE = 0.35  # higher = tighter filter
     model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)

@@ -1,13 +1,11 @@
 from math import atan2, cos, pi, sin, sqrt
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import TwistWithCovarianceStamped
 
 from driverless_common.point import Point
 
@@ -33,16 +31,17 @@ def cone_to_point(cone: Cone) -> Point:
     )
 
 
-class ReactiveController(Node):
+class PredictiveController(Node):
     Kp_ang: float = -2.5
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.1
     prev_steering_angle: float = 0
+    Kp_prev: float = 0.4
 
     def __init__(self):
-        super().__init__("reactive_controller")
+        super().__init__("predictive_controller")
 
         ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(ebs_test))
@@ -54,16 +53,7 @@ class ReactiveController(Node):
             self.throttle_max = 0.2
 
         # sync subscribers
-        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-
-        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        # synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[vel_sub, detection_sub],
-        #     queue_size=30,
-        #     slop=0.3,
-        # )
-        # synchronizer.registerCallback(self.callback)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
@@ -81,15 +71,41 @@ class ReactiveController(Node):
         control_msg.jerk = 1.0  # use as brake
 
         # weighting for track bounds
-        blue_weight = 0
-        yellow_weight = 0
+        left_weight = 0
+        right_weight = 0
 
         cones: List[Cone] = cone_msg.cones
-        blue_cones = [c for c in cones if c.color == Cone.BLUE]
-        yellow_cones = [c for c in cones if c.color == Cone.YELLOW]
+        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
+        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
 
         # when blue cones is not empty
-        # if blue_cones:
+        if left_cones:
+            left_weight = left_cones / len(cones)
+        # when yellow cones is not empty
+        if left_cones:
+            right_weight = -left_cones / len(cones)
+
+        # weight each cone by distance from origin
+        left_distances = [dist(ORIGIN, cone_to_point(c)) for c in left_cones]
+        right_distances = [dist(ORIGIN, cone_to_point(c)) for c in right_cones]
+
+        # sum weighted distances
+        # less weight to further away cones - inverse proportion
+        left_weighted_distance = sum([1 / d * left_weight for d in left_distances])
+        right_weighted_distance = sum([1 / d * right_weight for d in right_distances])
+
+        closest_left: Optional[Cone] = None
+        closest_right: Optional[Cone] = None
+        if len(left_cones) > 1:
+            # grab second closest
+            closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[1]
+        elif len(left_cones) > 0:
+            closest_left = left_cones[0]
+
+        if len(right_cones) > 1:
+            closest_right = sorted(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[1]
+        elif len(right_cones) > 0:
+            closest_right = right_cones[0]
 
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
