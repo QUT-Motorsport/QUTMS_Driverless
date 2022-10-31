@@ -174,11 +174,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             // }
 
-            // MANUAL HARD CODED FOR NOW
+            // TRACKDRIVE
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
             this->ros_state.mission = driverless_msgs::msg::State::TRACKDRIVE;
+
+            // MANUAL
             // this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
-            this->ros_state.mission = driverless_msgs::msg::State::MANUAL_DRIVING;
+            // this->ros_state.mission = driverless_msgs::msg::State::MANUAL_DRIVING;
+
             if (ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
                 // transition to Check EBS state when mission is selected
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
