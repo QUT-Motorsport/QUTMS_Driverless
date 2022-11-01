@@ -10,6 +10,7 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/state.hpp"
+#include "driverless_msgs/msg/steering_reading.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -29,6 +30,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
+    rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
@@ -115,14 +117,23 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     data[i] = msg.data[i];
                 }
 
-                int16_t steering_0;
-                int16_t steering_1;
+                int16_t steering_0_raw;
+                int16_t steering_1_raw;
                 uint16_t adc_0;
                 uint16_t adc_1;
 
-                Parse_VCU_TransmitSteering(data, &steering_0, &steering_1, &adc_0, &adc_1);
-                RCLCPP_INFO(this->get_logger(), "Steering 0: %i  Steering 1: %i ADC 0: %i ADC 1: %i", steering_0,
-                            steering_1, adc_0, adc_1);
+                Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
+                RCLCPP_INFO(this->get_logger(), "Steering 0: %i  Steering 1: %i ADC 0: %i ADC 1: %i", steering_0_raw,
+                            steering_1_raw, adc_0, adc_1);
+                double steering_0 = steering_0_raw / 10.0;
+                double steering_1 = steering_1_raw / 10.0;
+                if (abs(steering_0 - steering_1) < 5) {
+                    driverless_msgs::msg::SteeringReading reading;
+                    reading.steering_angle = steering_0;
+                    reading.adc_0 = adc_0;
+                    reading.adc_1 = adc_1;
+                    this->steering_reading_pub->publish(reading);
+                }
             }
 
             default:
@@ -263,35 +274,33 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
 
         // CAN
-        RCLCPP_DEBUG(this->get_logger(), "Initalising CAN interactants...");
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "canbus_rosbound", 10, std::bind(&ASSupervisor::canbus_callback, this, _1));
 
         if (this->can_pub == nullptr || this->can_sub == nullptr) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to create CAN topic interactants");
+            RCLCPP_ERROR(this->get_logger(), "Failed to create CAN topic pub sub");
         }
 
         // State
-        RCLCPP_DEBUG(this->get_logger(), "Initalising state interactants...");
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("as_status", 10);
 
         // RES
-        RCLCPP_INFO(this->get_logger(), "Initialising RES receiver...");
         this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
 
+        // Steering
+        this->steering_reading_pub =
+            this->create_publisher<driverless_msgs::msg::SteeringReading>("steering_reading", 10);
+
         // Ackermann
-        RCLCPP_DEBUG(this->get_logger(), "Initalising ackermann interactants...");
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
             "/driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
-        RCLCPP_DEBUG(this->get_logger(), "Creating heartbeat timer...");
         this->heartbeat_timer =
             this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::heartbeat_callback, this));
 
         // RES Alive
-        RCLCPP_DEBUG(this->get_logger(), "Creating RES alive timer...");
         this->res_alive_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
                                                         std::bind(&ASSupervisor::res_alive_callback, this));
     }

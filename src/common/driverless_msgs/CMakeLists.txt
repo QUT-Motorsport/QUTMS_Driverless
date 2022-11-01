@@ -30,6 +30,7 @@ set(msg_files
   "msg/State.msg"
   "msg/ConeWithCovariance.msg"
   "msg/TrackDetectionStamped.msg"
+  "msg/SteeringReading.msg"
 )
 
 set(srv_files
