@@ -39,6 +39,7 @@ class ReactiveController(Node):
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
+    target_cone_count = 3
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -86,16 +87,15 @@ class ReactiveController(Node):
 
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
-        if len(left_cones) > 1:
-            # grab second closest
-            closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[1]
-        elif len(left_cones) > 0:
-            closest_left = left_cones[0]
+        if len(left_cones) > 0:
+            closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[
+                min(self.target_cone_count, len(left_cones) - 1)
+            ]
 
-        if len(right_cones) > 1:
-            closest_right = sorted(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[1]
-        elif len(right_cones) > 0:
-            closest_right = right_cones[0]
+        if len(right_cones) > 0:
+            closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[
+                min(self.target_cone_count, len(right_cones) - 1)
+            ]
 
         # if we have two cones, check if they are greater than 5 meters apart
         if closest_left is not None and closest_right is not None:
