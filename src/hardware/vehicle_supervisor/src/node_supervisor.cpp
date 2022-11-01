@@ -42,8 +42,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
-        uint32_t maskedId = msg.id & ~0xF;
-
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -83,7 +81,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 break;
         }
 
-        switch (maskedId) {
+        uint32_t qutms_masked_id = msg.id & ~0xF;
+        switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
                 // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
@@ -108,6 +107,22 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // SEEMS LIKE A GOOD IDEA TO ADD A TIMER TO MAKE SURE THE VCUs ARE CHECKING IN
                 // ELSE EMERGENCY
                 break;
+            }
+            case (VCU_TransmitSteering_ID): {
+                // data vector to uint8_t array
+                uint8_t data[8];
+                for (int i = 0; i < 8; i++) {
+                    data[i] = msg.data[i];
+                }
+
+                int16_t steering_0;
+                int16_t steering_1;
+                uint16_t adc_0;
+                uint16_t adc_1;
+
+                Parse_VCU_TransmitSteering(data, &steering_0, &steering_1, &adc_0, &adc_1);
+                RCLCPP_INFO(this->get_logger(), "Steering 0: %i  Steering 1: %i ADC 0: %i ADC 1: %i", steering_0,
+                            steering_1, adc_0, adc_1);
             }
 
             default:
