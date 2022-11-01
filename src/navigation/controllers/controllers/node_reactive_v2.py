@@ -168,7 +168,7 @@ class BetterReactiveController(Node):
         control_msg.acceleration = calc_throttle
         self.control_publisher.publish(control_msg)
 
-        self.get_logger().info(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
 
 
 def main(args=None):
