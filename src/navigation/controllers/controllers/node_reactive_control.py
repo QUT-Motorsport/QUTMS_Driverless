@@ -34,11 +34,11 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = -2.5
+    Kp_ang: float = -3
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
-    throttle_max: float = 0.1
+    throttle_max: float = 0.2
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -117,12 +117,12 @@ class ReactiveController(Node):
         elif closest_left is not None:
             target = Point(
                 x=closest_left.location.x,
-                y=closest_left.location.y - 2,
+                y=closest_left.location.y - 1.5,
             )
         elif closest_right is not None:
             target = Point(
                 x=closest_right.location.x,
-                y=closest_right.location.y + 2,
+                y=closest_right.location.y + 1.5,
             )
 
         if target is not None:
