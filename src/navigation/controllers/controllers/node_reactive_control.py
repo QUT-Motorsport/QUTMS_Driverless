@@ -1,4 +1,4 @@
-from math import atan2, cos, pi, sin, sqrt
+import numpy as np
 
 import message_filters
 import rclpy
@@ -23,7 +23,7 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
 def dist(a: Point, b: Point) -> float:
-    return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+    return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
 
 
 def cone_to_point(cone: Cone) -> Point:
@@ -34,7 +34,7 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = -3
+    Kp_ang: float = 3
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
@@ -127,25 +127,8 @@ class ReactiveController(Node):
 
         if target is not None:
             # steering control
-            steering_angle = self.Kp_ang * ((pi / 2) - atan2(target.x, target.y))
+            steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")
-
-            # # velocity control
-            # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
-            # self.get_logger().info(f"True vel: {vel}")
-
-            # # target velocity proportional to angle
-            # target_vel: float = self.vel_max - (abs(steering_angle)) * self.Kp_vel
-            # if target_vel < self.vel_min:
-            #     target_vel = self.vel_min
-            # self.get_logger().info(f"Target vel: {target_vel}")
-
-            # # increase proportionally as it approaches target
-            # throttle_scalar: float = 1 - (vel / target_vel)
-            # if throttle_scalar > 0:
-            #     calc_throttle = self.throttle_max * throttle_scalar
-            # elif throttle_scalar <= 0:
-            #     calc_throttle = 0.0  # if its over maximum, cut throttle
 
             # publish message
             control_msg.steering_angle = steering_angle
