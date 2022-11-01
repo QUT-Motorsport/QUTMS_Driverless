@@ -133,6 +133,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     reading.adc_0 = adc_0;
                     reading.adc_1 = adc_1;
                     this->steering_reading_pub->publish(reading);
+                } else {
+                    // go to emergency
+                    this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
                 }
             }
 
