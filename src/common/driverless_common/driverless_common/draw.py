@@ -1,4 +1,4 @@
-from math import cos, pi, sin
+from math import cos, pi, radians, sin
 
 import cv2
 import numpy as np
@@ -124,8 +124,8 @@ def draw_steering(
     cv2.line(
         debug_img,
         (
-            int(50 * cos(steering_angle / 4 - pi / 2) + IMG_ORIGIN.x),
-            int(50 * sin(steering_angle / 4 - pi / 2) + IMG_ORIGIN.y),
+            int(50 * cos(radians(steering_angle)) + IMG_ORIGIN.x),
+            int(50 * sin(radians(steering_angle)) + IMG_ORIGIN.y),
         ),
         IMG_ORIGIN.to_tuple(),
         (0, 0, 255),
