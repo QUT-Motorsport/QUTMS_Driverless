@@ -34,12 +34,12 @@ def cone_to_point(cone: Cone) -> Point:
 
 
 class ReactiveController(Node):
-    Kp_ang: float = 3
+    Kp_ang: float = 2.5
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
-    target_cone_count = 3
+    target_cone_count = 4
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -93,7 +93,7 @@ class ReactiveController(Node):
             ]
 
         if len(right_cones) > 0:
-            closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[
+            closest_right = sorted(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))[
                 min(self.target_cone_count, len(right_cones) - 1)
             ]
 
