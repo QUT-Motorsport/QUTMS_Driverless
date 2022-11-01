@@ -3,6 +3,7 @@
 #include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/state.hpp"
+#include "driverless_msgs/msg/steering_reading.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -44,6 +45,7 @@ typedef struct c5e_config {
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
     int32_t target;
+    double current_steering_angle;
     int32_t velocity;
     int32_t current;
     std::pair<uint32_t, uint32_t> accelerations;
@@ -56,6 +58,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
+    rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
     driverless_msgs::msg::State state;
@@ -72,12 +75,21 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         }
     }
 
+    void steering_reading_callback(const driverless_msgs::msg::SteeringReading msg) {
+        this->current_steering_angle = msg.steering_angle;
+    }
+
     void steering_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         // Validate driving state
-        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, 1), -1);
-        int32_t steeringDemandStepper = cappedAngle * this->limits.first;
+        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, 90), -90);
+        // int32_t steeringDemandStepper = cappedAngle * this->limits.first;
 
-        this->target_position(steeringDemandStepper);
+        // left hand down is +, rhd is -
+        double steering_angle_difference = cappedAngle - this->current_steering_angle;
+
+        double enc_to_des_angle = ((steering_angle_difference * 0.2820f) / 10.0f) * 4000.f;
+        RCLCPP_INFO(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
+        // this->target_position(-enc_to_des_angle);
     }
 
     void c5e_state_callback() {
@@ -144,6 +156,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "as_status", 10, std::bind(&SteeringActuator::state_callback, this, _1));
+
+        this->steering_reading_sub = this->create_subscription<driverless_msgs::msg::SteeringReading>(
+            "steering_reading", 10, std::bind(&SteeringActuator::steering_reading_callback, this, _1));
 
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
             "driving_command", 10, std::bind(&SteeringActuator::steering_callback, this, _1));
@@ -262,7 +277,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint32_t id;     // Packet id out
         uint8_t out[8];  // Data out
 
-        uint16_t control_word = 47;
+        uint16_t control_word = 111;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out));
 
