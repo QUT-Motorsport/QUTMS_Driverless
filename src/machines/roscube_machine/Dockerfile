@@ -74,7 +74,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba install -y --file ./conda_requirements
 
 # driverless common
-COPY ./src/navigation/driverless_common/conda_requirements ./conda_requirements
+COPY ./src/common/driverless_common/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
