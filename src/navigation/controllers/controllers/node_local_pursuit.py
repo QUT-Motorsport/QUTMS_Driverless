@@ -22,7 +22,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStam
 from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
-from driverless_common.point import Point
+from driverless_common.point import Point, cone_to_point, dist
 
 from typing import List, Optional, Tuple
 
@@ -30,17 +30,6 @@ from typing import List, Optional, Tuple
 cv_bridge = CvBridge()
 
 ORIGIN = Point(0, 0)
-
-
-def dist(a: Point, b: Point) -> float:
-    return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
-
-
-def cone_to_point(cone: ConeWithCovariance) -> Point:
-    return Point(
-        cone.cone.location.x,
-        cone.cone.location.y,
-    )
 
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int = 3) -> Tuple[list, list]:
