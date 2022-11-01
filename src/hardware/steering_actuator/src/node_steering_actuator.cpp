@@ -288,7 +288,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_pub->publish(_d_2_f(id, 0, out));
 
         // Set Control Word
-        control_word = 63;
+        control_word = 127;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out));
     }
