@@ -124,8 +124,8 @@ def draw_steering(
     cv2.line(
         debug_img,
         (
-            int(50 * cos(radians(steering_angle)) + IMG_ORIGIN.x),
-            int(50 * sin(radians(steering_angle)) + IMG_ORIGIN.y),
+            int(IMG_ORIGIN.x - 50 * sin(radians(steering_angle))),
+            int(IMG_ORIGIN.y - 50 * cos(radians(steering_angle))),
         ),
         IMG_ORIGIN.to_tuple(),
         (0, 0, 255),
