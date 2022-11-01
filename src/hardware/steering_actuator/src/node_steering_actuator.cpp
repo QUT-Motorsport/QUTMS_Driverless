@@ -89,7 +89,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         double enc_to_des_angle = ((steering_angle_difference * 0.2820f) / 10.0f) * 3600.f;
         RCLCPP_INFO(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
-        // this->target_position(-enc_to_des_angle);
+        this->target_position(-enc_to_des_angle);
     }
 
     void c5e_state_callback() {
