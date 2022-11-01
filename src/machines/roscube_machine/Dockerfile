@@ -73,6 +73,12 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# driverless common
+COPY ./src/navigation/driverless_common/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 
@@ -95,6 +101,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         keyboard_control \
         car_status \
         baby_slam \
+        driverless_common \
     && rm -rf ./src
 
 # force ROS to use Jetson interface

@@ -34,6 +34,10 @@ def generate_launch_description():
                 package="car_status",
                 executable="car_status_node",
             ),
+            Node(
+                package="driverless_common",
+                executable="display",
+            ),
             # MISSION CONTROL NODE HERE
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
