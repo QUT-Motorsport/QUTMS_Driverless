@@ -102,9 +102,10 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
 
 CONE_TO_RGB_MAP = {
     Cone.BLUE: ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),
-    Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
+    Cone.UNKNOWN: ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0),
     Cone.ORANGE_BIG: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
     Cone.ORANGE_SMALL: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
+    Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
 }
 
 
