@@ -245,7 +245,7 @@ def main_trt(args=None):
     from .trt_inference import TensorWrapper
 
     # loading TensorRT engine
-    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
+    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.engine")
     PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
     CONFIDENCE = 0.35  # higher = tighter filter
     trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
