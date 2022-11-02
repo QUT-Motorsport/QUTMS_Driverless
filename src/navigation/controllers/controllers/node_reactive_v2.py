@@ -136,8 +136,6 @@ class BetterReactiveController(Node):
                     thickness=2,
                 )
 
-        # error += self.Kp_prev * self.prev_steering_angle
-
         # find the best curve
         best_curve: np.ndarray = curves[np.abs(errors).argmin()]
         for i in range(len(x)):
