@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = "baby_slam"
+package_name = "py_slam"
 
 setup(
     name=package_name,
@@ -23,7 +23,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "slam = baby_slam.node_slam:main",
+            "slam = py_slam.node_slam:main",
         ],
     },
 )
