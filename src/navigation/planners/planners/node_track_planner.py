@@ -64,12 +64,12 @@ def angle(p1: List[float], p2: List[float]) -> float:
     return atan2(y_disp, x_disp)
 
 
-class PathPlanner(Node):
+class TrackPlanner(Node):
     spline_len: int = 3999
     track: List[Cone] = []
 
     def __init__(self):
-        super().__init__("map_path_planner")
+        super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(TrackDetectionStamped, "/slam/track", self.map_callback, 10)
@@ -171,7 +171,7 @@ class PathPlanner(Node):
 def main(args=None):
     # begin ros node
     rclpy.init(args=args)
-    node = PathPlanner()
+    node = TrackPlanner()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
