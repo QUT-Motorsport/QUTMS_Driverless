@@ -101,6 +101,7 @@ class MapPathPlanner(Node):
             if cone.color == Cone.YELLOW:
                 yellow_x.append(cone.location.x)
                 yellow_y.append(cone.location.y)
+                cone.color = 4
             elif cone.color == Cone.BLUE:
                 blue_x.append(cone.location.x)
                 blue_y.append(cone.location.y)

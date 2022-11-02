@@ -63,6 +63,8 @@ class ConeDetectionTranslator(Node):
                 detected_cone.location.y = -x_dist * sin(ak) + y_dist * cos(ak)
                 detected_cone.location.z = 0.0
                 detected_cone.color = cone.color
+                if cone.color == FSCone.YELLOW:
+                    detected_cone.color = Cone.YELLOW
                 if detected_cone.location.x > 0:
                     detected_cones.append(detected_cone)
 

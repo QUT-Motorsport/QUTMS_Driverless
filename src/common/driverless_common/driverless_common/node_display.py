@@ -45,6 +45,7 @@ class DisplayDetections(Node):
         # track subs
         self.create_subscription(TrackDetectionStamped, "/sim_map/track", self.sim_track_callback, 1)
         self.create_subscription(TrackDetectionStamped, "/slam/track", self.slam_callback, 1)
+        self.create_subscription(TrackDetectionStamped, "/slam/local", self.local_callback, 1)
 
         # cv2 rosboard image pubs
         self.vision_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img", 1)
@@ -53,6 +54,7 @@ class DisplayDetections(Node):
 
         self.sim_track_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/sim_track_image", 1)
         self.slam_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/slam_image", 1)
+        self.local_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/local_image", 1)
 
         # rviz marker pubs
         self.vision_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/vision_markers", 1)
@@ -69,15 +71,11 @@ class DisplayDetections(Node):
 
     def steering_callback(self, msg: AckermannDrive):
         # get most recent driving command msg from a controller
-        self.get_logger().debug("Received steering control")
-
         self.steering_angle = msg.steering_angle
         self.velocity = msg.speed
 
     def vision_callback(self, msg: ConeDetectionStamped):
         # subscribed to vision cone detections
-        self.get_logger().debug("Received vision detection")
-
         debug_img = draw_markers(msg.cones)  # draw cones on image
         debug_img = draw_steering(
             debug_img, self.steering_angle, self.velocity
@@ -88,8 +86,6 @@ class DisplayDetections(Node):
 
     def lidar_callback(self, msg: ConeDetectionStamped):
         # subscribed to lidar cone detections
-        self.get_logger().debug("Received lidar detection")
-
         debug_img = draw_markers(msg.cones)
         debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.lidar_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
@@ -98,8 +94,6 @@ class DisplayDetections(Node):
 
     def sim_cones_callback(self, msg: ConeDetectionStamped):
         # subscribed to sim cone detections
-        self.get_logger().debug("Received sim cones detection")
-
         debug_img = draw_markers(msg.cones)
         debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.sim_cones_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
@@ -108,8 +102,6 @@ class DisplayDetections(Node):
 
     def path_callback(self, msg: PathStamped):
         # subscribed to a desired path
-        self.get_logger().debug("Received path spline")
-
         path_markers: List[Point] = []
         path_colours: List[ColorRGBA] = []
 
@@ -135,16 +127,20 @@ class DisplayDetections(Node):
     def sim_track_callback(self, msg: TrackDetectionStamped):
         # subscribed to sim map
         map_img = draw_map(msg)
-
         self.sim_track_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
         self.sim_track_mkr_publisher.publish(marker_array_from_map(msg, ground_truth=True))
 
     def slam_callback(self, msg: TrackDetectionStamped):
         # subscribed to slam map
         map_img = draw_map(msg)
-
         self.slam_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
         self.slam_mkr_publisher.publish(marker_array_from_map(msg))
+
+    def local_callback(self, msg: TrackDetectionStamped):
+        # subscribed to sim cone detections
+        cones: List[Cone] = [c.cone for c in msg.cones]
+        debug_img = draw_markers(cones)
+        self.local_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main():
