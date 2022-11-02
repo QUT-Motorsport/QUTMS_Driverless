@@ -32,12 +32,15 @@ Colour = Tuple[int, int, int]
 YELLOW_DISP_COLOUR: Colour = (0, 255, 255)  # bgr - yellow
 BLUE_DISP_COLOUR: Colour = (255, 0, 0)  # bgr - blue
 ORANGE_DISP_COLOUR: Colour = (0, 80, 255)  # bgr - orange
+UNKNOWN_DISP_COLOUR: Colour = (0, 0, 0)  # bgr - black
 
 # display_colour
 CONE_DISPLAY_PARAMETERS = [
     BLUE_DISP_COLOUR,
-    YELLOW_DISP_COLOUR,
+    UNKNOWN_DISP_COLOUR,
     ORANGE_DISP_COLOUR,
+    ORANGE_DISP_COLOUR,
+    YELLOW_DISP_COLOUR,
 ]
 
 ConeMsgColour = int  # define arbitrary variable type
@@ -208,7 +211,7 @@ def main_torch(args=None):
     from .torch_inference import infer, torch_init
 
     # loading Pytorch model
-    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBOV1.pt")
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
     CONFIDENCE = 0.35  # higher = tighter filter
     model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
@@ -242,7 +245,7 @@ def main_trt(args=None):
     from .trt_inference import TensorWrapper
 
     # loading TensorRT engine
-    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "YBV2.engine")
+    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.engine")
     PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
     CONFIDENCE = 0.35  # higher = tighter filter
     trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)

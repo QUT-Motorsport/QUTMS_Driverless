@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from math import sqrt
+
+from driverless_msgs.msg import Cone
 
 from typing import Tuple
 
@@ -23,3 +26,14 @@ class Point:
 
     def to_tuple(self) -> Tuple:
         return (self.x, self.y)
+
+
+def dist(a: Point, b: Point) -> float:
+    return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+
+
+def cone_to_point(cone: Cone) -> Point:
+    return Point(
+        cone.location.x,
+        cone.location.y,
+    )

@@ -1,15 +1,13 @@
 import numpy as np
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import TwistWithCovarianceStamped
 
-from driverless_common.point import Point
+from driverless_common.point import Point, cone_to_point, dist
 
 from typing import List, Optional, Tuple
 
@@ -20,17 +18,6 @@ ORIGIN = Point(0, 0)
 
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
-
-
-def dist(a: Point, b: Point) -> float:
-    return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
-
-
-def cone_to_point(cone: Cone) -> Point:
-    return Point(
-        cone.location.x,
-        cone.location.y,
-    )
 
 
 class ReactiveController(Node):
@@ -53,19 +40,8 @@ class ReactiveController(Node):
             self.vel_min = self.vel_max / 2  # m/s
             self.throttle_max = 0.2
 
-        # sync subscribers
-        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
-        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        # synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[vel_sub, detection_sub],
-        #     queue_size=30,
-        #     slop=0.3,
-        # )
-        # synchronizer.registerCallback(self.callback)
-
-        # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
