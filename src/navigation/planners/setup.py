@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "path_planners"
+package_name = "planners"
 
 setup(
     name=package_name,
@@ -18,6 +18,9 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["track_planner = path_planners.node_track_planner:main"],
+        "console_scripts": [
+            "track_planner = planners.node_track_planner:main",
+            "delauny_planner = planners.node_delauny_planner:main",
+        ],
     },
 )
