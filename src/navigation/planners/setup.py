@@ -20,7 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "track_planner = planners.node_track_planner:main",
-            "delauny_planner = planners.node_delauny_planner:main",
+            "delaunay_planner = planners.node_delaunay_planner:main",
         ],
     },
 )

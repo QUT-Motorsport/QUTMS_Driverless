@@ -72,14 +72,14 @@ class TrackPlanner(Node):
         super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.map_callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/path_planner/path", 1)
 
         self.get_logger().info("---Path Planner Node Initalised---")
 
-    def map_callback(self, track_msg: TrackDetectionStamped):
+    def callback(self, track_msg: TrackDetectionStamped):
         self.get_logger().debug("Received map")
 
         # track cone list is taken as coords relative to the initial car position
