@@ -33,7 +33,7 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
 
     return Cone(
         location=location,
-        color=4,
+        color=Cone.UNKNOWN,
     )
 
 
@@ -111,7 +111,7 @@ class LiDARProcessor(Node):
         LOGGER.info("Waiting for PointCloud2 data ...")
 
     def pc_callback(self, pc_msg: PointCloud2):
-        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
         start: float = time.perf_counter()  # begin a timer
 
         timestamp = create_timestamp()
@@ -210,7 +210,7 @@ class LiDARProcessor(Node):
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
 
-        self.get_logger().info(f"Total Time: {str(time.perf_counter() - self.start)}\n")  # log time
+        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - self.start)}\n")  # log time
         self.start = time.perf_counter()
 
 
