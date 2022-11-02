@@ -1,4 +1,4 @@
-from math import atan, atan2, pi, sqrt
+from math import sqrt
 import time
 
 import cv2
@@ -18,7 +18,7 @@ from sensor_msgs.msg import Image
 from driverless_common.draw import *
 from driverless_common.point import Point, cone_to_point, dist
 
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 Colour = Tuple[int, int, int]
 
