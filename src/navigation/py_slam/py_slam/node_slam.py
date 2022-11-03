@@ -1,4 +1,4 @@
-from math import atan2, cos, hypot, pi, sin
+from math import atan2, cos, hypot, pi, sin, sqrt
 import time
 
 import numpy as np
@@ -24,13 +24,13 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 
 class EKFSlam(Node):
-    R = np.diag([0.005, 0.005, 0.005])  # very confident of odom (cause its OP)
-    Q = np.diag([1, 0.8]) ** 2  # detections are a bit meh
+    R = np.diag([0.2, 0.1])**2
+    Q = np.diag([1, 0.8])**2
     radius = 2  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
     in_frames = 6  # minimum frames that cones have to be seen in
-    mu = np.array([0.0, 0.0, 0.0])  # initial pose
-    Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
+    state = np.array([0.0, 0.0, 0.0])  # initial pose
+    sigma: np.ndarray = np.diag([0.1, 0.1, 0.1])
     track: np.ndarray = []
 
     # init pose on first odom message
@@ -90,8 +90,8 @@ class EKFSlam(Node):
         for cone in detection_msg.cones:
             det = ConeProps(cone)  # detection with properties
 
-            mapx = self.mu[0] + det.range * cos(self.mu[2] + det.bearing)
-            mapy = self.mu[1] + det.range * sin(self.mu[2] + det.bearing)
+            mapx = self.state[0] + det.range * cos(self.state[2] + det.bearing)
+            mapy = self.state[1] + det.range * sin(self.state[2] + det.bearing)
 
             on_map = False  # by default its a new detection
 
@@ -129,7 +129,7 @@ class EKFSlam(Node):
         track_msg.header.frame_id = "map"
         for i, cone in enumerate(self.track):
             cov_i = i * 2 + 3
-            curr_cov: np.ndarray = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
+            curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
             cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
             cone_cov = curr_cov.flatten().tolist()
             track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
@@ -141,7 +141,7 @@ class EKFSlam(Node):
         local_map_msg.header.frame_id = "base_link"
         for i, cone in enumerate(local_map):
             cov_i = i * 2 + 3
-            curr_cov: np.ndarray = self.Sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
+            curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
             cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
             cone_cov = curr_cov.flatten().tolist()
             local_map_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
@@ -151,15 +151,15 @@ class EKFSlam(Node):
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
         pose_msg.header.frame_id = "map"
-        pose_msg.pose.pose.position = Point(x=self.mu[0], y=self.mu[1], z=0.2)
-        quaternion = euler2quat(0.0, 0.0, self.mu[2])
+        pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
+        quaternion = euler2quat(0.0, 0.0, self.state[2])
         pose_msg.pose.pose.orientation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
         # covariance as a 6x6 matrix
         cov = np.zeros((6, 6))
-        cov[0:2, 0:2] = self.Sigma[0:2, 0:2]
-        cov[0:2, 5] = self.Sigma[0:2, 2]
-        cov[5, 0:2] = self.Sigma[2, 0:2]
-        cov[5, 5] = self.Sigma[2, 2]
+        cov[0:2, 0:2] = self.sigma[0:2, 0:2]
+        cov[0:2, 5] = self.sigma[0:2, 2]
+        cov[5, 0:2] = self.sigma[2, 0:2]
+        cov[5, 5] = self.sigma[2, 2]
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
 
@@ -170,8 +170,8 @@ class EKFSlam(Node):
         t.header.frame_id = "map"
         t.child_frame_id = "car"
 
-        t.transform.translation.x = self.mu[0]
-        t.transform.translation.y = self.mu[1]
+        t.transform.translation.x = self.state[0]
+        t.transform.translation.y = self.state[1]
         t.transform.translation.z = 0.2
         t.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
         self.broadcaster.sendTransform(t)
@@ -180,17 +180,16 @@ class EKFSlam(Node):
 
     # predict step
     def predict(self, pose: tuple, cov: np.ndarray) -> Tuple[np.ndarray]:
-        dx = pose[0] - self.last_measure[0]
-        dy = pose[1] - self.last_measure[1]
-        dx = (pose[0] - self.last_measure[0]) * cos(self.last_measure[2]) \
-            + (pose[1] - self.last_measure[1]) * sin(self.last_measure[2])
-        dy = -(pose[0] - self.last_measure[0]) * sin(self.last_measure[2]) \
-            + (pose[1] - self.last_measure[1]) * cos(self.last_measure[2])
-            
+        # magnitude of distance
+        ddist = sqrt( (pose[0] - self.last_measure[0])**2 + (pose[1] - self.last_measure[1])**2 )
         dtheta = wrap_to_pi(pose[2] - self.last_measure[2])
 
-        self.mu[0:3] += np.array([dx, dy, dtheta])
-        self.mu[2] = wrap_to_pi(self.mu[2])
+        Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
+        Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
+
+        self.state[0] = self.state[0] + ddist * cos(self.state[2])
+        self.state[1] = self.state[1] + ddist * sin(self.state[2])
+        self.state[2] = wrap_to_pi(self.state[2] + dtheta)    
 
         """
         Covariance from odom, X Y Z Roll Pitch yaW in 1 list
@@ -202,74 +201,74 @@ class EKFSlam(Node):
         wx, wy, wz, wr, wp, ww
         """
         cov = np.reshape(cov, (6, 6))
-        # self.Sigma[0:3, 0:3] = np.array(
+        # self.sigma[0:3, 0:3] = np.array(
         #     [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
         # )
 
         # uncertainty
-        Jx = np.diag([1, 1, 1])
-        # self.Sigma[0:3, 0:3] = Jx @ self.Sigma[0:3, 0:3] @ Jx.T + self.R
+        # self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
 
         self.last_measure = np.array([pose[0], pose[1], pose[2]])
 
     # update step
     def update(self, index: int, cone: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray]:
-        i = index * 2 + 3  # landmark index, first 3 are robot, each landmark has 2 values
-        muL = self.mu[i : i + 2]  # omit colour from location mean
+        i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
+        muL = self.state[i : i + 2]  # omit colour from location mean
 
-        r = hypot(self.mu[0] - muL[0], self.mu[1] - muL[1])  # range to landmark
-        b = wrap_to_pi(atan2(muL[1] - self.mu[1], muL[0] - self.mu[0]) - self.mu[2])  # bearing to lm
+        r = hypot(self.state[0] - muL[0], self.state[1] - muL[1])  # range to landmark
+        b = wrap_to_pi(atan2(muL[1] - self.state[1], muL[0] - self.state[0]) - self.state[2])  # bearing to lm
         h = [r, b]
 
-        sig_len = len(self.Sigma)  # length of robot+landmarks we've seen so far
+        sig_len = len(self.sigma)  # length of vehicle+landmarks we've seen so far
 
         Gt = np.zeros((2, sig_len))
-        # robot jacobian
+        # vehicle jacobian
         Gt[0:2, 0:3] = [
-            [-(muL[0] - self.mu[0]) / r, -(muL[1] - self.mu[1]) / r, 0],
-            [(muL[1] - self.mu[1]) / (r**2), -(muL[0] - self.mu[0]) / (r**2), 1],
+            [-(muL[0] - self.state[0]) / r, -(muL[1] - self.state[1]) / r, 0],
+            [(muL[1] - self.state[1]) / (r**2), -(muL[0] - self.state[0]) / (r**2), 1],
         ]
         # landmark jacobian
-        Gt[0:2, i : i + 2] = [[(muL[0] - self.mu[0]) / r, (muL[1] - self.mu[1]) / r], [-(muL[1] - self.mu[1]) / (r**2), (muL[0] - self.mu[0]) / (r**2)]]
+        Gt[0:2, i : i + 2] = [[(muL[0] - self.state[0]) / r, (muL[1] - self.state[1]) / r], [-(muL[1] - self.state[1]) / (r**2), (muL[0] - self.state[0]) / (r**2)]]
 
-        Kt = self.Sigma @ Gt.T @ np.linalg.inv(Gt @ self.Sigma @ Gt.T + self.Q)
+        Kt = self.sigma @ Gt.T @ np.linalg.inv(Gt @ self.sigma @ Gt.T + self.Q)
 
-        self.mu = self.mu + (Kt @ np.array([cone[0] - h[0], cone[1] - h[1]])).T 
-        self.mu[3] = wrap_to_pi(self.mu[3])  # wrap angle
-        self.Sigma = (np.eye(sig_len) - Kt @ Gt) @ self.Sigma
+        # update state, wrap bearing to pi, wrap heading to pi
+        self.state = self.state + (Kt @ np.array([cone[0] - h[0], wrap_to_pi(cone[1] - h[1])])).T 
+        self.state[2] = wrap_to_pi(self.state[2])
+        # update cov
+        self.sigma = (np.eye(sig_len) - Kt @ Gt) @ self.sigma
 
-        self.track[index, :2] = self.mu[i : i + 2]  # track for this cone is just cone's mu
-
+        self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
         self.track[index, 3] += 1  # increment cone's seen count
     
     # add new landmark to state
     def init_landmark(self, cone: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray]:
-        new_x = self.mu[0] + cone[0] * cos(self.mu[2] + cone[1])  # add local xy to robot xy
-        new_y = self.mu[1] + cone[0] * sin(self.mu[2] + cone[1])
-        self.mu = np.append(self.mu, [new_x, new_y])  # append new landmark
+        new_x = self.state[0] + cone[0] * cos(self.state[2] + cone[1])  # add local xy to car xy
+        new_y = self.state[1] + cone[0] * sin(self.state[2] + cone[1])
+        self.state = np.append(self.state, [new_x, new_y])  # append new landmark
 
         # landmark Jacobian
         Lz = np.array(
             [
-                [cos(self.mu[2] + cone[1]), cone[0] * -sin(self.mu[2] + cone[1])],
-                [sin(self.mu[2] + cone[1]), cone[0] * cos(self.mu[2] + cone[1])],
+                [cos(self.state[2] + cone[1]), cone[0] * -sin(self.state[2] + cone[1])],
+                [sin(self.state[2] + cone[1]), cone[0] * cos(self.state[2] + cone[1])],
             ]
         )
 
-        sig_len = len(self.Sigma)
+        sig_len = len(self.sigma)
         new_sig = np.zeros((sig_len + 2, sig_len + 2))  # create zeros
-        new_sig[0:sig_len, 0:sig_len] = self.Sigma  # top left corner is existing sigma
+        new_sig[0:sig_len, 0:sig_len] = self.sigma  # top left corner is existing sigma
         new_sig[sig_len : sig_len + 2, sig_len : sig_len + 2] = Lz @ self.Q @ Lz.T  # bottom right is new lm
-        self.Sigma = new_sig
+        self.sigma = new_sig
 
     # remove landmarks not seen for a number of frames and only behind the car
     def flush_map(self):
         # get heading and position vector
-        heading = np.array([cos(self.mu[2]), sin(self.mu[2])])
-        position = np.array([self.mu[0], self.mu[1]])
+        heading = np.array([cos(self.state[2]), sin(self.state[2])])
+        position = np.array([self.state[0], self.state[1]])
 
         # get the landmark position vectors
-        # if the landmark is behind the robot, the dot product will be negative
+        # if the landmark is behind car, the dot product will be negative
         landmark_position_vectors = self.track[:, :2] - position
         dot_products = np.dot(landmark_position_vectors, heading)
         behind_idxs = np.where(dot_products < 0)[0]
@@ -284,11 +283,11 @@ class EKFSlam(Node):
 
         if len(duplicated_idxs) > 0:
             # remove landmarks from mu and Sigma
-            self.mu = np.delete(self.mu, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)
+            self.state = np.delete(self.state, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)
 
             # remove landmarks from Sigma
-            self.Sigma = np.delete(self.Sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)  # rows
-            self.Sigma = np.delete(self.Sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=1)  # columns
+            self.sigma = np.delete(self.sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)  # rows
+            self.sigma = np.delete(self.sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=1)  # columns
 
             # remove landmarks from track
             self.track = np.delete(self.track, duplicated_idxs, axis=0)
@@ -296,10 +295,10 @@ class EKFSlam(Node):
     # get cones within view of the car
     def get_local_map(self) -> np.ndarray:
         # global to local
-        local_xs = (self.track[:, 0] - self.mu[0]) * cos(self.mu[2]) \
-            + (self.track[:, 1] - self.mu[1]) * sin(self.mu[2])
-        local_ys = -(self.track[:, 0] - self.mu[0]) * sin(self.mu[2]) \
-            + (self.track[:, 1] - self.mu[1]) * cos(self.mu[2])
+        local_xs = (self.track[:, 0] - self.state[0]) * cos(self.state[2]) \
+            + (self.track[:, 1] - self.state[1]) * sin(self.state[2])
+        local_ys = -(self.track[:, 0] - self.state[0]) * sin(self.state[2]) \
+            + (self.track[:, 1] - self.state[1]) * cos(self.state[2])
 
         local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3]), axis=1)
 
