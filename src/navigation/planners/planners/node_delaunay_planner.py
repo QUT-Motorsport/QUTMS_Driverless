@@ -55,7 +55,7 @@ class TrackPlanner(Node):
         super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/local", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
@@ -117,7 +117,7 @@ class TrackPlanner(Node):
         self.ax.clear()
         self.ax.triplot(track[:, 0], track[:, 1], internal_triangles)
         self.ax.plot(track[:, 0], track[:, 1], "or", markersize=6)
-        self.ax.plot(lines[:, :, 0], lines[:, :, 1], "g", linewidth=2)
+        # self.ax.plot(lines[:, :, 0], lines[:, :, 1], "g", linewidth=2)
 
         plt.pause(0.05)
         plt.show(block=False)

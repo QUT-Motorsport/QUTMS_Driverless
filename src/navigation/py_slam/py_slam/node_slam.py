@@ -130,7 +130,7 @@ class EKFSlam(Node):
     Q = np.diag([1, 0.8]) ** 2  # detections are a bit meh
     radius = 2  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 7  # minimum frames that cones have to be seen in
+    in_frames = 6  # minimum frames that cones have to be seen in
     mu = np.array([3.0, 0.0, 0.0])  # initial pose
     Sigma: np.ndarray = np.diag([0.01, 0.01, 0.01])
     track: np.ndarray = []
