@@ -44,10 +44,10 @@ def generate_launch_description():
                     ("urdf_model", "qev3.urdf.xacro"),
                 ],
             ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("driverless_common") / "launch" / "display.launch.py")
-                ),
-            ),
+            # IncludeLaunchDescription(
+            #     launch_description_source=PythonLaunchDescriptionSource(
+            #         launch_file_path=str(get_package_share_path("driverless_common") / "launch" / "display.launch.py")
+            #     ),
+            # ),
         ]
     )
