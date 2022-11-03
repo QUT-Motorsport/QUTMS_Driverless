@@ -54,14 +54,14 @@ void TCPClient::_disconnect() { close(this->sock); }
 
 bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
     if (this->sock != -1) {
-        this->_connect();
+        // this->_connect();
         {
             if (send(this->sock, data->data(), data->size(), 0) < 0) {
                 std::cout << "Failed to send on socket: " << this->sock << std::endl;
                 return false;
             }
         }
-        this->_disconnect();
+        // this->_disconnect();
     } else {
         std::cout << "Please setup before trying to send!" << std::endl;
         return false;
@@ -72,14 +72,14 @@ bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
 std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
     char buf[RECV_SIZE];
     int b;
-    this->_connect();
+    // this->_connect();
     {
         if ((b = recv(this->sock, buf, RECV_SIZE, 0)) < 0) {
             // std::cout << "Failed to recv on socket: " << this->sock << std::endl;
             return nullptr;
         }
     }
-    this->_disconnect();
+    // this->_disconnect();
     auto vec = std::make_shared<std::vector<char>>(buf, buf + b);
     return vec;
 }
