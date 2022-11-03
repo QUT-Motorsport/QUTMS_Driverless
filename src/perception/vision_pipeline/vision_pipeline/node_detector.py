@@ -168,6 +168,7 @@ class VisionProcessor(Node):
         self.debug_img_publisher.publish(debug_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
+        self.get_logger().debug(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
         self.start = time.perf_counter()
 
 
@@ -208,13 +209,17 @@ def main_cv2(args=None):
 
 ## PyTorch inference
 def main_torch(args=None):
-    from .torch_inference import infer, torch_init
+    from .torch_inference import infer, torch_init, torch_init_v7
 
     # loading Pytorch model
-    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.pt")
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov5_small.pt")
+    MODEL_PATH_V7 = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov7_tiny.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
+    REPO_PATH_V7 = os.path.join(get_package_share_directory("vision_pipeline"), "yolov7")
     CONFIDENCE = 0.35  # higher = tighter filter
-    model = torch_init(CONFIDENCE, MODEL_PATH, REPO_PATH)
+    IOU = 0.1
+    # model = torch_init(MODEL_PATH, REPO_PATH, CONFIDENCE, IOU)
+    model = torch_init_v7(MODEL_PATH_V7, REPO_PATH_V7, CONFIDENCE, IOU)
 
     def get_torch_bounding_boxes(
         colour_frame: np.ndarray,
