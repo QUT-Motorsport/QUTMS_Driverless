@@ -32,10 +32,10 @@ def generate_launch_description():
                 package="sim_translation",
                 executable="sim_to_velodyne",
             ),
-            # Node(  # Mission control node when vehicle supervisor replaced launch
-            #     package="mission_controller",
-            #     executable="mission_control",
-            # ),
+            Node(
+                package="sim_translation",
+                executable="sim_transform",
+            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("models") / "launch" / "robot_description.launch.py")

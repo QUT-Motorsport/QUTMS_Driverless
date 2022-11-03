@@ -29,6 +29,7 @@ setup(
             "sim_to_odom = sim_translation.node_sim_to_odom:main",
             "sim_to_cam = sim_translation.node_sim_to_cam:main",
             "sim_to_velodyne = sim_translation.node_sim_to_velodyne:main",
+            "sim_transform = sim_translation.node_transform:main",
         ],
     },
 )
