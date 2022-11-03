@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import torch
-import time
 
 # initialising function for the YOLOv5 model with confidence threshold
 def torch_init(model_path: str, repo_path: str, conf_thresh: float, iou_thresh: float) -> torch.nn.Module:
@@ -41,11 +40,6 @@ def torch_init_v7(model_path: str, repo_path: str, conf_thresh: float, iou_thres
 
 def infer(colour_frame: np.ndarray, model):
     rgb_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2RGB)
-    
-    start = time.perf_counter()
     results = model(rgb_frame)
-    print(f"PyTorch Time: {str(time.perf_counter() - start)}\n")  # log time
-    print(f"ESt. FPS: {str(1/(time.perf_counter() - start))}")
-
     data = results.pandas().xyxy[0]
     return data
