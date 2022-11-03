@@ -161,28 +161,23 @@ class EKFSlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
 
-    # remove landmarks we haven't seen in a while
+    # remove landmarks not seen for a number of frames and only behind the car
     def flush_map(self):
-        # only remove landmarks if they are behind us
-
-        # get the robot's heading vector
+        # get heading and position vector
         heading = np.array([cos(self.mu[2]), sin(self.mu[2])])
-        # get the robot's position vector
         position = np.array([self.mu[0], self.mu[1]])
 
         # get the landmark position vectors
         # if the landmark is behind the robot, the dot product will be negative
         landmark_position_vectors = self.track[:, :2] - position
-        # get the dot product of the landmark position vector and the robot heading vector
         dot_products = np.dot(landmark_position_vectors, heading)
-        # get the indexes of the landmarks that are behind the robot
         behind_idxs = np.where(dot_products < 0)[0]
 
-        # get indexes of landmarks we haven't seen in a while
+        # get indexes of landmarks that have been seen for a number of frames
         noisy_idxs = np.where(self.track[:, 3] < self.in_frames)[0]
 
         # remove noisy and behind landmarks
-        idxs_to_remove = np.concatenate((behind_idxs, noisy_idxs))  # gets any indexes behind and noisy
+        idxs_to_remove = np.concatenate((behind_idxs, noisy_idxs))
         unique, count = np.unique(idxs_to_remove, return_counts=True)  # gets unique indexes
         duplicated_idxs = unique[count > 1]  # only gets indexes that are duplicated (behind and noisy)
 
@@ -197,19 +192,19 @@ class EKFSlam(Node):
             # remove landmarks from track
             self.track = np.delete(self.track, duplicated_idxs, axis=0)
 
-    # get cones within view of the cars
+    # get cones within view of the car
     def get_local_map(self) -> np.ndarray:
         # global to local
-        local_xs = (self.track[:, 0] - self.mu[0]) * cos(self.mu[2]) + (self.track[:, 1] - self.mu[1]) * sin(self.mu[2])
-        local_ys = -(self.track[:, 0] - self.mu[0]) * sin(self.mu[2]) + (self.track[:, 1] - self.mu[1]) * cos(
-            self.mu[2]
-        )
+        local_xs = (self.track[:, 0] - self.mu[0]) * cos(self.mu[2]) \
+            + (self.track[:, 1] - self.mu[1]) * sin(self.mu[2])
+        local_ys = -(self.track[:, 0] - self.mu[0]) * sin(self.mu[2]) \
+            + (self.track[:, 1] - self.mu[1]) * cos(self.mu[2])
 
         local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3]), axis=1)
 
-        # get any cones that are within -10m to 10m beside cars
+        # get any cones that are within -10m to 10m beside car
         side_idxs = np.where(np.logical_and(local_ys > -10, local_ys < 10))[0]
-        # get any cones that are within 10m in front of cars
+        # get any cones that are within 10m in front of car
         forward_idxs = np.where(np.logical_and(local_xs > 0, local_xs < 10))[0]
 
         # combine indexes

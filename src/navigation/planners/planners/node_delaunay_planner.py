@@ -39,11 +39,9 @@ def angle(v1: np.ndarray, v2: np.ndarray, v3: np.ndarray) -> float:
     # compute vectors
     v12 = v2 - v1
     v13 = v3 - v1
-    # compute dot product
     dot = np.dot(v12, v13)
-    # compute norm
     norm = np.linalg.norm(v12) * np.linalg.norm(v13)
-    # compute angle
+    # compute vector angle
     return np.arccos(dot / norm)
 
 
