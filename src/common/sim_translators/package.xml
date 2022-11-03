@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>sim_translation</name>
+    <name>sim_translators</name>
     <version>0.0.0</version>
     <description>Translates FSDS topics to Driverless topics</description>
     <maintainer email="team@qutmotorsport.com">Alistair English, Alastair Bradford</maintainer>

@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = "sim_translation"
+package_name = "sim_translators"
 
 setup(
     name=package_name,
@@ -23,13 +23,13 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "control_to_sim = sim_translation.node_control_to_sim:main",
-            "map_to_cone_detection = sim_translation.node_map_to_cone_detection:main",
-            "map_to_path = sim_translation.node_map_to_path:main",
-            "sim_to_odom = sim_translation.node_sim_to_odom:main",
-            "sim_to_cam = sim_translation.node_sim_to_cam:main",
-            "sim_to_velodyne = sim_translation.node_sim_to_velodyne:main",
-            "sim_transform = sim_translation.node_transform:main",
+            "control_to_sim = sim_translators.node_control_to_sim:main",
+            "map_to_cone_detection = sim_translators.node_map_to_cone_detection:main",
+            "map_to_path = sim_translators.node_map_to_path:main",
+            "sim_to_odom = sim_translators.node_sim_to_odom:main",
+            "sim_to_cam = sim_translators.node_sim_to_cam:main",
+            "sim_to_velodyne = sim_translators.node_sim_to_velodyne:main",
+            "sim_transform = sim_translators.node_transform:main",
         ],
     },
 )
