@@ -16,7 +16,7 @@ from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, Tran
 
 from driverless_common.cone_props import ConeProps
 
-from typing import List, Tuple
+from typing import Tuple
 
 
 def wrap_to_pi(angle: float) -> float:  # in rads
@@ -26,11 +26,11 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 class EKFSlam(Node):
     R = np.diag([0.2, 0.1])**2
     Q = np.diag([1, 0.8])**2
-    radius = 2  # nn kdtree nearch
+    radius = 1.5  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
     in_frames = 6  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma: np.ndarray = np.diag([0.1, 0.1, 0.1])
+    sigma: np.ndarray = np.diag([0.0, 0.0, 0.0])
     track: np.ndarray = []
 
     # init pose on first odom message
@@ -55,7 +55,7 @@ class EKFSlam(Node):
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
         self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
-        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/pose", 1)
+        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
