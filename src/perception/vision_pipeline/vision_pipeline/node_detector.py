@@ -142,7 +142,7 @@ class VisionProcessor(Node):
                 if bounding_box.tl.y < colour_camera_info_msg.height / 2:
                     continue
                 # filter on area
-                if bounding_box.area < 100 or bounding_box.area > 8000:
+                if bounding_box.area < 40 or bounding_box.area > 8000:
                     continue
                 # filter by aspect ratio
                 if bounding_box.aspect_ratio > 1.2:
