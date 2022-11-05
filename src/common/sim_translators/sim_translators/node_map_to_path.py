@@ -76,8 +76,8 @@ class MapPathPlanner(Node):
         self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
 
         # publishers
-        self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim_map/track", 1)
-        self.path_publisher: Publisher = self.create_publisher(PathStamped, "/path_planner/path", 1)
+        self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/track", 1)
+        self.path_publisher: Publisher = self.create_publisher(PathStamped, "/sim/path", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
