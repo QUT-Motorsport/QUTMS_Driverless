@@ -46,8 +46,12 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
         "euclidean",
     )
     min_index: int = np.where(dists == np.amin(dists))[0][0]
-
-    rvwp_index: int = (min_index + rvwp_lookahead) % len(path)
+    print("min_index: ", min_index)
+    if min_index + rvwp_lookahead >= len(path):
+        rvwp_index: int = len(path) - 1
+    else:
+        rvwp_index: int = (min_index + rvwp_lookahead) # % len(path)
+    print("rvwp_index: ", rvwp_index)
     rvwp: List[float] = path[rvwp_index]
 
     return rvwp
@@ -71,32 +75,30 @@ def wrap_to_pi(angle: float) -> float:
     * param angle: angle in rads
     * return: angle in rads wrapped to -pi and pi
     """
-
-    # https://stackoverflow.com/a/15927914/12206202
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
 class PurePursuit(Node):
     path: np.ndarray = []
-    Kp_ang: float = 6
+    Kp_ang: float = 3
     Kp_vel: float = 0.08
-    vel_max: float = 7  # m/s
-    vel_min: float = 5  # m/s
+    vel_max: float = 5  # m/s
+    vel_min: float = 3  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
-    pos_RVWP_LAD: int = 45
-    vel_RVWP_LAD: int = pos_RVWP_LAD + 30
+    pos_RVWP_LAD: int = 5
+    vel_RVWP_LAD: int = pos_RVWP_LAD
 
     def __init__(self):
         super().__init__("pure_pursuit")
 
         # sub to path mapper for the desired vehicle path (as an array)
-        self.create_subscription(PathStamped, "/path_planner/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/pose_with_covariance")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.1)
+        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
         synchronizer.registerCallback(self.callback)
 
         # publishers
@@ -105,10 +107,6 @@ class PurePursuit(Node):
         self.get_logger().info("---Path Follower Node Initalised---")
 
     def path_callback(self, spline_path_msg: PathStamped):
-        # Only set the desired path once (before the car is moving)
-        if self.path != []:
-            return
-
         # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
@@ -123,23 +121,23 @@ class PurePursuit(Node):
             return
 
         # i, j, k angles in rad
-        ai, aj, ak = quat2euler(
+        theta = quat2euler(
             [
                 pose_msg.pose.pose.orientation.w,
                 pose_msg.pose.pose.orientation.x,
                 pose_msg.pose.pose.orientation.y,
                 pose_msg.pose.pose.orientation.z,
             ]
-        )
+        )[2]
         # get the position of the center of gravity
         position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
-        position: List[float] = get_wheel_position(position_cog, ak)
+        position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
         rvwp: List[float] = get_RVWP(position, self.path, self.pos_RVWP_LAD)
         # steering control
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        steering_angle = wrap_to_pi(ak - des_heading_ang) * self.Kp_ang
+        steering_angle = wrap_to_pi(theta - des_heading_ang) * self.Kp_ang
 
         # velocity control
         rvwp: List[float] = get_RVWP(position, self.path, self.vel_RVWP_LAD)
