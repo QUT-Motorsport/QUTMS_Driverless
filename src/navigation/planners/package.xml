@@ -9,6 +9,9 @@
 
     <!-- Messages -->
     <depend>driverless_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>visualisation_msgs</depend>
+    <depend>std_msgs</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>
 
