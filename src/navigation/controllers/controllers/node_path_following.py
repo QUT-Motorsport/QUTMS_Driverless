@@ -82,12 +82,12 @@ class PurePursuit(Node):
     path: np.ndarray = []
     Kp_ang: float = 3
     Kp_vel: float = 0.08
-    vel_max: float = 5  # m/s
+    vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
-    pos_RVWP_LAD: int = 5
+    pos_RVWP_LAD: int = 15
     vel_RVWP_LAD: int = pos_RVWP_LAD
 
     def __init__(self):

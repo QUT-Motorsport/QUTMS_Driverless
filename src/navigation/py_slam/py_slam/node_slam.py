@@ -24,13 +24,13 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 
 class EKFSlam(Node):
-    R = np.diag([0.2, 0.1])**2
-    Q = np.diag([1, 0.8])**2
+    R = np.diag([0.2, 0.001])**2
+    Q = np.diag([0.2, 0.6])**2
     radius = 1.5  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
     in_frames = 6  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma: np.ndarray = np.diag([0.0, 0.0, 0.0])
+    sigma: np.ndarray = np.diag([0.5, 0.5, 0.001])
     track: np.ndarray = []
 
     # init pose on first odom message
@@ -176,7 +176,7 @@ class EKFSlam(Node):
         t.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
         self.broadcaster.sendTransform(t)
 
-        # self.get_logger().info(f"Wait time: {str(time.perf_counter()-start)}")  # log time
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
     # predict step
     def predict(self, pose: tuple, cov: np.ndarray) -> Tuple[np.ndarray]:
@@ -201,12 +201,12 @@ class EKFSlam(Node):
         wx, wy, wz, wr, wp, ww
         """
         cov = np.reshape(cov, (6, 6))
-        # self.sigma[0:3, 0:3] = np.array(
-        #     [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
-        # )
+        R = np.array(
+            [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
+        )
 
         # uncertainty
-        # self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
+        self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
 
         self.last_measure = np.array([pose[0], pose[1], pose[2]])
 
