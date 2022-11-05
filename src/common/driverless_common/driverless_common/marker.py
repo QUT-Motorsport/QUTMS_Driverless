@@ -6,6 +6,8 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker, MarkerArray
 
+import numpy as np
+
 from typing import List
 
 MARKER_HEIGHT = 0.3
@@ -156,7 +158,7 @@ def cov_marker_msg(
     )
 
 
-def line_marker_msg(
+def path_marker_msg(
     path_markers: list,
     path_colours: list,
 ) -> Marker:
@@ -170,6 +172,24 @@ def line_marker_msg(
         scale=Vector3(x=0.2, y=0.1, z=0.1),
         points=path_markers,
         colors=path_colours,
+        lifetime=Duration(sec=10, nanosec=100000),
+    )
+
+
+def delaunay_marker_msg(
+    delaunay_lines: list,
+    track_colours: list,
+) -> Marker:
+    return Marker(
+        header=Header(frame_id="map"),
+        ns="current_track",
+        id=0,
+        type=Marker.LINE_LIST,
+        action=Marker.ADD,
+        pose=Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        scale=Vector3(x=0.2, y=0.1, z=0.1),
+        points=delaunay_lines,
+        colors=track_colours,
         lifetime=Duration(sec=10, nanosec=100000),
     )
 

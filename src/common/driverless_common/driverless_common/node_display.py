@@ -13,7 +13,7 @@ from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.draw import draw_map, draw_markers, draw_steering
-from driverless_common.marker import line_marker_msg, marker_array_from_cone_detection, marker_array_from_map
+from driverless_common.marker import path_marker_msg, marker_array_from_cone_detection, marker_array_from_map
 
 from typing import List
 
@@ -40,7 +40,7 @@ class DisplayDetections(Node):
         self.create_subscription(AckermannDrive, "/driving_command", self.steering_callback, 1)
 
         # path spline sub
-        self.create_subscription(PathStamped, "/path_planner/path", self.path_callback, 1)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
 
         # track subs
         self.create_subscription(TrackDetectionStamped, "/sim_map/track", self.sim_track_callback, 1)
@@ -122,7 +122,7 @@ class DisplayDetections(Node):
             except:
                 continue
 
-        self.path_marker_publisher.publish(line_marker_msg(path_markers, path_colours))
+        self.path_marker_publisher.publish(path_marker_msg(path_markers, path_colours))
 
     def sim_track_callback(self, msg: TrackDetectionStamped):
         # subscribed to sim map
