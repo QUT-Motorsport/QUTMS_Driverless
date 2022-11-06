@@ -6,8 +6,6 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker, MarkerArray
 
-import numpy as np
-
 from typing import List
 
 MARKER_HEIGHT = 0.3
@@ -96,7 +94,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                     clear_marker_msg(
                         id_=i,
                         header=detection.header,
-                        name_space="cov_markers",
+                        name_space="cone_covs",
                     )
                 )
     return MarkerArray(markers=markers)
@@ -123,7 +121,19 @@ def marker_msg(
 ) -> Marker:
     marker = Marker(
         header=header,
-        ns="current_scan",
+        ns="cones",
+        id=id_,
+        type=Marker.MESH_RESOURCE,
+        action=Marker.ADD,
+        pose=Pose(position=Point(x=x, y=y, z=z), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        scale=Vector3(x=1.0, y=1.0, z=1.0),
+        mesh_resource="package://driverless_common/meshes/cone.dae",
+        color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
+        lifetime=lifetime,
+    )
+    marker = Marker(
+        header=header,
+        ns="cones",
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
@@ -147,7 +157,7 @@ def cov_marker_msg(
 ) -> Marker:
     return Marker(
         header=header,
-        ns="cov_markers",
+        ns="cone_covs",
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
@@ -197,7 +207,7 @@ def delaunay_marker_msg(
 def clear_marker_msg(
     id_: int,
     header: Header,
-    name_space: str = "current_scan",
+    name_space: str = "cones",
 ) -> Marker:
     return Marker(
         header=header,

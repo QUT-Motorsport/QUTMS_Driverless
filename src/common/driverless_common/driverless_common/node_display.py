@@ -34,7 +34,7 @@ class DisplayDetections(Node):
         # cone detection subscribers
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/sim_cones/cone_detection", self.sim_cones_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/sim/cone_detection", self.sim_cones_callback, 1)
 
         # steering angle target sub
         self.create_subscription(AckermannDrive, "/driving_command", self.steering_callback, 1)
@@ -43,7 +43,7 @@ class DisplayDetections(Node):
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
 
         # track subs
-        self.create_subscription(TrackDetectionStamped, "/sim_map/track", self.sim_track_callback, 1)
+        self.create_subscription(TrackDetectionStamped, "/sim/track", self.sim_track_callback, 1)
         self.create_subscription(TrackDetectionStamped, "/slam/track", self.slam_callback, 1)
         self.create_subscription(TrackDetectionStamped, "/slam/local", self.local_callback, 1)
 
