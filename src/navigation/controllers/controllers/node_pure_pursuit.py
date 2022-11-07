@@ -10,7 +10,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
-from driverless_msgs.msg import PathStamped
+from driverless_msgs.msg import PathStamped, Reset
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 
 from typing import List
@@ -100,6 +100,8 @@ class PurePursuit(Node):
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
         synchronizer.registerCallback(self.callback)
+
+        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
