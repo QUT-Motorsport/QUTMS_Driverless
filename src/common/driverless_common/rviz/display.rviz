@@ -5,16 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /TF1/Frames1
+        - /Image1
         - /MarkerArray1
         - /MarkerArray2
-        - /MarkerArray3
-        - /MarkerArray4
-        - /MarkerArray5
-        - /MarkerArray6
-        - /Marker1
-        - /Marker1/Namespaces1
-        - /Image1
         - /PointCloud21
       Splitter Ratio: 0.5
     Tree Height: 776
@@ -39,6 +32,62 @@ Panels:
 Visualization Manager:
   Class: ""
   Displays:
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_link:
+          Value: true
+        fl_wheel:
+          Value: true
+        fr_wheel:
+          Value: true
+        fsds/FSCar:
+          Value: true
+        fsds/Lidar1:
+          Value: true
+        fsds/Lidar2:
+          Value: true
+        fsds/depth_registered:
+          Value: true
+        fsds/image_rect_color:
+          Value: true
+        map:
+          Value: true
+        rl_wheel:
+          Value: true
+        rr_wheel:
+          Value: true
+        velodyne:
+          Value: true
+        zed2i:
+          Value: true
+        zed2i_left_camera_optical_frame:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        map:
+          base_link:
+            fl_wheel:
+              {}
+            fr_wheel:
+              {}
+            rl_wheel:
+              {}
+            rr_wheel:
+              {}
+            velodyne:
+              {}
+            zed2i:
+              zed2i_left_camera_optical_frame:
+                {}
+      Update Interval: 0
+      Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
@@ -92,112 +141,45 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        zed2i_left_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Mass Properties:
+        Inertia: false
+        Mass: false
       Name: RobotModel
       TF Prefix: ""
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Class: rviz_default_plugins/TF
+    - Class: rviz_default_plugins/Image
       Enabled: true
-      Frame Timeout: 15
-      Frames:
-        All Enabled: true
-        base_link:
-          Value: true
-        fl_wheel:
-          Value: true
-        fr_wheel:
-          Value: true
-        fsds/FSCar:
-          Value: true
-        fsds/Lidar1:
-          Value: true
-        fsds/Lidar2:
-          Value: true
-        fsds/depth_registered:
-          Value: true
-        fsds/image_rect_color:
-          Value: true
-        map:
-          Value: true
-        rl_wheel:
-          Value: true
-        rr_wheel:
-          Value: true
-        velodyne:
-          Value: true
-        zed2i:
-          Value: true
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: false
-      Tree:
-        map:
-          base_link:
-            fl_wheel:
-              {}
-            fr_wheel:
-              {}
-            rl_wheel:
-              {}
-            rr_wheel:
-              {}
-            velodyne:
-              {}
-            zed2i:
-              {}
-      Update Interval: 0
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /vision/debug_img
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
+      Enabled: true
       Name: MarkerArray
       Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /markers/sim_track
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /markers/sim_cones_markers
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /markers/lidar_markers
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray
-      Namespaces:
-        {}
+        cones: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /markers/vision_markers
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray
@@ -210,47 +192,6 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /markers/slam_with_cov
       Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: MarkerArray
-      Namespaces:
-        cov_markers: true
-        current_scan: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /markers/fusion_markers
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: false
-      Name: Marker
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /markers/path_line
-      Value: false
-    - Class: rviz_default_plugins/Image
-      Enabled: true
-      Max Value: 1
-      Median window: 5
-      Min Value: 0
-      Name: Image
-      Normalize Range: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /vision/debug_img
-      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -260,7 +201,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
-      Color: 255; 28; 12
+      Color: 255; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -331,7 +272,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 12.19211196899414
+      Distance: 15.446455001831055
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -346,10 +287,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.38039878010749817
+      Pitch: 0.7903980016708374
       Target Frame: base_link
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 3.1353938579559326
+      Yaw: 3.190398693084717
     Saved: ~
 Window Geometry:
   Displays:
@@ -359,7 +300,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000391fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b00000391000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000391fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000002da000000a000fffffffb0000000a0049006d006100670065010000031b000000b10000002800fffffffb0000000a0049006d00610067006501000002ce000000fe0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000008000000003efc0100000002fb0000000800540069006d00650000000000000008000000024400fffffffb0000000800540069006d00650100000000000004500000000000000000000005030000039100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000015600000391fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b00000391000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000391fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000002da000000a000fffffffb0000000a0049006d006100670065010000031b000000b10000002800fffffffb0000000a0049006d00610067006501000002ce000000fe0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000008000000003efc0100000002fb0000000800540069006d00650000000000000008000000025300fffffffb0000000800540069006d00650100000000000004500000000000000000000005030000039100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -369,5 +310,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1908
-  X: 1951
-  Y: 31
+  X: -32
+  Y: -32
