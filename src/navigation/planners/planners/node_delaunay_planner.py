@@ -27,7 +27,12 @@ S = 0.1
 
 
 def is_internal(simplice: np.ndarray, track: np.ndarray) -> bool:
-    """Returns True if the triangle is internal to the track, False otherwise."""
+    """
+    Determines if a simplice is internal to the track.
+    * param simplice: The simplice to check.
+    * param track: The track to check against.
+    * return: True if the simplice is internal, False otherwise.
+    """
     # get triangle vertices
     v1 = track[simplice[0]]
     v2 = track[simplice[1]]
@@ -43,7 +48,13 @@ def is_internal(simplice: np.ndarray, track: np.ndarray) -> bool:
 
 
 def angle(v1: np.ndarray, v2: np.ndarray, v3: np.ndarray) -> float:
-    """Returns the angle between the vectors v1->v2 and v1->v3."""
+    """
+    Calculates the angle between the vectors v1->v2 and v1->v3.
+    * param v1: The first vertex.
+    * param v2: The second vertex.
+    * param v3: The third vertex.
+    * return: The angle between the vectors v1->v2 and v1->v3.
+    """
     # compute vectors
     v12 = v2 - v1
     v13 = v3 - v1
@@ -60,6 +71,11 @@ def approximate_b_spline_path(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     ADAPTED FROM: https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/BSplinePath/bspline_path.py \n
+    Approximates a B-Spline path through the given points.
+    * param x: The x coordinates of the cones.
+    * param y: The y coordinates of the cones.
+    * param n_path_points: The number of spline points to generate.
+    * return: The x, y, heading and curvature of points on the spline.
     """
 
     distances = calc_distance_vector(x, y)
@@ -72,6 +88,12 @@ def approximate_b_spline_path(
 
 
 def calc_distance_vector(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """
+    Calculates the distance vector between the given points.
+    * param x: The x coordinates of the points.
+    * param y: The y coordinates of the points.
+    * return: The distance vector between the given points.
+    """
     dx, dy = np.diff(x), np.diff(y)
     distances = np.cumsum([np.hypot(idx, idy) for idx, idy in zip(dx, dy)])
     distances: np.ndarray = np.concatenate(([0.0], distances))
@@ -80,6 +102,13 @@ def calc_distance_vector(x: np.ndarray, y: np.ndarray) -> np.ndarray:
 
 
 def evaluate_spline(sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: UnivariateSpline):
+    """
+    Evaluates the given spline at the given points.
+    * param sampled: The points to evaluate the spline at.
+    * param spl_i_x: The x spline.
+    * param spl_i_y: The y spline.
+    * return: The x, y, heading and curvature of points on the spline.
+    """
     x = spl_i_x(sampled)
     y = spl_i_y(sampled)
     dx = spl_i_x.derivative(1)(sampled)
@@ -200,8 +229,6 @@ class TrackPlanner(Node):
 
         self.path_publisher.publish(PathStamped(path=path_msg))
 
-        # print(f"Time taken: {time.perf_counter() - start}")
-
         # publish delaunay lines
         # make pairs of points for each line
         delaunay_lines = []
@@ -215,6 +242,8 @@ class TrackPlanner(Node):
         # make marker message
         marker_msg = delaunay_marker_msg(delaunay_lines, track_colours)
         self.delaunay_publisher.publish(marker_msg)
+
+        self.get_logger().debug(f"Planned path in {time.perf_counter() - start}s")
 
         # # make plot
         # self.ax.clear()
@@ -232,7 +261,6 @@ class TrackPlanner(Node):
 
 
 def main(args=None):
-    # begin ros node
     rclpy.init(args=args)
     node = TrackPlanner()
     rclpy.spin(node)

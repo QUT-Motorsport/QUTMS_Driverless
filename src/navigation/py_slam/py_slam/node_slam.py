@@ -186,10 +186,14 @@ class EKFSlam(Node):
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    # predict step
-    def predict(self, pose: tuple, cov: np.ndarray) -> Tuple[np.ndarray]:
-        # magnitude of distance
-        ddist = sqrt( (pose[0] - self.last_measure[0])**2 + (pose[1] - self.last_measure[1])**2 )
+    def predict(self, pose: Tuple[float, float, float], cov: np.ndarray):
+        """
+        Predict step of the EKF
+        * param pose: tuple of current (x, y, theta) of the car
+        * param cov: current 6x6 covariance matrix of the car    
+        """
+
+        ddist = sqrt( (pose[0] - self.last_measure[0])**2 + (pose[1] - self.last_measure[1])**2 )  # magnitude of distance
         dtheta = wrap_to_pi(pose[2] - self.last_measure[2])
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
@@ -218,8 +222,13 @@ class EKFSlam(Node):
 
         self.last_measure = np.array([pose[0], pose[1], pose[2]])
 
-    # update step
-    def update(self, index: int, cone: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray]:
+    def update(self, index: int, cone: Tuple[float, float]):
+        """
+        Update step of the EKF
+        * param index: index of the cone in the map
+        * param cone: tuple of (x, y) of the cone
+        """
+        
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
         muL = self.state[i : i + 2]  # omit colour from location mean
 
@@ -249,8 +258,12 @@ class EKFSlam(Node):
         self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
         self.track[index, 3] += 1  # increment cone's seen count
     
-    # add new landmark to state
-    def init_landmark(self, cone: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray]:
+    def init_landmark(self, cone: Tuple[float, float]):
+        """
+        Add new landmark to state
+        * param cone: tuple of (x, y) of the cone
+        """
+        
         new_x = self.state[0] + cone[0] * cos(self.state[2] + cone[1])  # add local xy to car xy
         new_y = self.state[1] + cone[0] * sin(self.state[2] + cone[1])
         self.state = np.append(self.state, [new_x, new_y])  # append new landmark
@@ -269,8 +282,10 @@ class EKFSlam(Node):
         new_sig[sig_len : sig_len + 2, sig_len : sig_len + 2] = Lz @ self.Q @ Lz.T  # bottom right is new lm
         self.sigma = new_sig
 
-    # remove landmarks not seen for a number of frames and only behind the car
     def flush_map(self):
+        """
+        Remove landmarks not seen for a number of frames and only behind the car
+        """
         # get heading and position vector
         heading = np.array([cos(self.state[2]), sin(self.state[2])])
         position = np.array([self.state[0], self.state[1]])
@@ -300,8 +315,11 @@ class EKFSlam(Node):
             # remove landmarks from track
             self.track = np.delete(self.track, duplicated_idxs, axis=0)
 
-    # get cones within view of the car
     def get_local_map(self) -> np.ndarray:
+        """
+        Get cones within view of the car
+        * return: array of (x, y) of these cones
+        """
         # global to local
         local_xs = (self.track[:, 0] - self.state[0]) * cos(self.state[2]) \
             + (self.track[:, 1] - self.state[1]) * sin(self.state[2])

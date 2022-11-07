@@ -34,14 +34,10 @@ class TF2Publisher(Node):
 
 
 def main():
-    # begin ros node
     rclpy.init()
-
     node = TF2Publisher()
     rclpy.spin(node)
-
     node.destroy_node()
-
     rclpy.shutdown()
 
 
