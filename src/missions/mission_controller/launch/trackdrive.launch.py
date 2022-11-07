@@ -6,10 +6,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="controllers",
-                executable="reactive_control",
-            ),
-            Node(
                 package="vision_pipeline",
                 executable="torch_detector",
             ),
@@ -18,8 +14,16 @@ def generate_launch_description():
                 executable="lidar_perception",
             ),
             Node(
-                package="baby_slam",
+                package="py_slam",
                 executable="slam",
+            ),
+            Node(
+                package="planners",
+                executable="delaunay_planner",
+            ),
+            Node(
+                package="controllers",
+                executable="pure_pursuit",
             ),
         ]
     )

@@ -79,7 +79,7 @@ def wrap_to_pi(angle: float) -> float:
 
 
 class PurePursuit(Node):
-    path: np.ndarray = []
+    path = np.array([])
     Kp_ang: float = 3
     Kp_vel: float = 0.08
     vel_max: float = 4  # m/s
@@ -89,6 +89,7 @@ class PurePursuit(Node):
     Kp_brake: float = 0.0
     pos_RVWP_LAD: int = 15
     vel_RVWP_LAD: int = pos_RVWP_LAD
+    r2d: bool = False  # for reset
 
     def __init__(self):
         super().__init__("pure_pursuit")
@@ -108,6 +109,10 @@ class PurePursuit(Node):
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
+    def reset_callback(self, reset_msg: Reset):
+        self.path = np.array([])
+        self.r2d = True
+
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
@@ -118,8 +123,11 @@ class PurePursuit(Node):
         pose_msg: PoseWithCovarianceStamped,
         vel_msg: TwistWithCovarianceStamped,
     ):
+        if not self.r2d:
+            return
+        
         # Only start once the path has been recieved
-        if self.path == []:
+        if self.path.size == 0:
             return
 
         # i, j, k angles in rad

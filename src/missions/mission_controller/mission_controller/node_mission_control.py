@@ -10,7 +10,7 @@ from driverless_msgs.srv import SelectMission
 
 from .mission_constants import INT_MISSION_TYPE
 
-mission_pkg = get_package_share_directory("missions")  # path to the missions package
+mission_pkg = get_package_share_directory("mission_controller")  # path to the mission package
 
 
 class MissionControl(Node):
@@ -20,7 +20,7 @@ class MissionControl(Node):
     def __init__(self):
         super().__init__("mission_control")
 
-        self.create_subscription(State, "/ros_state", 10)
+        self.create_subscription(State, "/ros_state", self.callback, 10)
 
         self.create_service(SelectMission, "select_mission", self.gui_srv)
 

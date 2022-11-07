@@ -11,7 +11,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 from tf2_ros import TransformBroadcaster
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, TrackDetectionStamped, Reset
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped
 
 from driverless_common.cone_props import ConeProps
@@ -30,8 +30,8 @@ class EKFSlam(Node):
     leaf = 50  # nodes per tree before it starts brute forcing?
     in_frames = 6  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma: np.ndarray = np.diag([0.5, 0.5, 0.001])
-    track: np.ndarray = []
+    sigma = np.diag([0.5, 0.5, 0.001])
+    track = np.array([])
 
     # init pose on first odom message
     last_measure: np.ndarray = np.array([0.0, 0.0, 0.0])
@@ -52,6 +52,8 @@ class EKFSlam(Node):
         )
         lidar_synchronizer.registerCallback(self.callback)
 
+        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
         self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
@@ -61,6 +63,13 @@ class EKFSlam(Node):
         self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
+
+
+    def reset_callback(self, msg):
+        self.get_logger().info("Resetting SLAM")
+        self.state = np.array([0.0, 0.0, 0.0])
+        self.sigma = np.diag([0.5, 0.5, 0.001])
+        self.track = np.array([])
 
 
     def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
@@ -97,7 +106,7 @@ class EKFSlam(Node):
 
             if len(self.track) != 0:
                 neighbourhood = KDTree(self.track[:, :2], leaf_size=self.leaf)
-                check = np.reshape([mapx, mapy], (1, -1))  # turn into a 2D row array
+                check = np.array([[mapx, mapy]])  # turn into a 2D row array
                 ind = neighbourhood.query_radius(check, r=self.radius)  # check neighbours in radius
                 close = ind[0]  # index from the single colour list
                 if close.size != 0:
@@ -109,9 +118,8 @@ class EKFSlam(Node):
                         self.track[close[0]][2] = det.colour  # override colour
 
             if not on_map:
-                if self.track == []:  # first in this list
-                    self.track = np.array([mapx, mapy, det.colour, 1])
-                    self.track = np.reshape(self.track, (1, -1))  # turn 2D
+                if self.track.size == 0:  # first in this list
+                    self.track = np.array([[mapx, mapy, det.colour, 1]])
                 else:  # otherwise append vertically
                     self.track = np.vstack([self.track, [mapx, mapy, det.colour, 1]])
                 # initialise new landmark

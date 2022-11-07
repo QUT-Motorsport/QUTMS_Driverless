@@ -11,6 +11,7 @@
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
+#include "driverless_msgs/msg/reset.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -31,6 +32,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
+    rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
@@ -228,6 +230,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             if (this->RES_status.bt_k3) {
                 // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
+                driverless_msgs::msg::Reset reset_msg;
+                reset_msg.reset = true;
+                this->reset_pub->publish(reset_msg);
             }
         }
         // Driving state
@@ -287,6 +292,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // State
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("as_status", 10);
+
+        // Reset
+        this->reset_pub = this->create_publisher<driverless_msgs::msg::Reset>("reset", 10);
 
         // RES
         this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
