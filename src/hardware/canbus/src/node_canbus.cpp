@@ -2,7 +2,8 @@
 #include <bitset>
 #include <iostream>
 
-#include "can2etherenet_adapter.hpp"
+#include "TritiumCAN.hpp"
+//#include "can2etherenet_adapter.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -13,10 +14,12 @@ const int FI_RESERVED_MASK = 0x30;
 
 class CanBus : public rclcpp::Node {
    private:
-    std::shared_ptr<Can2Ethernet> c;
+    // std::shared_ptr<Can2Ethernet> c;
+    std::shared_ptr<TritiumCAN> tritiumCAN;
 
     void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-        this->c->tx(msg->id, msg->id_type, msg->data.data());
+        this->tritiumCAN->tx(msg.get());
+        // this->c->tx(msg->id, msg->id_type, msg->data.data());
     }
 
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr subscription_;
@@ -24,35 +27,43 @@ class CanBus : public rclcpp::Node {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr publisher_;
 
     void canmsg_timer_callback() {
-        auto res = this->c->rx();
-        if (res != nullptr) {
-            for (size_t i = 0; i < res->size() / FRAME_LENGTH; i++) {
-                std::vector<char> packet(FRAME_LENGTH);
-                std::copy(res->begin() + (FRAME_LENGTH * i), res->begin() + (FRAME_LENGTH * (i + 1)), packet.begin());
+        auto res = this->tritiumCAN->rx();
 
-                if (this->validate_frame(std::make_shared<std::vector<char>>(packet))) {
-                    uint32_t id = ((packet.at(1) & 0xFF) << 24) | ((packet.at(2) & 0xFF) << 16) |
-                                  ((packet.at(3) & 0xFF) << 8) | (packet.at(4) & 0xFF);
-                    std::vector<uint8_t> data_bytes(8);
-                    for (int i = 0; i < 8; i++) {
-                        data_bytes.at(i) = packet.at(5 + i);
-                    }
-
-                    char frame_information = packet.at(0);
-                    bool extended, remote;
-                    int dlc;
-
-                    this->parse_frame_information(frame_information, &extended, &remote, &dlc);
-
-                    driverless_msgs::msg::Can msg;
-                    msg.id = id;
-                    msg.id_type = extended;
-                    msg.dlc = dlc;
-                    msg.data = data_bytes;
-                    this->publisher_->publish(msg);
-                }
-            }
+        for (auto& msg : *res) {
+            this->publisher_->publish(msg);
         }
+        /*
+                auto res = this->c->rx();
+                if (res != nullptr) {
+                    for (size_t i = 0; i < res->size() / FRAME_LENGTH; i++) {
+                        std::vector<char> packet(FRAME_LENGTH);
+                        std::copy(res->begin() + (FRAME_LENGTH * i), res->begin() + (FRAME_LENGTH * (i + 1)),
+           packet.begin());
+
+                        if (this->validate_frame(std::make_shared<std::vector<char>>(packet))) {
+                            uint32_t id = ((packet.at(1) & 0xFF) << 24) | ((packet.at(2) & 0xFF) << 16) |
+                                          ((packet.at(3) & 0xFF) << 8) | (packet.at(4) & 0xFF);
+                            std::vector<uint8_t> data_bytes(8);
+                            for (int i = 0; i < 8; i++) {
+                                data_bytes.at(i) = packet.at(5 + i);
+                            }
+
+                            char frame_information = packet.at(0);
+                            bool extended, remote;
+                            int dlc;
+
+                            this->parse_frame_information(frame_information, &extended, &remote, &dlc);
+
+                            driverless_msgs::msg::Can msg;
+                            msg.id = id;
+                            msg.id_type = extended;
+                            msg.dlc = dlc;
+                            msg.data = data_bytes;
+                            this->publisher_->publish(msg);
+                        }
+                    }
+                }
+                */
     }
 
     rclcpp::TimerBase::SharedPtr timer_;
@@ -80,7 +91,9 @@ class CanBus : public rclcpp::Node {
 
         RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
 
-        this->c = std::make_shared<Can2Ethernet>(_ip, _port);
+        // this->c = std::make_shared<Can2Ethernet>(_ip, _port);
+        this->tritiumCAN = std::make_shared<TritiumCAN>();
+        this->tritiumCAN->setup();
 
         RCLCPP_INFO(this->get_logger(), "done!");
         RCLCPP_INFO(this->get_logger(), "Creating Timer...");
@@ -130,7 +143,10 @@ class CanBus : public rclcpp::Node {
         return true;
     }
 
-    ~CanBus() { this->c->~Can2Ethernet(); }
+    ~CanBus() {
+        // this->c->~Can2Ethernet();
+        this->tritiumCAN->~TritiumCAN();
+    }
 };
 
 int main(int argc, char* argv[]) {
