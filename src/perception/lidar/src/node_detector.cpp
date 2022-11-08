@@ -21,6 +21,8 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 
+#include "../PCL_DBSCAN/dbscan.hpp"
+
 using std::placeholders::_1;
 
 class LiDARProcessor : public rclcpp::Node{
@@ -104,19 +106,21 @@ class LiDARProcessor : public rclcpp::Node{
         pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground(new pcl::PointCloud<pcl::PointXYZI>);
         *non_ground = *non_ground_seg + *non_ground_crop;
 
-        // Cluster non-ground points into cones
-        // Creating the KdTree object for the search method of the extraction
-        pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
-        tree->setInputCloud(non_ground);
-        // Euclidean clustering objects
-        std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
-        ec.setClusterTolerance(0.6); 
-        ec.setMinClusterSize(20);
-        ec.setMaxClusterSize(200);
-        ec.setSearchMethod(tree);
-        ec.setInputCloud(non_ground);
-        ec.extract(cluster_indices);
+        // // Cluster non-ground points into cones
+        // // Creating the KdTree object for the search method of the extraction
+        // pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
+        // tree->setInputCloud(non_ground);
+        // // Euclidean clustering objects
+        // std::vector<pcl::PointIndices> cluster_indices;
+        // pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
+        // ec.setClusterTolerance(0.6); 
+        // ec.setMinClusterSize(20);
+        // ec.setMaxClusterSize(200);
+        // ec.setSearchMethod(tree);
+        // ec.setInputCloud(non_ground);
+        // ec.extract(cluster_indices);
+
+        // DBSCAN clustering
 
         pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
 
