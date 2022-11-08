@@ -56,7 +56,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 Byte 1 = Node ID (0x00 = All Nodes)
                 */
                 uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-                this->can_pub->publish(this->_d_2_f(0x00, false, p));
+                this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
 
                 this->res_alive = 1;
                 // run state machine (will update state from "start" to "select mission")
@@ -153,10 +153,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void heartbeat_callback() {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
-        this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
+        this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
 
         auto sw_heartbeat = Compose_SW_Heartbeat(&this->SW_heartbeat);
-        this->can_pub->publish(this->_d_2_f(sw_heartbeat.id, true, sw_heartbeat.data));
+        this->can_pub->publish(this->_d_2_f(sw_heartbeat.id, true, sw_heartbeat.data, sizeof(heartbeat.data)));
 
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
@@ -168,10 +168,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (!this->res_alive) {
             RCLCPP_INFO(this->get_logger(), "Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            this->can_pub->publish(this->_d_2_f(0x00, false, p));
+            this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            this->can_pub->publish(this->_d_2_f(0x00, false, p2));
+            this->can_pub->publish(this->_d_2_f(0x00, false, p2, sizeof(p2)));
         }
         this->res_alive = 0;
     }

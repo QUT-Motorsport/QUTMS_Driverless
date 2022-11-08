@@ -97,7 +97,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint32_t statusword_id;
         uint8_t statusword_data[8];
         sdo_read(C5_E_ID, 0x6041, 0x00, &statusword_id, (uint8_t *)&statusword_data);
-        this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data));
+        this->can_pub->publish(_d_2_f(statusword_id, 0, statusword_data, sizeof(statusword_data)));
     }
 
     void can_callback(const driverless_msgs::msg::Can msg) {
@@ -223,46 +223,46 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         std::cout << "Performing C5-E Setup... ";
 
         sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x607D, 0x01, (uint8_t *)&this->limits.second, 4, &id, out);  // Min Limit
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x607D, 0x02, (uint8_t *)&this->limits.first, 4, &id, out);  // Max Limit
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         int32_t ho = 0;
         sdo_write(C5_E_ID, 0x607C, 0x00, (uint8_t *)&ho, 4, &id, out);  // Home Offset
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6086, 0x00, (uint8_t *)&ho, 2, &id, out);  // Motion Profile Type (trap)
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6081, 0x00, (uint8_t *)&this->velocity, 4, &id, out);  // Profile Velocity
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6082, 0x00, (uint8_t *)&ho, 4, &id, out);  // End Velocity
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6083, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Profile Accelerataion
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6084, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Profile Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6085, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
                   out);  // Quick Stop Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x60C5, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Max Acceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Max Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         int8_t ppm = 1;
         sdo_write(C5_E_ID, 0x6060, 0x00, (uint8_t *)&ppm, 1, &id, out);  // Modes of Operation
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         std::cout << "Done (Motor Configured)" << std::endl;
     }
@@ -279,18 +279,18 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         uint16_t control_word = 111;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         // sus
         // std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         // Set Control Word
         control_word = 127;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void target_position(int32_t target, int32_t velocity) {
@@ -300,22 +300,22 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
 
         sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         this->velocity = velocity;
 
         sdo_write(C5_E_ID, 0x6081, 0x00, (uint8_t *)&this->velocity, 4, &id, out);  // Profile Velocity
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         uint16_t control_word = 47;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         // Set Control Word
         control_word = 63;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void set_velocity(int32_t velocity) {
@@ -325,7 +325,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
 
         sdo_write(C5_E_ID, 0x6081, 0x00, (uint8_t *)&this->velocity, 4, &id, out);  // Profile Velocity
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void set_acceleration(std::pair<uint32_t, uint32_t> accelerations) {
@@ -336,21 +336,21 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         sdo_write(C5_E_ID, 0x6083, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
                   out);  // Profile Accelerataion
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6084, 0x00, (uint8_t *)&this->accelerations.second, 4, &id,
                   out);  // Profile Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x6085, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
                   out);  // Quick Stop Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x60C5, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Max Acceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Max Deceleration
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void shutdown() {
@@ -359,7 +359,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         if (std::get<2>(this->c5e_state) == SO) return;
         uint16_t control_word = 6;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
         while (std::get<2>(this->c5e_state) != SO)
             ;
     }
@@ -370,19 +370,19 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         if (std::get<2>(this->c5e_state) == OE) return;
         uint16_t control_word = 6;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Shutdown
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         control_word = 7;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Switched On
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         control_word = 15;
         sdo_write(C5_E_ID, 0x6040, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Op Enabled
-        this->can_pub->publish(_d_2_f(id, 0, out));
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         while (std::get<2>(this->c5e_state) != OE)
             ;

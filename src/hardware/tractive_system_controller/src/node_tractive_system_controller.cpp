@@ -48,7 +48,7 @@ class TractiveSystemController : public rclcpp::Node, public CanInterface {
 
         // Publish the heartbeat
         // TODO: Should this be done in the DVL state machine?
-        this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data));
+        this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
     }
 
     rclcpp::TimerBase::SharedPtr timer_;
