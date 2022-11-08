@@ -120,24 +120,25 @@ class LiDARProcessor : public rclcpp::Node{
         // ec.setInputCloud(non_ground);
         // ec.extract(cluster_indices);
 
+        // pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
+        // int j = 0;
+        // for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+        // {
+        //     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZI>);
+        //     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
+        //     cloud_cluster->push_back ((*non_ground)[*pit]); //*
+        //     cloud_cluster->width = cloud_cluster->size ();
+        //     cloud_cluster->height = 1;
+        //     cloud_cluster->is_dense = true;
+
+        //     std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." << std::endl;
+        //     j++;
+        //     *clusters += *cloud_cluster;
+        // }
+
+        
         // DBSCAN clustering
 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
-
-        int j = 0;
-        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-        {
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZI>);
-            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-            cloud_cluster->push_back ((*non_ground)[*pit]); //*
-            cloud_cluster->width = cloud_cluster->size ();
-            cloud_cluster->height = 1;
-            cloud_cluster->is_dense = true;
-
-            std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." << std::endl;
-            j++;
-            *clusters += *cloud_cluster;
-        }
 
         // Publish the ground point cloud
         auto ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
