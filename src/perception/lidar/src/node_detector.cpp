@@ -76,7 +76,6 @@ class LiDARProcessor : public rclcpp::Node{
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setDistanceThreshold(0.08);  // metres from line
         seg.setMaxIterations(10);
-        // seg.setAxis(Eigen::Vector3f(0, 0, 1));
 
         seg.setInputCloud(ground_crop);
         seg.segment(*inliers, *coefficients);
@@ -86,12 +85,6 @@ class LiDARProcessor : public rclcpp::Node{
             RCLCPP_INFO(this->get_logger(), "Could not estimate a planar model for this scan.");
             return;
         }
-
-        // std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
-        //                                     << coefficients->values[1] << " "
-        //                                     << coefficients->values[2] << " " 
-        //                                     << coefficients->values[3] << std::endl;
-        // std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
         
         pcl::PointCloud<pcl::PointXYZI>::Ptr ground_seg(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground_seg(new pcl::PointCloud<pcl::PointXYZI>);
@@ -100,7 +93,7 @@ class LiDARProcessor : public rclcpp::Node{
         pcl::PointIndices::Ptr filtered_idxs (new pcl::PointIndices ());
         extract.setInputCloud(ground_crop);
         extract.setIndices(inliers);
-        // ground
+        // ground seg
         extract.setNegative(false);
         extract.filter(*ground_seg);
         // non-ground
@@ -115,11 +108,11 @@ class LiDARProcessor : public rclcpp::Node{
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
         tree->setInputCloud(non_ground);
-
+        // Euclidean clustering objects
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
-        ec.setClusterTolerance(0.05); // 2cm
-        ec.setMinClusterSize(30);
+        ec.setClusterTolerance(0.6); 
+        ec.setMinClusterSize(20);
         ec.setMaxClusterSize(200);
         ec.setSearchMethod(tree);
         ec.setInputCloud(non_ground);
@@ -157,7 +150,6 @@ class LiDARProcessor : public rclcpp::Node{
         pcl::toROSMsg(*clusters, *cluster_msg);
         cluster_msg->header = msg->header;
         cluster_pub->publish(*cluster_msg);
-
 
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
     }
