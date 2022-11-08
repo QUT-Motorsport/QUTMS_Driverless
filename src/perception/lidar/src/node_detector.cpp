@@ -7,18 +7,11 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-
-#include <pcl/common/centroid.h>
-#include <pcl/common/geometry.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree.h>
 #include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <ctime>
@@ -33,61 +26,83 @@ class LiDARProcessor : public rclcpp::Node{
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ground_pub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr non_ground_pub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub;
 
-    void cloud_callback(const sensor_msgs::msg::PointCloud2::ConstPtr &input)
+    void cloud_callback(const sensor_msgs::msg::PointCloud2::ConstPtr &msg)
     {
         clock_t start = clock();
+        // Process the point cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::fromROSMsg(*msg, *cloud);
 
-        /* Process the point cloud */
-        pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::PointCloud<pcl::PointXYZ>::Ptr clustered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        // Create the filtering object
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::CropBox<pcl::PointXYZI> scan_filter;
+        scan_filter.setInputCloud(cloud);
+        scan_filter.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
+        scan_filter.setMax(Eigen::Vector4f(20.0, 7.5, 0.2, 1.0));
+        scan_filter.filter(*cloud_filtered);
 
-        /* Creating the KdTree from input point cloud*/
-        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+        auto filtered_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        pcl::toROSMsg(*cloud_filtered, *filtered_msg);
+        filtered_msg->header = msg->header;
+        filtered_pub->publish(*filtered_msg);
 
-        pcl::fromROSMsg(*input, *input_cloud);
-
-        tree->setInputCloud(input_cloud);
+        // RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
 
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
         // Create the segmentation object
-        pcl::SACSegmentation<pcl::PointXYZ> seg;
+        pcl::SACSegmentation<pcl::PointXYZI> seg;
         // Optional
         seg.setOptimizeCoefficients(true);
         // Mandatory
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.01);
+        seg.setDistanceThreshold(0.02);
+        seg.setAxis(Eigen::Vector3f(0, 0, 1));
 
-        seg.setInputCloud(input_cloud);
+        seg.setInputCloud(cloud_filtered);
         seg.segment(*inliers, *coefficients);
 
         if (inliers->indices.size () == 0)
         {
-            RCLCPP_INFO(this->get_logger(), "Could not estimate a planar model for the given dataset.");
+            RCLCPP_INFO(this->get_logger(), "Could not estimate a planar model for this scan.");
+            return;
         }
 
-        std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
-                                            << coefficients->values[1] << " "
-                                            << coefficients->values[2] << " " 
-                                            << coefficients->values[3] << std::endl;
-
-        std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
+        // std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
+        //                                     << coefficients->values[1] << " "
+        //                                     << coefficients->values[2] << " " 
+        //                                     << coefficients->values[3] << std::endl;
+        // std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
         
-        pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points(new pcl::PointCloud<pcl::PointXYZ>);
-        for (const auto& idx: inliers->indices)
-        {
-            ground_points->points.push_back(input_cloud->points[idx]);
-        }
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ground_points(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground_points(new pcl::PointCloud<pcl::PointXYZI>);
+        // extract ground points and non-ground points
+        pcl::ExtractIndices<pcl::PointXYZI> extract;
+        pcl::PointIndices::Ptr filtered_idxs (new pcl::PointIndices ());
+        extract.setInputCloud(cloud_filtered);
+        extract.setIndices(inliers);
+        // ground
+        extract.setNegative(false);
+        extract.filter(*ground_points);
+        // non-ground
+        extract.setNegative(true);
+        extract.filter(*non_ground_points);
 
         auto ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*ground_points, *ground_msg);
-        ground_msg->header.frame_id = "velodyne";
-        //cluster_msg->header.frame_id = cluster->header.frame_id;
-        ground_msg->header.stamp = rosclock->now();
+        ground_msg->header = msg->header;
         ground_pub->publish(*ground_msg);
+
+        auto non_ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        pcl::toROSMsg(*non_ground_points, *non_ground_msg);
+        non_ground_msg->header = msg->header;
+        non_ground_pub->publish(*non_ground_msg);
+
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
     }
 
@@ -98,8 +113,10 @@ class LiDARProcessor : public rclcpp::Node{
             "/velodyne_points", 1, std::bind(&LiDARProcessor::cloud_callback, this, _1));
 
         // Create a ROS publisher for the output point cloud
-        ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground", 1);
-        RCLCPP_INFO(this->get_logger(),"---Initialised LidarDetector Node---");
+        ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/ground", 1);
+        non_ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/non_ground", 1);
+        filtered_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/filtered", 1);
+        RCLCPP_INFO(this->get_logger(),"---Initialised Lidar Detector Node---");
     }
 };
 
