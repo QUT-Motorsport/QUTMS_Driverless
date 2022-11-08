@@ -87,6 +87,7 @@ class CanBus : public rclcpp::Node {
         if (_ip == "") {
             RCLCPP_ERROR(this->get_logger(), "Please provide a rosparam yaml file!");
             rclcpp::shutdown();
+            exit(EXIT_FAILURE);
         }
 
         RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
