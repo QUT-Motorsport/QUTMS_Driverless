@@ -31,7 +31,7 @@ class LiDARProcessor : public rclcpp::Node{
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ground_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr non_ground_pub;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster_pub;
 
     void cloud_callback(const sensor_msgs::msg::PointCloud2::ConstPtr &msg)
     {
@@ -107,9 +107,40 @@ class LiDARProcessor : public rclcpp::Node{
         extract.setNegative(true);
         extract.filter(*non_ground_seg);
 
-        // Concatenate non-ground crop and non-ground seg
+        // Add non-ground crop and non-ground seg
         pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground(new pcl::PointCloud<pcl::PointXYZI>);
         *non_ground = *non_ground_seg + *non_ground_crop;
+
+        // Cluster non-ground points into cones
+        // Creating the KdTree object for the search method of the extraction
+        pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
+        tree->setInputCloud(non_ground);
+
+        std::vector<pcl::PointIndices> cluster_indices;
+        pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
+        ec.setClusterTolerance(0.05); // 2cm
+        ec.setMinClusterSize(30);
+        ec.setMaxClusterSize(200);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(non_ground);
+        ec.extract(cluster_indices);
+
+        pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
+
+        int j = 0;
+        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+        {
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZI>);
+            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
+            cloud_cluster->push_back ((*non_ground)[*pit]); //*
+            cloud_cluster->width = cloud_cluster->size ();
+            cloud_cluster->height = 1;
+            cloud_cluster->is_dense = true;
+
+            std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." << std::endl;
+            j++;
+            *clusters += *cloud_cluster;
+        }
 
         // Publish the ground point cloud
         auto ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
@@ -121,23 +152,14 @@ class LiDARProcessor : public rclcpp::Node{
         pcl::toROSMsg(*non_ground, *non_ground_msg);
         non_ground_msg->header = msg->header;
         non_ground_pub->publish(*non_ground_msg);
+        // Publish the clusters point cloud
+        auto cluster_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        pcl::toROSMsg(*clusters, *cluster_msg);
+        cluster_msg->header = msg->header;
+        cluster_pub->publish(*cluster_msg);
+
 
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
-
-        // Cluster non-ground points into cones
-        // Creating the KdTree object for the search method of the extraction
-        pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
-        tree->setInputCloud(non_ground);
-
-        std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
-        ec.setClusterTolerance(0.02); // 2cm
-        ec.setMinClusterSize(50);
-        ec.setMaxClusterSize(500);
-        ec.setSearchMethod(tree);
-        ec.setInputCloud(non_ground);
-        ec.extract(cluster_indices);
-
     }
 
    public:
@@ -149,7 +171,7 @@ class LiDARProcessor : public rclcpp::Node{
         // Create a ROS publisher for the output point cloud
         ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/ground", 1);
         non_ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/non_ground", 1);
-        filtered_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/filtered", 1);
+        cluster_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/clusters", 1);
         RCLCPP_INFO(this->get_logger(),"---Initialised Lidar Detector Node---");
     }
 };
