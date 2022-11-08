@@ -3,24 +3,28 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/time.hpp>
 
+#include <ctime>
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
+
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/kdtree/kdtree.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <ctime>
+#include <pcl/segmentation/extract_clusters.h>
 
 using std::placeholders::_1;
 
 class LiDARProcessor : public rclcpp::Node{
    private:
-    // Store clock
     rclcpp::Clock::SharedPtr rosclock = this->get_clock();
     
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
@@ -36,38 +40,48 @@ class LiDARProcessor : public rclcpp::Node{
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::fromROSMsg(*msg, *cloud);
 
-        // Create the filtering object
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::CropBox<pcl::PointXYZI> scan_filter;
-        scan_filter.setInputCloud(cloud);
-        scan_filter.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
-        scan_filter.setMax(Eigen::Vector4f(20.0, 7.5, 0.2, 1.0));
-        scan_filter.filter(*cloud_filtered);
+        // Create the filtering object 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cropped (new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ground_crop (new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground_crop (new pcl::PointCloud<pcl::PointXYZI>);
 
-        auto filtered_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        pcl::toROSMsg(*cloud_filtered, *filtered_msg);
-        filtered_msg->header = msg->header;
-        filtered_pub->publish(*filtered_msg);
+        // Crop window of interest
+        pcl::CropBox<pcl::PointXYZI> scan_cropper;
+        scan_cropper.setInputCloud(cloud);
+        scan_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
+        scan_cropper.setMax(Eigen::Vector4f(15.0, 7.5, 0.2, 1.0));
+        scan_cropper.filter(*cropped);
 
-        // RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
+        // Crop below "ground level" to segment ground
+        pcl::CropBox<pcl::PointXYZI> ground_cropper;
+        ground_cropper.setInputCloud(cropped);
+        ground_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
+        ground_cropper.setMax(Eigen::Vector4f(15.0, 7.5, -0.2, 1.0));
+        ground_cropper.filter(*ground_crop);
 
-        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+        // Crop above "ground level"
+        pcl::CropBox<pcl::PointXYZI> non_ground_cropper;
+        non_ground_cropper.setInputCloud(cropped);
+        non_ground_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.19, 0.0));
+        non_ground_cropper.setMax(Eigen::Vector4f(15.0, 7.5, 0.2, 1.0));
+        non_ground_cropper.filter(*non_ground_crop);
 
         // Create the segmentation object
         pcl::SACSegmentation<pcl::PointXYZI> seg;
-        // Optional
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+        // Segment
         seg.setOptimizeCoefficients(true);
-        // Mandatory
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.02);
-        seg.setAxis(Eigen::Vector3f(0, 0, 1));
+        seg.setDistanceThreshold(0.08);  // metres from line
+        seg.setMaxIterations(10);
+        // seg.setAxis(Eigen::Vector3f(0, 0, 1));
 
-        seg.setInputCloud(cloud_filtered);
+        seg.setInputCloud(ground_crop);
         seg.segment(*inliers, *coefficients);
 
-        if (inliers->indices.size () == 0)
+        if (inliers->indices.size() == 0)
         {
             RCLCPP_INFO(this->get_logger(), "Could not estimate a planar model for this scan.");
             return;
@@ -79,31 +93,51 @@ class LiDARProcessor : public rclcpp::Node{
         //                                     << coefficients->values[3] << std::endl;
         // std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
         
-        pcl::PointCloud<pcl::PointXYZI>::Ptr ground_points(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground_points(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ground_seg(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground_seg(new pcl::PointCloud<pcl::PointXYZI>);
         // extract ground points and non-ground points
         pcl::ExtractIndices<pcl::PointXYZI> extract;
         pcl::PointIndices::Ptr filtered_idxs (new pcl::PointIndices ());
-        extract.setInputCloud(cloud_filtered);
+        extract.setInputCloud(ground_crop);
         extract.setIndices(inliers);
         // ground
         extract.setNegative(false);
-        extract.filter(*ground_points);
+        extract.filter(*ground_seg);
         // non-ground
         extract.setNegative(true);
-        extract.filter(*non_ground_points);
+        extract.filter(*non_ground_seg);
 
+        // Concatenate non-ground crop and non-ground seg
+        pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground(new pcl::PointCloud<pcl::PointXYZI>);
+        *non_ground = *non_ground_seg + *non_ground_crop;
+
+        // Publish the ground point cloud
         auto ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        pcl::toROSMsg(*ground_points, *ground_msg);
+        pcl::toROSMsg(*ground_seg, *ground_msg);
         ground_msg->header = msg->header;
         ground_pub->publish(*ground_msg);
-
+        // Publish the non-ground point cloud
         auto non_ground_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        pcl::toROSMsg(*non_ground_points, *non_ground_msg);
+        pcl::toROSMsg(*non_ground, *non_ground_msg);
         non_ground_msg->header = msg->header;
         non_ground_pub->publish(*non_ground_msg);
 
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
+
+        // Cluster non-ground points into cones
+        // Creating the KdTree object for the search method of the extraction
+        pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
+        tree->setInputCloud(non_ground);
+
+        std::vector<pcl::PointIndices> cluster_indices;
+        pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
+        ec.setClusterTolerance(0.02); // 2cm
+        ec.setMinClusterSize(50);
+        ec.setMaxClusterSize(500);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(non_ground);
+        ec.extract(cluster_indices);
+
     }
 
    public:
