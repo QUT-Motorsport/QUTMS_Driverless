@@ -125,14 +125,13 @@ std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritum_can_bytes(drive
 }
 
 std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
-    auto rxData = this->rxClient->recieve_data();
+    auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
+    auto rxData = this->rxClient->recieve_data();
     if (rxData->size() < 16) {
         // invalid
-        return nullptr;
+        return msgs;
     }
-
-    auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
     uint64_t protocolVersion = 0;
 
@@ -196,9 +195,11 @@ driverless_msgs::msg::Can TritiumCAN::process_can_msg(uint8_t *data) {
     uint8_t DLC = data[5];
     msg.dlc = DLC;
 
+    std::vector<uint8_t> msgData;
     for (int i = 0; i < 8; i++) {
-        msg.data[i] = data[6 + i];
+        msgData.push_back(data[6 + i]);
     }
+    msg.data = msgData;
 
     std::cout << "ID: " << std::hex << msg.id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
               << ", DLC: " << (int)msg.dlc << ", Data: [";
