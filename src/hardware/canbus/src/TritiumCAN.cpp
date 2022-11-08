@@ -114,7 +114,7 @@ std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritum_can_bytes(drive
     result->push_back(msg.dlc);
 
     for (int i = 0; i < msg.dlc; i++) {
-        result->push_back(msg->data.data()[i]);
+        result->push_back(msg.data.data()[i]);
     }
 
     for (int i = msg.dlc; i < 8; i++) {

@@ -17,6 +17,8 @@ include_directories(include)
 set (SOURCES
   src/can2ethernet_adapter.cpp
   src/tcp_client.cpp
+  src/udp_client.cpp
+  src/TritiumCAN.cpp
 )
 
 add_executable(canbus src/node_canbus.cpp ${SOURCES})

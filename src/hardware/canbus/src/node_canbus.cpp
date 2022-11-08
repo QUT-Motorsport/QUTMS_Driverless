@@ -29,7 +29,7 @@ class CanBus : public rclcpp::Node {
     void canmsg_timer_callback() {
         auto res = this->tritiumCAN->rx();
 
-        for (auto&& msg : res) {
+        for (auto& msg : *res) {
             this->publisher_->publish(msg);
         }
         /*
