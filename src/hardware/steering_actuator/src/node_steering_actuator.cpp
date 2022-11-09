@@ -88,8 +88,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
     driverless_msgs::msg::State state;
-    c5e_state desired_state = states[F];
-    c5e_state current_state = states[F];
+    c5e_state desired_state = states[RTSO];
+    c5e_state current_state = states[RTSO];
     bool motor_enabled = false;
     double current_steering_angle = 0;
     bool shutdown_requested = false;
@@ -174,7 +174,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                         }
                     }
 
+                    RCLCPP_DEBUG(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
+                    RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
+
                     if (this->current_state != this->desired_state) {
+                        RCLCPP_DEBUG(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
                         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
                                   out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
@@ -211,7 +215,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         double steering_angle_difference = cappedAngle - this->current_steering_angle;
 
         double enc_to_des_angle = ((steering_angle_difference * 0.2443f) / 10.0f) * 3600.f;
-        RCLCPP_INFO(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
+        RCLCPP_DEBUG(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
 
         this->target_position(-enc_to_des_angle);
     }
