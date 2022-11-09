@@ -133,8 +133,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
             uint32_t id;     // Packet id out
             uint8_t out[8];  // Data out
-            
-            if(msg.data[0] == 0x60 || msg.data[0] == 0x80) {
+
+            if (msg.data[0] == 0x60 || msg.data[0] == 0x80) {
                 // 0x60 -> success ack
                 // 0x80 -> error ack
                 return;
@@ -193,24 +193,24 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     break;
                 }
 
-                // To set the controller to a usable state, we must set the:
-                // Home Offset = 0
-                // Motion Profile Type = trapezoidal ramp (0)
-                // Profile Velocity = PARAM_VELOCITY
-                // End Velocity = 0
-                // Profile Acceleration = PARAM_ACCELERATION
-                // Profile Deceleration = PARAM_ACCELERATION
-                // Quick Stop Deceleration = PARAM_ACCELERATION
-                // Max Acceleration = PARAM_ACCELERATION
-                // Max Deceleration = PARAM_ACCELERATION
-                // Mode of Operation = 1 (Profile Position)
+                    // To set the controller to a usable state, we must set the:
+                    // Home Offset = 0
+                    // Motion Profile Type = trapezoidal ramp (0)
+                    // Profile Velocity = PARAM_VELOCITY
+                    // End Velocity = 0
+                    // Profile Acceleration = PARAM_ACCELERATION
+                    // Profile Deceleration = PARAM_ACCELERATION
+                    // Quick Stop Deceleration = PARAM_ACCELERATION
+                    // Max Acceleration = PARAM_ACCELERATION
+                    // Max Deceleration = PARAM_ACCELERATION
+                    // Mode of Operation = 1 (Profile Position)
 
                 case HOME_OFFSET: {
                     int32_t val = (int32_t)data;
                     RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
 
                     int32_t desired_val = 0;
-                    if(val != desired_val) {
+                    if (val != desired_val) {
                         sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -221,7 +221,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     RCLCPP_INFO(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
 
                     int32_t desired_val = 0;
-                    if(val != desired_val) {
+                    if (val != desired_val) {
                         sdo_write(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -231,7 +231,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_VELOCITY: %u", val);
 
-                    if(val != param_velocity) {
+                    if (val != param_velocity) {
                         sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -242,7 +242,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     RCLCPP_INFO(this->get_logger(), "END_VELOCTITY: %u", val);
 
                     uint32_t desired_val = 0;
-                    if(val != desired_val) {
+                    if (val != desired_val) {
                         sdo_write(C5_E_ID, END_VELOCTITY, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -252,7 +252,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
 
-                    if(val != param_acceleration) {
+                    if (val != param_acceleration) {
                         sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -262,7 +262,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_DECELERATION: %u", val);
 
-                    if(val != param_acceleration) {
+                    if (val != param_acceleration) {
                         sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -272,7 +272,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
 
-                    if(val != param_acceleration) {
+                    if (val != param_acceleration) {
                         sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -281,8 +281,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 case MAX_ACCELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "MAX_ACCELERATION: %u", val);
-                    
-                    if(val != param_acceleration) {
+
+                    if (val != param_acceleration) {
                         sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -292,7 +292,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "MAX_DECELERATION: %u", val);
 
-                    if(val != param_acceleration) {
+                    if (val != param_acceleration) {
                         sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
@@ -303,7 +303,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     RCLCPP_INFO(this->get_logger(), "MODE_OF_OPERATION: %i", val);
 
                     int32_t desired_val = 1;
-                    if(val != desired_val) {
+                    if (val != desired_val) {
                         sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
