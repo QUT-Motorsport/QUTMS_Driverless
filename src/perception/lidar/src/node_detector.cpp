@@ -22,6 +22,21 @@
 
 using std::placeholders::_1;
 
+const int min_cluster_size = 10;
+const int max_cluster_size = 500;
+const float min_cluster_distance = 1.0;
+
+const float min_x = 0.0;
+const float max_x = 15.0;
+const float min_y = -6.0;
+const float max_y = 6.0;
+const float min_z = -0.5;
+const float max_z = 0.2;
+const float max_z_ground = -0.2;
+const float min_z_nground = max_z_ground + 0.01;
+
+const float max_plane_dist = 0.08;
+
 class LiDARProcessor : public rclcpp::Node {
    private:
     rclcpp::Clock::SharedPtr rosclock = this->get_clock();
@@ -46,22 +61,22 @@ class LiDARProcessor : public rclcpp::Node {
         // Crop window of interest
         pcl::CropBox<pcl::PointXYZI> scan_cropper;
         scan_cropper.setInputCloud(cloud);
-        scan_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
-        scan_cropper.setMax(Eigen::Vector4f(15.0, 7.5, 0.2, 1.0));
+        scan_cropper.setMin(Eigen::Vector4f(min_x, min_y, min_z, 0.0));
+        scan_cropper.setMax(Eigen::Vector4f(max_x, max_y, max_z, 1.0));
         scan_cropper.filter(*cropped);
 
         // Crop below "ground level" to segment ground
         pcl::CropBox<pcl::PointXYZI> ground_cropper;
         ground_cropper.setInputCloud(cropped);
-        ground_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.5, 0.0));
-        ground_cropper.setMax(Eigen::Vector4f(15.0, 7.5, -0.2, 1.0));
+        ground_cropper.setMin(Eigen::Vector4f(min_x, min_y, min_z, 0.0));
+        ground_cropper.setMax(Eigen::Vector4f(max_x, max_y, max_z_ground, 1.0));
         ground_cropper.filter(*ground_crop);
 
         // Crop above "ground level"
         pcl::CropBox<pcl::PointXYZI> non_ground_cropper;
         non_ground_cropper.setInputCloud(cropped);
-        non_ground_cropper.setMin(Eigen::Vector4f(0.0, -7.5, -0.19, 0.0));
-        non_ground_cropper.setMax(Eigen::Vector4f(15.0, 7.5, 0.2, 1.0));
+        non_ground_cropper.setMin(Eigen::Vector4f(min_x, min_y, min_z_nground, 0.0));
+        non_ground_cropper.setMax(Eigen::Vector4f(max_x, max_y, max_z, 1.0));
         non_ground_cropper.filter(*non_ground_crop);
 
         // Create the segmentation object
@@ -72,7 +87,7 @@ class LiDARProcessor : public rclcpp::Node {
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.08);  // metres from line
+        seg.setDistanceThreshold(max_plane_dist);  // metres from line
         seg.setMaxIterations(10);
 
         seg.setInputCloud(ground_crop);
@@ -101,43 +116,14 @@ class LiDARProcessor : public rclcpp::Node {
         pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground(new pcl::PointCloud<pcl::PointXYZI>);
         *non_ground = *non_ground_seg + *non_ground_crop;
 
-        // // Cluster non-ground points into cones
-        // // Creating the KdTree object for the search method of the extraction
-        // pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
-        // tree->setInputCloud(non_ground);
-        // // Euclidean clustering objects
-        // std::vector<pcl::PointIndices> cluster_indices;
-        // pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
-        // ec.setClusterTolerance(0.6);
-        // ec.setMinClusterSize(20);
-        // ec.setMaxClusterSize(200);
-        // ec.setSearchMethod(tree);
-        // ec.setInputCloud(non_ground);
-        // ec.extract(cluster_indices);
-
-        // pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
-        // int j = 0;
-        // for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end
-        // (); ++it)
-        // {
-        //     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZI>);
-        //     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-        //     cloud_cluster->push_back ((*non_ground)[*pit]); //*
-        //     cloud_cluster->width = cloud_cluster->size ();
-        //     cloud_cluster->height = 1;
-        //     cloud_cluster->is_dense = true;
-
-        //     std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." <<
-        //     std::endl; j++; *clusters += *cloud_cluster;
-        // }
-
         // pointcloud to vector of tuples
         std::vector<std::tuple<float, float, float>> points;
         for (auto point : non_ground->points) {
             points.push_back(std::make_tuple(point.x, point.y, point.z));
         }
         // DBSCAN clustering
-        std::vector<std::vector<size_t>> db_idxs = dbscan(points, 1, 8);
+        std::vector<std::vector<size_t>> db_idxs =
+            dbscan(points, min_cluster_distance, min_cluster_size, max_cluster_size);
 
         // Create clusters
         pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
