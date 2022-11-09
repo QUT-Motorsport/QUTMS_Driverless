@@ -63,14 +63,14 @@ struct c5e_state {
 };
 
 std::map<uint16_t, c5e_state> states = {
-    {NRTSO, (c5e_state){"Not ready to switch on", 0b0000000001001111, NRTSO, 0}},
-    {SOD, (c5e_state){"Switch on disabled", 0b0000000001001111, SOD, 0}},
-    {RTSO, (c5e_state){"Ready to switch on", 0b0000000001101111, RTSO, 6}},
-    {SO, (c5e_state){"Switched on", 0b0000000001101111, SO, 7}},
-    {OE, (c5e_state){"Operation enabled", 0b0000000001101111, OE, 15}},
-    {QSA, (c5e_state){"Quick stop active", 0b0000000001101111, QSA, 0}},
-    {FRA, (c5e_state){"Fault reaction active", 0b0000000001001111, FRA, 0}},
-    {F, (c5e_state){"Fault", 0b0000000001001111, F, 0}},
+    {NRTSO, {"Not ready to switch on", 0b0000000001001111, NRTSO, 0}},
+    {SOD, {"Switch on disabled", 0b0000000001001111, SOD, 0}},
+    {RTSO, {"Ready to switch on", 0b0000000001101111, RTSO, 6}},
+    {SO, {"Switched on", 0b0000000001101111, SO, 7}},
+    {OE, {"Operation enabled", 0b0000000001101111, OE, 15}},
+    {QSA, {"Quick stop active", 0b0000000001101111, QSA, 0}},
+    {FRA, {"Fault reaction active", 0b0000000001001111, FRA, 0}},
+    {F, {"Fault", 0b0000000001001111, F, 0}},
 };
 
 const std::string PARAM_ACCELERATION = "acceleration";
@@ -358,8 +358,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         }
         return states[F];
     }
-
-    c5e_state current_state() { return this->current_state; }
 
     void shutdown() { this->shutdown_requested = true; }
 };
