@@ -41,7 +41,7 @@ bool UDPClient::setup(in_addr_t address, int port, bool loopback) {
 
     // bind to requested address
     struct sockaddr_in bindAddr;
-    memset(&bindAddr, 0, sizeof(address));
+    memset(&bindAddr, 0, sizeof(bindAddr));
     bindAddr.sin_family = AF_INET;
     bindAddr.sin_addr.s_addr = address;
     bindAddr.sin_port = htons(port);
