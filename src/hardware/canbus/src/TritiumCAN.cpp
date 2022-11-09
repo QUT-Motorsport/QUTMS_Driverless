@@ -10,12 +10,17 @@ std::string groupAddr("239.255.60.60");
 
 TritiumCAN::TritiumCAN() { this->isConnected = false; }
 
-bool TritiumCAN::setup() {
+bool TritiumCAN::setup(std::string ip) {
     int port = 4876;
     std::string localLoopbackAddr("127.0.0.1");
 
-    this->rxClient = std::make_unique<UDPClient>();
+    this->rxClient = std::make_shared<UDPClient>();
     this->rxClient->setup(htonl(INADDR_ANY), port, false);
+
+    this->txClient = std::make_shared<TCPClient>();
+    this->txClient->setup(ip, port);
+
+    this->txInitial = false;
 
     // look through all valid interfaces and join multicast group on each
     this->txClients.clear();
@@ -64,11 +69,64 @@ void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
     std::vector<driverless_msgs::msg::Can> msgs;
     msgs.push_back(*msg);
 
+    if (!this->txInitial) {
+        auto headerData = this->compose_tritium_tcp_header();        
+
+        bool result = this->txClient->send_data(headerData);
+
+        if (result) {
+            this->txInitial = true;
+        }
+    }
+
+    auto msgData = this->compose_tritum_can_bytes(msgs);
+    this->txClient->send_data(msgData);
+
+/*
     auto data = this->compose_tritium_packet(msgs);
 
-    for (auto &&txClient : this->txClients) {
-        txClient->send_data(data, inet_addr(groupAddr.c_str()));
+    for (auto &&udpTxClient : this->txClients) {
+        udpTxClient->send_data(data, inet_addr(groupAddr.c_str()));
     }
+*/
+}
+
+std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritium_tcp_header() {
+    auto result = std::make_shared<std::vector<uint8_t>>();
+
+    uint32_t fwdId = 0x00;
+    uint32_t fwdRange = 0x1FFFFFFF;
+
+    for (int i = 0; i < 4; i++) {
+        result->push_back((fwdId >> ((3 - i) * 8)) & 0xFF);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        result->push_back((fwdRange >> ((3 - i) * 8)) & 0xFF);
+    }
+
+    result->push_back(0);
+
+    uint64_t protocolVersion = 0x547269FDD6;
+    uint16_t busNumber = 13;
+
+    // TODO: do this based on actual mac address?
+    uint64_t clientId = 0x00155DAE73CE;
+
+    for (int i = 0; i < 5; i++) {
+        result->push_back((protocolVersion >> ((4 - i) * 8)) & 0xFF);
+    }
+
+    for (int i = 0; i < 2; i++) {
+        result->push_back((busNumber >> ((1 - i) * 8)) & 0xFF);
+    }
+
+    result->push_back(0);
+    for (int i = 0; i < 7; i++) {
+        result->push_back((clientId >> ((6 - i) * 8)) & 0xFF);
+    }
+
+    return result;
 }
 
 std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritium_packet(std::vector<driverless_msgs::msg::Can> msgs) {
