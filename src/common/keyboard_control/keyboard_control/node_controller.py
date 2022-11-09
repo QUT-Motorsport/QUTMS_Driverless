@@ -10,9 +10,9 @@ TORQUE_MIN = 0.0
 TORQUE_MAX = 1.0
 TORQUE_INCREMENT = 0.05
 
-STEER_MIN = -1.0
-STEER_MAX = 1.0
-STEER_INCREMENT = 0.05
+STEER_MIN = -90.0
+STEER_MAX = 90.0
+STEER_INCREMENT = -5
 
 torque: float = 0.0
 steering_angle: float = 0.0
