@@ -91,17 +91,21 @@ def detect_cones(
 
     start_time = time.perf_counter()
     # ground_plane = gpe.get_ground_plane_3(prototype_points, SEGMENT_COUNT, BIN_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS)
-    ground_plane = gpe.get_ground_plane_7(
-        split_prototype_segments,
-        prototype_segments,
-        SEGMENT_COUNT,
-        T_M,
-        T_M_SMALL,
-        T_B,
-        T_RMSE,
-        REGRESS_BETWEEN_BINS,
-        BIN_SIZE,
-    )
+    # ground_plane = gpe.get_ground_plane_7(
+    #     split_prototype_segments,
+    #     prototype_segments,
+    #     SEGMENT_COUNT,
+    #     T_M,
+    #     T_M_SMALL,
+    #     T_B,
+    #     T_RMSE,
+    #     REGRESS_BETWEEN_BINS,
+    #     BIN_SIZE,
+    # )
+
+    # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
+    ground_plane = gpe.get_ground_plane_mp(split_prototype_segments, prototype_segments, SEGMENT_COUNT)
+    LOGGER.info(f"DONE: Ground Plane Mapped")
     end_time = time.perf_counter()
 
     if create_figures:
