@@ -1,10 +1,10 @@
 #include "canopen.hpp"
 
 std::map<uint8_t, size_t> can_open_size_map = {
-    {1, 0x4F},
-    {2, 0x4B},
-    {3, 0x47},
-    {4, 0x43},
+    {0x4F, 1},
+    {0x4B, 2},
+    {0x47, 3},
+    {0x43, 4},
 };
 
 void sdo_read(uint8_t node_id, uint16_t index, uint8_t sub_index, uint32_t* can_packet_id, uint8_t* out) {
