@@ -1,3 +1,5 @@
+#include <map>
+
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "can_interface.hpp"
 #include "canopen.hpp"
@@ -144,9 +146,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
             // CAN message from the steering actuator
             uint16_t object_id = (msg.data[2] & 0xFF) << 8 | (msg.data[1] & 0xFF);
+
+            uint32_t data;
+            size_t size = can_open_size_map[msg.data[0]];
+            for (int i = 0; i < size; i++) {
+                data |= (msg.data[3 + i] & 0xFF) << (size - 1 - i) * 8;
+            }
+
             switch (object_id) {
                 case STATUS_WORD: {
-                    uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
+                    uint16_t status_word = (uint16_t)data;
                     this->current_state = this->parse_state(status_word);
 
                     if (this->motor_enabled) {
@@ -184,6 +193,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     }
 
+                    break;
+                }
+                case HOME_OFFSET: {
+                    int32_t offset = (int32_t)data;
+                    RCLCPP_DEBUG(this->get_logger(), "Offset: %i", offset);
                     break;
                 }
                 default:
