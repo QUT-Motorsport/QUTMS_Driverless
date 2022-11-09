@@ -23,18 +23,6 @@ typedef enum c5e_state_id {
     F = 0b0000000001001000
 } c5e_state_id_t;
 
-/* To initialise the controller to a usable state, we must set the:
-    Home Offset = 0
-    Motion Profile Type = trapezoidal ramp (0)
-    Profile Velocity = PARAM_VELOCITY
-    End Velocity = 0
-    Profile Acceleration = PARAM_ACCELERATION
-    Profile Deceleration = PARAM_ACCELERATION
-    Quick Stop Deceleration = PARAM_ACCELERATION
-    Max Acceleration = PARAM_ACCELERATION
-    Max Deceleration = PARAM_ACCELERATION
-    Mode of Operation = 1 (Profile Position)
-*/
 typedef enum c5e_object_id {
     HOME_OFFSET = 0x607C,
     MOTION_PROFILE_TYPE = 0x6086,
@@ -159,6 +147,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 data |= (msg.data[4 + i] & 0xFF) << i * 8;
             }
 
+            uint32_t param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
+            uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
+
             switch (object_id) {
                 case STATUS_WORD: {
                     uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
@@ -201,62 +192,121 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                     break;
                 }
+
+                // To set the controller to a usable state, we must set the:
+                // Home Offset = 0
+                // Motion Profile Type = trapezoidal ramp (0)
+                // Profile Velocity = PARAM_VELOCITY
+                // End Velocity = 0
+                // Profile Acceleration = PARAM_ACCELERATION
+                // Profile Deceleration = PARAM_ACCELERATION
+                // Quick Stop Deceleration = PARAM_ACCELERATION
+                // Max Acceleration = PARAM_ACCELERATION
+                // Max Deceleration = PARAM_ACCELERATION
+                // Mode of Operation = 1 (Profile Position)
+
                 case HOME_OFFSET: {
                     int32_t val = (int32_t)data;
                     RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
+
+                    int32_t desired_val = 0;
+                    if(val != desired_val) {
+                        sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case MOTION_PROFILE_TYPE: {
                     int16_t val = (int16_t)data;
                     RCLCPP_INFO(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
+
+                    int32_t desired_val = 0;
+                    if(val != desired_val) {
+                        sdo_write(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case PROFILE_VELOCITY: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_VELOCITY: %u", val);
+
+                    if(val != param_velocity) {
+                        sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case END_VELOCTITY: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "END_VELOCTITY: %u", val);
+
+                    uint32_t desired_val = 0;
+                    if(val != desired_val) {
+                        sdo_write(C5_E_ID, END_VELOCTITY, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case PROFILE_ACCELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
+
+                    if(val != param_acceleration) {
+                        sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case PROFILE_DECELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "PROFILE_DECELERATION: %u", val);
+
+                    if(val != param_acceleration) {
+                        sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case QUICK_STOP_DECELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
+
+                    if(val != param_acceleration) {
+                        sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case MAX_ACCELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "MAX_ACCELERATION: %u", val);
-                    val = 400;
-                    sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&val, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    
+                    if(val != param_acceleration) {
+                        sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case MAX_DECELERATION: {
                     uint32_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "MAX_DECELERATION: %u", val);
+
+                    if(val != param_acceleration) {
+                        sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
                 case MODE_OF_OPERATION: {
                     int8_t val = (uint32_t)data;
                     RCLCPP_INFO(this->get_logger(), "MODE_OF_OPERATION: %i", val);
-                    break;
-                }
-                case TARGET_POSITION: {
-                    int32_t val = (int32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "TARGET_POSITION: %i", val);
+
+                    int32_t desired_val = 1;
+                    if(val != desired_val) {
+                        sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    }
                     break;
                 }
             }
@@ -318,57 +368,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
     }
 
-    // void setup() {
-    //     uint32_t id;     // Packet id out
-    //     uint8_t out[8];  // Data out
-
-    //     std::cout << "Performing C5-E Setup... ";
-
-    //     sdo_write(C5_E_ID, 0x607A, 0x00, (uint8_t *)&this->target, 4, &id, out);  // Target
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x607D, 0x01, (uint8_t *)&this->limits.second, 4, &id, out);  // Min Limit
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x607D, 0x02, (uint8_t *)&this->limits.first, 4, &id, out);  // Max Limit
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     int32_t ho = 0;
-    //     sdo_write(C5_E_ID, 0x607C, 0x00, (uint8_t *)&ho, 4, &id, out);  // Home Offset
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6086, 0x00, (uint8_t *)&ho, 2, &id, out);  // Motion Profile Type (trap)
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6081, 0x00, (uint8_t *)&this->velocity, 4, &id, out);  // Profile Velocity
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6082, 0x00, (uint8_t *)&ho, 4, &id, out);  // End Velocity
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6083, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Profile
-    //     Accelerataion this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6084, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Profile
-    //     Deceleration this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        // sdo_write(C5_E_ID, 0x6085, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
-        //           out);  // Quick Stop Deceleration
-        // this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x60C5, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Max Acceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Max Deceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     int8_t ppm = 1;
-    //     sdo_write(C5_E_ID, 0x6060, 0x00, (uint8_t *)&ppm, 1, &id, out);  // Modes of Operation
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     std::cout << "Done (Motor Configured)" << std::endl;
-    // }
-
     void target_position(int32_t target) {
         if (this->current_state != states[OE]) {
             return;
@@ -389,41 +388,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
-
-    // void set_velocity(int32_t velocity) {
-    //     this->velocity = velocity;
-
-    //     uint32_t id;     // Packet id out
-    //     uint8_t out[8];  // Data out
-
-    //     sdo_write(C5_E_ID, 0x6081, 0x00, (uint8_t *)&this->velocity, 4, &id, out);  // Profile Velocity
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-    // }
-
-    // void set_acceleration(std::pair<uint32_t, uint32_t> accelerations) {
-    //     this->accelerations = accelerations;
-
-    //     uint32_t id;     // Packet id out
-    //     uint8_t out[8];  // Data out
-
-    //     sdo_write(C5_E_ID, 0x6083, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
-    //               out);  // Profile Accelerataion
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6084, 0x00, (uint8_t *)&this->accelerations.second, 4, &id,
-    //               out);  // Profile Deceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x6085, 0x00, (uint8_t *)&this->accelerations.first, 4, &id,
-    //               out);  // Quick Stop Deceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x60C5, 0x00, (uint8_t *)&this->accelerations.first, 4, &id, out);  // Max Acceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-    //     sdo_write(C5_E_ID, 0x60C6, 0x00, (uint8_t *)&this->accelerations.second, 4, &id, out);  // Max Deceleration
-    //     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-    // }
 
     c5e_state parse_state(uint16_t status_word) {
         for (const auto &[key, state] : states) {
