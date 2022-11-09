@@ -50,7 +50,7 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
     if min_index + rvwp_lookahead >= len(path):
         rvwp_index: int = len(path) - 1
     else:
-        rvwp_index: int = (min_index + rvwp_lookahead) # % len(path)
+        rvwp_index: int = min_index + rvwp_lookahead  # % len(path)
     print("rvwp_index: ", rvwp_index)
     rvwp: List[float] = path[rvwp_index]
 
@@ -125,7 +125,7 @@ class PurePursuit(Node):
     ):
         if not self.r2d:
             return
-        
+
         # Only start once the path has been recieved
         if self.path.size == 0:
             return

@@ -27,9 +27,7 @@ class ConeDetectionTranslator(Node):
         self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
 
         # could also be /lidar/cone_detection
-        self.detection_publisher: Publisher = self.create_publisher(
-            ConeDetectionStamped, "/sim/cone_detection", 1
-        )
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/sim/cone_detection", 1)
 
         self.get_logger().info("---Cone Detection Map Translator Initalised---")
 

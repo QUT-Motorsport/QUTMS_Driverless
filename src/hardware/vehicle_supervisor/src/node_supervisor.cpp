@@ -9,9 +9,9 @@
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/res.hpp"
+#include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
-#include "driverless_msgs/msg/reset.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;

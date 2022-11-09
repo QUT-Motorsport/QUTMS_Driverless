@@ -3,15 +3,15 @@ import time
 
 import numpy as np
 from sklearn.neighbors import KDTree
-from transforms3d.euler import quat2euler, euler2quat
+from tf2_ros import TransformBroadcaster
+from transforms3d.euler import euler2quat, quat2euler
 
 import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-from tf2_ros import TransformBroadcaster
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, TrackDetectionStamped, Reset
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped
 
 from driverless_common.cone_props import ConeProps
@@ -24,8 +24,8 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 
 class EKFSlam(Node):
-    R = np.diag([0.2, 0.001])**2
-    Q = np.diag([0.2, 0.6])**2
+    R = np.diag([0.2, 0.001]) ** 2
+    Q = np.diag([0.2, 0.6]) ** 2
     radius = 1.5  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
     in_frames = 6  # minimum frames that cones have to be seen in
@@ -57,20 +57,20 @@ class EKFSlam(Node):
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
         self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
-        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1)
+        self.pose_publisher: Publisher = self.create_publisher(
+            PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
+        )
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
 
-
     def reset_callback(self, msg):
         self.get_logger().info("Resetting SLAM")
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.track = np.array([])
-
 
     def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -190,10 +190,12 @@ class EKFSlam(Node):
         """
         Predict step of the EKF
         * param pose: tuple of current (x, y, theta) of the car
-        * param cov: current 6x6 covariance matrix of the car    
+        * param cov: current 6x6 covariance matrix of the car
         """
 
-        ddist = sqrt( (pose[0] - self.last_measure[0])**2 + (pose[1] - self.last_measure[1])**2 )  # magnitude of distance
+        ddist = sqrt(
+            (pose[0] - self.last_measure[0]) ** 2 + (pose[1] - self.last_measure[1]) ** 2
+        )  # magnitude of distance
         dtheta = wrap_to_pi(pose[2] - self.last_measure[2])
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
@@ -201,7 +203,7 @@ class EKFSlam(Node):
 
         self.state[0] = self.state[0] + ddist * cos(self.state[2])
         self.state[1] = self.state[1] + ddist * sin(self.state[2])
-        self.state[2] = wrap_to_pi(self.state[2] + dtheta)    
+        self.state[2] = wrap_to_pi(self.state[2] + dtheta)
 
         """
         Covariance from odom, X Y Z Roll Pitch yaW in 1 list
@@ -228,7 +230,7 @@ class EKFSlam(Node):
         * param index: index of the cone in the map
         * param cone: tuple of (x, y) of the cone
         """
-        
+
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
         muL = self.state[i : i + 2]  # omit colour from location mean
 
@@ -245,25 +247,28 @@ class EKFSlam(Node):
             [(muL[1] - self.state[1]) / (r**2), -(muL[0] - self.state[0]) / (r**2), 1],
         ]
         # landmark jacobian
-        Gt[0:2, i : i + 2] = [[(muL[0] - self.state[0]) / r, (muL[1] - self.state[1]) / r], [-(muL[1] - self.state[1]) / (r**2), (muL[0] - self.state[0]) / (r**2)]]
+        Gt[0:2, i : i + 2] = [
+            [(muL[0] - self.state[0]) / r, (muL[1] - self.state[1]) / r],
+            [-(muL[1] - self.state[1]) / (r**2), (muL[0] - self.state[0]) / (r**2)],
+        ]
 
         Kt = self.sigma @ Gt.T @ np.linalg.inv(Gt @ self.sigma @ Gt.T + self.Q)
 
         # update state, wrap bearing to pi, wrap heading to pi
-        self.state = self.state + (Kt @ np.array([cone[0] - h[0], wrap_to_pi(cone[1] - h[1])])).T 
+        self.state = self.state + (Kt @ np.array([cone[0] - h[0], wrap_to_pi(cone[1] - h[1])])).T
         self.state[2] = wrap_to_pi(self.state[2])
         # update cov
         self.sigma = (np.eye(sig_len) - Kt @ Gt) @ self.sigma
 
         self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
         self.track[index, 3] += 1  # increment cone's seen count
-    
+
     def init_landmark(self, cone: Tuple[float, float]):
         """
         Add new landmark to state
         * param cone: tuple of (x, y) of the cone
         """
-        
+
         new_x = self.state[0] + cone[0] * cos(self.state[2] + cone[1])  # add local xy to car xy
         new_y = self.state[1] + cone[0] * sin(self.state[2] + cone[1])
         self.state = np.append(self.state, [new_x, new_y])  # append new landmark
@@ -321,10 +326,12 @@ class EKFSlam(Node):
         * return: array of (x, y) of these cones
         """
         # global to local
-        local_xs = (self.track[:, 0] - self.state[0]) * cos(self.state[2]) \
-            + (self.track[:, 1] - self.state[1]) * sin(self.state[2])
-        local_ys = -(self.track[:, 0] - self.state[0]) * sin(self.state[2]) \
-            + (self.track[:, 1] - self.state[1]) * cos(self.state[2])
+        local_xs = (self.track[:, 0] - self.state[0]) * cos(self.state[2]) + (self.track[:, 1] - self.state[1]) * sin(
+            self.state[2]
+        )
+        local_ys = -(self.track[:, 0] - self.state[0]) * sin(self.state[2]) + (self.track[:, 1] - self.state[1]) * cos(
+            self.state[2]
+        )
 
         local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3]), axis=1)
 

@@ -13,7 +13,7 @@ from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.draw import draw_map, draw_markers, draw_steering
-from driverless_common.marker import path_marker_msg, marker_array_from_cone_detection, marker_array_from_map
+from driverless_common.marker import marker_array_from_cone_detection, marker_array_from_map, path_marker_msg
 
 from typing import List
 

@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import torch
 
+
 # initialising function for the YOLOv5 model with confidence threshold
 def torch_init(model_path: str, repo_path: str, conf_thresh: float, iou_thresh: float) -> torch.nn.Module:
     """

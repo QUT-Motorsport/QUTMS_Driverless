@@ -97,7 +97,7 @@ class BetterReactiveController(Node):
     def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistWithCovarianceStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()  # begin a timer
-        if not self.r2d: 
+        if not self.r2d:
             return
 
         # safety critical, set to 0 if not good detection

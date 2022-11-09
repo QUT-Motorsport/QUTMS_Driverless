@@ -3,8 +3,8 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.spatial import Delaunay
 from scipy.interpolate import UnivariateSpline
+from scipy.spatial import Delaunay
 
 import rclpy
 from rclpy.node import Node
@@ -12,8 +12,8 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
 from geometry_msgs.msg import Point
-from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
+from visualization_msgs.msg import Marker
 
 from driverless_common.marker import delaunay_marker_msg
 
@@ -65,9 +65,7 @@ def angle(v1: np.ndarray, v2: np.ndarray, v3: np.ndarray) -> float:
 
 
 def approximate_b_spline_path(
-    x: np.ndarray, 
-    y: np.ndarray, 
-    n_path_points: int
+    x: np.ndarray, y: np.ndarray, n_path_points: int
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     ADAPTED FROM: https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/BSplinePath/bspline_path.py \n
@@ -117,7 +115,12 @@ def evaluate_spline(sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: Uni
     ddx = spl_i_x.derivative(2)(sampled)
     ddy = spl_i_y.derivative(2)(sampled)
     curvature = (ddy * dx - ddx * dy) / np.power(dx * dx + dy * dy, 2.0 / 3.0)
-    return np.array(x), y, heading, curvature,
+    return (
+        np.array(x),
+        y,
+        heading,
+        curvature,
+    )
 
 
 class TrackPlanner(Node):
@@ -160,13 +163,15 @@ class TrackPlanner(Node):
         internal_triangles = np.array([t for t in tri.simplices if is_internal(t, track)])
 
         # only take triangles with all sides shorter than MAX_CONE_DISTANCE
-        internal_triangles = np.array([
-            t
-            for t in internal_triangles
-            if np.linalg.norm(track[t[0]] - track[t[1]]) < MAX_CONE_DISTANCE
-            and np.linalg.norm(track[t[1]] - track[t[2]]) < MAX_CONE_DISTANCE
-            and np.linalg.norm(track[t[2]] - track[t[0]]) < MAX_CONE_DISTANCE
-        ])
+        internal_triangles = np.array(
+            [
+                t
+                for t in internal_triangles
+                if np.linalg.norm(track[t[0]] - track[t[1]]) < MAX_CONE_DISTANCE
+                and np.linalg.norm(track[t[1]] - track[t[2]]) < MAX_CONE_DISTANCE
+                and np.linalg.norm(track[t[2]] - track[t[0]]) < MAX_CONE_DISTANCE
+            ]
+        )
 
         # get all lines that go to a different coloured cone
         lines: list = []
@@ -216,9 +221,11 @@ class TrackPlanner(Node):
         else:
             # interpolate midpoints with a B-Spline
             points = len(ordered_midpoints) * 4
-            rix, riy, heading, curvature = approximate_b_spline_path(ordered_midpoints[:, 0], ordered_midpoints[:, 1], points)
+            rix, riy, heading, curvature = approximate_b_spline_path(
+                ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
+            )
             path = np.vstack((rix, riy, curvature)).T
-        
+
         # publish path
         path_msg: list[PathPoint] = []
         for i in path:
