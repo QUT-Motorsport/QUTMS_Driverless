@@ -66,8 +66,8 @@ bool TritiumCAN::setup(std::string ip) {
 }
 
 void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
-    std::vector<driverless_msgs::msg::Can> msgs;
-    msgs.push_back(*msg);
+    //std::vector<driverless_msgs::msg::Can> msgs;
+    //msgs.push_back(*msg);
 
     if (!this->txInitial) {
         auto headerData = this->compose_tritium_tcp_header();        
@@ -78,8 +78,9 @@ void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
             this->txInitial = true;
         }
     }
+    
 
-    auto msgData = this->compose_tritum_can_bytes(msgs);
+    auto msgData = this->compose_tritum_can_bytes(*msg);
     this->txClient->send_data(msgData);
 
 /*
