@@ -147,7 +147,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             // CAN message from the steering actuator
             uint16_t object_id = (msg.data[2] & 0xFF) << 8 | (msg.data[1] & 0xFF);
 
-            uint32_t data;
+            uint32_t data = 0;
             size_t size = can_open_size_map[msg.data[0]];
             for (size_t i = 0; i < size; i++) {
                 data |= (msg.data[3 + i] & 0xFF) << (size - 1 - i) * 8;
