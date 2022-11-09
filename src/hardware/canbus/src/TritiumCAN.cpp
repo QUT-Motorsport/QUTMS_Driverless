@@ -41,12 +41,14 @@ bool TritiumCAN::setup() {
 
                     rxClient->join_multicast_group(inet_addr(groupAddr.c_str()), ifAddr->sin_addr.s_addr);
 
-                    // create tx client for this interface
-                    auto txClient = std::make_shared<UDPClient>();
-                    txClient->setup(ifAddr->sin_addr.s_addr, port, true);
-                    txClient->join_multicast_group(inet_addr(groupAddr.c_str()), ifAddr->sin_addr.s_addr);
+                    if (ifAddr->sin_addr.s_addr == inet_addr("192.168.2.1")) {
+                        // create tx client for this interface
+                        auto txClient = std::make_shared<UDPClient>();
+                        txClient->setup(ifAddr->sin_addr.s_addr, port, true);
+                        txClient->join_multicast_group(inet_addr(groupAddr.c_str()), ifAddr->sin_addr.s_addr);
 
-                    txClients.push_back(txClient);
+                        txClients.push_back(txClient);
+                    }
                 }
             }
         }
