@@ -149,7 +149,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
             uint32_t data;
             size_t size = can_open_size_map[msg.data[0]];
-            for (int i = 0; i < size; i++) {
+            for (size_t i = 0; i < size; i++) {
                 data |= (msg.data[3 + i] & 0xFF) << (size - 1 - i) * 8;
             }
 
