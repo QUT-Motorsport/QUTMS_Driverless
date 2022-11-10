@@ -12,7 +12,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
-from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped
+from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
 from driverless_common.cone_props import ConeProps
 
@@ -24,14 +24,16 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 
 class EKFSlam(Node):
-    R = np.diag([0.2, 0.001]) ** 2
-    Q = np.diag([0.2, 0.6]) ** 2
-    radius = 1.5  # nn kdtree nearch
+    R = np.diag([0.1, 0.001]) ** 2
+    Q = np.diag([0.6, 0.8]) ** 2
+    radius = 2  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 6  # minimum frames that cones have to be seen in
+    in_frames = 15  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     track = np.array([])
+
+    clock = time.time()
 
     # init pose on first odom message
     last_measure: np.ndarray = np.array([0.0, 0.0, 0.0])
@@ -40,15 +42,15 @@ class EKFSlam(Node):
         super().__init__("ekf_slam")
 
         # sync subscribers
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
         vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
         lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[pose_sub, vision_sub], queue_size=20, slop=0.2
+            fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
         )
         vision_synchronizer.registerCallback(self.callback)
         lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[pose_sub, lidar_sub], queue_size=20, slop=0.2
+            fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
         )
         lidar_synchronizer.registerCallback(self.callback)
 
@@ -72,28 +74,31 @@ class EKFSlam(Node):
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.track = np.array([])
 
-    def callback(self, pose_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
+    def callback(self, vel_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()
 
-        x = pose_msg.pose.pose.position.x
-        y = pose_msg.pose.pose.position.y
-        theta = quat2euler(
-            [
-                pose_msg.pose.pose.orientation.w,
-                pose_msg.pose.pose.orientation.x,
-                pose_msg.pose.pose.orientation.y,
-                pose_msg.pose.pose.orientation.z,
-            ]
-        )[2]
-        cov = pose_msg.pose.covariance
+        self.dt = time.time() - self.clock
+        self.clock = time.time()
 
-        if (self.last_measure == 0.0).all():
-            self.last_measure = np.array([x, y, theta])
-            return
+        # x = pose_msg.pose.pose.position.x
+        # y = pose_msg.pose.pose.position.y
+        # theta = quat2euler(
+        #     [
+        #         pose_msg.pose.pose.orientation.w,
+        #         pose_msg.pose.pose.orientation.x,
+        #         pose_msg.pose.pose.orientation.y,
+        #         pose_msg.pose.pose.orientation.z,
+        #     ]
+        # )[2]
+        # cov = pose_msg.pose.covariance
+
+        # if (self.last_measure == 0.0).all():
+        #     self.last_measure = np.array([x, y, theta])
+        #     return
 
         # predict car location
-        self.predict((x, y, theta), cov)
+        self.predict(vel_msg)
 
         # process detected cones
         for cone in detection_msg.cones:
@@ -134,7 +139,7 @@ class EKFSlam(Node):
         # publish track msg
         track_msg = TrackDetectionStamped()
         track_msg.header.stamp = self.get_clock().now().to_msg()
-        track_msg.header.frame_id = "map"
+        track_msg.header.frame_id = "track"
         for i, cone in enumerate(self.track):
             cov_i = i * 2 + 3
             curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
@@ -146,7 +151,7 @@ class EKFSlam(Node):
         # publish local map msg
         local_map_msg = TrackDetectionStamped()
         local_map_msg.header.stamp = self.get_clock().now().to_msg()
-        local_map_msg.header.frame_id = "base_link"
+        local_map_msg.header.frame_id = "car"
         for i, cone in enumerate(local_map):
             cov_i = i * 2 + 3
             curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
@@ -158,7 +163,7 @@ class EKFSlam(Node):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = "map"
+        pose_msg.header.frame_id = "track"
         pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
         pose_msg.pose.pose.orientation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
@@ -175,7 +180,7 @@ class EKFSlam(Node):
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "map"
+        t.header.frame_id = "track"
         t.child_frame_id = "car"
 
         t.transform.translation.x = self.state[0]
@@ -186,17 +191,15 @@ class EKFSlam(Node):
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    def predict(self, pose: Tuple[float, float, float], cov: np.ndarray):
+    def predict(self, vel_msg: TwistStamped):
         """
         Predict step of the EKF
         * param pose: tuple of current (x, y, theta) of the car
         * param cov: current 6x6 covariance matrix of the car
         """
 
-        ddist = sqrt(
-            (pose[0] - self.last_measure[0]) ** 2 + (pose[1] - self.last_measure[1]) ** 2
-        )  # magnitude of distance
-        dtheta = wrap_to_pi(pose[2] - self.last_measure[2])
+        ddist = sqrt((vel_msg.twist.linear.x/2) ** 2 + (vel_msg.twist.linear.y/2) ** 2) * self.dt # magnitude of distance
+        dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
@@ -205,24 +208,15 @@ class EKFSlam(Node):
         self.state[1] = self.state[1] + ddist * sin(self.state[2])
         self.state[2] = wrap_to_pi(self.state[2] + dtheta)
 
-        """
-        Covariance from odom, X Y Z Roll Pitch yaW in 1 list
-        xx, xy, xz, xr, xp, xw
-        yx, yy, yz, yr, yp, yw
-        zx, zy, zz, zr, zp, zw
-        rx, ry, rz, rr, rp, rw
-        px, py, pz, pr, pp, pw
-        wx, wy, wz, wr, wp, ww
-        """
-        cov = np.reshape(cov, (6, 6))
-        R = np.array(
-            [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
-        )
+        # cov = np.reshape(cov, (6, 6))
+        # R = np.array(
+        #     [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
+        # )
 
         # uncertainty
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
 
-        self.last_measure = np.array([pose[0], pose[1], pose[2]])
+        # self.last_measure = np.array([pose[0], pose[1], pose[2]])
 
     def update(self, index: int, cone: Tuple[float, float]):
         """
