@@ -153,7 +153,7 @@ def cov_marker_msg(
     x_scale: float,  # x sigma
     y_scale: float,  # y sigma
     lifetime=Duration(sec=1, nanosec=0),
-    header=Header(frame_id="map"),
+    header=Header(frame_id="track"),
 ) -> Marker:
     return Marker(
         header=header,
@@ -173,7 +173,7 @@ def path_marker_msg(
     path_colours: list,
 ) -> Marker:
     return Marker(
-        header=Header(frame_id="map"),
+        header=Header(frame_id="track"),
         ns="current_path",
         id=0,
         type=Marker.LINE_STRIP,
@@ -191,7 +191,7 @@ def delaunay_marker_msg(
     track_colours: list,
 ) -> Marker:
     return Marker(
-        header=Header(frame_id="map"),
+        header=Header(frame_id="track"),
         ns="current_track",
         id=0,
         type=Marker.LINE_LIST,
