@@ -82,6 +82,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     c5e_state current_state = states[RTSO];
     bool motor_enabled = false;
     double current_steering_angle = 0;
+    double requested_steering_angle = 0;
     bool shutdown_requested = false;
 
     void c5e_state_request_callback() {
@@ -327,18 +328,54 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void steering_reading_callback(const driverless_msgs::msg::SteeringReading msg) {
         this->current_steering_angle = msg.steering_angle;
+        this->update_steering();
     }
 
     void driving_command_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         float cappedAngle = std::fmax(std::fmin(msg->steering_angle, 90), -90);
+        this->requested_steering_angle = cappedAngle;
+        this->update_steering();
+    }
 
+    void update_steering() {
         // left hand down is +, rhd is -
-        double steering_angle_difference = cappedAngle - this->current_steering_angle;
+        double steering_angle_difference = this->requested_steering_angle - this->current_steering_angle;
 
         double enc_to_des_angle = ((steering_angle_difference * 0.2443f) / 10.0f) * 3600.f;
-        RCLCPP_DEBUG(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
+        RCLCPP_INFO(this->get_logger(), "Diff: %lf, Enc: %lf", steering_angle_difference, -enc_to_des_angle);
 
         this->target_position(-enc_to_des_angle);
+    }
+
+    void target_position(int32_t target) {
+        if (this->current_state != states[OE]) {
+            return;
+        }
+
+        uint32_t id;     // Packet id out
+        uint8_t out[8];  // Data out
+        uint16_t control_word;
+
+        control_word = 111;
+        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+
+        sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+
+        // Set Control Word
+        control_word = 127;
+        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+    }
+
+    c5e_state parse_state(uint16_t status_word) {
+        for (const auto &[key, state] : states) {
+            if ((status_word & state.mask) == state.state_id) {
+                return state;
+            }
+        }
+        return states[F];
     }
 
    public:
@@ -366,36 +403,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->c5e_config_request_timer = this->create_wall_timer(
             std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
-    }
-
-    void target_position(int32_t target) {
-        if (this->current_state != states[OE]) {
-            return;
-        }
-
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
-
-        uint16_t control_word = 111;
-        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        // Set Control Word
-        control_word = 127;
-        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-    }
-
-    c5e_state parse_state(uint16_t status_word) {
-        for (const auto &[key, state] : states) {
-            if ((status_word & state.mask) == state.state_id) {
-                return state;
-            }
-        }
-        return states[F];
     }
 
     void shutdown() { this->shutdown_requested = true; }
