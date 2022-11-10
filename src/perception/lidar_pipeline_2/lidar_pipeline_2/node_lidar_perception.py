@@ -226,7 +226,7 @@ def main(args=sys.argv[1:]):
     stdout_handler = None
 
     # Max range of points to process (metres)
-    LIDAR_RANGE = 20
+    LIDAR_RANGE = 15
 
     # Delta angle of segments
     DELTA_ALPHA = (2 * math.pi) / 128
