@@ -14,7 +14,6 @@ ros-galactic-ackermann-msgs
 ros-galactic-ament-cmake-nose
 ros-galactic-joint-state-publisher
 ros-galactic-xacro
-ros-galactic-pcl-conversions
 scikit-learn
 scipy
 seaborn

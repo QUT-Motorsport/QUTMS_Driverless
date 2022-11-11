@@ -1,6 +1,5 @@
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/point_cloud.h>
@@ -47,7 +46,20 @@ class LiDARProcessor : public rclcpp::Node {
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr non_ground_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster_pub;
 
-    void cloud_callback(const sensor_msgs::msg::PointCloud2::ConstPtr& msg) {
+   public:
+    LiDARProcessor() : Node("lidar_processor") {
+        // Create a ROS subscriber for the input point cloud
+        cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/velodyne_points", 10, std::bind(&LiDARProcessor::cloud_callback, this, _1));
+
+        // Create a ROS publisher for the output point cloud
+        ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/ground", 1);
+        non_ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/non_ground", 1);
+        cluster_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/clusters", 1);
+        RCLCPP_INFO(this->get_logger(), "---Initialised Lidar Detector Node---");
+    }
+
+    void cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         clock_t start = clock();
         // Process the point cloud
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -158,19 +170,6 @@ class LiDARProcessor : public rclcpp::Node {
         cluster_pub->publish(*cluster_msg);
 
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
-    }
-
-   public:
-    LiDARProcessor() : Node("lidar_processor") {
-        // Create a ROS subscriber for the input point cloud
-        cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/velodyne_points", 1, std::bind(&LiDARProcessor::cloud_callback, this, _1));
-
-        // Create a ROS publisher for the output point cloud
-        ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/ground", 1);
-        non_ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/non_ground", 1);
-        cluster_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/clusters", 1);
-        RCLCPP_INFO(this->get_logger(), "---Initialised Lidar Detector Node---");
     }
 };
 
