@@ -149,7 +149,7 @@ class TrackPlanner(Node):
         left_cones = [c.cone for c in cones_with_cov if c.cone.color == LEFT_CONE_COLOUR]
         right_cones = [c.cone for c in cones_with_cov if c.cone.color == RIGHT_CONE_COLOUR]
 
-        if len(left_cones) == 0 or len(right_cones) == 0: # no cones
+        if len(left_cones) == 0 or len(right_cones) == 0:  # no cones
             return
 
         # order cones by distance from car

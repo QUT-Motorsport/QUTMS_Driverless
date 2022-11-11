@@ -198,7 +198,9 @@ class EKFSlam(Node):
         * param cov: current 6x6 covariance matrix of the car
         """
 
-        ddist = sqrt((vel_msg.twist.linear.x/2) ** 2 + (vel_msg.twist.linear.y/2) ** 2) * self.dt # magnitude of distance
+        ddist = (
+            sqrt((vel_msg.twist.linear.x / 2) ** 2 + (vel_msg.twist.linear.y / 2) ** 2) * self.dt
+        )  # magnitude of distance
         dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
