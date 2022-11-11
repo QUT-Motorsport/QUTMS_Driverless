@@ -13,7 +13,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(pcl_ros REQUIRED)
 
 set (SOURCES
   src/node_detector.cpp
@@ -31,7 +30,6 @@ target_compile_features(detector PUBLIC c_std_99 cxx_std_17)  # Require C99 and 
 ament_target_dependencies(detector
   rclcpp
   sensor_msgs
-  pcl_ros
   pcl_conversions
   PCL
 )
