@@ -26,7 +26,7 @@ from .library import lidar_manager
 def cone_msg(x_coord: float, y_coord: float) -> Cone:
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location: Point = Point(
-        x=x_coord,
+        x=x_coord + 1.65,
         y=y_coord,
         z=0.15,
     )
@@ -67,6 +67,8 @@ class LiDARProcessor(Node):
         _REGRESS_BETWEEN_BINS,
         _T_D_GROUND,
         _T_D_MAX,
+        _EPSILON,
+        _MIN_SAMPLES,
         _create_figures,
         _show_figures,
         _animate_figures,
@@ -97,6 +99,8 @@ class LiDARProcessor(Node):
         self.REGRESS_BETWEEN_BINS = _REGRESS_BETWEEN_BINS
         self.T_D_GROUND = _T_D_GROUND
         self.T_D_MAX = _T_D_MAX
+        self.EPSILON = _EPSILON
+        self.MIN_SAMPLES = _MIN_SAMPLES
 
         # Misc variables for lidar manager
         self.create_figures = _create_figures
@@ -171,6 +175,8 @@ class LiDARProcessor(Node):
             self.REGRESS_BETWEEN_BINS,
             self.T_D_GROUND,
             self.T_D_MAX,
+            self.EPSILON,
+            self.MIN_SAMPLES,
             point_count,
             self.create_figures,
             self.show_figures,
@@ -226,7 +232,7 @@ def main(args=sys.argv[1:]):
     stdout_handler = None
 
     # Max range of points to process (metres)
-    LIDAR_RANGE = 20
+    LIDAR_RANGE = 15
 
     # Delta angle of segments
     DELTA_ALPHA = (2 * math.pi) / 128
@@ -256,6 +262,9 @@ def main(args=sys.argv[1:]):
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = 100
+
+    EPSILON = 0.6  # Neighbourhood Scan Size
+    MIN_POINTS = 4  # Number of points required to form a neighbourhood
 
     # Path to data to import and use
     data_path = None
@@ -429,6 +438,8 @@ def main(args=sys.argv[1:]):
             REGRESS_BETWEEN_BINS,
             T_D_GROUND,
             T_D_MAX,
+            EPSILON,
+            MIN_POINTS,
             point_count,
             create_figures,
             show_figures,
@@ -455,6 +466,8 @@ def main(args=sys.argv[1:]):
             REGRESS_BETWEEN_BINS,
             T_D_GROUND,
             T_D_MAX,
+            EPSILON,
+            MIN_POINTS,
             create_figures,
             show_figures,
             animate_figures,

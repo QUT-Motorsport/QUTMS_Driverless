@@ -28,7 +28,7 @@ class EKFSlam(Node):
     Q = np.diag([0.6, 0.8]) ** 2
     radius = 2  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 15  # minimum frames that cones have to be seen in
+    in_frames = 25  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     track = np.array([])
@@ -48,7 +48,7 @@ class EKFSlam(Node):
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
         )
-        vision_synchronizer.registerCallback(self.callback)
+        # vision_synchronizer.registerCallback(self.callback)
         lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
         )
