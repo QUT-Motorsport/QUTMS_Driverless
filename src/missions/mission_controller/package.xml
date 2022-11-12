@@ -11,7 +11,7 @@
     <depend>driverless_msgs</depend>
     <!-- Custom packages -->
     <depend>controllers</depend>
-    <depend>baby_slam</depend>
+    <depend>py_slam</depend>
     <depend>vision_pipeline</depend>
     <depend>lidar_pipeline_2</depend>
     <depend>planners</depend>
