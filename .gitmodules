@@ -14,3 +14,6 @@
 [submodule "src/hardware/QUTMS_Embedded_Common"]
 	path = src/hardware/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
+[submodule "src/perception/cpp_lidar/PCL_DBSCAN"]
+	path = src/perception/cpp_lidar/PCL_DBSCAN
+	url = https://github.com/QUT-Motorsport/PCL_DBSCAN.git
