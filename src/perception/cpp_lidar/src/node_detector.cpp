@@ -29,9 +29,9 @@ const float min_x = 0.0;
 const float max_x = 15.0;
 const float min_y = -6.0;
 const float max_y = 6.0;
-const float min_z = -0.5;
-const float max_z = 0.2;
-const float max_z_ground = -0.2;
+const float min_z = -0.4;
+const float max_z = 0.3;
+const float max_z_ground = -0.05;
 const float min_z_nground = max_z_ground + 0.01;
 
 const float max_plane_dist = 0.08;
