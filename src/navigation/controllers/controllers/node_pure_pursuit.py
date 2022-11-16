@@ -89,15 +89,15 @@ class PurePursuit(Node):
     Kp_brake: float = 0.0
     pos_RVWP_LAD: int = 15
     vel_RVWP_LAD: int = pos_RVWP_LAD
-    r2d: bool = False  # for reset
+    r2d: bool = True  # for reset
 
     def __init__(self):
         super().__init__("pure_pursuit")
 
         # sub to path mapper for the desired vehicle path (as an array)
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
         # sync subscribers pose + velocity
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/pose_with_covariance")
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
         synchronizer.registerCallback(self.callback)
