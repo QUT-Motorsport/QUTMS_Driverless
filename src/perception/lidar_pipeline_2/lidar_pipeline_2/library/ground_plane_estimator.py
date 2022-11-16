@@ -472,13 +472,22 @@ def get_ground_plane_7(
 
 
 # Multiprocessing version of get_ground_plane_single_core
-def get_ground_plane_mp(proto_segs_arr, proto_segs, SEGMENT_COUNT):
+def get_ground_plane_mp(
+    proto_segs_arr,
+    proto_segs,
+    SEGMENT_COUNT,
+    num_bins,
+    T_M,
+    T_M_SMALL,
+    T_B,
+    T_RMSE,
+):
     batches = [proto_segs_arr[proto_seg_ind].tolist() for proto_seg_ind in range(len(proto_segs_arr))]
 
     core_count = math.floor(mp.cpu_count() * 0.9)
     pool = mp.Pool(core_count)
 
-    line_batches = pool.starmap(get_ground_lines, [[batch] for batch in batches])
+    line_batches = pool.starmap(get_ground_lines, [[batch, num_bins, T_M, T_M_SMALL, T_B, T_RMSE] for batch in batches])
     pool.close()
     pool.join()
 
