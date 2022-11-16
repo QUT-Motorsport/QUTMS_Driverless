@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = "driverless_common"
+package_name = "py_slam"
 
 setup(
     name=package_name,
@@ -12,20 +12,18 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        (os.path.join("share", package_name, "launch"), glob("launch/*.launch.py")),
-        (os.path.join("share", package_name, "rviz"), glob("rviz/*.rviz")),
-        (os.path.join("share", package_name, "meshes"), glob("meshes/*")),
+        (os.path.join("share", package_name), glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
     maintainer="Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="QUTMS Driverless common Python modules",
+    description="Python approach to SLAM with known car position",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "display = driverless_common.node_display:main",
+            "slam = py_slam.node_slam:main",
         ],
     },
 )

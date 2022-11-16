@@ -4,12 +4,9 @@ from sklearn.cluster import DBSCAN
 from . import point_cloud_processor as pcp
 
 
-def group_points(object_points):
-    EPSILON = 0.6  # Neighbourhood Scan Size
-    MIN_POINTS = 2  # Number of points required to form a neighbourhood
-
+def group_points(object_points, EPS, MIN_SAMPLES):
     # Cluster object points
-    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(object_points)
+    clustering = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES).fit(object_points)
     labels = clustering.labels_
 
     # All object ids

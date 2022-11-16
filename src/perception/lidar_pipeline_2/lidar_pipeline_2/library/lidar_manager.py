@@ -28,6 +28,8 @@ def detect_cones(
     REGRESS_BETWEEN_BINS,
     T_D_GROUND,
     T_D_MAX,
+    EPSILON,
+    MIN_SAMPLES,
     point_count,
     create_figures,
     show_figures,
@@ -168,7 +170,8 @@ def detect_cones(
     LOGGER.info(f"Object points extracted and stacked in {end_time - start_time}s")
 
     start_time = time.perf_counter()
-    object_centers, objects = op.group_points(object_points)
+
+    object_centers, objects = op.group_points(object_points, EPSILON, MIN_SAMPLES)
     end_time = time.perf_counter()
 
     if create_figures:

@@ -1,4 +1,4 @@
-from math import atan, atan2, pi, sqrt
+from math import sqrt
 import time
 
 import cv2
@@ -11,14 +11,14 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 from geometry_msgs.msg import TwistWithCovarianceStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
 from driverless_common.point import Point, cone_to_point, dist
 
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 Colour = Tuple[int, int, int]
 
@@ -34,7 +34,12 @@ WEIGHT = -1
 
 
 def closest_point_on_curve(point: Point, curve: np.ndarray) -> Point:
-    # find the closest point on the curve to the cone
+    """
+    Find the closest point on the curve to the cone
+    * param point: the cone coord
+    * param curve: the curve
+    * return: the closest point on the curve to the cone
+    """
     closest_point = ORIGIN
     min_dist = float("inf")
     for i in range(len(curve)):
@@ -53,8 +58,8 @@ class BetterReactiveController(Node):
     Kp_prev: float = 0.4
     Kp_dist: float = 0.05
     Kp_angle: float = -20
-    # create black image
-    debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
+    r2d: bool = True  # for reset
+    debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     def __init__(self):
         super().__init__("better_reactive_controller")
@@ -73,19 +78,28 @@ class BetterReactiveController(Node):
         )
         synchronizer.registerCallback(self.callback)
 
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
+        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
+
         self.get_logger().info("---Better Reactive Controller Node Initalised---")
+        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
 
+    def reset_callback(self, msg: Reset):
+        self.prev_steering_angle = 0
+        self.r2d = True
+
     def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistWithCovarianceStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()  # begin a timer
+        if not self.r2d:
+            return
 
         # safety critical, set to 0 if not good detection
         control_msg = AckermannDrive()
@@ -135,8 +149,6 @@ class BetterReactiveController(Node):
                     markerSize=1,
                     thickness=2,
                 )
-
-        # error += self.Kp_prev * self.prev_steering_angle
 
         # find the best curve
         best_curve: np.ndarray = curves[np.abs(errors).argmin()]

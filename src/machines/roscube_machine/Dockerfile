@@ -67,8 +67,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
-# baby slam
-COPY ./src/navigation/baby_slam/conda_requirements ./conda_requirements
+# py slam
+COPY ./src/navigation/py_slam/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
@@ -100,7 +100,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         vehicle_supervisor \
         keyboard_control \
         car_status \
-        baby_slam \
+        py_slam \
         driverless_common \
     && rm -rf ./src
 

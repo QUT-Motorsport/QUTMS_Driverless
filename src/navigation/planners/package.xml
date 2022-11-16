@@ -1,20 +1,19 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>mission_controller</name>
+    <name>planners</name>
     <version>0.0.0</version>
-    <description>Mission control node to start driving events</description>
+    <description>Path Planner for mapped tracks</description>
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
     <!-- Messages -->
     <depend>driverless_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>visualisation_msgs</depend>
+    <depend>std_msgs</depend>
     <!-- Custom packages -->
-    <depend>controllers</depend>
-    <depend>py_slam</depend>
-    <depend>vision_pipeline</depend>
-    <depend>lidar_pipeline_2</depend>
-    <depend>planners</depend>
+    <depend>driverless_common</depend>
 
     <export>
         <build_type>ament_python</build_type>

@@ -36,7 +36,7 @@
     <!--                           Links & Joints                            -->
     <!-- =================================================================== -->
     <!-- Base link (chassis) -->
-    <link name="base_link">
+    <link name="car">
         <visual>
             <origin xyz="${chassis_length/6} 0 ${chassis_height/6}" rpy="0 0 0" />
             <geometry>
@@ -61,7 +61,7 @@
         </link>
         <joint name="${name}_wheel_joint" type="continuous">
             <axis xyz="0 1 0" rpy="0 0 0" />
-            <parent link="base_link"/>
+            <parent link="car"/>
             <child link="${name}_wheel"/>
             <origin xyz="${loc}" rpy="0 0 0"/>
         </joint>
@@ -83,7 +83,7 @@
         </visual>
     </link>
     <joint name="velodyne_joint" type="fixed">
-        <parent link="base_link"/>
+        <parent link="car"/>
         <child link="velodyne"/>
         <origin xyz="1.65 0 -0.2" rpy="0 0 0"/>
     </joint>
@@ -99,7 +99,7 @@
         </visual>
     </link>
     <joint name="zed2i_joint" type="fixed">
-        <parent link="base_link"/>
+        <parent link="car"/>
         <child link="zed2i"/>
         <origin xyz="-0.1 0 0.6" rpy="0 0 0"/>
     </joint>

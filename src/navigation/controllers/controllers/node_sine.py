@@ -26,9 +26,7 @@ class SineController(Node):
         self.count += self.interval
         control_msg = AckermannDrive()
         control_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        control_msg.acceleration = (
-            math.sin(self.count / 2) / 6 + 0.17
-        )  # max torque is 1. this occilates between 0 and 0.4
+        control_msg.acceleration = 0.1
         self.get_logger().info(
             "Angle: " + str(control_msg.steering_angle) + "\tAcceleration: " + str(control_msg.acceleration)
         )

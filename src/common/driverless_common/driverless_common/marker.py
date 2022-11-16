@@ -94,7 +94,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                     clear_marker_msg(
                         id_=i,
                         header=detection.header,
-                        name_space="cov_markers",
+                        name_space="cone_covs",
                     )
                 )
     return MarkerArray(markers=markers)
@@ -102,9 +102,10 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
 
 CONE_TO_RGB_MAP = {
     Cone.BLUE: ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),
-    Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
+    Cone.UNKNOWN: ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0),
     Cone.ORANGE_BIG: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
     Cone.ORANGE_SMALL: ColorRGBA(r=1.0, g=0.3, b=0.0, a=1.0),
+    Cone.YELLOW: ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0),
 }
 
 
@@ -120,7 +121,19 @@ def marker_msg(
 ) -> Marker:
     marker = Marker(
         header=header,
-        ns="current_scan",
+        ns="cones",
+        id=id_,
+        type=Marker.MESH_RESOURCE,
+        action=Marker.ADD,
+        pose=Pose(position=Point(x=x, y=y, z=z), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        scale=Vector3(x=1.0, y=1.0, z=1.0),
+        mesh_resource="package://driverless_common/meshes/cone.dae",
+        color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
+        lifetime=lifetime,
+    )
+    marker = Marker(
+        header=header,
+        ns="cones",
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
@@ -140,11 +153,11 @@ def cov_marker_msg(
     x_scale: float,  # x sigma
     y_scale: float,  # y sigma
     lifetime=Duration(sec=1, nanosec=0),
-    header=Header(frame_id="map"),
+    header=Header(frame_id="track"),
 ) -> Marker:
     return Marker(
         header=header,
-        ns="cov_markers",
+        ns="cone_covs",
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
@@ -155,12 +168,12 @@ def cov_marker_msg(
     )
 
 
-def line_marker_msg(
+def path_marker_msg(
     path_markers: list,
     path_colours: list,
 ) -> Marker:
     return Marker(
-        header=Header(frame_id="map"),
+        header=Header(frame_id="track"),
         ns="current_path",
         id=0,
         type=Marker.LINE_STRIP,
@@ -173,10 +186,28 @@ def line_marker_msg(
     )
 
 
+def delaunay_marker_msg(
+    delaunay_lines: list,
+    track_colours: list,
+) -> Marker:
+    return Marker(
+        header=Header(frame_id="track"),
+        ns="current_track",
+        id=0,
+        type=Marker.LINE_LIST,
+        action=Marker.ADD,
+        pose=Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        scale=Vector3(x=0.2, y=0.1, z=0.1),
+        points=delaunay_lines,
+        colors=track_colours,
+        lifetime=Duration(sec=10, nanosec=100000),
+    )
+
+
 def clear_marker_msg(
     id_: int,
     header: Header,
-    name_space: str = "current_scan",
+    name_space: str = "cones",
 ) -> Marker:
     return Marker(
         header=header,
