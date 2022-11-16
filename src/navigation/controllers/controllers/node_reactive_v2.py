@@ -58,7 +58,7 @@ class BetterReactiveController(Node):
     Kp_prev: float = 0.4
     Kp_dist: float = 0.05
     Kp_angle: float = -20
-    r2d: bool = False  # for reset
+    r2d: bool = True  # for reset
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     def __init__(self):
@@ -86,6 +86,7 @@ class BetterReactiveController(Node):
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 
         self.get_logger().info("---Better Reactive Controller Node Initalised---")
+        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
