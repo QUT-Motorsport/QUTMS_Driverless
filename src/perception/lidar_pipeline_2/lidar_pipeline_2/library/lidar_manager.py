@@ -108,11 +108,12 @@ def detect_cones(
         split_prototype_segments,
         prototype_segments,
         SEGMENT_COUNT,
-        BIN_COUNT,
         T_M,
         T_M_SMALL,
         T_B,
         T_RMSE,
+        REGRESS_BETWEEN_BINS,
+        BIN_SIZE,
     )
     LOGGER.info(f"DONE: Ground Plane Mapped")
     end_time = time.perf_counter()
