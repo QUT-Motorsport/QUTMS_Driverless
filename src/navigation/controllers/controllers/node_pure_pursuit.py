@@ -108,6 +108,7 @@ class PurePursuit(Node):
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
+        self.get_logger().info("---Awaing Ready to Drive command---")
 
     def reset_callback(self, reset_msg: Reset):
         self.path = np.array([])
