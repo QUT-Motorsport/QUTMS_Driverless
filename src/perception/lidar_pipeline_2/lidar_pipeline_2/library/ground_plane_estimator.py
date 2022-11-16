@@ -2,6 +2,7 @@
 # from . import total_least_squares_old as tls
 import copy
 import math
+import multiprocessing as mp
 
 # Python Modules
 import numpy as np
@@ -466,6 +467,28 @@ def get_ground_plane_7(
         ground_plane[prototype_segments[segment_counter]] = get_ground_lines_4(
             segment, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE
         )
+
+    return ground_plane
+
+
+# Multiprocessing version of get_ground_plane_single_core
+def get_ground_plane_mp(
+    proto_segs_arr, proto_segs, SEGMENT_COUNT, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE
+):
+    batches = [proto_segs_arr[proto_seg_ind].tolist() for proto_seg_ind in range(len(proto_segs_arr))]
+
+    core_count = math.floor(mp.cpu_count() * 0.9)
+    pool = mp.Pool(core_count)
+
+    line_batches = pool.starmap(
+        get_ground_lines_4, [[batch, T_M, T_M_SMALL, T_B, T_RMSE, REGRESS_BETWEEN_BINS, BIN_SIZE] for batch in batches]
+    )
+    pool.close()
+    pool.join()
+
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)
+    for segment_counter in range(len(proto_segs_arr)):
+        ground_plane[proto_segs[segment_counter]] = line_batches[segment_counter]
 
     return ground_plane
 

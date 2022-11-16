@@ -14,6 +14,7 @@ ros-humble-ackermann-msgs
 ros-humble-ament-cmake-nose
 ros-humble-joint-state-publisher
 ros-humble-xacro
+ros-humble-pcl-ros
 scikit-learn
 scipy
 seaborn

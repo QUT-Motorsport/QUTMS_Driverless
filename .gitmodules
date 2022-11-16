@@ -17,3 +17,6 @@
 [submodule "src/perception/vision_pipeline/yolov7"]
 	path = src/perception/vision_pipeline/yolov7
 	url = https://github.com/WongKinYiu/yolov7.git
+[submodule "src/perception/cpp_lidar/PCL_DBSCAN"]
+	path = src/perception/cpp_lidar/PCL_DBSCAN
+	url = https://github.com/QUT-Motorsport/PCL_DBSCAN.git
