@@ -26,7 +26,7 @@ from .library import lidar_manager
 def cone_msg(x_coord: float, y_coord: float) -> Cone:
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location: Point = Point(
-        x=x_coord + 1.65,
+        x=x_coord,
         y=y_coord,
         z=0.15,
     )
