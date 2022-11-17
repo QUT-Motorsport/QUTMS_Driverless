@@ -216,7 +216,7 @@ class LiDARProcessor(Node):
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
 
-        self.get_logger().info(f"Total Time: {total_time} | Est. Hz: {1 / total_time}\n")  # log time
+        self.get_logger().debug(f"Total Time: {total_time} | Est. Hz: {1 / total_time}\n")  # log time
         self.start = time.perf_counter()
 
 
