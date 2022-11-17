@@ -30,9 +30,9 @@ def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_
     num_bins_to_search = CONE_DIAM / BIN_SIZE
 
     # Which segments / bins to search around
-    center_segs, center_bins = pcp.get_discretised_positions_2(
-        object_centers[:, 0], object_centers[:, 1], center_norms, DELTA_ALPHA, BIN_SIZE
-    )
+    # center_segs, center_bins = pcp.get_discretised_positions_2(
+    #     object_centers[:, 0], object_centers[:, 1], center_norms, DELTA_ALPHA, BIN_SIZE
+    # )
 
     # Hacky shit, getting points in search area
     reconstructed_objects = []

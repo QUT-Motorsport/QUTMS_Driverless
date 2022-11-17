@@ -19,7 +19,6 @@ from sensor_msgs.msg import PointCloud2
 
 import ros2_numpy as rnp
 
-from . import config
 from .library import lidar_manager
 
 
@@ -264,7 +263,7 @@ def main(args=sys.argv[1:]):
     T_D_MAX = 100
 
     EPSILON = 0.6  # Neighbourhood Scan Size
-    MIN_POINTS = 4  # Number of points required to form a neighbourhood
+    MIN_POINTS = 5  # Number of points required to form a neighbourhood
 
     # Path to data to import and use
     data_path = None
