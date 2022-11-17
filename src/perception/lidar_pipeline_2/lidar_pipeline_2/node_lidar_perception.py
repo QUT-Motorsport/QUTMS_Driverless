@@ -260,10 +260,10 @@ def main(args=sys.argv[1:]):
 
     # Maximum distance a point can be from the origin to even be considered as
     # a ground point. Otherwise it's labelled as a non-ground point.
-    T_D_MAX = 100
+    T_D_MAX = LIDAR_RANGE
 
-    EPSILON = 0.6  # Neighbourhood Scan Size
-    MIN_POINTS = 5  # Number of points required to form a neighbourhood
+    EPSILON = 0.8  # Neighbourhood Scan Size
+    MIN_POINTS = 4  # Number of points required to form a neighbourhood
 
     # Path to data to import and use
     data_path = None

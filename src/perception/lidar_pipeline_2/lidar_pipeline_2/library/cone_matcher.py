@@ -1,11 +1,11 @@
-import math as meth
+import math as math
 
 # I NEED TO COMPUTE THE CENTER OF A CLUSTER ONLY ONCE
 # AND KEEP THIS VALUE. Instead of calculating it multiple times.
 # HORIZONTAL_RES = 0.192 * (math.pi / 180) # 0.384 degrees in between each point
-HORIZONTAL_RES = 0.05 * (meth.pi / 180)  # 0.384 degrees in between each point
-HORIZONTAL_RES = 0.039 * (meth.pi / 180)  # NEW
-VERTICAL_RES = 1.25 * (meth.pi / 180)  # 1.25 degrees in between each point
+HORIZONTAL_RES = 0.05 * (math.pi / 180)  # 0.384 degrees in between each point
+HORIZONTAL_RES = 0.039 * (math.pi / 180)  # NEW
+VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
 
 CONE_HEIGHT = 0.3  # m
 CONE_WIDTH = 0.15  # m
@@ -27,8 +27,8 @@ def cone_filter(distance: float) -> float:
     #    distance = BIN_SIZE
     return (
         (1 / 2)
-        * (CONE_HEIGHT / (2 * distance * meth.tan(VERTICAL_RES / 2)))
-        * (CONE_WIDTH / (2 * distance * meth.tan(HORIZONTAL_RES / 2)))
+        * (CONE_HEIGHT / (2 * distance * math.tan(VERTICAL_RES / 2)))
+        * (CONE_WIDTH / (2 * distance * math.tan(HORIZONTAL_RES / 2)))
     )
 
 
@@ -41,7 +41,7 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
     ERROR_MARGIN = 0.95
 
     if point_count >= F_3(distance):
-        x_0 = meth.sqrt(A / point_count)
+        x_0 = math.sqrt(A / point_count)
     else:
         x_0 = distance
 
@@ -52,7 +52,7 @@ def new_cone_filter(distance: float, point_count: int) -> bool:
         # NEED TO DO CHECK HERE. IF LAST ONE EQUALS NEW ONE THEN BREAK
 
     closest_point = cone_filter(x_n)
-    dist = meth.sqrt((x_n - distance) ** 2 + (closest_point - point_count) ** 2)
+    dist = math.sqrt((x_n - distance) ** 2 + (closest_point - point_count) ** 2)
     # print(distance, point_count, x_n, closest_point, dist)
     # and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count
     # and closest_point <= point_count * 1.5
@@ -68,7 +68,7 @@ def new_cone_filter_old(distance: float, point_count: int) -> bool:
     ERROR_MARGIN = 0.95
 
     if point_count >= F_3(distance):
-        x_0 = meth.sqrt(A / point_count)
+        x_0 = math.sqrt(A / point_count)
     else:
         x_0 = distance
 
@@ -79,7 +79,7 @@ def new_cone_filter_old(distance: float, point_count: int) -> bool:
         # NEED TO DO CHECK HERE. IF LAST ONE EQUALS NEW ONE THEN BREAK
 
     closest_point = cone_filter(x_n)
-    dist = meth.sqrt((x_n - distance) ** 2 + (closest_point - point_count) ** 2)
+    dist = math.sqrt((x_n - distance) ** 2 + (closest_point - point_count) ** 2)
     # print(distance, point_count, x_n, closest_point, dist)
     # and x_n >= distance * ERROR_MARGIN and closest_point * ERROR_MARGIN <= point_count
     # and closest_point <= point_count * 1.5
@@ -91,9 +91,6 @@ def new_cone_filter_old(distance: float, point_count: int) -> bool:
         return False
 
 
-FAR_X = 60  # m
-
-
 def get_cones(reconstructed_clusters):
     cones = []
     ERROR_MARGIN = 0.20  # Constant
@@ -102,17 +99,19 @@ def get_cones(reconstructed_clusters):
         if point_count >= 1:  # MAKE THIS MORE THAN 1?
             x_cluster = [coords[0] for coords in reconstructed_clusters[i]]
             y_cluster = [coords[1] for coords in reconstructed_clusters[i]]
-            # Univserity of melbourne used z as well
-            # z_cluster = [coords[1] for coords in reconstructed_clusters[i]]
+            z_cluster = [coords[2] for coords in reconstructed_clusters[i]]
             x_mean = sum(x_cluster) / len(x_cluster)
             y_mean = sum(y_cluster) / len(y_cluster)
-            # z_mean  = sum(y_cluster) / len(y_cluster)
-            distance = meth.sqrt(x_mean**2 + y_mean**2)
+            z_mean = sum(z_cluster) / len(z_cluster)
+            x_range = max(x_cluster) - min(x_cluster)
+            y_range = max(y_cluster) - min(y_cluster)
+            z_range = max(z_cluster) - min(z_cluster)
+            distance = math.sqrt(x_mean**2 + y_mean**2)
 
             # print(round(x_mean, 2), "\t", round(y_mean, 2), "\t", round(distance, 4), "\t", point_count)
 
             # only checks centre of scan for cones - noise filter (delete if needed)
-            if abs(x_mean) < FAR_X:
+            if (z_range > 0.10 and z_range < 0.45) and x_range < 0.30 and y_range < 0.30:
                 # print("    ", x_mean, y_mean, point_count, distance)
                 if new_cone_filter(distance, point_count):
                     cones.append([x_mean, y_mean])
