@@ -23,12 +23,13 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-R = np.diag([0.1, 0.001]) ** 2
-Q = np.diag([0.6, 0.8]) ** 2
-RADIUS = 2  # nn kdtree nearch
+R = np.diag([0.1, 0.001]) ** 2  # motion model
+Q_CAM = np.diag([0.6, 0.8]) ** 2  # measurement
+Q_LIDAR = np.diag([0.2, 0.2]) ** 2
+RADIUS = 1.7  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 15  # minimum frames before confirming cones
-FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be removed
+FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
 
 
 class PySlam(Node):
@@ -88,8 +89,10 @@ class PySlam(Node):
 
         if detection_msg.header.frame_id == "velodyne":
             sensor = "lidar"
+            Q = Q_LIDAR
         else:
             sensor = "camera"
+            Q = Q_CAM
 
         # predict car location
         self.predict(vel_msg)
@@ -111,7 +114,7 @@ class PySlam(Node):
                 if close.size != 0:
                     on_map = True
                     # update step
-                    self.update(close[0], det.sense_rb)
+                    self.update(close[0], det.sense_rb, Q)
 
                     if det.colour != Cone.UNKNOWN:  # updated cone was not a lidar detection
                         self.track[close[0]][2] = det.colour  # override colour
@@ -122,7 +125,7 @@ class PySlam(Node):
                 else:  # otherwise append vertically
                     self.track = np.vstack([self.track, [mapx, mapy, det.colour, 1, 0]])
                 # initialise new landmark
-                self.init_landmark(det.sense_rb)
+                self.init_landmark(det.sense_rb, Q)
 
         # remove noise
         self.flush_map()
@@ -206,7 +209,7 @@ class PySlam(Node):
         # uncertainty
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ R @ Ju.T
 
-    def update(self, index: int, cone: Tuple[float, float]):
+    def update(self, index: int, cone: Tuple[float, float], Q: np.ndarray):
         """
         Update step of the EKF
         * param index: index of the cone in the map
@@ -247,7 +250,7 @@ class PySlam(Node):
         if self.track[index, 3] > FRAME_COUNT and self.track[index, 4] == 0:
             self.track[index, 4] = 1  # mark as confirmed
 
-    def init_landmark(self, cone: Tuple[float, float]):
+    def init_landmark(self, cone: Tuple[float, float], Q: np.ndarray):
         """
         Add new landmark to state
         * param cone: tuple of (x, y) of the cone
