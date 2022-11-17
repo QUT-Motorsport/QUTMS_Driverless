@@ -23,23 +23,20 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class EKFSlam(Node):
+class PySlam(Node):
     R = np.diag([0.1, 0.001]) ** 2
     Q = np.diag([0.6, 0.8]) ** 2
     radius = 2  # nn kdtree nearch
     leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 25  # minimum frames that cones have to be seen in
+    in_frames = 15  # minimum frames that cones have to be seen in
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     track = np.array([])
 
-    clock = time.time()
-
-    # init pose on first odom message
-    last_measure: np.ndarray = np.array([0.0, 0.0, 0.0])
+    last_timestamp = time.time()
 
     def __init__(self):
-        super().__init__("ekf_slam")
+        super().__init__("py_slam")
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
@@ -48,13 +45,13 @@ class EKFSlam(Node):
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
         )
-        # vision_synchronizer.registerCallback(self.callback)
+        vision_synchronizer.registerCallback(self.callback)
         lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
         )
         lidar_synchronizer.registerCallback(self.callback)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
@@ -69,7 +66,7 @@ class EKFSlam(Node):
         self.get_logger().info("---SLAM node initialised---")
 
     def reset_callback(self, msg):
-        self.get_logger().info("Resetting SLAM")
+        self.get_logger().info("Resetting Map")
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.track = np.array([])
@@ -78,24 +75,8 @@ class EKFSlam(Node):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()
 
-        self.dt = time.time() - self.clock
-        self.clock = time.time()
-
-        # x = pose_msg.pose.pose.position.x
-        # y = pose_msg.pose.pose.position.y
-        # theta = quat2euler(
-        #     [
-        #         pose_msg.pose.pose.orientation.w,
-        #         pose_msg.pose.pose.orientation.x,
-        #         pose_msg.pose.pose.orientation.y,
-        #         pose_msg.pose.pose.orientation.z,
-        #     ]
-        # )[2]
-        # cov = pose_msg.pose.covariance
-
-        # if (self.last_measure == 0.0).all():
-        #     self.last_measure = np.array([x, y, theta])
-        #     return
+        self.dt = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
+        self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
 
         # predict car location
         self.predict(vel_msg)
@@ -210,15 +191,8 @@ class EKFSlam(Node):
         self.state[1] = self.state[1] + ddist * sin(self.state[2])
         self.state[2] = wrap_to_pi(self.state[2] + dtheta)
 
-        # cov = np.reshape(cov, (6, 6))
-        # R = np.array(
-        #     [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
-        # )
-
         # uncertainty
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
-
-        # self.last_measure = np.array([pose[0], pose[1], pose[2]])
 
     def update(self, index: int, cone: Tuple[float, float]):
         """
@@ -345,7 +319,7 @@ class EKFSlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = EKFSlam()
+    node = PySlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
