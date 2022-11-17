@@ -16,8 +16,11 @@ class ConeProps:
     range: float
     bearing: float
 
-    def __init__(self, cone: Cone):
-        self.x = cone.location.x
+    def __init__(self, cone: Cone, sensor: str):
+        if sensor == "lidar":
+            self.x = cone.location.x + 1.65
+        else:
+            self.x = cone.location.x - 0.1
         self.y = cone.location.y
         self.colour = cone.color
 
