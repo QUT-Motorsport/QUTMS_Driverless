@@ -14,13 +14,5 @@ def generate_launch_description():
                 package="vision_pipeline",
                 executable="torch_detector",
             ),
-            Node(
-                package="lidar_pipeline_2",
-                executable="lidar_perception",
-            ),
-            Node(
-                package="baby_slam",
-                executable="slam",
-            ),
         ]
     )
