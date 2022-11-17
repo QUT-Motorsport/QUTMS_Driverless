@@ -216,7 +216,7 @@ class LiDARProcessor(Node):
         total_time = time.perf_counter() - start_time
         LOGGER.info(f"Total Time: {total_time}s | Est. Hz: {1 / total_time}")
 
-        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - self.start)}\n")  # log time
+        self.get_logger().info(f"Total Time: {total_time} | Est. Hz: {1 / total_time}\n")  # log time
         self.start = time.perf_counter()
 
 
@@ -232,7 +232,7 @@ def main(args=sys.argv[1:]):
     stdout_handler = None
 
     # Max range of points to process (metres)
-    LIDAR_RANGE = 15
+    LIDAR_RANGE = 20
 
     # Delta angle of segments
     DELTA_ALPHA = (2 * math.pi) / 128
