@@ -36,6 +36,8 @@ class DisplayDetections(Node):
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/sim/cone_detection", self.sim_cones_callback, 1)
 
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback2, 1)
+
         # steering angle target sub
         self.create_subscription(AckermannDrive, "/driving_command", self.steering_callback, 1)
 
@@ -64,6 +66,9 @@ class DisplayDetections(Node):
         self.sim_track_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/sim_track", 1)
         self.slam_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "/markers/slam_with_cov", 1)
 
+        self.vision_img_publisher2: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img2", 1)
+        self.vision_mkr_publisher2: Publisher = self.create_publisher(MarkerArray, "/markers/vision_markers2", 1)
+
         # path marker pubs
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/markers/path_line", 1)
 
@@ -83,6 +88,16 @@ class DisplayDetections(Node):
         self.vision_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.vision_mkr_publisher.publish(marker_array_from_cone_detection(msg))
+
+    def vision_callback2(self, msg: ConeDetectionStamped):
+        # subscribed to vision cone detections
+        debug_img = draw_markers(msg.cones)  # draw cones on image
+        debug_img = draw_steering(
+            debug_img, self.steering_angle, self.velocity
+        )  # draw steering angle and vel data on image
+        self.vision_img_publisher2.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+        self.vision_mkr_publisher2.publish(marker_array_from_cone_detection(msg))
 
     def lidar_callback(self, msg: ConeDetectionStamped):
         # subscribed to lidar cone detections
