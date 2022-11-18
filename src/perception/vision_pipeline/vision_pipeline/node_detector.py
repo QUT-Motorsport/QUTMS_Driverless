@@ -26,6 +26,8 @@ from typing import Callable, List, Tuple
 cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
+MAX_RANGE = 16  # m
+MIN_RANGE = 0.5  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -80,11 +82,11 @@ def cone_bearing(
 def cone_msg(
     distance: float,
     bearing: float,
-    colour: int,  # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
+    colour: int,
 ) -> Cone:
 
     location = Point(
-        x=distance * cos(radians(bearing)) - 0.1,  # offset distance from camera to centre of car
+        x=distance * cos(radians(bearing)),
         y=distance * sin(radians(bearing)),
         z=-0.6,
     )
@@ -118,8 +120,8 @@ class VisionProcessor(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection2", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img2", 1)
 
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
@@ -142,15 +144,15 @@ class VisionProcessor(Node):
                 if bounding_box.tl.y < colour_camera_info_msg.height / 2:
                     continue
                 # filter on area
-                if bounding_box.area < 40 or bounding_box.area > 8000:
-                    continue
-                # filter by aspect ratio
-                if bounding_box.aspect_ratio > 1.2:
+                if bounding_box.area < 100 or bounding_box.area > 8000:
                     continue
 
             distance = cone_distance(bounding_box, depth_frame)
             # filter on distance
-            if isnan(distance) or isinf(distance) or distance > 10 or distance < 0.5:
+            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
+                continue
+            # filter by aspect ratio
+            if bounding_box.aspect_ratio < 0.5:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)

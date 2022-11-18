@@ -5,12 +5,12 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+from . import cone_matcher as cm
 from . import ground_plane_estimator as gpe
 from . import object_processor as op
 from . import point_classifier as pc
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
-from . import worlds_worst_code as ihateuni
 
 LOGGER = logging.getLogger(__name__)
 
@@ -199,7 +199,7 @@ def detect_cones(
 
     start_time = time.perf_counter()
     # identified_cones = op.cone_filter(reconstructed_objects)
-    identified_cones = ihateuni.get_cones(reconstructed_objects)
+    identified_cones = cm.get_cones(reconstructed_objects)
     end_time = time.perf_counter()
 
     if create_figures:

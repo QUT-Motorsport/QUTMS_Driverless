@@ -89,7 +89,7 @@ class PurePursuit(Node):
     Kp_brake: float = 0.0
     pos_RVWP_LAD: int = 15
     vel_RVWP_LAD: int = pos_RVWP_LAD
-    r2d: bool = False  # for reset
+    r2d: bool = True  # for reset
 
     def __init__(self):
         super().__init__("pure_pursuit")
@@ -108,7 +108,7 @@ class PurePursuit(Node):
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
-        self.get_logger().info("---Awaing Ready to Drive command---")
+        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
     def reset_callback(self, reset_msg: Reset):
         self.path = np.array([])

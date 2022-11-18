@@ -23,23 +23,25 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class EKFSlam(Node):
-    R = np.diag([0.1, 0.001]) ** 2
-    Q = np.diag([0.6, 0.8]) ** 2
-    radius = 2  # nn kdtree nearch
-    leaf = 50  # nodes per tree before it starts brute forcing?
-    in_frames = 25  # minimum frames that cones have to be seen in
+R = np.diag([0.1, 0.001]) ** 2  # motion model
+Q_CAM = np.diag([0.6, 0.8]) ** 2  # measurement
+Q_LIDAR = np.diag([0.2, 0.2]) ** 2
+RADIUS = 1.7  # nn kdtree nearch
+LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
+FRAME_COUNT = 15  # minimum frames before confirming cones
+FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
+
+
+class PySlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     track = np.array([])
+    # track is a multi-dim array of [x, y, theta, frame_count, confirmed_detection]
 
-    clock = time.time()
-
-    # init pose on first odom message
-    last_measure: np.ndarray = np.array([0.0, 0.0, 0.0])
+    last_timestamp = 0.0
 
     def __init__(self):
-        super().__init__("ekf_slam")
+        super().__init__("py_slam")
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
@@ -48,13 +50,13 @@ class EKFSlam(Node):
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
         )
-        # vision_synchronizer.registerCallback(self.callback)
+        vision_synchronizer.registerCallback(self.callback)
         lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
         )
         lidar_synchronizer.registerCallback(self.callback)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
@@ -69,7 +71,7 @@ class EKFSlam(Node):
         self.get_logger().info("---SLAM node initialised---")
 
     def reset_callback(self, msg):
-        self.get_logger().info("Resetting SLAM")
+        self.get_logger().info("Resetting Map")
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.track = np.array([])
@@ -78,31 +80,26 @@ class EKFSlam(Node):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()
 
-        self.dt = time.time() - self.clock
-        self.clock = time.time()
+        # get velocity timestep
+        if self.last_timestamp == 0.0:
+            self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
+            return
+        self.dt = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
+        self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
 
-        # x = pose_msg.pose.pose.position.x
-        # y = pose_msg.pose.pose.position.y
-        # theta = quat2euler(
-        #     [
-        #         pose_msg.pose.pose.orientation.w,
-        #         pose_msg.pose.pose.orientation.x,
-        #         pose_msg.pose.pose.orientation.y,
-        #         pose_msg.pose.pose.orientation.z,
-        #     ]
-        # )[2]
-        # cov = pose_msg.pose.covariance
-
-        # if (self.last_measure == 0.0).all():
-        #     self.last_measure = np.array([x, y, theta])
-        #     return
+        if detection_msg.header.frame_id == "velodyne":
+            sensor = "lidar"
+            Q = Q_LIDAR
+        else:
+            sensor = "camera"
+            Q = Q_CAM
 
         # predict car location
         self.predict(vel_msg)
 
         # process detected cones
         for cone in detection_msg.cones:
-            det = ConeProps(cone)  # detection with properties
+            det = ConeProps(cone, sensor)  # detection with properties
 
             mapx = self.state[0] + det.range * cos(self.state[2] + det.bearing)
             mapy = self.state[1] + det.range * sin(self.state[2] + det.bearing)
@@ -110,54 +107,53 @@ class EKFSlam(Node):
             on_map = False  # by default its a new detection
 
             if len(self.track) != 0:
-                neighbourhood = KDTree(self.track[:, :2], leaf_size=self.leaf)
+                neighbourhood = KDTree(self.track[:, :2], leaf_size=LEAF_SIZE)
                 check = np.array([[mapx, mapy]])  # turn into a 2D row array
-                ind = neighbourhood.query_radius(check, r=self.radius)  # check neighbours in radius
+                ind = neighbourhood.query_radius(check, r=RADIUS)  # check neighbours in radius
                 close = ind[0]  # index from the single colour list
                 if close.size != 0:
                     on_map = True
                     # update step
-                    self.update(close[0], det.sense_rb)
+                    self.update(close[0], det.sense_rb, Q)
 
                     if det.colour != Cone.UNKNOWN:  # updated cone was not a lidar detection
                         self.track[close[0]][2] = det.colour  # override colour
 
             if not on_map:
                 if self.track.size == 0:  # first in this list
-                    self.track = np.array([[mapx, mapy, det.colour, 1]])
+                    self.track = np.array([[mapx, mapy, det.colour, 1, 0]])
                 else:  # otherwise append vertically
-                    self.track = np.vstack([self.track, [mapx, mapy, det.colour, 1]])
+                    self.track = np.vstack([self.track, [mapx, mapy, det.colour, 1, 0]])
                 # initialise new landmark
-                self.init_landmark(det.sense_rb)
+                self.init_landmark(det.sense_rb, Q)
 
         # remove noise
         self.flush_map()
-
-        # get local map
-        local_map = self.get_local_map()
 
         # publish track msg
         track_msg = TrackDetectionStamped()
         track_msg.header.stamp = self.get_clock().now().to_msg()
         track_msg.header.frame_id = "track"
         for i, cone in enumerate(self.track):
-            cov_i = i * 2 + 3
-            curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
-            cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
-            cone_cov = curr_cov.flatten().tolist()
-            track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+            if cone[4] == 1:
+                cov_i = i * 2 + 3
+                curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
+                cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
+                cone_cov = curr_cov.flatten().tolist()
+                track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
         local_map_msg = TrackDetectionStamped()
         local_map_msg.header.stamp = self.get_clock().now().to_msg()
         local_map_msg.header.frame_id = "car"
-        for i, cone in enumerate(local_map):
-            cov_i = i * 2 + 3
-            curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
-            cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
-            cone_cov = curr_cov.flatten().tolist()
-            local_map_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+        for i, cone in enumerate(self.get_local_map()):
+            if cone[4] == 1:
+                cov_i = i * 2 + 3
+                curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
+                cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
+                cone_cov = curr_cov.flatten().tolist()
+                local_map_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
         self.local_publisher.publish(local_map_msg)
 
         # publish pose msg
@@ -210,17 +206,10 @@ class EKFSlam(Node):
         self.state[1] = self.state[1] + ddist * sin(self.state[2])
         self.state[2] = wrap_to_pi(self.state[2] + dtheta)
 
-        # cov = np.reshape(cov, (6, 6))
-        # R = np.array(
-        #     [[cov[0, 0], cov[0, 1], cov[0, 5]], [cov[1, 0], cov[1, 1], cov[1, 5]], [cov[5, 0], cov[5, 1], cov[5, 5]]]
-        # )
-
         # uncertainty
-        self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ self.R @ Ju.T
+        self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ R @ Ju.T
 
-        # self.last_measure = np.array([pose[0], pose[1], pose[2]])
-
-    def update(self, index: int, cone: Tuple[float, float]):
+    def update(self, index: int, cone: Tuple[float, float], Q: np.ndarray):
         """
         Update step of the EKF
         * param index: index of the cone in the map
@@ -248,7 +237,7 @@ class EKFSlam(Node):
             [-(muL[1] - self.state[1]) / (r**2), (muL[0] - self.state[0]) / (r**2)],
         ]
 
-        Kt = self.sigma @ Gt.T @ np.linalg.inv(Gt @ self.sigma @ Gt.T + self.Q)
+        Kt = self.sigma @ Gt.T @ np.linalg.inv(Gt @ self.sigma @ Gt.T + Q)
 
         # update state, wrap bearing to pi, wrap heading to pi
         self.state = self.state + (Kt @ np.array([cone[0] - h[0], wrap_to_pi(cone[1] - h[1])])).T
@@ -258,8 +247,10 @@ class EKFSlam(Node):
 
         self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
         self.track[index, 3] += 1  # increment cone's seen count
+        if self.track[index, 3] > FRAME_COUNT and self.track[index, 4] == 0:
+            self.track[index, 4] = 1  # mark as confirmed
 
-    def init_landmark(self, cone: Tuple[float, float]):
+    def init_landmark(self, cone: Tuple[float, float], Q: np.ndarray):
         """
         Add new landmark to state
         * param cone: tuple of (x, y) of the cone
@@ -280,14 +271,16 @@ class EKFSlam(Node):
         sig_len = len(self.sigma)
         new_sig = np.zeros((sig_len + 2, sig_len + 2))  # create zeros
         new_sig[0:sig_len, 0:sig_len] = self.sigma  # top left corner is existing sigma
-        new_sig[sig_len : sig_len + 2, sig_len : sig_len + 2] = Lz @ self.Q @ Lz.T  # bottom right is new lm
+        new_sig[sig_len : sig_len + 2, sig_len : sig_len + 2] = Lz @ Q @ Lz.T  # bottom right is new lm
         self.sigma = new_sig
 
     def flush_map(self):
         """
         Remove landmarks not seen for a number of frames and only behind the car
         """
-        # get heading and position vector
+
+        if len(self.track) == 0:
+            return
         heading = np.array([cos(self.state[2]), sin(self.state[2])])
         position = np.array([self.state[0], self.state[1]])
 
@@ -298,7 +291,7 @@ class EKFSlam(Node):
         behind_idxs = np.where(dot_products < 0)[0]
 
         # get indexes of landmarks that have been seen for a number of frames
-        noisy_idxs = np.where(self.track[:, 3] < self.in_frames)[0]
+        noisy_idxs = np.where(self.track[:, 3] < FRAME_REM_COUNT)[0]
 
         # remove noisy and behind landmarks
         idxs_to_remove = np.concatenate((behind_idxs, noisy_idxs))
@@ -329,12 +322,12 @@ class EKFSlam(Node):
             self.state[2]
         )
 
-        local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3]), axis=1)
+        local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3], self.track[:, 4]), axis=1)
 
         # get any cones that are within -10m to 10m beside car
         side_idxs = np.where(np.logical_and(local_ys > -10, local_ys < 10))[0]
-        # get any cones that are within 10m in front of car
-        forward_idxs = np.where(np.logical_and(local_xs > 0, local_xs < 10))[0]
+        # get any cones that are within 15m in front of car
+        forward_idxs = np.where(np.logical_and(local_xs > 0, local_xs < 15))[0]
 
         # combine indexes
         idxs = np.intersect1d(side_idxs, forward_idxs)
@@ -345,7 +338,7 @@ class EKFSlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = EKFSlam()
+    node = PySlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
