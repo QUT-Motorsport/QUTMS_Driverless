@@ -292,16 +292,16 @@ class TrackPlanner(Node):
 
         self.get_logger().debug(f"Planned path in {time.perf_counter() - start}s")
 
-        # make plot
-        self.ax.clear()
-        self.ax.triplot(track[:, 0], track[:, 1], internal_triangles)
-        for line in lines:
-            self.ax.plot(line[:, 0], line[:, 1], "g-")
-        # number midpoints
-        for i, p in enumerate(ordered_midpoints):
-            self.ax.text(p[0], p[1], str(i), fontsize=14)
-        self.ax.plot(ordered_midpoints[:, 0], ordered_midpoints[:, 1], "ro")
-        self.ax.plot(path[:,0], path[:,1], "r-")
+        ## make plot
+        #self.ax.clear()
+        #self.ax.triplot(track[:, 0], track[:, 1], internal_triangles)
+        #for line in lines:
+        #    self.ax.plot(line[:, 0], line[:, 1], "g-")
+        ## number midpoints
+        #for i, p in enumerate(ordered_midpoints):
+        #    self.ax.text(p[0], p[1], str(i), fontsize=14)
+        #self.ax.plot(ordered_midpoints[:, 0], ordered_midpoints[:, 1], "ro")
+        #self.ax.plot(path[:,0], path[:,1], "r-")
 
         plt.pause(0.03)
         plt.show(block=False)
