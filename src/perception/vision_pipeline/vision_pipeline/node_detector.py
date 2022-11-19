@@ -25,7 +25,8 @@ from typing import Callable, List, Tuple
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
-CAMERA_FOV = 110  # degrees
+CAMERA_FOV = 120  # degrees
+FOCAL_CONST = 420
 MAX_RANGE = 20  # m
 MIN_RANGE = 0.5  # m
 
@@ -45,6 +46,9 @@ CONE_DISPLAY_PARAMETERS = [
     YELLOW_DISP_COLOUR,
 ]
 
+# cone heights in metres
+HEIGHTS = [0.3, 0.3, 0.35, 0.35, 0.3]
+
 ConeMsgColour = int  # define arbitrary variable type
 
 
@@ -52,12 +56,15 @@ def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
 ) -> Tuple[float, Rect]:
+    """
+    Calculate the distance to the cone using a region of interest in the depth image.
+    """
+    scale: int = 2
 
-    # resize depth frame 2x
-    depth_frame = cv2.resize(depth_frame, (0, 0), fx=2, fy=2)
-
-    # resize bounding box 2x
-    colour_frame_cone_bounding_box = colour_frame_cone_bounding_box.scale(2)
+    # resize depth frame
+    depth_frame = cv2.resize(depth_frame, (0, 0), fx=scale, fy=scale)
+    # resize bounding box
+    colour_frame_cone_bounding_box = colour_frame_cone_bounding_box.scale(scale)
 
     # get center as roi
     y_height = int(colour_frame_cone_bounding_box.height / 5)
@@ -74,15 +81,28 @@ def cone_distance(
     return np.mean(depth_roi), depth_rect
 
 
+def cone_distance_bbox(
+    colour_frame_cone_bounding_box: Rect,
+    colour: ConeMsgColour,
+):
+    """
+    Calculate distance using the bounding box height to known heights.
+    """
+    return (HEIGHTS[colour] * FOCAL_CONST) / colour_frame_cone_bounding_box.height
+
+
 def cone_bearing(
     colour_frame_cone_bounding_box: Rect,
     colour_frame_camera_info: CameraInfo,
 ) -> float:
+    """
+    Calculate the bearing to the cone using the bounding box and camera info.
+    """
 
-    cone_center = colour_frame_cone_bounding_box.center.x
-    frame_width = colour_frame_camera_info.width
-    center_scaled = (frame_width / 2 - cone_center) / (frame_width / 2)  # 1 to -1 left to right
-
+    cone_center: int = colour_frame_cone_bounding_box.center.x
+    frame_width: int = colour_frame_camera_info.width
+    # 1 to -1 left to right
+    center_scaled: int = (frame_width / 2 - cone_center) / (frame_width / 2)
     return CAMERA_FOV / 2 * center_scaled
 
 
@@ -153,35 +173,39 @@ class VisionProcessor(Node):
         disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
 
         detected_cones: List[Cone] = []
+        i = 0
         for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
-            if self.enable_cv_filters:
-                # filter by height
-                if bounding_box.tl.y < colour_camera_info_msg.height / 2:
-                    continue
-                # filter on area
-                if bounding_box.area < 100 or bounding_box.area > 8000:
-                    continue
-
-            distance, d_rect = cone_distance(bounding_box, depth_frame)
-            # filter on distance
-            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
+            # filter by height
+            if bounding_box.tl.y < colour_camera_info_msg.height / 2:
+                continue
+            # filter on area
+            if bounding_box.area < 10:
                 continue
             # filter by aspect ratio
-            if bounding_box.aspect_ratio < 0.5:
+            if bounding_box.aspect_ratio < 0.4:
+                continue
+
+            # using bounding box sizes for distance
+            # distance, d_rect = cone_distance(bounding_box, depth_frame)
+            distance = cone_distance_bbox(bounding_box, cone_colour)
+
+            # filter on distance
+            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
-            draw_box(
-                disp_depth_frame, box=bounding_box.scale(2), colour=display_colour, distance=distance, bearing=bearing
-            )
-            draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
-
-            # cv2.imshow("depth", disp_depth_frame)
-            # cv2.waitKey(1)
+            # draw_box(
+            #     disp_depth_frame, box=bounding_box.scale(2), colour=display_colour, distance=distance, bearing=bearing
+            # )
+            # draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
 
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
+
+        #     print(i, "dist:", distance)
+        #     i += 1
+        # print("\n")
 
         detection_msg = ConeDetectionStamped(
             header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),

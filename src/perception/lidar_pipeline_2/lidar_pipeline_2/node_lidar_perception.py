@@ -207,6 +207,8 @@ class LiDARProcessor(Node):
                     cones[i][1],
                 )
             )
+        #     print(i, "dist: ", math.sqrt(cones[i][0]**2 + cones[i][1]**2))
+        # print("\n")
 
         detection_msg = ConeDetectionStamped(header=pc_msg.header, cones=detected_cones)
 

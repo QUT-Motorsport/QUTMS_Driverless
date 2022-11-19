@@ -28,8 +28,8 @@ Q_CAM = np.diag([0.6, 0.8]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
 RADIUS = 1.7  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 15  # minimum frames before confirming cones
-FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
+FRAME_COUNT = 20  # minimum frames before confirming cones
+FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
 
 
 class PySlam(Node):
