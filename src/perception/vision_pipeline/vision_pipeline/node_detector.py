@@ -178,8 +178,8 @@ class VisionProcessor(Node):
             )
             draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
 
-            cv2.imshow("depth", disp_depth_frame)
-            cv2.waitKey(1)
+            # cv2.imshow("depth", disp_depth_frame)
+            # cv2.waitKey(1)
 
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
@@ -197,7 +197,7 @@ class VisionProcessor(Node):
         self.depth_debug_img_publisher.publish(depth_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
-        self.get_logger().info(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
+        self.get_logger().debug(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
         self.start = time.perf_counter()
 
 
