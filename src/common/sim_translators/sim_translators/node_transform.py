@@ -21,8 +21,8 @@ class TF2Publisher(Node):
         # Read message content and assign it to
         # corresponding tf variables
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "map"
-        t.child_frame_id = "car"
+        t.header.frame_id = "simmap"
+        t.child_frame_id = "simcar"
 
         t.transform.translation.x = msg.pose.pose.position.x
         t.transform.translation.y = msg.pose.pose.position.y
