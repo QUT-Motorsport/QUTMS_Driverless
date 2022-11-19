@@ -79,15 +79,20 @@ class Rect:
     def as_roi(self, frame: np.ndarray) -> np.ndarray:
         return frame[self.tl.y : self.br.y, self.tl.x : self.br.x]
 
+    def scale(self, factor: int) -> "Rect":
+        return Rect(self.tl.x * factor, self.tl.y * factor, self.width * factor, self.height * factor)
 
-def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None):
+
+def draw_box(
+    img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float] = None, bearing: Optional[float] = None
+) -> None:
     """
     Draws a box on a display image, around a given rectangle object, of the cone's colour\n
     Also writes the distance to the cone in meters if it is a valid distance
     """
 
     # draw a bounding box around the cone on the display image
-    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.tl.x + box.width, box.tl.y + box.height), colour, thickness=2)
+    cv2.rectangle(img, (box.tl.x, box.tl.y), (box.br.x, box.br.y), colour, thickness=2)
 
     # write text above the cone bounding box on the display image
     if distance is not None:
@@ -95,6 +100,17 @@ def draw_box(img: np.ndarray, box: Rect, colour: Tuple, distance: Optional[float
             img,
             str(round(distance, 1)) + "m",
             (box.tl.x, box.tl.y - 3),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.4,
+            color=(255, 255, 255),
+            thickness=1,
+        )
+
+    if bearing is not None:
+        cv2.putText(
+            img,
+            str(round(bearing, 1)) + "deg",
+            (box.tl.x, box.tl.y + box.height + 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=0.4,
             color=(255, 255, 255),

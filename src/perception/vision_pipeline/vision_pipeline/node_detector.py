@@ -26,7 +26,7 @@ from typing import Callable, List, Tuple
 cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
-MAX_RANGE = 16  # m
+MAX_RANGE = 20  # m
 MIN_RANGE = 0.5  # m
 
 # display colour constants
@@ -51,9 +51,16 @@ ConeMsgColour = int  # define arbitrary variable type
 def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
-) -> float:
+) -> Tuple[float, Rect]:
+
+    # resize depth frame 2x
+    depth_frame = cv2.resize(depth_frame, (0, 0), fx=2, fy=2)
+
+    # resize bounding box 2x
+    colour_frame_cone_bounding_box = colour_frame_cone_bounding_box.scale(2)
+
     # get center as roi
-    y_height = int(colour_frame_cone_bounding_box.height / 6)
+    y_height = int(colour_frame_cone_bounding_box.height / 5)
     depth_rect = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
         y=colour_frame_cone_bounding_box.center.y + y_height,
@@ -64,7 +71,7 @@ def cone_distance(
 
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
-    return np.mean(depth_roi)
+    return np.mean(depth_roi), depth_rect
 
 
 def cone_bearing(
@@ -122,6 +129,7 @@ class VisionProcessor(Node):
         # publishers
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection2", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img2", 1)
+        self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/depth_debug_img", 1)
 
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
@@ -137,6 +145,13 @@ class VisionProcessor(Node):
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
 
+        # colour depth map for debugging
+        disp_depth_frame = np.nan_to_num(depth_frame, nan=0, posinf=0, neginf=0)
+        disp_depth_frame = cv2.resize(disp_depth_frame, (0, 0), fx=2, fy=2)
+        disp_depth_frame[disp_depth_frame > 20] = 0
+        disp_depth_frame = cv2.normalize(disp_depth_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+        disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
+
         detected_cones: List[Cone] = []
         for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
             if self.enable_cv_filters:
@@ -147,7 +162,7 @@ class VisionProcessor(Node):
                 if bounding_box.area < 100 or bounding_box.area > 8000:
                     continue
 
-            distance = cone_distance(bounding_box, depth_frame)
+            distance, d_rect = cone_distance(bounding_box, depth_frame)
             # filter on distance
             if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
                 continue
@@ -158,6 +173,14 @@ class VisionProcessor(Node):
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
+            draw_box(
+                disp_depth_frame, box=bounding_box.scale(2), colour=display_colour, distance=distance, bearing=bearing
+            )
+            draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
+
+            cv2.imshow("depth", disp_depth_frame)
+            cv2.waitKey(1)
+
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
         detection_msg = ConeDetectionStamped(
@@ -169,8 +192,12 @@ class VisionProcessor(Node):
         debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
 
+        depth_msg = cv_bridge.cv2_to_imgmsg(disp_depth_frame, encoding="bgr8")
+        depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
+        self.depth_debug_img_publisher.publish(depth_msg)
+
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
-        self.get_logger().debug(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
+        self.get_logger().info(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
         self.start = time.perf_counter()
 
 

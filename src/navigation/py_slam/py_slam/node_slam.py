@@ -45,7 +45,7 @@ class PySlam(Node):
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
         lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
