@@ -37,6 +37,7 @@ class SimToOdom(Node):
         vel_msg.header = odom_msg.header
         vel_msg.header.frame_id = "imu_link_ned"
         vel_msg.twist = odom_msg.twist.twist
+        vel_msg.twist.angular.z = -odom_msg.twist.twist.angular.z
         self.vel_publisher.publish(vel_msg)
 
 

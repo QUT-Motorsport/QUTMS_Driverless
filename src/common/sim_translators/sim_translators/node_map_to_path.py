@@ -168,9 +168,10 @@ class MapPathPlanner(Node):
                 path.append(path_point)
 
         path_msg = PathStamped(path=path)
+        path_msg.header.frame_id = "track"
         self.path_publisher.publish(path_msg)
         sim_track_msg = TrackDetectionStamped()
-        sim_track_msg.header.frame_id = "map"
+        sim_track_msg.header.frame_id = "track"
         sim_track_msg.cones = sim_track
         self.track_publisher.publish(sim_track_msg)
 
