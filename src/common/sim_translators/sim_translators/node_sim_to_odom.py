@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, TwistStamped
 from nav_msgs.msg import Odometry
 
 
@@ -19,7 +19,7 @@ class SimToOdom(Node):
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance", 1
         )
-        self.vel_publisher: Publisher = self.create_publisher(TwistWithCovarianceStamped, "/imu/velocity", 1)
+        self.vel_publisher: Publisher = self.create_publisher(TwistStamped, "/imu/velocity", 1)
 
         self.get_logger().info("---Sim odometry translator initialised---")
 
@@ -33,13 +33,10 @@ class SimToOdom(Node):
         pose_msg.pose.covariance = cov.flatten()  # 1x36
         self.pose_publisher.publish(pose_msg)
 
-        vel_msg = TwistWithCovarianceStamped()
+        vel_msg = TwistStamped()
         vel_msg.header = odom_msg.header
-        vel_msg.header.frame_id = "base_link"
-        vel_msg.twist.twist = odom_msg.twist.twist
-        cov: np.ndarray = np.diag(np.random.rand(6) * 0.1)
-        cov = np.reshape(cov, (6, 6))
-        vel_msg.twist.covariance = cov.flatten()
+        vel_msg.header.frame_id = "imu_link_ned"
+        vel_msg.twist = odom_msg.twist.twist
         self.vel_publisher.publish(vel_msg)
 
 
