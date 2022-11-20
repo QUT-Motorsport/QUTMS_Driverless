@@ -1,4 +1,4 @@
-from math import cos, sin, sqrt
+from math import cos, sin, dist
 
 import numpy as np
 import scipy.spatial
@@ -32,7 +32,7 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
 
     return [x_axle, y_axle]
 
-def get_distance(pos_target1: tuple[float, float], pos_target2: tuple[float, float]) -> float:
+def get_distance(pos_target1: List[float], pos_target2: List[float]) -> float:
     """
     Gets the distance between two points of interest.
     * param pos_target1: [x,y] coords of first point of interest
@@ -40,31 +40,26 @@ def get_distance(pos_target1: tuple[float, float], pos_target2: tuple[float, flo
     * return: [float] of distance between two points of interest
     """
 
-    distance = scipy.spatial.distance.cdist(pos_target1, pos_target2, "euclidean")
+    distance = dist(pos_target1, pos_target2)
     return distance
 
-def get_closest_cone(pos_car: tuple[float, float], boundaries: tuple[:, :2]) -> float:
+def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> float:
     """
     Gets the position of the nearest cone to the car.
     * param pos_car: [x,y] coords of car position
-    * param boundaries: [x,y,~] coords of all current cones
+    * param boundaries: [x,y] coords of all current cones
     * return: [x,y] of nearest cone to the car
     """
     
+    # get arrays of only coords for more efficient compute
     _pos = np.array([[pos_car[0], pos_car[1]]])
-    dists: np.ndarray = scipy.spatial.distance.cdist(
-        boundaries[:, :2],  # search all path points for x,y cols up to 3rd col (intensity)
-        _pos,
-        "euclidean",
-    )
-    nearest_cone_distance: tuple[float, float] = np.where(dists == np.amin(dists))[0][0]
-
-    # find the index of the cone with the lowest distance to the car
-    for cone in dists:
-        if dists[cone] == nearest_cone_distance:
-            nearest_cone_index = cone
-            
-    nearest_cone = boundaries[nearest_cone_index]
+    boundaries_coords = boundaries[:, :2]
+    
+    # find distances of all cones and index of closest cone (improve by finding distances of close cones only?)
+    dists: np.ndarray = scipy.spatial.distance.cdist(boundaries_coords, _pos, "euclidean",)
+    nearest_cone_index: List[float] = np.where(dists == np.amin(dists))[0][0]    
+    
+    nearest_cone = boundaries_coords[nearest_cone_index]
     return nearest_cone
 
 def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> List[float]:
@@ -95,11 +90,11 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
 class ParticlePursuit(Node):
     """
     ADAPTED FROM: https://link.springer.com/chapter/10.1007/978-3-031-10047-5_5
-    Treats the vehicle as a charged point particle, interacting
-    with two external charged forces (barrier - repulsive, lookahead - attractive).
+    * Treats the vehicle as a charged point particle, interacting \
+    * with two external charged forces (barrier - repulsive, lookahead - attractive).
     """
-    
-    # basic constants
+    #------------------------------
+    # common constants:
     path = np.array([])
     Kp_ang: float = 3
     Kp_vel: float = 0.08
@@ -109,17 +104,22 @@ class ParticlePursuit(Node):
     brake_max: float = 0.12
     r2d: bool = True  # for reset
     
-    # attractive force constants
+    #------------------------------
+    # attractive force constants:
     rvwp_lookahead: float = 15  # how far the lookahead is (no. of indeces) [convert to distance preferably]
     k_attractive: float = 1     # attractive force gain
 
-    # repulsive force constants
-    d_min: float = 1.2          # min repulsive force distance (car cant go closer to cone)
-    d_max: float = 2.8          # max repulsive force distance
+    #------------------------------
+    # repulsive force constants:
+    d_min: float = 1.3          # min repulsive force distance (max. repulsion at or below)
+    d_max: float = 2.5          # max repulsive force distance (zero repulsion at or above)
     k_repulsive: float = 1      # repulsive force gain
-    boundary_danger: float = 0.75      # danger_level gain (sort of), gamma in documentation
     
-
+    # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
+    # E.g. cone_danger > 0: corners cut tighter
+    #      cone_danger < 0: corners taken wider
+    cone_danger: float = 2.5     
+    
 
     def __init__(self):
         super().__init__("particle_pursuit")
@@ -167,7 +167,7 @@ class ParticlePursuit(Node):
         if not self.r2d:
             return
         
-        # Only start once the path has been recieved
+        # Only start if the path has been recieved:
         if self.path.size == 0:
             return
 
@@ -186,7 +186,7 @@ class ParticlePursuit(Node):
 
         # get the position of the centre of the front steering axle
         position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
-        position: List[float] = get_wheel_position(position_cog, theta) #[x,y] of centre of steering axle
+        pos_car: List[float] = get_wheel_position(position_cog, theta) #[x,y] of centre of steering axle
 
         cones_with_cov: List[ConeWithCovariance] = track_msg.cones
 
@@ -208,30 +208,29 @@ class ParticlePursuit(Node):
         #----------------
         # Determine steering angle
         #----------------
-        pos_car: tuple[float, float]  = position    # [x,y]
-        pos_lookahead: tuple[float, float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)  
+        pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)  
 
         f_attractive = self.k_attractive * (get_distance(pos_lookahead, pos_car))
 
-        pos_nearestBoundary: tuple[float, float] = get_closest_cone(pos_car, track)
-        d_nearestBoundary: float = get_distance(pos_car, pos_nearestBoundary)
+        pos_nearestBoundary: List[float] = get_closest_cone(pos_car, track)
+        d_nearestCone: float = get_distance(pos_car, pos_nearestBoundary)
 
-        # danger_level = [max] [lim(gamma approaching gamma(k)?) of] [(d_nearestBoundary(x,y) - d_max) / (d_min - d_max)]
-        # need to take the maximum value of the fraction as it approaches the limit of gamma(k) which 
-        # i "think" is just another way of saying as x approaches gamma, gamma(k) being the 
-        # final value processed?
-        danger_level_expression = (d_nearestBoundary**(1-self.boundary_danger) - self.d_max**(1-self.boundary_danger)) \
-                                 / (self.d_min**(1-self.boundary_danger) - self.d_max**(1-self.boundary_danger))
+        # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
+        danger_level: float = (d_nearestCone**(1-self.cone_danger) - self.d_max**(1-self.cone_danger)) \
+                               / (self.d_min**(1-self.cone_danger) - self.d_max**(1-self.cone_danger))
+        if danger_level > 1:
+            danger_level = 1
+        elif danger_level < 0:
+            danger_level = 0
+
+        f_repulsive: float = self.k_repulsive * danger_level   # ((d_nearestCone) / abs(d_nearestCone))     [documentation multiplies this?]
+                
         
-        danger_level = np.amax(             )
-
-        # f_repulsive = self.k_repulsive * danger_level * ((p - p_danger) / abs(p - p_danger))
-        f_repulsive: float
         
         #----------------
         # Determine acceleration (integrate velocity)
         #----------------
-
+        
 
         # temp initialisation
         steering_angle: float
@@ -245,5 +244,11 @@ class ParticlePursuit(Node):
         control_msg.jerk = calc_brake  # using jerk for brake for now
 
         self.control_publisher.publish(control_msg)
-
         
+        
+def main(args=None):  # begin ros node
+    rclpy.init(args=args)
+    node = ParticlePursuit()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
