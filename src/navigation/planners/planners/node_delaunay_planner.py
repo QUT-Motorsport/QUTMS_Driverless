@@ -216,18 +216,17 @@ class TrackPlanner(Node):
             midpoints = np.delete(midpoints, closest, axis=0)
         ordered_midpoints = np.array(ordered_midpoints)
 
-        # print(len(midpoints))
-        if len(ordered_midpoints) <= 3:
-            curvatures = np.zeros(len(ordered_midpoints))
-            path = np.hstack((ordered_midpoints, curvatures.reshape(-1, 1)))
+        # if len(ordered_midpoints) <= 3:
+        curvatures = np.zeros(len(ordered_midpoints))
+        path = np.hstack((ordered_midpoints, curvatures.reshape(-1, 1)))
 
-        else:
-            # interpolate midpoints with a B-Spline
-            points = len(ordered_midpoints) * 4
-            rix, riy, heading, curvature = approximate_b_spline_path(
-                ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
-            )
-            path = np.vstack((rix, riy, curvature)).T
+        # else:
+        #     # interpolate midpoints with a B-Spline
+        #     points = len(ordered_midpoints) * 4
+        #     rix, riy, heading, curvature = approximate_b_spline_path(
+        #         ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
+        #     )
+        #     path = np.vstack((rix, riy, curvature)).T
 
         # publish path
         path_msg: list[PathPoint] = []
