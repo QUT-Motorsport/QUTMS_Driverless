@@ -25,7 +25,7 @@ from typing import Callable, List, Tuple
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
-CAMERA_FOV = 120  # degrees
+CAMERA_FOV = 110  # degrees
 FOCAL_CONST = 420
 MAX_RANGE = 20  # m
 MIN_RANGE = 0.5  # m
