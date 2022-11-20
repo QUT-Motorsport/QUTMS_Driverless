@@ -22,7 +22,7 @@ import ros2_numpy as rnp
 from .library import lidar_manager
 
 
-def cone_msg(x_coord: float, y_coord: float) -> Cone:
+def cone_msg(x_coord: float, y_coord: float, col: int) -> Cone:
     # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
     location: Point = Point(
         x=x_coord,
@@ -32,7 +32,7 @@ def cone_msg(x_coord: float, y_coord: float) -> Cone:
 
     return Cone(
         location=location,
-        color=Cone.UNKNOWN,
+        color=col,
     )
 
 
@@ -189,24 +189,20 @@ class LiDARProcessor(Node):
 
         self.count += 1
 
-        # Publish identified cones
-        # cones_msg = ConeDetectionStamped(
-        #    header=pc_msg.header,
-        #    cones=identified_cones
-        # )
-
-        # self.cone_publisher.publish(cones_msg)
+        # average y value of cones
+        average_y = sum([cone[1] for cone in cones]) / len(cones)
 
         # define message component - list of Cone type messages
         detected_cones = []  # List of Cones
-        for i in range(len(cones)):
+        for cone in cones:
             # add cone to msg list
-            detected_cones.append(
-                cone_msg(
-                    cones[i][0],
-                    cones[i][1],
-                )
-            )
+            if cone[1] > average_y:
+                colour = Cone.BLUE
+            else:
+                colour = Cone.YELLOW
+            detected_cones.append(cone_msg(cone[0], cone[1], colour))
+        #     print(i, "dist: ", math.sqrt(cones[i][0]**2 + cones[i][1]**2))
+        # print("\n")
 
         detection_msg = ConeDetectionStamped(header=pc_msg.header, cones=detected_cones)
 
@@ -262,7 +258,7 @@ def main(args=sys.argv[1:]):
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = LIDAR_RANGE
 
-    EPSILON = 0.8  # Neighbourhood Scan Size
+    EPSILON = 1.5  # Neighbourhood Scan Size
     MIN_POINTS = 4  # Number of points required to form a neighbourhood
 
     # Path to data to import and use

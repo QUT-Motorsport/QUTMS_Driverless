@@ -26,8 +26,9 @@ from typing import Callable, List, Tuple
 cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
-MAX_RANGE = 16  # m
-MIN_RANGE = 0.5  # m
+FOCAL_CONST = 420
+MAX_RANGE = 15  # m
+MIN_RANGE = 2  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -45,15 +46,28 @@ CONE_DISPLAY_PARAMETERS = [
     YELLOW_DISP_COLOUR,
 ]
 
+# cone heights in metres
+HEIGHTS = [0.3, 0.3, 0.35, 0.35, 0.3]
+
 ConeMsgColour = int  # define arbitrary variable type
 
 
 def cone_distance(
     colour_frame_cone_bounding_box: Rect,
     depth_frame: np.ndarray,
-) -> float:
+) -> Tuple[float, Rect]:
+    """
+    Calculate the distance to the cone using a region of interest in the depth image.
+    """
+    scale: int = 2
+
+    # resize depth frame
+    depth_frame = cv2.resize(depth_frame, (0, 0), fx=scale, fy=scale)
+    # resize bounding box
+    colour_frame_cone_bounding_box = colour_frame_cone_bounding_box.scale(scale)
+
     # get center as roi
-    y_height = int(colour_frame_cone_bounding_box.height / 6)
+    y_height = int(colour_frame_cone_bounding_box.height / 5)
     depth_rect = Rect(
         x=colour_frame_cone_bounding_box.center.x - 3,
         y=colour_frame_cone_bounding_box.center.y + y_height,
@@ -64,18 +78,31 @@ def cone_distance(
 
     # filter out nans
     depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
-    return np.mean(depth_roi)
+    return np.mean(depth_roi), depth_rect
+
+
+def cone_distance_bbox(
+    colour_frame_cone_bounding_box: Rect,
+    colour: ConeMsgColour,
+):
+    """
+    Calculate distance using the bounding box height to known heights.
+    """
+    return (HEIGHTS[colour] * FOCAL_CONST) / colour_frame_cone_bounding_box.height
 
 
 def cone_bearing(
     colour_frame_cone_bounding_box: Rect,
     colour_frame_camera_info: CameraInfo,
 ) -> float:
+    """
+    Calculate the bearing to the cone using the bounding box and camera info.
+    """
 
-    cone_center = colour_frame_cone_bounding_box.center.x
-    frame_width = colour_frame_camera_info.width
-    center_scaled = (frame_width / 2 - cone_center) / (frame_width / 2)  # 1 to -1 left to right
-
+    cone_center: int = colour_frame_cone_bounding_box.center.x
+    frame_width: int = colour_frame_camera_info.width
+    # 1 to -1 left to right
+    center_scaled: int = (frame_width / 2 - cone_center) / (frame_width / 2)
     return CAMERA_FOV / 2 * center_scaled
 
 
@@ -122,6 +149,7 @@ class VisionProcessor(Node):
         # publishers
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection2", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img2", 1)
+        self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/depth_debug_img", 1)
 
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
@@ -137,28 +165,47 @@ class VisionProcessor(Node):
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
 
-        detected_cones: List[Cone] = []
-        for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
-            if self.enable_cv_filters:
-                # filter by height
-                if bounding_box.tl.y < colour_camera_info_msg.height / 2:
-                    continue
-                # filter on area
-                if bounding_box.area < 100 or bounding_box.area > 8000:
-                    continue
+        # colour depth map for debugging
+        disp_depth_frame = np.nan_to_num(depth_frame, nan=0, posinf=0, neginf=0)
+        disp_depth_frame = cv2.resize(disp_depth_frame, (0, 0), fx=2, fy=2)
+        disp_depth_frame[disp_depth_frame > 20] = 0
+        disp_depth_frame = cv2.normalize(disp_depth_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+        disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
 
-            distance = cone_distance(bounding_box, depth_frame)
-            # filter on distance
-            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
+        detected_cones: List[Cone] = []
+        i = 0
+        for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
+            # filter by height
+            if bounding_box.tl.y < colour_camera_info_msg.height / 2:
+                continue
+            # filter on area
+            if bounding_box.area < 10:
                 continue
             # filter by aspect ratio
-            if bounding_box.aspect_ratio < 0.5:
+            if bounding_box.aspect_ratio < 0.4:
+                continue
+
+            # using bounding box sizes for distance
+            # distance, d_rect = cone_distance(bounding_box, depth_frame)
+            distance = cone_distance_bbox(bounding_box, cone_colour)
+
+            # filter on distance
+            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
                 continue
 
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
+            # draw_box(
+            #     disp_depth_frame, box=bounding_box.scale(2), colour=display_colour, distance=distance, bearing=bearing
+            # )
+            # draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
+
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
+
+        #     print(i, "dist:", distance)
+        #     i += 1
+        # print("\n")
 
         detection_msg = ConeDetectionStamped(
             header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),
@@ -168,6 +215,10 @@ class VisionProcessor(Node):
         debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
         debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.debug_img_publisher.publish(debug_msg)
+
+        depth_msg = cv_bridge.cv2_to_imgmsg(disp_depth_frame, encoding="bgr8")
+        depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
+        self.depth_debug_img_publisher.publish(depth_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
         self.get_logger().debug(f"EST. FPS: {str(1/(time.perf_counter() - start))}")

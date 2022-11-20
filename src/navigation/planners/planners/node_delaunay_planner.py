@@ -22,8 +22,8 @@ from typing import List, Tuple
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
-MAX_CONE_DISTANCE = 14
-S = 0.1
+MAX_CONE_DISTANCE = 8
+S = 0.5
 
 
 def is_internal(simplice: np.ndarray, track: np.ndarray) -> bool:
@@ -149,7 +149,7 @@ class TrackPlanner(Node):
         left_cones = [c.cone for c in cones_with_cov if c.cone.color == LEFT_CONE_COLOUR]
         right_cones = [c.cone for c in cones_with_cov if c.cone.color == RIGHT_CONE_COLOUR]
 
-        if len(left_cones) == 0 or len(right_cones) == 0:  # no cones
+        if len(left_cones) < 2 or len(right_cones) < 2:  # no cones
             return
 
         # order cones by distance from car
@@ -216,18 +216,17 @@ class TrackPlanner(Node):
             midpoints = np.delete(midpoints, closest, axis=0)
         ordered_midpoints = np.array(ordered_midpoints)
 
-        # print(len(midpoints))
-        if len(ordered_midpoints) <= 3:
-            curvatures = np.zeros(len(ordered_midpoints))
-            path = np.hstack((ordered_midpoints, curvatures.reshape(-1, 1)))
+        # if len(ordered_midpoints) <= 3:
+        curvatures = np.zeros(len(ordered_midpoints))
+        path = np.hstack((ordered_midpoints, curvatures.reshape(-1, 1)))
 
-        else:
-            # interpolate midpoints with a B-Spline
-            points = len(ordered_midpoints) * 4
-            rix, riy, heading, curvature = approximate_b_spline_path(
-                ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
-            )
-            path = np.vstack((rix, riy, curvature)).T
+        # else:
+        #     # interpolate midpoints with a B-Spline
+        #     points = len(ordered_midpoints) * 4
+        #     rix, riy, heading, curvature = approximate_b_spline_path(
+        #         ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
+        #     )
+        #     path = np.vstack((rix, riy, curvature)).T
 
         # publish path
         path_msg: list[PathPoint] = []

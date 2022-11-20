@@ -24,12 +24,12 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 
 R = np.diag([0.1, 0.001]) ** 2  # motion model
-Q_CAM = np.diag([0.6, 0.8]) ** 2  # measurement
+Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.7  # nn kdtree nearch
+RADIUS = 2  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 15  # minimum frames before confirming cones
-FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
+FRAME_COUNT = 20  # minimum frames before confirming cones
+FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
 
 
 class PySlam(Node):
@@ -45,7 +45,7 @@ class PySlam(Node):
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
         lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
         vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
@@ -215,6 +215,8 @@ class PySlam(Node):
         * param index: index of the cone in the map
         * param cone: tuple of (x, y) of the cone
         """
+        og_mu = self.state[0:3]
+        og_sigma = self.sigma[0:3, 0:3]
 
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
         muL = self.state[i : i + 2]  # omit colour from location mean
@@ -244,6 +246,12 @@ class PySlam(Node):
         self.state[2] = wrap_to_pi(self.state[2])
         # update cov
         self.sigma = (np.eye(sig_len) - Kt @ Gt) @ self.sigma
+
+        # reset car state if this isn't a confirmed cone
+        # only update states on confirmed cones not noise
+        if self.track[index, 4] == 0:
+            self.state[0:3] = og_mu
+            self.sigma[0:3, 0:3] = og_sigma
 
         self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
         self.track[index, 3] += 1  # increment cone's seen count
