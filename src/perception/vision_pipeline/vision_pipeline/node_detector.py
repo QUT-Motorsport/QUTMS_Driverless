@@ -27,8 +27,8 @@ cv_bridge = CvBridge()
 
 CAMERA_FOV = 110  # degrees
 FOCAL_CONST = 420
-MAX_RANGE = 20  # m
-MIN_RANGE = 0.5  # m
+MAX_RANGE = 15  # m
+MIN_RANGE = 2  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]

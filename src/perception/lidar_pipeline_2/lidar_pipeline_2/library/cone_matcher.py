@@ -111,7 +111,7 @@ def get_cones(reconstructed_clusters):
             # print(round(x_mean, 2), "\t", round(y_mean, 2), "\t", round(distance, 4), "\t", point_count)
 
             # only checks centre of scan for cones - noise filter (delete if needed)
-            if (z_range > 0.10 and z_range < 0.45) and x_range < 0.4 and y_range < 0.4:
+            if z_range < 0.45 and x_range < 0.4 and y_range < 0.4:
                 # print("    ", x_mean, y_mean, point_count, distance)
                 if new_cone_filter(distance, point_count):
                     cones.append([x_mean, y_mean])
