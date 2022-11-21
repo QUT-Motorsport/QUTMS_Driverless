@@ -21,7 +21,7 @@ from typing import Tuple
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 2  # nn kdtree nearch
+RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 20  # minimum frames before confirming cones
 FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
@@ -83,6 +83,10 @@ class PySlam(Node):
             self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
             return
         self.dt = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
+        if self.dt < -1:
+            self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
+            self.state[0:3] = [0.0, 0.0, 0.0]
+            return
         self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
 
         # predict car location
@@ -120,12 +124,14 @@ class PySlam(Node):
                 ind: np.ndarray = neighbourhood.query_radius(check, r=RADIUS)  # check neighbours in radius
                 close: np.ndarray = ind[0]  # index from the single colour list
                 if close.size != 0:
+                    # update step
                     prev_mu = self.state[0:3]
                     prev_sigma = self.sigma[0:3, 0:3]
-                    # update step
-                    self.update(close[0], detection, Q)
-
                     updated_detection: ConeProps = self.properties[close[0]]
+                    if detection.sensor == "lidar":
+                        self.update(close[0], detection, Q)
+                        updated_detection.sensor = "lidar"
+
                     # reset car state if this isn't a confirmed cone
                     # only update states on confirmed cones not noise
                     if not updated_detection.confirmed:
@@ -139,7 +145,7 @@ class PySlam(Node):
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
 
-            if not detection.tracked:
+            if not detection.tracked and detection_msg.header.frame_id == "velodyne":
                 detection.set_world_coords(map_coords)
                 self.properties = np.append(self.properties, detection)
                 # initialise new landmark

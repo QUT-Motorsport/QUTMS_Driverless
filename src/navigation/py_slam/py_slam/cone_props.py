@@ -31,8 +31,10 @@ class ConeProps:
     def __init__(self, cone: Cone, frame_id: str):
         if frame_id == "velodyne":
             self.local_x = cone.location.x + 1.65
+            self.sensor = "lidar"
         else:
             self.local_x = cone.location.x - 0.1
+            self.sensor = "camera"
         self.local_y = cone.location.y
         self.colour = cone.color
 
@@ -50,20 +52,27 @@ class ConeProps:
 
         self.frame_count += 1
         if self.frame_count > FRAME_COUNT and not self.confirmed:
-            self.confirmed = True  # mark as confirmed
+            if abs(self.cov[0, 0]) < 0.5 and abs(self.cov[1, 1]) < 0.5:
+                self.confirmed = True  # mark as confirmed
+
+        if self.sensor == "lidar":
+            increment = 1
+        else:
+            increment = 3
 
         if colour == Cone.YELLOW:
-            self.yellow_count += 1
+            self.yellow_count += increment
         elif colour == Cone.BLUE:
-            self.blue_count += 1
+            self.blue_count += increment
         elif colour == Cone.ORANGE_BIG:
-            self.orange_count += 1
+            self.orange_count += increment
 
         if self.yellow_count > self.blue_count and self.yellow_count > self.orange_count:
             self.colour = Cone.YELLOW
         elif self.blue_count > self.yellow_count and self.blue_count > self.orange_count:
             self.colour = Cone.BLUE
-        elif self.orange_count > self.yellow_count and self.orange_count > self.blue_count:
+
+        if self.orange_count > 10:
             self.colour = Cone.ORANGE_BIG
 
         self.tracked = True
