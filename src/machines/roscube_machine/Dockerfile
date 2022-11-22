@@ -100,7 +100,9 @@ USER ${USERNAME}
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
 # build lidar cython
-RUN cd src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library && \
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    cd src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library && \
     python setup.py build_ext --inplace
 
 # run a ros build
