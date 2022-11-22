@@ -1,4 +1,4 @@
-from math import cos, sin, dist
+from math import cos, sin, dist, atan2, pi, sqrt
 
 import numpy as np
 import scipy.spatial
@@ -68,7 +68,7 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
     * param car_pos: [x,y] coords of point 1
     * param path: [[x0,y0],[x1,y1],...,[xn-1,yn-1]] path points
     * param rvwpLookahead: how many indices to look ahead in path array for RVWP
-    * return: RVWP position as [x,y]
+    * return: RVWP position as [x,y,intensity]
     """
     _pos = np.array([[car_pos[0], car_pos[1]]])
     dists: np.ndarray = scipy.spatial.distance.cdist(
@@ -77,15 +77,47 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> Lis
         "euclidean",
     )
     min_index: int = np.where(dists == np.amin(dists))[0][0]
-    print("min_index: ", min_index)
+    #print("min_index: ", min_index)
     if min_index + rvwp_lookahead >= len(path):
         rvwp_index: int = len(path) - 1
     else:
         rvwp_index: int = min_index + rvwp_lookahead  # % len(path)
-    print("rvwp_index: ", rvwp_index)
+    #print("rvwp_index: ", rvwp_index)
     rvwp: List[float] = path[rvwp_index]
-
+    
     return rvwp
+
+def angle(p1: List[float], p2: List[float]) -> float:
+    """
+    Retrieve angle between two points
+    * param p1: [x,y] coords of point 1
+    * param p2: [x,y] coords of point 2
+    * return: angle in rads
+    """
+    x_disp = p2[0] - p1[0]
+    y_disp = p2[1] - p1[1]
+    return atan2(y_disp, x_disp)
+
+def wrap_to_pi(angle: float) -> float:
+    """
+    Wrap an angle between -pi and pi
+    * param angle: angle in rads
+    * return: angle in rads wrapped to -pi and pi
+    """
+    return (angle + np.pi) % (2 * np.pi) - np.pi
+
+def angle_between(v1: List[float], v2: List[float]):
+    """ 
+    Find the angle between two vectors, both with [0,0] as origin
+    * param v1: [x,y] coords of first vector
+    * param v2: [x,y] coords of second vector 
+    * return: angle in rads between two vectors          
+    """
+    unit_vector_1 = v1 / np.linalg.norm(v1)
+    unit_vector_2 = v2 / np.linalg.norm(v2)
+    dot_product = np.dot(unit_vector_1, unit_vector_2)
+    angle = np.arccos(dot_product)  
+    return(angle)
 
 class ParticlePursuit(Node):
     """
@@ -96,24 +128,27 @@ class ParticlePursuit(Node):
     #------------------------------
     # common constants:
     path = np.array([])
+    cone_pos = []
     Kp_ang: float = 3
     Kp_vel: float = 0.08
     vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
+    Kp_brake: float = 0.0
+    vel_RVWP_LAD: int = 15
     r2d: bool = True  # for reset
     
     #------------------------------
     # attractive force constants:
     rvwp_lookahead: float = 15  # how far the lookahead is (no. of indeces) [convert to distance preferably]
-    k_attractive: float = 1     # attractive force gain
+    k_attractive: float = 10     # attractive force gain
 
     #------------------------------
     # repulsive force constants:
     d_min: float = 1.3          # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.5          # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 1      # repulsive force gain
+    k_repulsive: float = 10      # repulsive force gain
     
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
@@ -128,7 +163,7 @@ class ParticlePursuit(Node):
         self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
 
         # sub to track for all cone locations relative to car start point, used for boundary danger calculations
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/sim/track", self.track_callback, 10)
 
         # sync subscribers pose + velocity
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
@@ -154,11 +189,14 @@ class ParticlePursuit(Node):
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
+    # recieve the cone locations
+    def track_callback(self, cone_pos_msg: TrackDetectionStamped):
+        self.cone_pos = cone_pos_msg.cones
+
     def callback(
         self,
         pose_msg: PoseWithCovarianceStamped,
         vel_msg: TwistWithCovarianceStamped,
-        track_msg: TrackDetectionStamped,
     ):
         #----------------
         # Node initialisation processes:
@@ -175,7 +213,7 @@ class ParticlePursuit(Node):
         # Get positions of car and cones
         #----------------
         # i, j, k angles in rad
-        theta = quat2euler(
+        car_heading = quat2euler(
             [
                 pose_msg.pose.pose.orientation.w,
                 pose_msg.pose.pose.orientation.x,
@@ -186,13 +224,11 @@ class ParticlePursuit(Node):
 
         # get the position of the centre of the front steering axle
         position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
-        pos_car: List[float] = get_wheel_position(position_cog, theta) #[x,y] of centre of steering axle
-
-        cones_with_cov: List[ConeWithCovariance] = track_msg.cones
+        pos_car: List[float] = get_wheel_position(position_cog, car_heading) #[x,y] of centre of steering axle
 
         # get left and right cones
-        left_cones = [c.cone for c in cones_with_cov if c.cone.color == LEFT_CONE_COLOUR]
-        right_cones = [c.cone for c in cones_with_cov if c.cone.color == RIGHT_CONE_COLOUR]
+        left_cones = [c.cone for c in self.cone_pos if c.cone.color == LEFT_CONE_COLOUR]
+        right_cones = [c.cone for c in self.cone_pos if c.cone.color == RIGHT_CONE_COLOUR]
 
         if len(left_cones) == 0 or len(right_cones) == 0:  # no cones
             return
@@ -208,34 +244,67 @@ class ParticlePursuit(Node):
         #----------------
         # Determine steering angle
         #----------------
-        pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)  
+        pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)[:2]  
 
-        f_attractive = self.k_attractive * (get_distance(pos_lookahead, pos_car))
-
-        pos_nearestBoundary: List[float] = get_closest_cone(pos_car, track)
-        d_nearestCone: float = get_distance(pos_car, pos_nearestBoundary)
+        pos_nearestCone: List[float] = get_closest_cone(pos_car, track)
+        d_nearestCone: float = get_distance(pos_car, pos_nearestCone)
 
         # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
-        danger_level: float = (d_nearestCone**(1-self.cone_danger) - self.d_max**(1-self.cone_danger)) \
-                               / (self.d_min**(1-self.cone_danger) - self.d_max**(1-self.cone_danger))
-        if danger_level > 1:
-            danger_level = 1
-        elif danger_level < 0:
-            danger_level = 0
+        danger_level: float = np.clip((d_nearestCone**(1-self.cone_danger) - self.d_max**(1-self.cone_danger)) \
+                                       / (self.d_min**(1-self.cone_danger) - self.d_max**(1-self.cone_danger)), 0, 1)
 
-        f_repulsive: float = self.k_repulsive * danger_level   # ((d_nearestCone) / abs(d_nearestCone))     [documentation multiplies this?]
-                
+        # determine attractive and repulsive forces acting on car
+        print(pos_lookahead)
+        f_attractive: float = self.k_attractive * (get_distance(pos_lookahead, pos_car))        # car is attracted to lookahead
+        f_repulsive: float = self.k_repulsive * danger_level                                    # car is repulsed by nearest cone
         
-        
-        #----------------
-        # Determine acceleration (integrate velocity)
-        #----------------
-        
+        # determine angles of forces acting on car (angles in rads)
+        attractive_heading: float = angle(pos_car, pos_lookahead)
+        repulsive_heading: float = angle(pos_car, pos_nearestCone) + pi                        # opposite heading of position
 
-        # temp initialisation
-        steering_angle: float
-        calc_throttle: float
-        calc_brake: float
+        # get coords of vectors (forces) acting on car, relative to the car as origin
+        pos_attractive_relCar: List[float] = [f_attractive * cos(attractive_heading), f_attractive * sin(attractive_heading)]
+        pos_repulsive_relcar: List[float] = [f_repulsive * cos(repulsive_heading), f_repulsive * sin(repulsive_heading)]
+
+        # get coords of resultant vector (force) acting on car, relative to the car as origin
+        pos_resultant_relcar: List[float] = [pos_attractive_relCar[0] + pos_repulsive_relcar[0], pos_attractive_relCar[1] + pos_repulsive_relcar[1]]
+
+        # get angle of resultant vector as desired heading of the car
+        steering_angle: float = angle([0,0], pos_resultant_relcar) * self.Kp_ang
+
+
+        ## get the angle between the two vectors (forces) acting on the car
+        #vector_theta = angle_between(pos_attractive_relCar, pos_repulsive_relcar)
+
+        ## compute the magnitude and heading of the resultant vector
+        #f_resultant: float = f_attractive**2 + f_repulsive**2 + 2*f_attractive*f_repulsive*cos(vector_theta)        
+        #resultant_heading: float 
+
+
+        #----------------
+        # Determine velocity
+        #----------------
+        # velocity control
+        rvwp: List[float] = get_RVWP(pos_car, self.path, self.vel_RVWP_LAD)
+        intensity = rvwp[2]
+        vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+
+        # target velocity proportional to angle
+        target_vel: float = self.vel_max - intensity * self.Kp_vel
+        if target_vel < self.vel_min:
+            target_vel = self.vel_min
+
+        # increase proportionally as it approaches target
+        throttle_scalar: float = 1 - (vel / target_vel)
+        calc_brake = 0.0
+        if throttle_scalar > 0:
+            calc_throttle = self.throttle_max * throttle_scalar
+        # if its over maximum, brake propotionally unless under minimum
+        else:
+            calc_throttle = 0.0
+            if vel > self.vel_min:
+                calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
+        
 
         # publish message
         control_msg = AckermannDrive()
