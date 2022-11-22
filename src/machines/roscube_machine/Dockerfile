@@ -91,6 +91,12 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# planner
+COPY ./src/perception/planners/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 
@@ -121,7 +127,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         car_status \
         py_slam \
         driverless_common \
-        lidar_pipeline_2
+        lidar_pipeline_2 \
+        planners
 
 # delete source
 RUN rm -rf ./src

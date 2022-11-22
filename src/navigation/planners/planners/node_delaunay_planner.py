@@ -131,7 +131,7 @@ class TrackPlanner(Node):
         super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/local", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
@@ -216,17 +216,17 @@ class TrackPlanner(Node):
             midpoints = np.delete(midpoints, closest, axis=0)
         ordered_midpoints = np.array(ordered_midpoints)
 
-        # if len(ordered_midpoints) <= 3:
-        curvatures = np.zeros(len(ordered_midpoints))
-        path = np.hstack((ordered_midpoints, curvatures.reshape(-1, 1)))
+        if len(ordered_midpoints) <= 3:
+            headings = np.zeros(len(ordered_midpoints))
+            path = np.hstack((ordered_midpoints, heading.reshape(-1, 1)))
 
-        # else:
-        #     # interpolate midpoints with a B-Spline
-        #     points = len(ordered_midpoints) * 4
-        #     rix, riy, heading, curvature = approximate_b_spline_path(
-        #         ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
-        #     )
-        #     path = np.vstack((rix, riy, curvature)).T
+        else:
+            # interpolate midpoints with a B-Spline
+            points = len(ordered_midpoints) * 4
+            rix, riy, heading, curvature = approximate_b_spline_path(
+                ordered_midpoints[:, 0], ordered_midpoints[:, 1], points
+            )
+            path = np.vstack((rix, riy, heading)).T
 
         # publish path
         path_msg: list[PathPoint] = []
