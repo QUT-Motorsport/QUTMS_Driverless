@@ -92,7 +92,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba install -y --file ./conda_requirements
 
 # planner
-COPY ./src/perception/planners/conda_requirements ./conda_requirements
+COPY ./src/navigation/planners/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
