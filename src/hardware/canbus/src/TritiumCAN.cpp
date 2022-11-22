@@ -66,36 +66,36 @@ bool TritiumCAN::setup(std::string ip) {
 }
 
 void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
-    //std::vector<driverless_msgs::msg::Can> msgs;
-    //msgs.push_back(*msg);
+    // std::vector<driverless_msgs::msg::Can> msgs;
+    // msgs.push_back(*msg);
 
     if (!this->txInitial) {
-        auto headerData = this->compose_tritium_tcp_header();        
+        auto headerData = this->compose_tritium_tcp_header();
 
         bool result = this->tcpClient->send_data(headerData);
 
         if (result) {
             this->txInitial = true;
         }
-    }    
+    }
 
     auto msgData = this->compose_tritum_can_bytes(*msg);
     this->tcpClient->send_data(msgData);
 
-/*
-    auto data = this->compose_tritium_packet(msgs);
+    /*
+        auto data = this->compose_tritium_packet(msgs);
 
-    for (auto &&udpTxClient : this->txClients) {
-        udpTxClient->send_data(data, inet_addr(groupAddr.c_str()));
-    }
-*/
+        for (auto &&udpTxClient : this->txClients) {
+            udpTxClient->send_data(data, inet_addr(groupAddr.c_str()));
+        }
+    */
 }
 
 std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritium_tcp_header() {
     auto result = std::make_shared<std::vector<uint8_t>>();
 
     uint32_t fwdId = 0x00;
-    uint32_t fwdRange = 0x00;//0x1FFFFFFF;
+    uint32_t fwdRange = 0x00;  // 0x1FFFFFFF;
 
     for (int i = 0; i < 4; i++) {
         result->push_back((fwdId >> ((3 - i) * 8)) & 0xFF);
@@ -187,7 +187,7 @@ std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritum_can_bytes(drive
 std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
-    //auto rxData = this->tcpClient->recieve_data();
+    // auto rxData = this->tcpClient->recieve_data();
 
     auto rxData = this->rxClient->recieve_data();
     if (rxData->size() < 16) {
@@ -219,7 +219,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     for (int i = 0; i < numCAN; i++) {
         uint8_t data[CAN_MSG_LEN];
         std::copy(rxData->begin() + 16 + i * CAN_MSG_LEN, rxData->begin() + 16 + (i + 1) * CAN_MSG_LEN, data);
-        
+
         driverless_msgs::msg::Can msg;
         bool result = this->process_can_msg(data, &msg);
         if (result) {
@@ -236,7 +236,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     return msgs;
 }
 
-bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can* msg) {
+bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) {
     // // std::cout << "CAN: ";
     // for (int i = 0; i < CAN_MSG_LEN; i++) {
     // }
@@ -261,7 +261,7 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can* msg) 
             return false;
         }
     } else {
-        if ( ((canID & (~0x7FF)) != 0)) {
+        if (((canID & (~0x7FF)) != 0)) {
             // standard, so only lowest 11 bits should have values, top 21 bits should be 0
             return false;
         }
