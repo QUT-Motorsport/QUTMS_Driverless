@@ -47,7 +47,7 @@ class DisplayDetections(Node):
         # track subs
         self.create_subscription(TrackDetectionStamped, "/sim/track", self.sim_track_callback, 1)
         self.create_subscription(TrackDetectionStamped, "/slam/track", self.slam_callback, 1)
-        self.create_subscription(TrackDetectionStamped, "/slam/local", self.local_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/local", self.local_callback, 1)
 
         # cv2 rosboard image pubs
         self.vision_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img", 1)
@@ -151,10 +151,10 @@ class DisplayDetections(Node):
         self.slam_img_publisher.publish(cv_bridge.cv2_to_imgmsg(map_img, encoding="bgr8"))
         self.slam_mkr_publisher.publish(marker_array_from_map(msg))
 
-    def local_callback(self, msg: TrackDetectionStamped):
-        # subscribed to sim cone detections
-        cones: List[Cone] = [c.cone for c in msg.cones]
-        debug_img = draw_markers(cones)
+    def local_callback(self, msg: ConeDetectionStamped):
+        # subscribed to local cone detections
+        debug_img = draw_markers(msg.cones)
+        debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.local_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
