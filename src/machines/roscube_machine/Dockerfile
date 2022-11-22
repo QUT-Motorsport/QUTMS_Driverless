@@ -97,8 +97,13 @@ RUN rm -f ./conda_requirements
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
-# run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
+
+# build lidar cython
+RUN cd src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library && \
+    python setup.py build_ext --inplace
+
+# run a ros build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
@@ -114,8 +119,10 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         car_status \
         py_slam \
         driverless_common \
-        lidar_pipeline_2 \
-    && rm -rf ./src
+        lidar_pipeline_2
+
+# delete source
+RUN rm -rf ./src
 
 # force ROS to use Jetson interface
 ENV CYCLONEDDS_URI="<CycloneDDS><Domain><General><NetworkInterfaceAddress>enp6s0</NetworkInterfaceAddress></General></Domain></CycloneDDS>"
