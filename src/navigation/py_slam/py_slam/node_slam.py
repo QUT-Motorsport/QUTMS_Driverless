@@ -11,12 +11,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
 from py_slam.cone_props import ConeProps
-
-from typing import Tuple
 
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
@@ -112,9 +110,6 @@ class PySlam(Node):
             )
             map_coords = rotation_mat @ np.array([detection.local_x, detection.local_y]).T + self.state[:2]
 
-            mapx = self.state[0] + detection.range * cos(self.state[2] + detection.bearing)
-            mapy = self.state[1] + detection.range * sin(self.state[2] + detection.bearing)
-
             track_as_2d = np.array([])
             for i in range(3, len(self.state), 2):
                 track_as_2d = np.append(track_as_2d, [self.state[i], self.state[i + 1]])
@@ -145,6 +140,9 @@ class PySlam(Node):
 
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
+                    if detection.colour == "orange":
+                        self.get_logger().info("Red cone detected")
+                    print(detection.colour)
 
             if not detection.tracked and detection_msg.header.frame_id == "velodyne":
                 detection.set_world_coords(map_coords)
@@ -209,8 +207,7 @@ class PySlam(Node):
     def predict(self, vel_msg: TwistStamped):
         """
         Predict step of the EKF
-        * param pose: tuple of current (x, y, theta) of the car
-        * param cov: current 6x6 covariance matrix of the car
+        * param vel_msg: TwistStamped message containing the velocity of the car
         """
 
         ddist = (
@@ -232,7 +229,8 @@ class PySlam(Node):
         """
         Update step of the EKF
         * param index: index of the cone in the map
-        * param cone: tuple of (x, y) of the cone
+        * param detection: ConeProps object containing the cone properties
+        * param Q: measurement noise covariance matrix for this sensor
         """
 
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
@@ -267,7 +265,8 @@ class PySlam(Node):
     def init_landmark(self, detection: ConeProps, Q: np.ndarray):
         """
         Add new landmark to state
-        * param cone: tuple of (x, y) of the cone
+        * param detection: ConeProps object containing the cone properties
+        * param Q: measurement noise covariance matrix for this sensor
         """
 
         self.state = np.append(self.state, detection.map_coords)  # append new landmark
@@ -289,6 +288,7 @@ class PySlam(Node):
     def flush_map(self, track_as_2d: np.ndarray):
         """
         Remove landmarks not seen for a number of frames and only behind the car
+        * param track_as_2d: track as a 2d array
         """
 
         if len(self.properties) == 0:
@@ -321,6 +321,7 @@ class PySlam(Node):
     def get_local_map(self, rotation_mat) -> np.ndarray:
         """
         Get cones within view of the car
+        * param rotation_mat: rotation matrix to rotate the map to the car's heading
         * return: array of (x, y) of these cones
         """
         # transform detection to map
