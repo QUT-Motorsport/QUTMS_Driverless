@@ -11,7 +11,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
 from py_slam.cone_props import ConeProps
@@ -160,14 +160,12 @@ class PySlam(Node):
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
-        local_map_msg = TrackDetectionStamped()
+        local_map_msg = ConeDetectionStamped()
         local_map_msg.header.stamp = self.get_clock().now().to_msg()
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
-                local_map_msg.cones.append(
-                    ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg)
-                )
+                local_map_msg.cones.append(Cone(cone=detection.local_cone_as_msg))
         self.local_publisher.publish(local_map_msg)
 
         # publish pose msg
