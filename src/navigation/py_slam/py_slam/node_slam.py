@@ -19,7 +19,7 @@ from py_slam.cone_props import ConeProps
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.5  # nn kdtree nearch
+RADIUS = 1.2  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 20  # minimum frames before confirming cones
 FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
