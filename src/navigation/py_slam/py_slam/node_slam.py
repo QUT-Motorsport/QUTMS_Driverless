@@ -165,7 +165,7 @@ class PySlam(Node):
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
-                local_map_msg.cones.append(Cone(cone=detection.local_cone_as_msg))
+                local_map_msg.cones.append(detection.local_cone_as_msg)
         self.local_publisher.publish(local_map_msg)
 
         # publish pose msg
