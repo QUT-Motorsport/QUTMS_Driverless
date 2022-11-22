@@ -117,6 +117,8 @@ def cone_msg(
         y=distance * sin(radians(bearing)),
         z=-0.6,
     )
+    if colour == Cone.ORANGE_SMALL:
+        colour = Cone.ORANGE_BIG
 
     return Cone(
         location=location,
@@ -196,10 +198,6 @@ class VisionProcessor(Node):
             bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
-            # draw_box(
-            #     disp_depth_frame, box=bounding_box.scale(2), colour=display_colour, distance=distance, bearing=bearing
-            # )
-            # draw_box(disp_depth_frame, box=d_rect, colour=(255, 255, 255))
 
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 

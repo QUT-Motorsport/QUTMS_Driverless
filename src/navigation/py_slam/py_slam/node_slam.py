@@ -11,32 +11,28 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
-from driverless_common.cone_props import ConeProps
+from py_slam.cone_props import ConeProps
 
-from typing import Tuple
+R = np.diag([0.1, 0.001]) ** 2  # motion model
+Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
+Q_LIDAR = np.diag([0.2, 0.2]) ** 2
+RADIUS = 1.5  # nn kdtree nearch
+LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
+FRAME_COUNT = 20  # minimum frames before confirming cones
+FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
 
 
 def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-R = np.diag([0.1, 0.001]) ** 2  # motion model
-Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
-Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 2  # nn kdtree nearch
-LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 20  # minimum frames before confirming cones
-FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
-
-
 class PySlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
-    track = np.array([])
-    # track is a multi-dim array of [x, y, theta, frame_count, confirmed_detection]
+    properties = np.array([])
 
     last_timestamp = 0.0
 
@@ -74,7 +70,7 @@ class PySlam(Node):
         self.get_logger().info("Resetting Map")
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
-        self.track = np.array([])
+        self.properties = np.array([])
 
     def callback(self, vel_msg: PoseWithCovarianceStamped, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -85,75 +81,96 @@ class PySlam(Node):
             self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
             return
         self.dt = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
+        # for rosbag repeat
+        if self.dt < -1:
+            self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
+            self.state[0:3] = [0.0, 0.0, 0.0]
+            return
         self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
-
-        if detection_msg.header.frame_id == "velodyne":
-            sensor = "lidar"
-            Q = Q_LIDAR
-        else:
-            sensor = "camera"
-            Q = Q_CAM
 
         # predict car location
         self.predict(vel_msg)
 
+        if detection_msg.header.frame_id == "velodyne":
+            Q = Q_LIDAR
+        else:
+            Q = Q_CAM
+
         # process detected cones
-        for cone in detection_msg.cones:
-            det = ConeProps(cone, sensor)  # detection with properties
+        track_as_2d = np.array([])
+        for detection in detection_msg.cones:
+            detection = ConeProps(detection, detection_msg.header.frame_id)  # detection with properties
 
-            mapx = self.state[0] + det.range * cos(self.state[2] + det.bearing)
-            mapy = self.state[1] + det.range * sin(self.state[2] + det.bearing)
+            # transform detection to map
+            rotation_mat = np.array(
+                [
+                    [cos(self.state[2]), -sin(self.state[2])],
+                    [sin(self.state[2]), cos(self.state[2])],
+                ]
+            )
+            map_coords = rotation_mat @ np.array([detection.local_x, detection.local_y]).T + self.state[:2]
 
-            on_map = False  # by default its a new detection
+            track_as_2d = np.array([])
+            for i in range(3, len(self.state), 2):
+                track_as_2d = np.append(track_as_2d, [self.state[i], self.state[i + 1]])
 
-            if len(self.track) != 0:
-                neighbourhood = KDTree(self.track[:, :2], leaf_size=LEAF_SIZE)
-                check = np.array([[mapx, mapy]])  # turn into a 2D row array
-                ind = neighbourhood.query_radius(check, r=RADIUS)  # check neighbours in radius
-                close = ind[0]  # index from the single colour list
+            if len(track_as_2d) != 0:
+                neighbourhood = KDTree(track_as_2d.reshape(-1, 2), leaf_size=LEAF_SIZE)
+                check: np.ndarray = map_coords.reshape(1, -1)  # turn into a 2D row array
+                ind: np.ndarray = neighbourhood.query_radius(check, r=RADIUS)  # check neighbours in radius
+                close: np.ndarray = ind[0]  # index from the single colour list
                 if close.size != 0:
-                    on_map = True
                     # update step
-                    self.update(close[0], det.sense_rb, Q)
+                    prev_mu = self.state[0:3]
+                    prev_sigma = self.sigma[0:3, 0:3]
+                    updated_detection: ConeProps = self.properties[close[0]]
+                    if detection.sensor == "lidar":
+                        self.update(close[0], detection, Q)
+                        updated_detection.sensor = "lidar"
 
-                    if det.colour != Cone.UNKNOWN:  # updated cone was not a lidar detection
-                        self.track[close[0]][2] = det.colour  # override colour
+                    # reset car state if this isn't a confirmed cone
+                    # only update states on confirmed cones not noise
+                    if not updated_detection.confirmed:
+                        self.state[0:3] = prev_mu
+                        self.sigma[0:3, 0:3] = prev_sigma
 
-            if not on_map:
-                if self.track.size == 0:  # first in this list
-                    self.track = np.array([[mapx, mapy, det.colour, 1, 0]])
-                else:  # otherwise append vertically
-                    self.track = np.vstack([self.track, [mapx, mapy, det.colour, 1, 0]])
+                    idx = close[0] * 2 + 3
+                    state = self.state[idx : idx + 2]
+                    cov = self.sigma[idx : idx + 2, idx : idx + 2]
+
+                    updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
+                    detection = updated_detection
+                    if detection.colour == "orange":
+                        self.get_logger().info("Red cone detected")
+                    print(detection.colour)
+
+            if not detection.tracked and detection_msg.header.frame_id == "velodyne":
+                detection.set_world_coords(map_coords)
+                self.properties = np.append(self.properties, detection)
                 # initialise new landmark
-                self.init_landmark(det.sense_rb, Q)
+                self.init_landmark(detection, Q)
 
         # remove noise
-        self.flush_map()
+        self.flush_map(track_as_2d.reshape(-1, 2))
 
         # publish track msg
         track_msg = TrackDetectionStamped()
         track_msg.header.stamp = self.get_clock().now().to_msg()
         track_msg.header.frame_id = "track"
-        for i, cone in enumerate(self.track):
-            if cone[4] == 1:
-                cov_i = i * 2 + 3
-                curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]  # 2x2 covariance to plot
-                cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
-                cone_cov = curr_cov.flatten().tolist()
-                track_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+        for detection in self.properties:
+            if detection.confirmed:
+                track_msg.cones.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
         local_map_msg = TrackDetectionStamped()
         local_map_msg.header.stamp = self.get_clock().now().to_msg()
         local_map_msg.header.frame_id = "car"
-        for i, cone in enumerate(self.get_local_map()):
-            if cone[4] == 1:
-                cov_i = i * 2 + 3
-                curr_cov: np.ndarray = self.sigma[cov_i : cov_i + 2, cov_i : cov_i + 2]
-                cone_msg = Cone(location=Point(x=cone[0], y=cone[1], z=0.0), color=int(cone[2]))
-                cone_cov = curr_cov.flatten().tolist()
-                local_map_msg.cones.append(ConeWithCovariance(cone=cone_msg, covariance=cone_cov))
+        for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
+            if detection.confirmed:
+                local_map_msg.cones.append(
+                    ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg)
+                )
         self.local_publisher.publish(local_map_msg)
 
         # publish pose msg
@@ -190,8 +207,7 @@ class PySlam(Node):
     def predict(self, vel_msg: TwistStamped):
         """
         Predict step of the EKF
-        * param pose: tuple of current (x, y, theta) of the car
-        * param cov: current 6x6 covariance matrix of the car
+        * param vel_msg: TwistStamped message containing the velocity of the car
         """
 
         ddist = (
@@ -209,20 +225,19 @@ class PySlam(Node):
         # uncertainty
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ R @ Ju.T
 
-    def update(self, index: int, cone: Tuple[float, float], Q: np.ndarray):
+    def update(self, index: int, detection: ConeProps, Q: np.ndarray):
         """
         Update step of the EKF
         * param index: index of the cone in the map
-        * param cone: tuple of (x, y) of the cone
+        * param detection: ConeProps object containing the cone properties
+        * param Q: measurement noise covariance matrix for this sensor
         """
-        og_mu = self.state[0:3]
-        og_sigma = self.sigma[0:3, 0:3]
 
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
-        muL = self.state[i : i + 2]  # omit colour from location mean
+        mu_cone = self.state[i : i + 2]  # omit colour from location mean
 
-        r = hypot(self.state[0] - muL[0], self.state[1] - muL[1])  # range to landmark
-        b = wrap_to_pi(atan2(muL[1] - self.state[1], muL[0] - self.state[0]) - self.state[2])  # bearing to lm
+        r = hypot(self.state[0] - mu_cone[0], self.state[1] - mu_cone[1])  # range to landmark
+        b = wrap_to_pi(atan2(mu_cone[1] - self.state[1], mu_cone[0] - self.state[0]) - self.state[2])  # bearing to lm
         h = [r, b]
 
         sig_len = len(self.sigma)  # length of vehicle+landmarks we've seen so far
@@ -230,49 +245,37 @@ class PySlam(Node):
         Gt = np.zeros((2, sig_len))
         # vehicle jacobian
         Gt[0:2, 0:3] = [
-            [-(muL[0] - self.state[0]) / r, -(muL[1] - self.state[1]) / r, 0],
-            [(muL[1] - self.state[1]) / (r**2), -(muL[0] - self.state[0]) / (r**2), 1],
+            [-(mu_cone[0] - self.state[0]) / r, -(mu_cone[1] - self.state[1]) / r, 0],
+            [(mu_cone[1] - self.state[1]) / (r**2), -(mu_cone[0] - self.state[0]) / (r**2), 1],
         ]
         # landmark jacobian
         Gt[0:2, i : i + 2] = [
-            [(muL[0] - self.state[0]) / r, (muL[1] - self.state[1]) / r],
-            [-(muL[1] - self.state[1]) / (r**2), (muL[0] - self.state[0]) / (r**2)],
+            [(mu_cone[0] - self.state[0]) / r, (mu_cone[1] - self.state[1]) / r],
+            [-(mu_cone[1] - self.state[1]) / (r**2), (mu_cone[0] - self.state[0]) / (r**2)],
         ]
 
         Kt = self.sigma @ Gt.T @ np.linalg.inv(Gt @ self.sigma @ Gt.T + Q)
 
         # update state, wrap bearing to pi, wrap heading to pi
-        self.state = self.state + (Kt @ np.array([cone[0] - h[0], wrap_to_pi(cone[1] - h[1])])).T
+        self.state = self.state + (Kt @ np.array([detection.range - h[0], wrap_to_pi(detection.bearing - h[1])])).T
         self.state[2] = wrap_to_pi(self.state[2])
         # update cov
         self.sigma = (np.eye(sig_len) - Kt @ Gt) @ self.sigma
 
-        # reset car state if this isn't a confirmed cone
-        # only update states on confirmed cones not noise
-        if self.track[index, 4] == 0:
-            self.state[0:3] = og_mu
-            self.sigma[0:3, 0:3] = og_sigma
-
-        self.track[index, :2] = self.state[i : i + 2]  # track for this cone is just cone's mu
-        self.track[index, 3] += 1  # increment cone's seen count
-        if self.track[index, 3] > FRAME_COUNT and self.track[index, 4] == 0:
-            self.track[index, 4] = 1  # mark as confirmed
-
-    def init_landmark(self, cone: Tuple[float, float], Q: np.ndarray):
+    def init_landmark(self, detection: ConeProps, Q: np.ndarray):
         """
         Add new landmark to state
-        * param cone: tuple of (x, y) of the cone
+        * param detection: ConeProps object containing the cone properties
+        * param Q: measurement noise covariance matrix for this sensor
         """
 
-        new_x = self.state[0] + cone[0] * cos(self.state[2] + cone[1])  # add local xy to car xy
-        new_y = self.state[1] + cone[0] * sin(self.state[2] + cone[1])
-        self.state = np.append(self.state, [new_x, new_y])  # append new landmark
+        self.state = np.append(self.state, detection.map_coords)  # append new landmark
 
         # landmark Jacobian
         Lz = np.array(
             [
-                [cos(self.state[2] + cone[1]), cone[0] * -sin(self.state[2] + cone[1])],
-                [sin(self.state[2] + cone[1]), cone[0] * cos(self.state[2] + cone[1])],
+                [cos(self.state[2] + detection.bearing), detection.range * -sin(self.state[2] + detection.bearing)],
+                [sin(self.state[2] + detection.bearing), detection.range * cos(self.state[2] + detection.bearing)],
             ]
         )
 
@@ -282,24 +285,25 @@ class PySlam(Node):
         new_sig[sig_len : sig_len + 2, sig_len : sig_len + 2] = Lz @ Q @ Lz.T  # bottom right is new lm
         self.sigma = new_sig
 
-    def flush_map(self):
+    def flush_map(self, track_as_2d: np.ndarray):
         """
         Remove landmarks not seen for a number of frames and only behind the car
+        * param track_as_2d: track as a 2d array
         """
 
-        if len(self.track) == 0:
+        if len(self.properties) == 0:
             return
         heading = np.array([cos(self.state[2]), sin(self.state[2])])
         position = np.array([self.state[0], self.state[1]])
 
         # get the landmark position vectors
         # if the landmark is behind car, the dot product will be negative
-        landmark_position_vectors = self.track[:, :2] - position
+        landmark_position_vectors = track_as_2d - position
         dot_products = np.dot(landmark_position_vectors, heading)
         behind_idxs = np.where(dot_products < 0)[0]
 
         # get indexes of landmarks that have been seen for a number of frames
-        noisy_idxs = np.where(self.track[:, 3] < FRAME_REM_COUNT)[0]
+        noisy_idxs = np.array([i for i, cone in enumerate(self.properties) if cone.frame_count < FRAME_REM_COUNT])
 
         # remove noisy and behind landmarks
         idxs_to_remove = np.concatenate((behind_idxs, noisy_idxs))
@@ -307,41 +311,43 @@ class PySlam(Node):
         duplicated_idxs = unique[count > 1]  # only gets indexes that are duplicated (behind and noisy)
 
         if len(duplicated_idxs) > 0:
-            # remove landmarks from mu and Sigma
             self.state = np.delete(self.state, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)
 
-            # remove landmarks from Sigma
             self.sigma = np.delete(self.sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=0)  # rows
             self.sigma = np.delete(self.sigma, [duplicated_idxs * 2 + 3, duplicated_idxs * 2 + 4], axis=1)  # columns
 
-            # remove landmarks from track
-            self.track = np.delete(self.track, duplicated_idxs, axis=0)
+            self.properties = np.delete(self.properties, duplicated_idxs, axis=0)
 
-    def get_local_map(self) -> np.ndarray:
+    def get_local_map(self, rotation_mat) -> np.ndarray:
         """
         Get cones within view of the car
+        * param rotation_mat: rotation matrix to rotate the map to the car's heading
         * return: array of (x, y) of these cones
         """
-        # global to local
-        local_xs = (self.track[:, 0] - self.state[0]) * cos(self.state[2]) + (self.track[:, 1] - self.state[1]) * sin(
-            self.state[2]
-        )
-        local_ys = -(self.track[:, 0] - self.state[0]) * sin(self.state[2]) + (self.track[:, 1] - self.state[1]) * cos(
-            self.state[2]
+        # transform detection to map
+        rotation_mat = np.array(
+            [
+                [cos(self.state[2]), -sin(self.state[2])],
+                [sin(self.state[2]), cos(self.state[2])],
+            ]
         )
 
-        local_track = np.stack((local_xs, local_ys, self.track[:, 2], self.track[:, 3], self.track[:, 4]), axis=1)
+        local_coords = np.array([])
+        for i in range(len(self.properties)):
+            local = np.linalg.inv(rotation_mat) @ (self.properties[i].map_coords - self.state[0:2])
+            local_coords = np.append(local_coords, [local])
+            self.properties[i].local_x = local[0]
+            self.properties[i].local_y = local[1]
+        local_coords = local_coords.reshape(-1, 2)
 
         # get any cones that are within -10m to 10m beside car
-        side_idxs = np.where(np.logical_and(local_ys > -10, local_ys < 10))[0]
+        side_idxs = np.where(np.logical_and(local_coords[:, 1] > -10, local_coords[:, 1] < 10))[0]
         # get any cones that are within 15m in front of car
-        forward_idxs = np.where(np.logical_and(local_xs > 0, local_xs < 15))[0]
-
+        forward_idxs = np.where(np.logical_and(local_coords[:, 0] > 0, local_coords[:, 0] < 15))[0]
         # combine indexes
         idxs = np.intersect1d(side_idxs, forward_idxs)
 
-        # get local map
-        return local_track[idxs]
+        return self.properties[idxs]
 
 
 def main(args=None):
