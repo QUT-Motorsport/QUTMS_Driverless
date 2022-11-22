@@ -130,7 +130,7 @@ class ParticlePursuit(Node):
     # common constants:
     path = np.array([])
     cone_pos = []
-    Kp_ang: float = 1
+    Kp_ang: float = 3
     Kp_vel: float = 0.08
     vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
@@ -142,19 +142,20 @@ class ParticlePursuit(Node):
     
     #------------------------------
     # attractive force constants:
-    rvwp_lookahead: float = 15  # how far the lookahead is (no. of indeces) [convert to distance preferably]
-    k_attractive: float = 2     # attractive force gain
+    rvwp_lookahead: float = 100  # how far the lookahead is (no. of indeces) [convert to distance preferably]
+    k_attractive: float = 3     # attractive force gain
 
     #------------------------------
     # repulsive force constants:
-    d_min: float = 130          # min repulsive force distance (max. repulsion at or below)     [cm IF SIM, m IF NOT SIM]
-    d_max: float = 250          # max repulsive force distance (zero repulsion at or above)     [cm IF SIM, m IF NOT SIM]
-    k_repulsive: float = 5      # repulsive force gain
+    d_min: float = 20          # min repulsive force distance (max. repulsion at or below)     [cm IF SIM, m IF NOT SIM]
+    d_max: float = 60          # max repulsive force distance (zero repulsion at or above)     [cm IF SIM, m IF NOT SIM]
+    k_repulsive: float = 7.5      # repulsive force gain
     
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
     #      cone_danger < 0: corners taken wider
-    cone_danger: float = 2.5     
+    #      ** dont set to 1 **
+    cone_danger: float = 15     
     
 
     def __init__(self):
