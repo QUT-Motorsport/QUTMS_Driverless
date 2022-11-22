@@ -11,9 +11,12 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import PathStamped, Reset
-from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, TwistStamped
 
-from typing import List
+from typing import List, Tuple
+
+LOOKAHEAD = 6
+LOOKAHEAD_VEL = 6
 
 
 def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
@@ -31,28 +34,37 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     return [x_axle, y_axle]
 
 
-def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> List[float]:
+def get_RVWP(car_pos: List[float], path: np.ndarray, lookahead: float) -> np.ndarray:
     """
     Retrieve angle between two points
     * param car_pos: [x,y] coords of point 1
-    * param path: [[x0,y0],[x1,y1],...,[xn-1,yn-1]] path points
-    * param rvwpLookahead: how many indices to look ahead in path array for RVWP
-    * return: RVWP position as [x,y]
+    * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
+    * param rvwp_lookahead: distance to look ahead for the RVWP
+    * return: RVWP position as [x,y,i]
     """
-    _pos = np.array([[car_pos[0], car_pos[1]]])
+    pos = np.array([[car_pos[0], car_pos[1]]])
     dists: np.ndarray = scipy.spatial.distance.cdist(
         path[:, :2],  # search all path points for x,y cols up to 3rd col (intensity)
-        _pos,
+        pos,
         "euclidean",
     )
     min_index: int = np.where(dists == np.amin(dists))[0][0]
-    print("min_index: ", min_index)
-    if min_index + rvwp_lookahead >= len(path):
+
+    # vwp_dists: np.ndarray = scipy.spatial.distance.cdist(
+    #     path[:, :2],  # search all path points for x,y cols up to 3rd col (intensity)
+    #     [path[min_index, :2]],
+    #     "euclidean",
+    # )
+    # vwp_dists = vwp_dists[vwp_dists > lookahead]
+    # rvwp = path[np.where(vwp_dists == np.amin(vp_dists))[0][0]]
+
+    if min_index + lookahead >= len(path):
         rvwp_index: int = len(path) - 1
     else:
-        rvwp_index: int = min_index + rvwp_lookahead  # % len(path)
-    print("rvwp_index: ", rvwp_index)
-    rvwp: List[float] = path[rvwp_index]
+        rvwp_index: int = min_index + lookahead
+
+    print("path indices: ", len(path), "rvwp_index: ", rvwp_index, "min_index: ", min_index)
+    rvwp: np.ndarray = path[rvwp_index]
 
     return rvwp
 
@@ -80,26 +92,23 @@ def wrap_to_pi(angle: float) -> float:
 
 class PurePursuit(Node):
     path = np.array([])
-    Kp_ang: float = 3
+    Kp_ang: float = 15
     Kp_vel: float = 0.08
     vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
-    pos_RVWP_LAD: int = 15
-    vel_RVWP_LAD: int = pos_RVWP_LAD
     r2d: bool = True  # for reset
 
     def __init__(self):
         super().__init__("pure_pursuit")
 
-        # sub to path mapper for the desired vehicle path (as an array)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/pose_with_covariance")
-        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
+        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=30, slop=0.3)
         synchronizer.registerCallback(self.callback)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
@@ -122,7 +131,7 @@ class PurePursuit(Node):
     def callback(
         self,
         pose_msg: PoseWithCovarianceStamped,
-        vel_msg: TwistWithCovarianceStamped,
+        vel_msg: TwistStamped,
     ):
         if not self.r2d:
             return
@@ -145,15 +154,15 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = get_RVWP(position, self.path, self.pos_RVWP_LAD)
+        rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD)
         # steering control
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         steering_angle = wrap_to_pi(theta - des_heading_ang) * self.Kp_ang
 
         # velocity control
-        rvwp: List[float] = get_RVWP(position, self.path, self.vel_RVWP_LAD)
+        rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD_VEL)
         intensity = rvwp[2]
-        vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+        vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
 
         # target velocity proportional to angle
         target_vel: float = self.vel_max - intensity * self.Kp_vel
@@ -173,7 +182,7 @@ class PurePursuit(Node):
 
         # publish message
         control_msg = AckermannDrive()
-        control_msg.steering_angle = steering_angle
+        control_msg.steering_angle = -steering_angle
         control_msg.acceleration = calc_throttle
         control_msg.jerk = calc_brake  # using jerk for brake for now
 
