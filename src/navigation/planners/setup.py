@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "delaunay_planner = planners.node_delaunay_planner:main",
+            "local_planner = planners.node_local_planner:main",
         ],
     },
 )
