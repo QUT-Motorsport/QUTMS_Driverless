@@ -8,7 +8,7 @@ Can2Ethernet::Can2Ethernet(std::string ip, int port) {
 }
 
 void Can2Ethernet::tx(uint32_t id, bool std_id, uint8_t* data) {
-    auto d = std::make_shared<std::vector<char>>();
+    auto d = std::make_shared<std::vector<uint8_t>>();
     uint8_t enetByte = 8;
     enetByte = enetByte | ((std_id << 7) & 1);
     d->emplace_back(enetByte);
@@ -24,4 +24,4 @@ void Can2Ethernet::tx(uint32_t id, bool std_id, uint8_t* data) {
         std::cout << "Failed to send_data!" << std::endl;
     }
 }
-std::shared_ptr<std::vector<char>> Can2Ethernet::rx() { return this->recieve_data(); }
+std::shared_ptr<std::vector<uint8_t>> Can2Ethernet::rx() { return this->recieve_data(); }
