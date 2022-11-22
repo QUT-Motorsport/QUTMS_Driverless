@@ -83,6 +83,7 @@ class PySlam(Node):
             self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
             return
         self.dt = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
+        # for rosbag repeat
         if self.dt < -1:
             self.last_timestamp = vel_msg.header.stamp.sec + vel_msg.header.stamp.nanosec / 1e9
             self.state[0:3] = [0.0, 0.0, 0.0]
