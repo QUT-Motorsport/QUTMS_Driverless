@@ -79,6 +79,18 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# ros2 dumbpy
+COPY ./src/common/ros2_numpy/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# lidar
+COPY ./src/perception/lidar_pipeline_2/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 
@@ -102,6 +114,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         car_status \
         py_slam \
         driverless_common \
+        lidar_pipeline_2 \
     && rm -rf ./src
 
 # force ROS to use Jetson interface
