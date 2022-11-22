@@ -1,17 +1,20 @@
 from math import pi
 import time
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from scipy.spatial import Delaunay
 
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
 from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker
 
@@ -123,6 +126,21 @@ def evaluate_spline(sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: Uni
     )
 
 
+# debug img params
+cv_bridge = CvBridge()  # translate ROS image messages to OpenCV
+
+HEIGHT = 640
+WIDTH = 640
+
+TRACK_WIDTH = 100
+TRACK_LENGTH = 50
+
+scale = WIDTH // max(TRACK_WIDTH, TRACK_LENGTH)
+
+img_origin_x = TRACK_WIDTH * scale // 3
+img_origin_y = (HEIGHT - TRACK_LENGTH * scale) // 3
+
+
 class TrackPlanner(Node):
     fig = plt.figure()
     ax = fig.add_subplot()
@@ -131,11 +149,12 @@ class TrackPlanner(Node):
         super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/local", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
-        self.delaunay_publisher: Publisher = self.create_publisher(Marker, "/markers/delaunay_lines", 1)
+        self.marker_publisher: Publisher = self.create_publisher(Marker, "/markers/delaunay_lines", 1)
+        self.img_publisher: Publisher = self.create_publisher(Image, "/planner/debug_img", 1)
 
         self.get_logger().info("---Delaunay Planner Node Initalised---")
 
@@ -205,6 +224,8 @@ class TrackPlanner(Node):
         midpoints = np.unique(midpoints, axis=0)
 
         # order midpoints by distance to each other
+        if midpoints.size == 0:
+            return
         ordered_midpoints = [midpoints[0]]
         midpoints = np.delete(midpoints, 0, axis=0)
         while len(midpoints) != 0:
@@ -218,7 +239,7 @@ class TrackPlanner(Node):
 
         if len(ordered_midpoints) <= 3:
             headings = np.zeros(len(ordered_midpoints))
-            path = np.hstack((ordered_midpoints, heading.reshape(-1, 1)))
+            path = np.hstack((ordered_midpoints, headings.reshape(-1, 1)))
 
         else:
             # interpolate midpoints with a B-Spline
@@ -240,6 +261,8 @@ class TrackPlanner(Node):
 
         # publish delaunay lines
         # make pairs of points for each line
+        debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
+
         delaunay_lines = []
         track_colours = []
         for l in disp_lines:
@@ -248,25 +271,25 @@ class TrackPlanner(Node):
             track_colours.append(ColorRGBA(r=0.1, g=0.1, b=0.1, a=0.2))
             track_colours.append(ColorRGBA(r=0.1, g=0.1, b=0.1, a=0.2))
 
+            cv2.line(
+                debug_img,
+                (int(l[0][0] * scale + img_origin_x), int(l[0][1] * scale + img_origin_y)),
+                (int(l[1][0] * scale + img_origin_x), int(l[1][1] * scale + img_origin_y)),
+                (255, 255, 255),
+                1,
+            )
+
+        for p in path:
+            cv2.circle(
+                debug_img, (int(p[0] * scale + img_origin_x), int(p[1] * scale + img_origin_y)), 2, (0, 0, 255), -1
+            )
+
         # make marker message
         marker_msg = delaunay_marker_msg(delaunay_lines, track_colours)
-        self.delaunay_publisher.publish(marker_msg)
+        self.marker_publisher.publish(marker_msg)
+        self.img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         self.get_logger().debug(f"Planned path in {time.perf_counter() - start}s")
-
-        # make plot
-        # self.ax.clear()
-        # self.ax.triplot(track[:, 0], track[:, 1], internal_triangles)
-        # for line in lines:
-        #     self.ax.plot(line[:, 0], line[:, 1], "g-")
-        # # number midpoints
-        # for i, p in enumerate(ordered_midpoints):
-        #     self.ax.text(p[0], p[1], str(i), fontsize=14)
-        # self.ax.plot(ordered_midpoints[:, 0], ordered_midpoints[:, 1], "ro")
-        # self.ax.plot(path[:, 0], path[:, 1], "r-")
-
-        # plt.pause(0.03)
-        # plt.show(block=False)
 
 
 def main(args=None):
