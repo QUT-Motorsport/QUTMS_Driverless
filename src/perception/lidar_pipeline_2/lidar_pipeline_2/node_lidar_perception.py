@@ -305,6 +305,7 @@ def main(args=sys.argv[1:]):
             "model_car",
             "export_data",
             "print_logs",
+            "--ros-args",
         ],
     )
 
