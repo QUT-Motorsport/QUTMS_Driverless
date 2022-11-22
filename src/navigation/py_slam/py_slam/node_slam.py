@@ -152,7 +152,7 @@ class PySlam(Node):
 
         # publish track msg
         track_msg = TrackDetectionStamped()
-        track_msg.header.stamp = self.get_clock().now().to_msg()
+        track_msg.header.stamp = vel_msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
@@ -170,7 +170,7 @@ class PySlam(Node):
 
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = self.get_clock().now().to_msg()
+        pose_msg.header.stamp = vel_msg.header.stamp
         pose_msg.header.frame_id = "track"
         pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
@@ -187,7 +187,7 @@ class PySlam(Node):
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
-        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.stamp = vel_msg.header.stamp
         t.header.frame_id = "track"
         t.child_frame_id = "car"
 
