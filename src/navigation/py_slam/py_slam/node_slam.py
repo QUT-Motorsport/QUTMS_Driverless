@@ -140,9 +140,6 @@ class PySlam(Node):
 
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
-                    if detection.colour == "orange":
-                        self.get_logger().info("Red cone detected")
-                    print(detection.colour)
 
             if not detection.tracked and detection_msg.header.frame_id == "velodyne":
                 detection.set_world_coords(map_coords)
