@@ -28,7 +28,7 @@ class TCPClient {
     bool setup(std::string address, int port);
     bool _connect();
     void _disconnect();
-    bool send_data(std::shared_ptr<std::vector<uint8_t>> data);
-    std::shared_ptr<std::vector<uint8_t>> recieve_data();
+    bool send_data(std::shared_ptr<std::vector<char>> data);
+    std::shared_ptr<std::vector<char>> recieve_data();
     ~TCPClient() { this->_disconnect(); };
 };
