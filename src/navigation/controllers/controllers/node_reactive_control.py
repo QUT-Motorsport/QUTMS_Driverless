@@ -21,12 +21,12 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
 class ReactiveController(Node):
-    Kp_ang: float = 2.5
+    Kp_ang: float = 2
     Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
-    target_cone_count = 4
+    target_cone_count = 1
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -93,12 +93,12 @@ class ReactiveController(Node):
         elif closest_left is not None:
             target = Point(
                 x=closest_left.location.x,
-                y=closest_left.location.y - 1.5,
+                y=closest_left.location.y - 5,
             )
         elif closest_right is not None:
             target = Point(
                 x=closest_right.location.x,
-                y=closest_right.location.y + 1.5,
+                y=closest_right.location.y + 5,
             )
 
         if target is not None:

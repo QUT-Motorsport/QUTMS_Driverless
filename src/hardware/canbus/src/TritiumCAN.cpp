@@ -135,26 +135,26 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
         return msgs;
     }
 
-    uint64_t protocolVersion = 0;
+    // uint64_t protocolVersion = 0;
 
-    for (int i = 0; i < 5; i++) {
-        protocolVersion |= ((uint64_t)rxData->data()[1 + i]) << ((4 - i) * 8);
-    }
-    std::cout << "Protocol Version: " << std::hex << protocolVersion << std::dec;
+    // for (int i = 0; i < 5; i++) {
+    //     protocolVersion |= ((uint64_t)rxData->data()[1 + i]) << ((4 - i) * 8);
+    // }
+    // std::cout << "Protocol Version: " << std::hex << protocolVersion << std::dec;
 
-    uint16_t busNumber = (rxData->data()[6] << 8) | (rxData->data()[7]);
-    std::cout << ", Bus Number: " << busNumber;
+    // uint16_t busNumber = (rxData->data()[6] << 8) | (rxData->data()[7]);
+    // std::cout << ", Bus Number: " << busNumber;
 
-    uint64_t clientIdentifier = 0;
-    for (int i = 0; i < 7; i++) {
-        clientIdentifier |= ((uint64_t)rxData->data()[9 + i]) << ((6 - i) * 8);
-    }
-    std::cout << ", Client Identifier: " << std::hex << clientIdentifier << std::dec;
+    // uint64_t clientIdentifier = 0;
+    // for (int i = 0; i < 7; i++) {
+    //     clientIdentifier |= ((uint64_t)rxData->data()[9 + i]) << ((6 - i) * 8);
+    // }
+    // std::cout << ", Client Identifier: " << std::hex << clientIdentifier << std::dec;
 
     int numCANBytes = rxData->size() - 16;
     int numCAN = numCANBytes / CAN_MSG_LEN;
 
-    std::cout << ", Num CAN: " << numCAN << std::endl;
+    // std::cout << ", Num CAN: " << numCAN << std::endl;
 
     for (int i = 0; i < numCAN; i++) {
         uint8_t data[CAN_MSG_LEN];
@@ -162,11 +162,11 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
         driverless_msgs::msg::Can msg = this->process_can_msg(data);
         msgs->push_back(msg);
 
-        std::cout << "ID: " << std::hex << (long)msg.id << std::dec << ", DLC: " << (int)msg.dlc << ", DATA: [";
-        for (int j = 0; j < msg.dlc; j++) {
-            std::cout << std::hex << (int)msg.data[j] << std::dec << ", ";
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "ID: " << std::hex << (long)msg.id << std::dec << ", DLC: " << (int)msg.dlc << ", DATA: [";
+        // for (int j = 0; j < msg.dlc; j++) {
+        //     std::cout << std::hex << (int)msg.data[j] << std::dec << ", ";
+        // }
+        // std::cout << "]" << std::endl;
     }
 
     return msgs;
@@ -175,11 +175,11 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
 driverless_msgs::msg::Can TritiumCAN::process_can_msg(uint8_t *data) {
     driverless_msgs::msg::Can msg;
 
-    std::cout << "CAN: ";
-    for (int i = 0; i < CAN_MSG_LEN; i++) {
-        std::cout << std::hex << (int)data[i] << " ";
-    }
-    std::cout << std::dec << std::endl;
+    // // std::cout << "CAN: ";
+    // for (int i = 0; i < CAN_MSG_LEN; i++) {
+    //     std::cout << std::hex << (int)data[i] << " ";
+    // }
+    // std::cout << std::dec << std::endl;
 
     uint32_t canID = 0;
     for (int i = 0; i < 4; i++) {
@@ -203,12 +203,12 @@ driverless_msgs::msg::Can TritiumCAN::process_can_msg(uint8_t *data) {
     }
     msg.data = msgData;
 
-    std::cout << "ID: " << std::hex << msg.id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
-              << ", DLC: " << (int)msg.dlc << ", Data: [";
-    for (int i = 0; i < DLC; i++) {
-        std::cout << std::hex << (int)msg.data[i] << std::dec << ", ";
-    }
-    std::cout << "]" << std::endl;
+    // std::cout << "ID: " << std::hex << msg.id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
+    //           << ", DLC: " << (int)msg.dlc << ", Data: [";
+    // for (int i = 0; i < DLC; i++) {
+    //     std::cout << std::hex << (int)msg.data[i] << std::dec << ", ";
+    // }
+    // std::cout << "]" << std::endl;
 
     return msg;
 }
