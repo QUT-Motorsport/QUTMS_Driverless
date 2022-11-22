@@ -1,4 +1,4 @@
-from math import sqrt
+from math import atan, atan2, pi, sqrt, degrees
 import time
 
 import cv2
@@ -68,15 +68,15 @@ class BetterReactiveController(Node):
 
         # debug image
         self.create_subscription(Image, "/debug_imgs/vision_det_img", self.img_callback, 1)
-        # sync subscribers
-        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[detection_sub, vel_sub],
-            queue_size=30,
-            slop=0.3,
-        )
-        synchronizer.registerCallback(self.callback)
+        #  subscribers
+        # vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
+        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
+        # synchronizer = message_filters.ApproximateTimeSynchronizer(
+        #     fs=[detection_sub, vel_sub],
+        #     queue_size=30,
+        #     slop=0.3,
+        # )
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
@@ -95,7 +95,8 @@ class BetterReactiveController(Node):
         self.prev_steering_angle = 0
         self.r2d = True
 
-    def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistWithCovarianceStamped):
+    # def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistWithCovarianceStamped):
+    def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()  # begin a timer
         if not self.r2d:
@@ -167,16 +168,17 @@ class BetterReactiveController(Node):
         best_curve_steering_angle: float = A[np.abs(errors).argmin()] * self.Kp_angle
 
         # velocity control
-        vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
-        # increase proportionally as it approaches target
-        throttle_scalar: float = 1 - (vel / self.vel_max)
-        if throttle_scalar > 0:
-            calc_throttle = self.throttle_max * throttle_scalar
-        elif throttle_scalar <= 0:
-            calc_throttle = 0.0  # if its over maximum, cut throttle
+        # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+        # # increase proportionally as it approaches target
+        # throttle_scalar: float = 1 - (vel / self.vel_max)
+        # if throttle_scalar > 0:
+        #     calc_throttle = self.throttle_max * throttle_scalar
+        # elif throttle_scalar <= 0:
+        #     calc_throttle = 0.0  # if its over maximum, cut throttle
+        calc_throttle = 0.2
 
         # publish message
-        control_msg.steering_angle = best_curve_steering_angle
+        control_msg.steering_angle = -degrees(best_curve_steering_angle)
         control_msg.acceleration = calc_throttle
         self.control_publisher.publish(control_msg)
 
