@@ -1,4 +1,4 @@
-from math import atan, atan2, pi, sqrt, degrees
+from math import atan, atan2, degrees, pi, sqrt
 import time
 
 import cv2
