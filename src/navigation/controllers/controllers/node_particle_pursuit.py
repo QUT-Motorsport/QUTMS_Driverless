@@ -53,12 +53,13 @@ def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> float:
     
     # get arrays of only coords for more efficient compute
     _pos = np.array([[pos_car[0], pos_car[1]]])
-    boundaries_coords = boundaries[:, :2]
+    boundaries_coords = np.array(boundaries[:, :2])
     
     # find distances of all cones and index of closest cone (improve by finding distances of close cones only?)
     dists: np.ndarray = scipy.spatial.distance.cdist(boundaries_coords, _pos, "euclidean",)
-    nearest_cone_index: List[float] = np.where(dists == np.amin(dists))[0][0]    
-    
+    # not certain np.where is returning the index - it should though
+    nearest_cone_index: int = np.where(dists == np.amin(dists))[0][0]    
+      
     nearest_cone = boundaries_coords[nearest_cone_index]
     return nearest_cone
 
@@ -129,7 +130,7 @@ class ParticlePursuit(Node):
     # common constants:
     path = np.array([])
     cone_pos = []
-    Kp_ang: float = 3
+    Kp_ang: float = 1
     Kp_vel: float = 0.08
     vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
@@ -142,13 +143,13 @@ class ParticlePursuit(Node):
     #------------------------------
     # attractive force constants:
     rvwp_lookahead: float = 15  # how far the lookahead is (no. of indeces) [convert to distance preferably]
-    k_attractive: float = 10     # attractive force gain
+    k_attractive: float = 2     # attractive force gain
 
     #------------------------------
     # repulsive force constants:
-    d_min: float = 1.3          # min repulsive force distance (max. repulsion at or below)
-    d_max: float = 2.5          # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 10      # repulsive force gain
+    d_min: float = 130          # min repulsive force distance (max. repulsion at or below)     [cm IF SIM, m IF NOT SIM]
+    d_max: float = 250          # max repulsive force distance (zero repulsion at or above)     [cm IF SIM, m IF NOT SIM]
+    k_repulsive: float = 5      # repulsive force gain
     
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
@@ -267,10 +268,11 @@ class ParticlePursuit(Node):
         pos_repulsive_relcar: List[float] = [f_repulsive * cos(repulsive_heading), f_repulsive * sin(repulsive_heading)]
 
         # get coords of resultant vector (force) acting on car, relative to the car as origin
-        pos_resultant_relcar: List[float] = [pos_attractive_relCar[0] + pos_repulsive_relcar[0], pos_attractive_relCar[1] + pos_repulsive_relcar[1]]
+        pos_resultant_relCar: List[float] = [pos_attractive_relCar[0] + pos_repulsive_relcar[0], pos_attractive_relCar[1] + pos_repulsive_relcar[1]]
 
         # get angle of resultant vector as desired heading of the car
-        steering_angle: float = angle([0,0], pos_resultant_relcar) * self.Kp_ang
+        des_heading_ang: float = angle([0,0], pos_resultant_relCar)
+        steering_angle = wrap_to_pi(car_heading - des_heading_ang) * self.Kp_ang
 
 
         ## get the angle between the two vectors (forces) acting on the car
