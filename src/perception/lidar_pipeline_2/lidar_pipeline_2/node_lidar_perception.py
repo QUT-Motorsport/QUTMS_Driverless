@@ -186,6 +186,8 @@ class LiDARProcessor(Node):
             self.working_dir,
             timestamp,
         )
+        if cones == []:
+            return
 
         self.count += 1
 
@@ -258,7 +260,7 @@ def main(args=sys.argv[1:]):
     # a ground point. Otherwise it's labelled as a non-ground point.
     T_D_MAX = LIDAR_RANGE
 
-    EPSILON = 1.5  # Neighbourhood Scan Size
+    EPSILON = 1  # Neighbourhood Scan Size
     MIN_POINTS = 4  # Number of points required to form a neighbourhood
 
     # Path to data to import and use
