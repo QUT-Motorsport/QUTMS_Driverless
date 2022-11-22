@@ -281,76 +281,75 @@ def main(args=sys.argv[1:]):
     # Export numpy point clouds to text file
     export_data = False
 
-    # Processing args
-    opts, arg = getopt.getopt(
-        args,
-        str(),
-        [
-            "pc_node=",
-            "loglevel=",
-            "lidar_range=",
-            "delta_alpha=",
-            "bin_size=",
-            "t_m=",
-            "t_m_small=",
-            "t_b=",
-            "t_rmse=",
-            "t_d_ground=",
-            "t_d_max=",
-            "import_data=",
-            "disable_regress",
-            "create_figures",
-            "show_figures",
-            "animate_figures",
-            "model_car",
-            "export_data",
-            "print_logs",
-            "--ros-args",
-        ],
-    )
+    # # Processing args
+    # opts, arg = getopt.getopt(
+    #     args,
+    #     str(),
+    #     [
+    #         "pc_node=",
+    #         "loglevel=",
+    #         "lidar_range=",
+    #         "delta_alpha=",
+    #         "bin_size=",
+    #         "t_m=",
+    #         "t_m_small=",
+    #         "t_b=",
+    #         "t_rmse=",
+    #         "t_d_ground=",
+    #         "t_d_max=",
+    #         "import_data=",
+    #         "disable_regress",
+    #         "create_figures",
+    #         "show_figures",
+    #         "animate_figures",
+    #         "model_car",
+    #         "export_data",
+    #         "print_logs",
+    #     ],
+    # )
 
-    for opt, arg in opts:
-        if opt == "--pc_node":
-            pc_node = arg
-        elif opt == "--loglevel":
-            loglevel = arg
-        elif opt == "--lidar_range":
-            LIDAR_RANGE = float(arg)
-        elif opt == "--delta_alpha":
-            DELTA_ALPHA = arg
-        elif opt == "--bin_size":
-            BIN_SIZE = arg
-        elif opt == "--t_m":
-            T_M = arg
-        elif opt == "--t_m_small":
-            T_M_SMALL = arg
-        elif opt == "--t_b":
-            T_B = arg
-        elif opt == "--t_rmse":
-            T_RMSE = arg
-        elif opt == "--t_d_ground":
-            T_D_GROUND = float(arg)
-        elif opt == "--t_d_max":
-            T_D_MAX = arg
-        elif opt == "--import_data":
-            data_path = "./src/perception/lidar_pipeline_2/lidar_pipeline_2/exports/" + arg
-        elif opt == "--disable_regress":
-            REGRESS_BETWEEN_BINS = False
-        elif opt == "--create_figures":
-            create_figures = True
-        elif opt == "--show_figures":
-            create_figures = True
-            show_figures = True
-        elif opt == "--animate_figures":
-            create_figures = True
-            animate_figures = True
-        elif opt == "--model_car":
-            create_figures = True
-            model_car = True
-        elif opt == "--export_data":
-            export_data = True
-        elif opt == "--print_logs":
-            print_logs = True
+    # for opt, arg in opts:
+    #     if opt == "--pc_node":
+    #         pc_node = arg
+    #     elif opt == "--loglevel":
+    #         loglevel = arg
+    #     elif opt == "--lidar_range":
+    #         LIDAR_RANGE = float(arg)
+    #     elif opt == "--delta_alpha":
+    #         DELTA_ALPHA = arg
+    #     elif opt == "--bin_size":
+    #         BIN_SIZE = arg
+    #     elif opt == "--t_m":
+    #         T_M = arg
+    #     elif opt == "--t_m_small":
+    #         T_M_SMALL = arg
+    #     elif opt == "--t_b":
+    #         T_B = arg
+    #     elif opt == "--t_rmse":
+    #         T_RMSE = arg
+    #     elif opt == "--t_d_ground":
+    #         T_D_GROUND = float(arg)
+    #     elif opt == "--t_d_max":
+    #         T_D_MAX = arg
+    #     elif opt == "--import_data":
+    #         data_path = "./src/perception/lidar_pipeline_2/lidar_pipeline_2/exports/" + arg
+    #     elif opt == "--disable_regress":
+    #         REGRESS_BETWEEN_BINS = False
+    #     elif opt == "--create_figures":
+    #         create_figures = True
+    #     elif opt == "--show_figures":
+    #         create_figures = True
+    #         show_figures = True
+    #     elif opt == "--animate_figures":
+    #         create_figures = True
+    #         animate_figures = True
+    #     elif opt == "--model_car":
+    #         create_figures = True
+    #         model_car = True
+    #     elif opt == "--export_data":
+    #         export_data = True
+    #     elif opt == "--print_logs":
+    #         print_logs = True
 
     if not print_logs:
         print("--print_logs flag not specified")
