@@ -160,9 +160,36 @@ def map_segments_2(ground_plane):
     non_zeros = np.nonzero(ground_plane)[0]
 
     for i in range(len(ground_plane)):
-        distances = np.abs(non_zeros - i)
-        closest_idx = np.min(np.where(distances == np.min(distances)))
-        ground_plane[i] = ground_plane[closest_idx]
+        if ground_plane[i] == 0:
+            distances = np.abs(non_zeros - i)
+            closest_idx = np.min(np.where(distances == np.min(distances)))
+            ground_plane[i] = ground_plane[closest_idx]
+
+    return ground_plane
+
+
+# maybe compare with original mapping function
+# create test list and ensure this functionailty is the same
+# as the original map segments function in edge cases
+def map_segments_3(ground_plane):
+    non_zeros = np.flatnonzero(ground_plane)
+
+    mask = np.ones(ground_plane.size, dtype=bool)
+    mask[non_zeros] = False
+    zeros = np.arange(ground_plane.size)[mask]
+
+    for idx in zeros:
+        dists = np.abs(idx - non_zeros)
+        wrap_dists = np.abs(ground_plane.size - dists)
+
+        min_dist = np.min(dists)
+        min_wrap_dist = np.min(wrap_dists)
+        if min_dist <= min_wrap_dist:
+            closest_idx = non_zeros[np.min(np.where(dists == min_dist))]
+        else:
+            closest_idx = non_zeros[np.min(np.where(wrap_dists == min_wrap_dist))]
+
+        ground_plane[idx] = ground_plane[closest_idx]
 
     return ground_plane
 
