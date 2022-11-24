@@ -165,3 +165,66 @@ def map_segments_2(ground_plane):
         ground_plane[i] = ground_plane[closest_idx]
 
     return ground_plane
+
+
+def label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, ground_plane):
+    gp_mapped = map_segments_2(ground_plane)
+
+    # Get indices where sorted segments differ
+    seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
+
+    # Split point_norms, point_z and bins into segments
+    split_point_norms = np.split(point_norms[seg_bin_z_ind], seg_sorted_ind)
+    split_point_z = np.split(point_cloud["z"][seg_bin_z_ind], seg_sorted_ind)
+    split_bins = np.split(bins[seg_bin_z_ind], seg_sorted_ind)
+
+    counter = 0
+    point_labels = np.empty(point_cloud.shape[0], dtype=bool)
+    for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
+        bin_idx_set = split_bins[idx]
+        point_norm_set = split_point_norms[idx]
+        point_z_set = split_point_z[idx]
+        ground_set = gp_mapped[segment_idx]
+
+        unq_bin_idx = np.unique(bin_idx_set)
+
+        ground_line_dict = dict()
+        for bin_idx in unq_bin_idx:
+            ground_line = get_closest_line(ground_set, bin_idx)
+            ground_line_dict[bin_idx] = ground_line
+
+        for jdx, bin_idx in enumerate(bin_idx_set):
+            point_norm = point_norm_set[jdx]
+            point_z = point_z_set[jdx]
+            ground_line = ground_line_dict[bin_idx]
+            # point_line_dist = get_point_line_dist_2(ground_line, point_norm, point_z)
+            point_line_dist = point_z - (
+                ground_line[0] * ((bin_idx - ground_line[4]) * const.BIN_SIZE) + ground_line[1]
+            )
+
+            is_non_ground = True
+            # this doesn't make sense ( ... and point_line_dist < T_D_MAX)
+            if point_line_dist < const.T_D_GROUND:
+                is_non_ground = False
+
+            point_labels[counter] = is_non_ground
+            counter += 1
+
+    return point_labels
+
+    # print(point_cloud.shape)
+    # print(segments.shape)
+    # print(bins.shape)
+    # print(np.concatenate([point_cloud['z'], segments, bins], axis=0))
+    # point_cloud * line * bin
+
+    # seg" [-2, , 0, -1, 0, -1, 3, 4] [-31, 31]
+    # gp: [m b start(x, y) end(x, y) bin]
+    # gp: seg -31 to 31
+
+    # for i in range(point_cloud.shape[0]):
+    # get segment
+    # get bin
+    # get matching line
+    # see how high above line it is
+    #    pass
