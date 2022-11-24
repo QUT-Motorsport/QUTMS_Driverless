@@ -88,3 +88,13 @@ def get_ground_lines(proto_seg_points):
         return estimated_lines
     else:
         return 0
+
+
+def get_ground_plane_single_core(proto_segs_arr, proto_segs):
+    # Computing the ground plane
+    ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)
+    for segment_counter in range(len(proto_segs_arr)):
+        proto_seg_points = proto_segs_arr[segment_counter].tolist()
+        ground_plane[proto_segs[segment_counter]] = get_ground_lines(proto_seg_points)
+
+    return ground_plane
