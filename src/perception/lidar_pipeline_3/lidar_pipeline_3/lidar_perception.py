@@ -33,7 +33,8 @@ def cone_msg(x_coord: float, y_coord: float, col: int) -> Cone:
 
     return Cone(
         location=location,
-        color=Cone.UNKNOWN,
+        # color=Cone.UNKNOWN,
+        color=col,
     )
 
 
@@ -68,16 +69,25 @@ class ConeDetectionNode(Node):
             return
 
         # average y value of cones
-        average_y = sum([cone[1] for cone in cone_locations]) / len(cone_locations)
+        y_cutoff = 8
+        average_y = 0
+        count = 1
+        for cone in cone_locations:
+            if abs(cone[1]) < y_cutoff:
+                average_y += cone[1]
+                count += 1
+        average_y /= count
 
         # define message component - list of Cone type messages
         detected_cones = []  # List of Cones
         for cone in cone_locations:
             # add cone to msg list
-            if cone[1] > average_y:
+            if cone[1] > average_y and cone[1] < average_y + y_cutoff:
                 colour = Cone.BLUE
-            else:
+            elif cone[1] < average_y and cone[1] > average_y - y_cutoff:
                 colour = Cone.YELLOW
+            else:
+                colour = Cone.UNKNOWN
             detected_cones.append(cone_msg(cone[0], cone[1], colour))
 
         detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
