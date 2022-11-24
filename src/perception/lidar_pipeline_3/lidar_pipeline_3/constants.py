@@ -17,11 +17,12 @@ T_B = 0.05  # Max y-intercept for a ground plane line
 T_RMSE = 0.2  # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
 REGRESS_BETWEEN_BINS = True  # Determines if regression for ground lines should occur between two
 # neighbouring bins when they're described by different lines
-T_D_GROUND = 0.15  # 0.15 # Maximum distance between point and line to be considered part of ground plane
-# changed from 0.1
+T_D_GROUND = 0.125  # 0.15 # Maximum distance between point and line to be considered part of ground plane # tune this
+# changed from 0.1, ^^ also, the higher this value, the more low object points it will mark as ground BUT this makes dbscan faster
 T_D_MAX = 100  # Maximum distance a point can be from the origin to even be considered as
 # a ground point. Otherwise it's labelled as a non-ground point.
 CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing ground plane mapping (0.0 - 1.0)
+CONE_DIAM = 0.4
 
 # Derived Parameters
 SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
