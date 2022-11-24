@@ -15,7 +15,7 @@ from sensor_msgs.msg import PointCloud2
 import ros2_numpy as rnp
 
 from . import constants as const
-from . import utils
+from . import utils, video_stitcher
 from .library import lidar_manager
 
 # For typing
@@ -31,7 +31,7 @@ class ConeDetectionNode(Node):
 
         self.config: Config = _config
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback, 1
+            PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
 
@@ -87,7 +87,12 @@ def main(args=sys.argv[1:]):
     config.logger.info(f"args = {args}")
 
     # Init data stream
-    if config.data_path:
+    if config.video_from_session:
+        video_stitcher.stitch_figures(
+            f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
+            f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
+        )
+    elif config.data_path:
         # Use local data source
         local_data_stream()
     else:
