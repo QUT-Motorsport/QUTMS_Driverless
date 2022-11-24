@@ -104,3 +104,5 @@ def locate_cones(config, point_cloud):
 
         if config.show_figures:
             plt.show()
+
+    return cones
