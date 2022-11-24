@@ -354,3 +354,83 @@ def plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, name)
     # Create Animation
     if config.animate_figures:
         animate_figure(f"05_{name}_Animated", ax, config.image_dir)
+
+def plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, name):
+    fig, ax = init_plot_2D("Labelled Points", "X", "Y")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([const.mint_hex, const.red_hex]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * idx)
+
+                ax.plot(x, y, color=const.colours_01[jdx % len(const.colours_01)])
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_labelled_points_3D(config, point_cloud, point_labels, ground_plane, name):
+    # Create Figure
+    fig, ax = init_plot_3D("Labelled Points", "X", "Y", "Z")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([const.mint_hex, const.red_hex]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * idx)
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(x, y, z, color=const.colours_01[jdx % len(const.colours_01)])
+
+    max_limit = max(
+        np.abs(
+            [
+                min(point_cloud["x"]),
+                max(point_cloud["x"]),
+                min(point_cloud["y"]),
+                max(point_cloud["y"]),
+                min(point_cloud["z"]),
+                max(point_cloud["z"]),
+            ]
+        )
+    )
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+    ax.axes.set_zlim(-max_limit, max_limit)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"06_{name}_Animated", ax, config.image_dir)
