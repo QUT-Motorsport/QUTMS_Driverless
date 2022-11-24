@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from . import ground_plane_estimator as gpe
+from . import point_classifier as pc
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from .. import constants as const
@@ -14,7 +15,7 @@ def locate_cones(config, point_cloud):
     # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
-        vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
+        # vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
 
     # Remove points behind car
     point_cloud = point_cloud[point_cloud["x"] > 0]
@@ -45,10 +46,18 @@ def locate_cones(config, point_cloud):
     # Create visualisations
     if config.create_figures:
         vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
-        vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
-        vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
-        # vis.plot_segments_3D(config, point_cloud, segments, name)
-        # vis.plot_bins_3D(point_cloud, bins, working_dir, timestamp, animate_figures)
+        # vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
+        # vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
+        # vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
+        # vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
+        # vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
+        # vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
+        # vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
+        # vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
+        # vis.plot_labelled_points_2D(config, point_cloud[seg_bin_z_ind], point_labels, ground_plane, "11_LabelledPoints_2D")
+        vis.plot_labelled_points_3D(
+            config, point_cloud[seg_bin_z_ind], point_labels, ground_plane, "12_LabelledPoints_3D"
+        )
 
         if config.show_figures:
             plt.show()
