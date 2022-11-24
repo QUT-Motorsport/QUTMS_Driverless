@@ -7,12 +7,11 @@ from .. import constants as const
 
 def group_points(object_points):
     EPSILON = 0.6  # Neighbourhood Scan Size 0.1: +0Hz, 0.5: -2Hz, 1 -3Hz:
-    MIN_POINTS = 3  # Number of points required to form a neighbourhood
+    MIN_POINTS = 2  # Number of points required to form a neighbourhood
+    # move these into constants file
 
     # Cluster object points
-    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(
-        np.column_stack([object_points["x"], object_points["y"]])
-    )
+    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(object_points[:, :2])
     labels = clustering.labels_
 
     # All object ids
@@ -22,9 +21,7 @@ def group_points(object_points):
     object_centers = np.empty((unq_labels.size, 3))
     for idx, label in enumerate(unq_labels):
         objects[idx] = object_points[np.where(labels == label)]
-        object_centers[idx] = np.mean(
-            np.column_stack([objects[idx]["x"], objects[idx]["y"], objects[idx]["z"]]), axis=0
-        )
+        object_centers[idx] = np.mean(objects[idx], axis=0)
 
     return object_centers, objects
 

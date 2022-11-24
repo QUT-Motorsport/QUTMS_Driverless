@@ -50,6 +50,7 @@ def locate_cones(config, point_cloud):
     config.logger.info(f"DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
+    object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
     config.logger.info("DONE: Object Points Grouped")
 
     if object_points.size == 0:
