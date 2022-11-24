@@ -128,9 +128,7 @@ def plot_point_cloud_2D(config, point_cloud, name):
 
 
 def plot_segments_2D(config, point_cloud, segments, name):
-    fig, ax = init_plot_2D(
-        f"Point Cloud Discretised into {abs(segments.min()) + segments.max() + 1} Segments", "X", "Y"
-    )
+    fig, ax = init_plot_2D(f"Point Cloud Discretised into {get_segment_count(segments)} Segments", "X", "Y")
     plot = ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
@@ -165,3 +163,78 @@ def plot_bins_2D(config, point_cloud, bins, name):
 
     # Save Figure
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_segments_3D(config, point_cloud, segments, name):
+    fig, ax = init_plot_3D(f"Point Cloud Discretised into {get_segment_count(segments)} Segments", "X", "Y", "Z")
+
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=(segments % len(const.colours_01)),
+        cmap=mpl_colors.ListedColormap(const.colours_01),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    max_limit = max(
+        np.abs(
+            [
+                min(point_cloud["x"]),
+                max(point_cloud["x"]),
+                min(point_cloud["y"]),
+                max(point_cloud["y"]),
+                min(point_cloud["z"]),
+                max(point_cloud["z"]),
+            ]
+        )
+    )
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+    ax.axes.set_zlim(-max_limit, max_limit)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"02_{name}_Animated", ax, config.image_dir)
+
+
+def plot_bins_3D(config, point_cloud, bins, name):
+    fig, ax = init_plot_3D(f"Segments Discretised into a Maximum of {get_bin_count(bins)} Bins", "X", "Y", "Z")
+
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=(bins % len(const.colours_01)),
+        cmap=mpl_colors.ListedColormap(const.colours_01),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    max_limit = max(
+        np.abs(
+            [
+                min(point_cloud["x"]),
+                max(point_cloud["x"]),
+                min(point_cloud["y"]),
+                max(point_cloud["y"]),
+                min(point_cloud["z"]),
+                max(point_cloud["z"]),
+            ]
+        )
+    )
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+    ax.axes.set_zlim(-max_limit, max_limit)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"03_{name}_Animated", ax, config.image_dir)
+
