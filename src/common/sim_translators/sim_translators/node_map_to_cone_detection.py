@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 
 from typing import List
 
-MAX_CONE_RANGE = 10  # meters
+MAX_CONE_RANGE = 20  # meters
 
 
 class ConeDetectionTranslator(Node):
