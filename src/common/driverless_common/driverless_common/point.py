@@ -21,7 +21,10 @@ class Point:
         return Point(int(round(self.x / divisor)), int(round(self.y / divisor)))
 
     # NEW METHODS ADDED
-    def __mul__(self, multiplier: int) -> "Point":
+    # def __mul__(self, multiplier: int) -> "Point":
+    #     return Point(self.x * multiplier, self.y * multiplier)
+
+    def __mul__(self, multiplier: float) -> "Point":
         return Point(self.x * multiplier, self.y * multiplier)
 
     def to_tuple(self) -> Tuple:
