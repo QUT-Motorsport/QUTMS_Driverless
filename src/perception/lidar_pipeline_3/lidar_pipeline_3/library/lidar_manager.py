@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from . import ground_plane_estimator as gpe
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from .. import constants as const
@@ -32,6 +33,10 @@ def locate_cones(config, point_cloud):
 
     proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(segments, bins, point_norms, point_cloud["z"])
     config.logger.info(f"DONE: Prototype Points")
+
+    # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
+    ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
+    config.logger.info(f"DONE: Ground Plane Mapped")
 
     # Create visualisations
     if config.create_figures:
