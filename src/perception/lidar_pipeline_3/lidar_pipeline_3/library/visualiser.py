@@ -238,3 +238,54 @@ def plot_bins_3D(config, point_cloud, bins, name):
     if config.animate_figures:
         animate_figure(f"03_{name}_Animated", ax, config.image_dir)
 
+
+def plot_prototype_points_2D(config, proto_segs_arr, proto_segs, name):
+    fig, ax = init_plot_2D("Prototype Points", "X", "Y")
+
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
+
+        ax.scatter(
+            x, y, c=const.colours_01[proto_segs[idx] % len(const.colours_01)], marker="s", s=(72.0 / fig.dpi) ** 2
+        )
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_prototype_points_3D(config, proto_segs_arr, proto_segs, name):
+    fig, ax = init_plot_3D("Prototype Points", "X", "Y", "Z")
+
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
+
+        ax.scatter(
+            x,
+            y,
+            segment[:, 1],
+            c=const.colours_01[proto_segs[idx] % len(const.colours_01)],
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2,
+        )
+
+    max_limit = max(np.abs([min(x), max(x), min(y), max(y), min(segment[:, 1]), max(segment[:, 1])]))
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+    ax.axes.set_zlim(-max_limit, max_limit)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"04_{name}_Animated", ax, config.image_dir)
+
+
