@@ -79,14 +79,39 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# ros2 dumbpy
+COPY ./src/common/ros2_numpy/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# lidar
+COPY ./src/perception/lidar_pipeline_2/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
+# planner
+COPY ./src/navigation/planners/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
-# run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
+
+# build lidar cython
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    cd src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library && \
+    python setup.py build_ext --inplace
+
+# run a ros build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
@@ -102,7 +127,11 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         car_status \
         py_slam \
         driverless_common \
-    && rm -rf ./src
+        lidar_pipeline_2 \
+        planners
+
+# delete source
+RUN rm -rf ./src
 
 # force ROS to use Jetson interface
 ENV CYCLONEDDS_URI="<CycloneDDS><Domain><General><NetworkInterfaceAddress>enp6s0</NetworkInterfaceAddress></General></Domain></CycloneDDS>"

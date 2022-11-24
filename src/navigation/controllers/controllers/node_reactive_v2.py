@@ -76,7 +76,7 @@ class BetterReactiveController(Node):
         #     queue_size=30,
         #     slop=0.3,
         # )
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 

@@ -94,7 +94,7 @@ class CanBus : public rclcpp::Node {
 
         // this->c = std::make_shared<Can2Ethernet>(_ip, _port);
         this->tritiumCAN = std::make_shared<TritiumCAN>();
-        this->tritiumCAN->setup(_ip);
+        this->tritiumCAN->setup();
 
         RCLCPP_INFO(this->get_logger(), "done!");
         RCLCPP_INFO(this->get_logger(), "Creating Timer...");

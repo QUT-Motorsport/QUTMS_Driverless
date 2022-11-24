@@ -12,7 +12,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, PathPoint, PathStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from std_msgs.msg import ColorRGBA
@@ -132,13 +132,13 @@ cv_bridge = CvBridge()  # translate ROS image messages to OpenCV
 HEIGHT = 640
 WIDTH = 640
 
-TRACK_WIDTH = 100
-TRACK_LENGTH = 50
+TRACK_WIDTH = 20
+TRACK_LENGTH = 30
 
 scale = WIDTH // max(TRACK_WIDTH, TRACK_LENGTH)
 
-img_origin_x = TRACK_WIDTH * scale // 3
-img_origin_y = (HEIGHT - TRACK_LENGTH * scale) // 3
+img_origin_y = TRACK_WIDTH * scale // 2
+img_origin_x = (HEIGHT) // 2
 
 
 class TrackPlanner(Node):
@@ -149,7 +149,7 @@ class TrackPlanner(Node):
         super().__init__("track_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
@@ -158,15 +158,15 @@ class TrackPlanner(Node):
 
         self.get_logger().info("---Delaunay Planner Node Initalised---")
 
-    def callback(self, track_msg: TrackDetectionStamped):
+    def callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received track")
         start = time.perf_counter()
 
-        cones_with_cov: List[ConeWithCovariance] = track_msg.cones
+        cones: List[Cone] = track_msg.cones
 
         # get left and right cones
-        left_cones = [c.cone for c in cones_with_cov if c.cone.color == LEFT_CONE_COLOUR]
-        right_cones = [c.cone for c in cones_with_cov if c.cone.color == RIGHT_CONE_COLOUR]
+        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
+        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
 
         if len(left_cones) < 2 or len(right_cones) < 2:  # no cones
             return
@@ -273,15 +273,15 @@ class TrackPlanner(Node):
 
             cv2.line(
                 debug_img,
-                (int(l[0][0] * scale + img_origin_x), int(l[0][1] * scale + img_origin_y)),
-                (int(l[1][0] * scale + img_origin_x), int(l[1][1] * scale + img_origin_y)),
+                (int(l[0][0] * scale + img_origin_x), int(-l[0][1] * scale + img_origin_y)),
+                (int(l[1][0] * scale + img_origin_x), int(-l[1][1] * scale + img_origin_y)),
                 (255, 255, 255),
                 1,
             )
 
         for p in path:
             cv2.circle(
-                debug_img, (int(p[0] * scale + img_origin_x), int(p[1] * scale + img_origin_y)), 2, (0, 0, 255), -1
+                debug_img, (int(p[0] * scale + img_origin_x), int(-p[1] * scale + img_origin_y)), 2, (0, 0, 255), -1
             )
 
         # make marker message

@@ -5,6 +5,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
+from driverless_msgs.msg import Reset
 
 TORQUE_MIN = 0.0
 TORQUE_MAX = 1.0
@@ -23,9 +24,13 @@ class KeyboardControllerNode(Node):
         super().__init__("keyboard_controller")
 
         self.drive_command_publisher: Publisher = self.create_publisher(AckermannDrive, "driving_command", 1)
+        self.reset_pub: Publisher = self.create_publisher(Reset, "/reset", 1)
 
     def publish_drive_command(self, torque: float, steering_angle: float):
         self.drive_command_publisher.publish(AckermannDrive(acceleration=torque, steering_angle=steering_angle))
+
+    def reset(self):
+        self.reset_pub.publish(Reset(reset=True))
 
 
 def print_state(stdscr):
@@ -63,6 +68,7 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
         if c == ord("\n"):
             torque = 0.0
             steering_angle = 0.0
+            keyboard_controller_node.reset()
 
         torque = round(max(min(torque, TORQUE_MAX), TORQUE_MIN), 2)
         steering_angle = round(max(min(steering_angle, STEER_MAX), STEER_MIN), 2)

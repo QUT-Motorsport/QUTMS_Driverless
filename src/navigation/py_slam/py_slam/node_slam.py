@@ -11,7 +11,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
 from py_slam.cone_props import ConeProps
@@ -19,10 +19,10 @@ from py_slam.cone_props import ConeProps
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.5  # nn kdtree nearch
+RADIUS = 1.2  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 20  # minimum frames before confirming cones
-FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
+FRAME_COUNT = 15  # minimum frames before confirming cones
+FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be removed
 
 
 def wrap_to_pi(angle: float) -> float:  # in rads
@@ -56,7 +56,7 @@ class PySlam(Node):
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
@@ -140,9 +140,6 @@ class PySlam(Node):
 
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
-                    if detection.colour == "orange":
-                        self.get_logger().info("Red cone detected")
-                    print(detection.colour)
 
             if not detection.tracked and detection_msg.header.frame_id == "velodyne":
                 detection.set_world_coords(map_coords)
@@ -155,7 +152,7 @@ class PySlam(Node):
 
         # publish track msg
         track_msg = TrackDetectionStamped()
-        track_msg.header.stamp = self.get_clock().now().to_msg()
+        track_msg.header.stamp = vel_msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
@@ -163,19 +160,17 @@ class PySlam(Node):
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
-        local_map_msg = TrackDetectionStamped()
+        local_map_msg = ConeDetectionStamped()
         local_map_msg.header.stamp = self.get_clock().now().to_msg()
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
-                local_map_msg.cones.append(
-                    ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg)
-                )
+                local_map_msg.cones.append(detection.local_cone_as_msg)
         self.local_publisher.publish(local_map_msg)
 
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = self.get_clock().now().to_msg()
+        pose_msg.header.stamp = vel_msg.header.stamp
         pose_msg.header.frame_id = "track"
         pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
@@ -192,7 +187,7 @@ class PySlam(Node):
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
-        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.stamp = vel_msg.header.stamp
         t.header.frame_id = "track"
         t.child_frame_id = "car"
 

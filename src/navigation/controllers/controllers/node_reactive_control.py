@@ -5,7 +5,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
 from driverless_common.point import Point, cone_to_point, dist
 
@@ -27,6 +27,7 @@ class ReactiveController(Node):
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
     target_cone_count = 1
+    r2d: bool = True
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -40,11 +41,19 @@ class ReactiveController(Node):
             self.vel_min = self.vel_max / 2  # m/s
             self.throttle_max = 0.2
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+
+        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
+        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
+
+    def reset_callback(self, msg: Reset):
+        self.prev_steering_angle = 0
+        self.r2d = True
 
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

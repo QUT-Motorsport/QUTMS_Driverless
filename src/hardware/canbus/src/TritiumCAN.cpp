@@ -10,17 +10,12 @@ std::string groupAddr("239.255.60.60");
 
 TritiumCAN::TritiumCAN() { this->isConnected = false; }
 
-bool TritiumCAN::setup(std::string ip) {
+bool TritiumCAN::setup() {
     int port = 4876;
     std::string localLoopbackAddr("127.0.0.1");
 
-    this->rxClient = std::make_shared<UDPClient>();
+    this->rxClient = std::make_unique<UDPClient>();
     this->rxClient->setup(htonl(INADDR_ANY), port, false);
-
-    this->tcpClient = std::make_shared<TCPClient>();
-    this->tcpClient->setup(ip, port);
-
-    this->txInitial = false;
 
     // look through all valid interfaces and join multicast group on each
     this->txClients.clear();
@@ -66,67 +61,14 @@ bool TritiumCAN::setup(std::string ip) {
 }
 
 void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
-    // std::vector<driverless_msgs::msg::Can> msgs;
-    // msgs.push_back(*msg);
+    std::vector<driverless_msgs::msg::Can> msgs;
+    msgs.push_back(*msg);
 
-    if (!this->txInitial) {
-        auto headerData = this->compose_tritium_tcp_header();
+    auto data = this->compose_tritium_packet(msgs);
 
-        bool result = this->tcpClient->send_data(headerData);
-
-        if (result) {
-            this->txInitial = true;
-        }
+    for (auto &&txClient : this->txClients) {
+        txClient->send_data(data, inet_addr(groupAddr.c_str()));
     }
-
-    auto msgData = this->compose_tritum_can_bytes(*msg);
-    this->tcpClient->send_data(msgData);
-
-    /*
-        auto data = this->compose_tritium_packet(msgs);
-
-        for (auto &&udpTxClient : this->txClients) {
-            udpTxClient->send_data(data, inet_addr(groupAddr.c_str()));
-        }
-    */
-}
-
-std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritium_tcp_header() {
-    auto result = std::make_shared<std::vector<uint8_t>>();
-
-    uint32_t fwdId = 0x00;
-    uint32_t fwdRange = 0x00;  // 0x1FFFFFFF;
-
-    for (int i = 0; i < 4; i++) {
-        result->push_back((fwdId >> ((3 - i) * 8)) & 0xFF);
-    }
-
-    for (int i = 0; i < 4; i++) {
-        result->push_back((fwdRange >> ((3 - i) * 8)) & 0xFF);
-    }
-
-    result->push_back(0);
-
-    uint64_t protocolVersion = 0x547269FDD6;
-    uint16_t busNumber = 13;
-
-    // TODO: do this based on actual mac address?
-    uint64_t clientId = 0x00155DAE73CE;
-
-    for (int i = 0; i < 5; i++) {
-        result->push_back((protocolVersion >> ((4 - i) * 8)) & 0xFF);
-    }
-
-    for (int i = 0; i < 2; i++) {
-        result->push_back((busNumber >> ((1 - i) * 8)) & 0xFF);
-    }
-
-    result->push_back(0);
-    for (int i = 0; i < 7; i++) {
-        result->push_back((clientId >> ((6 - i) * 8)) & 0xFF);
-    }
-
-    return result;
 }
 
 std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritium_packet(std::vector<driverless_msgs::msg::Can> msgs) {
@@ -187,8 +129,6 @@ std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritum_can_bytes(drive
 std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
-    // auto rxData = this->tcpClient->recieve_data();
-
     auto rxData = this->rxClient->recieve_data();
     if (rxData->size() < 16) {
         // invalid
@@ -219,12 +159,8 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     for (int i = 0; i < numCAN; i++) {
         uint8_t data[CAN_MSG_LEN];
         std::copy(rxData->begin() + 16 + i * CAN_MSG_LEN, rxData->begin() + 16 + (i + 1) * CAN_MSG_LEN, data);
-
-        driverless_msgs::msg::Can msg;
-        bool result = this->process_can_msg(data, &msg);
-        if (result) {
-            msgs->push_back(msg);
-        }
+        driverless_msgs::msg::Can msg = this->process_can_msg(data);
+        msgs->push_back(msg);
 
         // std::cout << "ID: " << std::hex << (long)msg.id << std::dec << ", DLC: " << (int)msg.dlc << ", DATA: [";
         // for (int j = 0; j < msg.dlc; j++) {
@@ -236,71 +172,45 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     return msgs;
 }
 
-bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) {
+driverless_msgs::msg::Can TritiumCAN::process_can_msg(uint8_t *data) {
+    driverless_msgs::msg::Can msg;
+
     // // std::cout << "CAN: ";
     // for (int i = 0; i < CAN_MSG_LEN; i++) {
-    // }
     //     std::cout << std::hex << (int)data[i] << " ";
+    // }
     // std::cout << std::dec << std::endl;
 
     uint32_t canID = 0;
     for (int i = 0; i < 4; i++) {
         canID |= ((uint32_t)data[0 + i]) << ((3 - i) * 8);
     }
-    msg->id = canID;
+    msg.id = canID;
 
     uint8_t flags = data[4];
     // bool tritiumHB = (flags & (1 << 7)) > 0;
     // bool settings = (flags & (1 << 6)) > 0;
     // bool rtr = (flags & (1 << 1)) > 0;
     bool extended = (flags & (1 << 0)) > 0;
-
-    if (extended) {
-        if (((canID & 0xE0000000) != 0)) {
-            // extended, so only lowest 29 bits should have values, top 3 bits should be 0
-            return false;
-        }
-    } else {
-        if (((canID & (~0x7FF)) != 0)) {
-            // standard, so only lowest 11 bits should have values, top 21 bits should be 0
-            return false;
-        }
-    }
-
-    msg->id_type = extended;
+    msg.id_type = extended;
 
     uint8_t DLC = data[5];
-
-    if (DLC > 8) {
-        // DLC cannot be greater than 8
-        return false;
-    }
-
-    msg->dlc = DLC;
-
-    if (DLC < 8) {
-        for (int i = DLC; i < 8; i++) {
-            if (data[6 + i] != 0) {
-                // all bytes after dlc amount should be 0
-                return false;
-            }
-        }
-    }
+    msg.dlc = DLC;
 
     std::vector<uint8_t> msgData;
     for (int i = 0; i < 8; i++) {
         msgData.push_back(data[6 + i]);
     }
-    msg->data = msgData;
+    msg.data = msgData;
 
-    std::cout << "ID: " << std::hex << msg->id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
-              << ", DLC: " << (int)msg->dlc << ", Data: [";
-    for (int i = 0; i < DLC; i++) {
-        std::cout << std::hex << (int)msg->data[i] << std::dec << ", ";
-    }
-    std::cout << "]" << std::endl;
+    // std::cout << "ID: " << std::hex << msg->id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
+    //           << ", DLC: " << (int)msg->dlc << ", Data: [";
+    // for (int i = 0; i < DLC; i++) {
+    //     std::cout << std::hex << (int)msg->data[i] << std::dec << ", ";
+    // }
+    // std::cout << "]" << std::endl;
 
-    return true;
+    return msg;
 }
 
 TritiumCAN::~TritiumCAN() {}
