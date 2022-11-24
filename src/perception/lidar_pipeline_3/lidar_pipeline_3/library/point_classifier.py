@@ -155,3 +155,13 @@ def label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane
             counter += 1
 
     return point_labels
+
+def map_segments_2(ground_plane):
+    non_zeros = np.nonzero(ground_plane)[0]
+
+    for i in range(len(ground_plane)):
+        distances = np.abs(non_zeros - i)
+        closest_idx = np.min(np.where(distances == np.min(distances)))
+        ground_plane[i] = ground_plane[closest_idx]
+
+    return ground_plane
