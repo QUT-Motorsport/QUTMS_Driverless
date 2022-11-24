@@ -21,6 +21,11 @@ T_D_GROUND = 0.15  # 0.15 # Maximum distance between point and line to be consid
 # changed from 0.1
 T_D_MAX = 100  # Maximum distance a point can be from the origin to even be considered as
 # a ground point. Otherwise it's labelled as a non-ground point.
+CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing ground plane mapping (0.0 - 1.0)
+
+# Derived Parameters
+SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
+BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 
 # Visualiser
 # Default Values
