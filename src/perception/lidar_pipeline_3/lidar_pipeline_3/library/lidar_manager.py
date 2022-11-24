@@ -40,8 +40,12 @@ def locate_cones(config, point_cloud):
     ground_plane = gpe.get_ground_plane_single_core(proto_segs_arr, proto_segs)
     config.logger.info(f"DONE: Ground Plane Mapped")
 
-    point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
+    # point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
     # point_labels = pc.label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, ground_plane)
+    # point_labels = pc.label_points_3(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
+    # point_labels = pc.label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, ground_plane)
+    # point_labels = pc.label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
+    point_labels = pc.label_points_6(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
     config.logger.info(f"DONE: Points Labelled")
 
     # Create visualisations
