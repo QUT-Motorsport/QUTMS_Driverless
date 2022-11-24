@@ -26,8 +26,8 @@ def group_points(object_points):
     return object_centers, objects
 
 
-def reconstruct_objects_2(point_cloud, segments, bins, object_centers, objects):
-    obj_norms = np.linalg.norm(object_centers, axis=1)
+def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_centers, objects):
+    obj_norms = np.linalg.norm(object_centers[:, :2], axis=1)
     obj_segs, obj_bins = pcp.get_discretised_positions(object_centers[:, 0], object_centers[:, 1], obj_norms)
 
     # Upside down floor devision
@@ -35,29 +35,34 @@ def reconstruct_objects_2(point_cloud, segments, bins, object_centers, objects):
     seg_widths = -((2 * (const.BIN_SIZE * obj_bins) * np.tan(const.DELTA_ALPHA / 2)) // -2)
     seg_search_half = np.floor_divide(const.CONE_DIAM, seg_widths)
 
+    # do i even car about all the points in a recon object? wouldnt i just want the cetner, and num points?
     reconstructed_objs = []
+    reconstructed_centers = np.empty((object_centers.shape[0], 3))
     for i in range(object_centers.shape[0]):
+        matching_points = objects[i]
+
         curr_seg = obj_segs[i]
         curr_bin = obj_bins[i]
 
-        segments_ind = (curr_seg - seg_search_half[i] <= segments) * (segments <= curr_seg + seg_search_half[i])
-        bins_ind = (curr_bin - bin_search_half <= bins) * (bins <= curr_bin + bin_search_half)
-        search_points = point_cloud[segments_ind * bins_ind]
-
-        distances = np.linalg.norm(
-            np.column_stack((search_points["x"], search_points["y"])) - object_centers[i], axis=1
+        segments_ind = (curr_seg - seg_search_half[i] <= ground_segments) * (
+            ground_segments <= curr_seg + seg_search_half[i]
         )
-        matching_points = search_points[distances <= const.CONE_DIAM / 2]
-        matching_points = np.vstack((matching_points, objects[i]))
+        bins_ind = (curr_bin - bin_search_half <= ground_bins) * (ground_bins <= curr_bin + bin_search_half)
+        search_points = ground_points[segments_ind * bins_ind]
 
-        zeros = np.zeros((objects[i].shape[0], 1))
-        test = np.hstack([objects[i], zeros])
-        obj = np.vstack([xyz[norms <= CONE_DIAM / 2], test])
-        unq_obj = np.unique(obj, axis=0)
+        if search_points.size > 0:
+            distances = np.linalg.norm(
+                np.column_stack((search_points["x"], search_points["y"])) - object_centers[i, :2], axis=1
+            )
+            in_range_points = search_points[distances <= const.CONE_DIAM / 2]
+            matching_points = np.vstack(
+                (matching_points, np.column_stack((in_range_points["x"], in_range_points["y"], in_range_points["z"])))
+            )
 
+        reconstructed_centers[i] = np.mean(matching_points, axis=0)
         reconstructed_objs.append(matching_points)  # add error margin?
 
-    return reconstructed_objs
+    return obj_segs, obj_bins, reconstructed_objs, reconstructed_centers
 
 
 def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_DIAM, BIN_SIZE):
