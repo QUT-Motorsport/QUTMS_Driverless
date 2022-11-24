@@ -1,3 +1,4 @@
+from enum import Enum
 import math
 import pathlib
 
@@ -50,3 +51,41 @@ blue_hex = "#636EFA"
 # Colour Sets
 colours_01 = [mint_hex, yellow_hex, red_hex, blue_hex]
 colours_01 = [blue_hex, yellow_hex, red_hex]
+
+# Visualiser 2
+def hex_to_rgb(hex):
+    return tuple(int(hex.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))
+
+
+def normalise_rgb(rgb):
+    return tuple([c / 255 for c in rgb] + [1])
+
+
+class Colour(Enum):
+    MS_ORANGE = "#EE7623"
+    MS_BLUE = "#0F406A"
+    WHITE = "#FFFFFF"
+    DARK_GREY = "#1F2630"
+    LIGHT_GREY = "#252E3F"
+    GREY = "#555555"
+    MINT = "#30FDC3"
+    BLUE = "#9CDCFE"
+    GREEN = "#23CE6B"
+    RED = "#B9314F"
+
+
+# DBD053, FFE548, FFFD77
+# 28AFB0, 43BCCD
+
+
+class RGBA(Enum):
+    MS_ORANGE = normalise_rgb(hex_to_rgb(Colour.MS_ORANGE.value))
+    MS_BLUE = normalise_rgb(hex_to_rgb(Colour.MS_BLUE.value))
+    WHITE = normalise_rgb(hex_to_rgb(Colour.WHITE.value))
+    DARK_GREY = normalise_rgb(hex_to_rgb(Colour.DARK_GREY.value))
+    LIGHT_GREY = normalise_rgb(hex_to_rgb(Colour.LIGHT_GREY.value))
+    GREY = normalise_rgb(hex_to_rgb(Colour.GREY.value))
+    MINT = normalise_rgb(hex_to_rgb(Colour.MINT.value))
+    BLUE = normalise_rgb(hex_to_rgb(Colour.BLUE.value))
+    GREEN = normalise_rgb(hex_to_rgb(Colour.GREEN.value))
+    RED = normalise_rgb(hex_to_rgb(Colour.RED.value))
