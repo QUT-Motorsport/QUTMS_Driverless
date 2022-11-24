@@ -310,3 +310,29 @@ def label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, groun
 
     point_labels = np.abs(point_line_dists) <= const.T_D_GROUND
     return point_labels
+
+
+def label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane):
+    ground_plane = map_segments_3(ground_plane)
+
+    # Get indices where sorted segments differ
+    seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
+
+    ground_lines_arr = np.empty((point_cloud.shape[0], 2))
+    for idx, segment_idx in enumerate(segments_sorted[seg_sorted_ind]):
+        ground_set = ground_plane[idx]
+        ground_lines_arr[(segments == segment_idx).nonzero()[0], :] = np.array([ground_set[0][0], ground_set[0][1]])
+        # For each line in segment
+        for ground_line in ground_set:
+            curr_bin = ground_line[4]
+            line_ind = ((segments == segment_idx) & (bins >= curr_bin)).nonzero()[0]
+            ground_lines_arr[line_ind, :] = np.array([ground_line[0], ground_line[1]])
+
+    discretised_ground_heights = ((const.BIN_SIZE * bins[seg_bin_z_ind]) * ground_lines_arr[:, 0]) + ground_lines_arr[
+        :, 1
+    ]
+    point_line_dists = point_cloud["z"][seg_bin_z_ind] - discretised_ground_heights  # should there be an abs() here?
+
+    point_labels = point_line_dists > const.T_D_GROUND  # if close enough, or simply lower than line
+    return point_labels
+
