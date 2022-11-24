@@ -9,7 +9,7 @@ FIGURES_DIR: str = "/figures"
 VIDEOS_DIR: str = "videos"
 
 # Algorithm Parameters
-LIDAR_RANGE = 22.5  # Max range of points to process (metres)
+LIDAR_RANGE = 25  # Max range of points to process (metres)
 DELTA_ALPHA = (2 * math.pi) / 128  # Delta angle of segments
 BIN_SIZE = 0.14  # Size of bins
 T_M = 2 * math.pi / 148  # (2 * math.pi) / (152*2)           # Max angle that will be considered for ground lines
