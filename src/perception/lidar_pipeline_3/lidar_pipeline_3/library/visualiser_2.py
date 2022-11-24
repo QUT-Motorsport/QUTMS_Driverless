@@ -78,3 +78,19 @@ def init_plot_3D(title, xlabel, ylabel, zlabel):
     return fig, ax
 
 
+def add_logo(fig, dpi, small):
+    if small:
+        logo_size = 0.1
+    else:
+        logo_size = 0.125
+
+    # Add Logo
+    im = Image.open(const.WORKING_DIR + "/library/resources/qutms_logo_white.png")
+    im_width, im_height = im.size
+
+    fig_width, fig_height = fig.get_size_inches() * 225  # fig.dpi
+    new_height = int(fig_height * logo_size)
+    im = im.resize((int(new_height * (im_width / im_height)), new_height))
+    fig.figimage(im, 10, 10, alpha=0.75, origin="upper", zorder=3)
+
+
