@@ -337,13 +337,13 @@ def label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane):
     return point_labels
 
 
-def label_points_6(point_cloud, segments, bins, seg_bin_z_ind, ground_plane):
+def label_points_6(point_heights, segments, bins, seg_bin_z_ind, ground_plane):
     ground_plane = map_segments_3(ground_plane)
 
     # Get indices where sorted segments differ
     seg_sorted_ind, segments_sorted = sort_segments(segments, seg_bin_z_ind)
 
-    ground_lines_arr = np.empty((point_cloud.shape[0], 2))
+    ground_lines_arr = np.empty((point_heights.shape[0], 2))
     for segment_idx in segments_sorted[seg_sorted_ind]:
         ground_set = ground_plane[segment_idx]
         seg_eq_idx = segments == segment_idx
@@ -356,11 +356,11 @@ def label_points_6(point_cloud, segments, bins, seg_bin_z_ind, ground_plane):
 
     discretised_ground_heights = ((const.BIN_SIZE * bins) * ground_lines_arr[:, 0]) + ground_lines_arr[:, 1]
     point_line_dists = (
-        point_cloud["z"] - discretised_ground_heights
+        point_heights - discretised_ground_heights
     )  # should there be an abs() here? no, read comment below
 
     point_labels = point_line_dists > const.T_D_GROUND  # if close enough, or simply lower than line
-    return point_labels
+    return point_labels, ground_lines_arr
 
 
 # Note: using CUDA, you could run the matrix multiplication on GPU

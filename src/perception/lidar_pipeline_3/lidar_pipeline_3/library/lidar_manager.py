@@ -46,7 +46,7 @@ def locate_cones(config, point_cloud):
     # point_labels = pc.label_points_3(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
     # point_labels = pc.label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, ground_plane)
     # point_labels = pc.label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
-    point_labels = pc.label_points_6(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
+    point_labels, ground_lines_arr = pc.label_points_6(point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane)
     config.logger.info(f"DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
