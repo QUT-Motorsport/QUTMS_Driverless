@@ -94,3 +94,13 @@ def add_logo(fig, dpi, small):
     fig.figimage(im, 10, 10, alpha=0.75, origin="upper", zorder=3)
 
 
+def calibrate_axis(ax, x=None, y=None, z=None):
+    if x is not None:
+        max_limit = max(np.abs([np.min(x), np.max(x), np.min(y), np.max(y), np.min(z), np.max(z)]))
+        ax.axes.set_zlim(-max_limit, max_limit)
+    else:
+        max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+
+
