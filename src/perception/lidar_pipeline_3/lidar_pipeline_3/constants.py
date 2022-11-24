@@ -22,7 +22,9 @@ T_D_GROUND = 0.125  # 0.15 # Maximum distance between point and line to be consi
 T_D_MAX = 100  # Maximum distance a point can be from the origin to even be considered as
 # a ground point. Otherwise it's labelled as a non-ground point.
 CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing ground plane mapping (0.0 - 1.0)
-CONE_DIAM = 0.4
+CONE_DIAM = 0.15
+CONE_WIDTH = 0.075
+CONE_HEIGHT = 0.30
 
 # Derived Parameters
 SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
