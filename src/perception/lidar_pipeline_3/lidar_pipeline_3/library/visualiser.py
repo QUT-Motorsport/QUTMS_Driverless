@@ -438,7 +438,7 @@ def plot_labelled_points_3D(config, point_cloud, point_labels, ground_plane, nam
 
 def plot_object_points_2D(config, object_points, name):
     fig, ax = init_plot_2D("Object Points", "X", "Y")
-    plot = ax.scatter(object_points["x"], object_points["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+    plot = ax.scatter(object_points[:, 0], object_points[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])
@@ -450,7 +450,7 @@ def plot_object_points_2D(config, object_points, name):
 
 def plot_object_centers_2D(config, object_points, object_centers, name):
     fig, ax = init_plot_2D("Object Centers", "X", "Y")
-    plot = ax.scatter(object_points["x"], object_points["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+    plot = ax.scatter(object_points[:, 0], object_points[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
     plot = ax.scatter(object_centers[:, 0], object_centers[:, 1], c=const.mint_hex, marker="x")
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
@@ -466,8 +466,32 @@ def plot_reconstructed_objects_2D(config, reconstructed_objects, name):
 
     for reconstructed_object in reconstructed_objects:
         plot = ax.scatter(
-            reconstructed_object["x"], reconstructed_object["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2
+            reconstructed_object[:, 0], reconstructed_object[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2
         )
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_cones_2D(config, point_cloud, identified_cones, name):
+    fig, ax = init_plot_2D("Identified Cones", "X", "Y")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_cloud["intensity"] / 255,
+        cmap=plt.cm.gist_rainbow,
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        vmin=0.0,
+        vmax=1.0,
+    )
+
+    for cone in identified_cones:
+        plot = ax.scatter(cone[0], cone[1], c=const.mint_hex, marker=".")
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])

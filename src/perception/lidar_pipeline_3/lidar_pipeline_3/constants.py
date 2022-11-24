@@ -26,9 +26,13 @@ CONE_DIAM = 0.15
 CONE_WIDTH = 0.075
 CONE_HEIGHT = 0.30
 
+HACH_LOWER_ERR = 0.3
+HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
+
 # Derived Parameters
 SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
 BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
+HALF_AREA_CONE_HEIGHT = CONE_HEIGHT * (2 - math.sqrt(2)) / 2  # 0.08787
 
 # Visualiser
 # Default Values

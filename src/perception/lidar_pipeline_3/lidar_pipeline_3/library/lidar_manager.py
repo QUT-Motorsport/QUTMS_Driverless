@@ -93,10 +93,10 @@ def locate_cones(config, point_cloud):
         # vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
         # vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
         # vis.plot_labelled_points_3D(
-        #    config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
+        #   config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
         # )
-        vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
-        vis.plot_object_centers_2D(config, object_points, object_centers, "14_Objects_2D")
+        # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
+        # vis.plot_object_centers_2D(config, object_points, object_centers, "14_Objects_2D")
         # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, "14_Reconstructed_Objects")
 
         if config.show_figures:
