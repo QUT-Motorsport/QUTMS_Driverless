@@ -355,6 +355,7 @@ def plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, name)
     if config.animate_figures:
         animate_figure(f"05_{name}_Animated", ax, config.image_dir)
 
+
 def plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, name):
     fig, ax = init_plot_2D("Labelled Points", "X", "Y")
     plot = ax.scatter(

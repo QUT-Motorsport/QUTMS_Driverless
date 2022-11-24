@@ -6,9 +6,11 @@ import numpy as np
 from .. import constants as const
 from .cy_library import total_least_squares as tls
 
+
 # Returns bin idx of a point from its norm
 def get_bin(norm, BIN_SIZE):
     return math.floor(norm / BIN_SIZE)
+
 
 # Returns the RMSE of a line fit to a set of points
 def fit_error(m, b, points):

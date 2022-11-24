@@ -156,6 +156,7 @@ def label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane
 
     return point_labels
 
+
 def map_segments_2(ground_plane):
     non_zeros = np.nonzero(ground_plane)[0]
 
