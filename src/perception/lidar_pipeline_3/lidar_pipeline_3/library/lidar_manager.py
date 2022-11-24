@@ -68,6 +68,17 @@ def locate_cones(config, point_cloud):
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
 
+    cones = op.cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_centers)
+    # cones = cones.tolist()
+    # for cone in cones:
+    #     print(cone)
+    # print(const.HALF_AREA_CONE_HEIGHT)
+
+    # Investigate turning structured arrays into normal arrays for better indexing and avoiding column stack
+    # actually i think this is fine ^ go back to structured to retain intensity
+    # Tune group points, 2 min is great for range, but probs noisy, also slower
+    # and now that we have ros bags that are more accurate for track, maybe increase epsilon
+    # to known min distance between cones
 
     # Create visualisations
     if config.create_figures:

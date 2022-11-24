@@ -92,3 +92,44 @@ def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_
         reconstructed_objects.append(unq_obj)
 
     return reconstructed_objects
+
+
+# get height of object
+# get ground line
+# check height above ground line
+# Since every single object will exists where points did,
+# we have already know the ground line for the segment and bin
+# of the object center. I doubt it's possible for an object center
+# to be in a segment or bin where no points were due to the small
+# epsilon in DBSCAN. If you introduce the noise cluster back, you will though
+def cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_centers):
+    seg_bin_ind = (obj_segs == segments) * (obj_bins == bins)
+
+    discretised_ground_heights = (
+        (const.BIN_SIZE * bins[seg_bin_ind]) * ground_lines_arr[seg_bin_ind, 0]
+    ) + ground_lines_arr[seg_bin_ind, 1]
+    object_line_dists = np.abs(object_centers[:, 2] - discretised_ground_heights)
+
+    # Upper bound cone height, lower bound take err margin
+    matching_ind = (const.HALF_AREA_CONE_HEIGHT - const.HACH_LOWER_ERR <= object_line_dists) * (
+        object_line_dists <= const.HALF_AREA_CONE_HEIGHT + const.HACH_UPPER_ERR
+    )
+
+    # for rec in reconstructed_centers[matching_ind]:
+    #    print(rec, )
+
+    return object_centers[matching_ind]
+
+
+# if average is straight up higher than a cone, ignore it
+
+# if distance between height of rec and ground is more than what you would expect the average height of points on a cone to be, filter out
+# do like segments * bins and match for object centers
+
+# If you do some integration on a triangle, you can find the height at which
+# you expect 50% of the area to be, i.e., since more lidar points will hit the bottom of
+# a triangle compared to the top, the average height of points will be lower than half
+# the height of the triangle
+# This is formula for the height of a triangle for 50% of its area
+# h2 = h1 * (2 - sqtr(2)) / 2
+# where h1 is the height of the triangle
