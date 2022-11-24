@@ -8,9 +8,12 @@ from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.draw import coord_to_img_pt
 
 from typing import List, Optional, Tuple
 
+import cv2
+from sensor_msgs.msg import Image
 from colour import Color
 from cv_bridge import CvBridge
 from visualization_msgs.msg import Marker, MarkerArray
@@ -31,8 +34,8 @@ ORIGIN = Point(0, 0)
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
-left_mid_col = Color("aqua")
-right_mid_col = Color("orange")
+left_mid_col = (245,215,66)
+right_mid_col = (66,194,245)
 
 
 class VectorReactiveController(Node):
@@ -58,8 +61,8 @@ class VectorReactiveController(Node):
             self.vel_min = self.vel_max / 2  # m/s
             self.throttle_max = 0.2
 
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+        #self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
@@ -96,7 +99,7 @@ class VectorReactiveController(Node):
         debug_img = draw_markers(cones)
 
         # find points from left side
-        midpoints = List[Point]
+        midpoints: List[Point] = []
 
         if len(left_cones) > 0:
             closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
@@ -104,20 +107,18 @@ class VectorReactiveController(Node):
             for i in range(0, len(closest_left)-1):
                 p1 = cone_to_point(closest_left[i])
                 p2 = cone_to_point(closest_left[i+1])
-
-                0.5 * (p1+p2)
                 diff = p2-p1
                 R = (diff / (dist(ORIGIN, diff))) * self.in_dist
                 temp = R
                 temp.x = R.y
                 temp.y = -R.x
                 
-                midPoint = (0.5 * (p1+p2)) + temp 
+                midPoint = ((p1+p2) / 2.0) + temp 
                 midpoints.append(midPoint)
 
                 cv2.drawMarker(
                     debug_img, 
-                    coord_to_img_pt(midPoint.x, midPoint.y), 
+                    coord_to_img_pt(midPoint.x, midPoint.y).to_tuple(), 
                     left_mid_col, 
                     markerType=cv2.MARKER_TRIANGLE_UP, 
                     markerSize=5, 
@@ -131,19 +132,18 @@ class VectorReactiveController(Node):
                 p1 = cone_to_point(closest_right[i])
                 p2 = cone_to_point(closest_right[i+1])
 
-                0.5 * (p1+p2)
                 diff = p2-p1
                 R = (diff / (dist(ORIGIN, diff))) * self.in_dist
                 temp = R
                 temp.x = -R.y
                 temp.y = R.x
                 
-                midPoint = (0.5 * (p1+p2)) + temp 
+                midPoint = ((p1+p2) / 2.0) + temp 
                 midpoints.append(midPoint)
 
                 cv2.drawMarker(
                     debug_img, 
-                    coord_to_img_pt(midPoint.x, midPoint.y), 
+                    coord_to_img_pt(midPoint.x, midPoint.y).to_tuple(), 
                     right_mid_col, 
                     markerType=cv2.MARKER_TRIANGLE_UP, 
                     markerSize=5, 
@@ -155,7 +155,7 @@ class VectorReactiveController(Node):
         target: Optional[Point] = None
 
         # if we found midpoints
-        if len(midpoints) > 0
+        if len(midpoints) > 0:
             midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
 
             target = ORIGIN
@@ -163,12 +163,13 @@ class VectorReactiveController(Node):
 
             # find all points closer than 5m and average and send it there
             for p in midpoints:
-                if dist(ORIGIN, p) < mid_dist:
+                if dist(ORIGIN, p) < self.mid_dist:
                     target = target + p
                     numMid = numMid + 1
 
-            # average points
-            target = target / numMid
+            if numMid > 0:
+                # average points
+                target = target / numMid
 
             self.get_logger().debug(f"Target: {target}")
 
@@ -183,7 +184,7 @@ class VectorReactiveController(Node):
             cv2.drawMarker(
                 debug_img, 
                 coord_to_img_pt(target.x, target.y), 
-                Color('green'), 
+                (0,255,0), 
                 markerType=cv2.MARKER_TRIANGLE_UP, 
                 markerSize=5, 
                 thickness=2
@@ -198,11 +199,11 @@ class VectorReactiveController(Node):
             control_msg.acceleration = self.throttle_max
 
         self.control_publisher.publish(control_msg)
-        self.vector_publisher.publisher(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+        self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ReactiveController()
+    node = VectorReactiveController()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
