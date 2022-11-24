@@ -11,6 +11,18 @@ from driverless_common.point import Point, cone_to_point, dist
 
 from typing import List, Optional, Tuple
 
+from colour import Color
+from cv_bridge import CvBridge
+from visualization_msgs.msg import Marker, MarkerArray
+from driverless_common.draw import draw_map, draw_markers, draw_steering
+from driverless_common.marker import marker_array_from_cone_detection, marker_array_from_map, path_marker_msg
+
+cv_bridge = CvBridge()  # translate ROS image messages to OpenCV
+
+red = Color("red")
+blue = Color("blue")
+col_range = list(blue.range_to(red, 100))
+
 Colour = Tuple[int, int, int]
 
 
@@ -18,6 +30,9 @@ ORIGIN = Point(0, 0)
 
 LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
+
+left_mid_col = Color("aqua")
+right_mid_col = Color("orange")
 
 
 class VectorReactiveController(Node):
@@ -50,6 +65,9 @@ class VectorReactiveController(Node):
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
 
+        self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
+
+
         self.get_logger().info("---Reactive Controller Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
@@ -75,26 +93,36 @@ class VectorReactiveController(Node):
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
 
+        debug_img = draw_markers(cones)
+
         # find points from left side
         midpoints = List[Point]
 
         if len(left_cones) > 0:
             closest_left = sorted(left_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
+           
+            for i in range(0, len(closest_left)-1):
+                p1 = cone_to_point(closest_left[i])
+                p2 = cone_to_point(closest_left[i+1])
 
-            if len(closest_left) > 2:                
-                for i in range(0, len(closest_left)-1):
-                    p1 = cone_to_point(closest_left[i])
-                    p2 = cone_to_point(closest_left[i+1])
+                0.5 * (p1+p2)
+                diff = p2-p1
+                R = (diff / (dist(ORIGIN, diff))) * self.in_dist
+                temp = R
+                temp.x = R.y
+                temp.y = -R.x
+                
+                midPoint = (0.5 * (p1+p2)) + temp 
+                midpoints.append(midPoint)
 
-                    0.5 * (p1+p2)
-                    diff = p2-p1
-                    R = (diff / (dist(ORIGIN, diff))) * self.in_dist
-                    temp = R
-                    temp.x = R.y
-                    temp.y = -R.x
-                    
-                    midPoint = (0.5 * (p1+p2)) + temp 
-                    midpoints.append(midPoint)
+                cv2.drawMarker(
+                    debug_img, 
+                    coord_to_img_pt(midPoint.x, midPoint.y), 
+                    left_mid_col, 
+                    markerType=cv2.MARKER_TRIANGLE_UP, 
+                    markerSize=5, 
+                    thickness=5
+                )
 
         if len(right_cones) > 0:
             closest_right = sorted(right_cones, key=lambda c: dist(ORIGIN, cone_to_point(c)))
@@ -112,6 +140,15 @@ class VectorReactiveController(Node):
                 
                 midPoint = (0.5 * (p1+p2)) + temp 
                 midpoints.append(midPoint)
+
+                cv2.drawMarker(
+                    debug_img, 
+                    coord_to_img_pt(midPoint.x, midPoint.y), 
+                    right_mid_col, 
+                    markerType=cv2.MARKER_TRIANGLE_UP, 
+                    markerSize=5, 
+                    thickness=2
+                )
 
         self.get_logger().debug(f"Midpoints: {midpoints}")
 
@@ -143,12 +180,25 @@ class VectorReactiveController(Node):
             steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")
 
+            cv2.drawMarker(
+                debug_img, 
+                coord_to_img_pt(target.x, target.y), 
+                Color('green'), 
+                markerType=cv2.MARKER_TRIANGLE_UP, 
+                markerSize=5, 
+                thickness=2
+            )
+
+            debug_img = draw_steering(
+                debug_img, steering_angle, 0
+            )  # draw steering angle and vel data on image
+
             # publish message
             control_msg.steering_angle = steering_angle
             control_msg.acceleration = self.throttle_max
 
         self.control_publisher.publish(control_msg)
-
+        self.vector_publisher.publisher(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 def main(args=None):
     rclpy.init(args=args)
