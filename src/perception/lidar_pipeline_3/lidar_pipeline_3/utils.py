@@ -170,6 +170,57 @@ class Config:
         self._export_data = value
 
     @property
+    def process_all(self) -> bool:
+        """
+        If False, skip point clouds when algorithm begins to fall
+        behind real-time data stream to catch up.
+
+        Setting this to True can help with debugging repeatable
+        and predictable data (ROS bags).
+
+        Returns:
+            bool: Process all point clouds from ROS subscription
+        """
+        return self._process_all
+
+    @process_all.setter
+    def process_all(self, value) -> None:
+        self._process_all = value
+        if self.process_all:
+            self._pcl_memory = 72000  # 1 hour of data at 20Hz
+        else:
+            self._pcl_memory = 1
+
+    @property
+    def video_from_session(self) -> bool:
+        """
+        Returns:
+            bool: Stitch created figures from a particular session into video(s)
+        """
+        return self._video_from_session
+
+    @video_from_session.setter
+    def video_from_session(self, value) -> None:
+        self._video_from_session = value
+
+        remove_dir(self.runtime_dir)
+
+        self._runtime_dir: str = f"{const.OUTPUT_DIR}/{self.video_from_session}_{const.VIDEOS_DIR}"
+        self._figures_dir: str = self.runtime_dir + "/" + const.VIDEOS_DIR
+
+        self.setup_runtime_dir()
+        create_dir(self.runtime_dir + "/" + const.VIDEOS_DIR)
+        self.setup_logging()
+
+    @property
+    def pcl_memory(self) -> int:
+        """
+        Returns:
+            int: Number of ROS point clouds to store in memory
+        """
+        return self._pcl_memory
+
+    @property
     def data_path(self) -> str:
         """
         Returns:
@@ -258,7 +309,7 @@ class Config:
     def setup_logging(self):
         """Initialise logging parameters and log format"""
         logging.basicConfig(
-            filename=f"{self.runtime_dir}/logfile_{self.datestamp}.log",
+            filename=f"{self.runtime_dir}/{self.datestamp}_logfile.log",
             filemode="w",
             format="%(asctime)s.%(msecs)03d | %(levelname)s | %(filename)s %(lineno)s: %(message)s",
             datefmt="%H:%M:%S",
