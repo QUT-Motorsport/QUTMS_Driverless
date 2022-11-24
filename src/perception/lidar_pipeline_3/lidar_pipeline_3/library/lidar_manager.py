@@ -33,7 +33,7 @@ def locate_cones(config, point_cloud):
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
     config.logger.info(f"DONE: Segments and Bins")
 
-    proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(segments, bins, point_norms, point_cloud["z"])
+    proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(point_cloud["z"], segments, bins, point_norms)
     config.logger.info(f"DONE: Prototype Points")
 
     # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]

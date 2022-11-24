@@ -17,7 +17,7 @@ def get_discretised_positions(x, y, point_norms):
 
 # In LPP 2, np.absolute(z) is used. I'm not sure why this was the case.
 # If a point is negative, i.e., low, that's still valid.
-def get_prototype_points(segments, bins, point_norms, z):
+def get_prototype_points(z, segments, bins, point_norms):
     # Indicies sorted by segments, then bins, then z (height)
     seg_bin_z_ind = np.lexsort((z, bins, segments))
 
