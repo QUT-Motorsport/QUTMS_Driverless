@@ -15,7 +15,7 @@ def group_points(object_points):
     labels = clustering.labels_
 
     # All object ids
-    unq_labels = np.unique(labels)
+    unq_labels = np.unique(labels)[1:]  # Noise cluster -1 (np.unique sorts)
 
     objects = np.empty(unq_labels.size, dtype=object)
     object_centers = np.empty((unq_labels.size, 3))
