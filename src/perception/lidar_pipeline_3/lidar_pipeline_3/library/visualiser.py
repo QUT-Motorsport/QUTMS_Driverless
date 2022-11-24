@@ -460,3 +460,18 @@ def plot_object_centers_2D(config, object_points, object_centers, name):
     # Save Figure
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
+
+def plot_reconstructed_objects_2D(config, reconstructed_objects, name):
+    fig, ax = init_plot_2D("Reconstructed Objects", "X", "Y")
+
+    for reconstructed_object in reconstructed_objects:
+        plot = ax.scatter(
+            reconstructed_object["x"], reconstructed_object["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2
+        )
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
