@@ -127,3 +127,28 @@ def plot_cones_2D(config, point_cloud, point_labels, cones, name):
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
+def plot_cones_3D(config, point_cloud, point_labels, cones, name):
+    # Create Figure
+    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+    )
+
+    ax.scatter(cones[:, 0], cones[:, 1], cones[:, 2], c=RGBA.WHITE.value, marker="o")
+
+    calibrate_axis(ax, point_cloud["x"], point_cloud["y"], point_cloud["z"])
+
+    # Save Figure
+    add_logo(fig, dpi=225, small=False)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
