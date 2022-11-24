@@ -1,4 +1,3 @@
-from enum import Enum
 import math
 import pathlib
 
@@ -6,6 +5,7 @@ import pathlib
 WORKING_DIR: str = str(pathlib.Path(__file__).parent.resolve())
 OUTPUT_DIR: str = WORKING_DIR + "/output"
 FIGURES_DIR: str = "/figures"
+VIDEOS_DIR: str = "videos"
 
 # Algorithm Parameters
 LIDAR_RANGE = 22.5  # Max range of points to process (metres)
