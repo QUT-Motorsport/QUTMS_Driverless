@@ -52,6 +52,13 @@ def locate_cones(config, point_cloud):
     object_points = point_cloud[point_labels]
     config.logger.info("DONE: Object Points Grouped")
 
+    if object_points.size == 0:
+        config.logger.info("No objects points detected")
+        return None
+
+    object_centers, objects = op.group_points(object_points)  # maybe improve speed?
+    config.logger.info(f"DONE: Objects Identified")
+
     # Create visualisations
     if config.create_figures:
         # vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
