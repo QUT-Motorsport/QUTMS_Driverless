@@ -30,6 +30,9 @@ def locate_cones(config, point_cloud):
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
     config.logger.info(f"DONE: Segments and Bins")
 
+    proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(segments, bins, point_norms, point_cloud["z"])
+    config.logger.info(f"DONE: Prototype Points")
+
     # Create visualisations
     if config.create_figures:
         vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
