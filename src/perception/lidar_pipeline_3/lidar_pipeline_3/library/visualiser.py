@@ -434,3 +434,29 @@ def plot_labelled_points_3D(config, point_cloud, point_labels, ground_plane, nam
     # Create Animation
     if config.animate_figures:
         animate_figure(f"06_{name}_Animated", ax, config.image_dir)
+
+
+def plot_object_points_2D(config, object_points, name):
+    fig, ax = init_plot_2D("Object Points", "X", "Y")
+    plot = ax.scatter(object_points["x"], object_points["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_object_centers_2D(config, object_points, object_centers, name):
+    fig, ax = init_plot_2D("Object Centers", "X", "Y")
+    plot = ax.scatter(object_points["x"], object_points["y"], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+    plot = ax.scatter(object_centers[:, 0], object_centers[:, 1], c=const.mint_hex, marker="x")
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
