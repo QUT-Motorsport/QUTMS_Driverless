@@ -1,9 +1,19 @@
+import math
+
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 import numpy as np
 
 from .. import constants as const
 from .. import utils
+
+
+def get_segment_count(segments):
+    return abs(segments.min()) + segments.max() + 1
+
+
+def get_bin_count(bins):
+    return bins.max()
 
 
 def init_plot_2D(
@@ -36,6 +46,54 @@ def init_plot_2D(
     ax.set_aspect("equal")
 
     return fig, ax
+
+
+def init_plot_3D(
+    title,
+    xlabel,
+    ylabel,
+    zlabel,
+    background_c=const.light_grey,
+    title_c=const.blue,
+    face_c=const.light_grey,
+    axis_c=const.dark_grey,
+    label_c=const.blue,
+    tick_c=const.mint,
+):
+
+    # Initialise figure
+    fig = plt.figure(facecolor=background_c)
+    ax = fig.add_subplot(projection="3d")
+
+    # Strings
+    ax.set_title(title, color=title_c)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+
+    # Colours
+    ax.set_facecolor(face_c)
+    ax.w_xaxis.set_pane_color(axis_c)
+    ax.w_yaxis.set_pane_color(axis_c)
+    ax.w_zaxis.set_pane_color(axis_c)
+    ax.xaxis.label.set_color(label_c)
+    ax.yaxis.label.set_color(label_c)
+    ax.zaxis.label.set_color(label_c)
+    ax.tick_params(axis="x", colors=tick_c)
+    ax.tick_params(axis="y", colors=tick_c)
+    ax.tick_params(axis="z", colors=tick_c)
+
+    # Equal axis
+    ax.set_aspect("equal")
+
+    # Set view anlge
+    ax.view_init(elev=34, azim=202)
+
+    return fig, ax
+
+
+def animate_figure():
+    raise NotImplementedError
 
 
 def add_colourbar(fig, plot, title, title_c, tick_c):
