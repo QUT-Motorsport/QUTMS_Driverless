@@ -104,3 +104,26 @@ def calibrate_axis(ax, x=None, y=None, z=None):
     ax.axes.set_ylim(-max_limit, max_limit)
 
 
+def plot_cones_2D(config, point_cloud, point_labels, cones, name):
+    fig, ax = init_plot_2D("Cone Locations Identified", "X", "Y")
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        vmin=0.0,
+        vmax=1.0,
+    )
+
+    for cone in cones:
+        ax.scatter(cone[0], cone[1], c=RGBA.WHITE.value, marker=".")
+
+    calibrate_axis(ax)
+
+    # Save Figure
+    add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
