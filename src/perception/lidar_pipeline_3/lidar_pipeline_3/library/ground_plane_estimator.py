@@ -25,6 +25,8 @@ def fit_error(m, b, points):
     # root mean square return
     return math.sqrt(sse / num_points)
 
+
+# start and end points are used in visualisation
 # The Incremental Algorithm
 def get_ground_lines(proto_seg_points):
     estimated_lines = []
@@ -92,14 +94,15 @@ def get_ground_lines(proto_seg_points):
 
 # Multiprocessing version of get_ground_plane_single_core
 def get_ground_plane_mp(config, proto_segs_arr, proto_segs):
+    # YOU CAN MAKE EACH CORE DO THIS TOLIST STEP FOR BETTER PERFORMANCE
     batches = [proto_segs_arr[proto_seg_ind].tolist() for proto_seg_ind in range(len(proto_segs_arr))]
 
     core_count = math.floor(mp.cpu_count() * const.CPU_UTILISATION)
-    pool = mp.Pool(core_count)
+    pool = mp.Pool(core_count)  # hefty ovewrhead
 
     config.logger.info(f"Mapping Ground Plane using {core_count} / {mp.cpu_count()} cores...")
     line_batches = pool.starmap(get_ground_lines, [[batch] for batch in batches])
-    pool.close()
+    pool.close()  # hefty overhead, is there a way to not keep opening and closing the pool? onetime set up?
     pool.join()
 
     ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)
@@ -111,7 +114,8 @@ def get_ground_plane_mp(config, proto_segs_arr, proto_segs):
 
 def get_ground_plane_single_core(proto_segs_arr, proto_segs):
     # Computing the ground plane
-    ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)
+    ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)  # should it be vector of dtype, or matrix of nums?
+
     for segment_counter in range(len(proto_segs_arr)):
         proto_seg_points = proto_segs_arr[segment_counter].tolist()
         ground_plane[proto_segs[segment_counter]] = get_ground_lines(proto_seg_points)

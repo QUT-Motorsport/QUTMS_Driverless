@@ -36,7 +36,8 @@ def locate_cones(config, point_cloud):
     config.logger.info(f"DONE: Prototype Points")
 
     # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
-    ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
+    # ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
+    ground_plane = gpe.get_ground_plane_single_core(proto_segs_arr, proto_segs)
     config.logger.info(f"DONE: Ground Plane Mapped")
 
     point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
