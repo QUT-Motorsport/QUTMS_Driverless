@@ -60,10 +60,14 @@ def locate_cones(config, point_cloud):
     object_centers, objects = op.group_points(object_points)  # maybe improve speed?
     config.logger.info(f"DONE: Objects Identified")
 
-    # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
-    reconstructed_objects = op.reconstruct_objects_2(point_cloud, segments, bins, object_centers, objects)
+    # print(object_centers.shape[0])
 
-    # Investigate turning structured arrays into normal arrays for better indexing and avoiding column stack
+    ground_points = point_cloud[~point_labels]
+    # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
+    obj_segs, obj_bins, reconstructed_objects, reconstructed_centers = op.reconstruct_objects_2(
+        ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
+    )
+
 
     # Create visualisations
     if config.create_figures:
