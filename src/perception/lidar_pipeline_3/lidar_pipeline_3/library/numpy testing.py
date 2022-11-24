@@ -1,32 +1,24 @@
 import numpy as np
 
-test = np.array([0, 1, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 4, 5, 6, 0, 0, 0])
-print("array", test)
+import visualiser_2 as vis2
 
-non_zeros = np.flatnonzero(test)
-print("non zeros", non_zeros)
+x = np.array([(1.0, 2.0, 3.0), (1.1, 2.2, 3.3), (-1, 27.4, 13.4)], dtype=[("x", "f4"), ("y", "f4"), ("z", "f4")])
 
-mask = np.ones(test.size, dtype=bool)
-mask[non_zeros] = False
-zeros = np.arange(test.size)[mask]
+xy_cols = x[["x", "y"][:]]
 
-for idx in zeros:
-    dists = np.abs(idx - non_zeros)
-    wrap_dists = np.abs(test.size - dists)
+print(xy_cols, xy_cols.shape)
 
-    min_dist = np.min(dists)
-    min_wrap_dist = np.min(wrap_dists)
-    if min_dist <= min_wrap_dist:
-        closest_idx = non_zeros[np.min(np.where(dists == min_dist))]
-    else:
-        closest_idx = non_zeros[np.min(np.where(wrap_dists == min_wrap_dist))]
+print(np.column_stack((x["x"], x["y"])))
 
-    test[idx] = test[closest_idx]
+print(x["x"].shape)
 
-    print("\ndistances", idx, dists)
-    print("closest", closest_idx)
-    print("replace", test[closest_idx])
-    print("wrap", wrap_dists)
+print(np.column_stack((x["x"], x["y"])).shape)
 
-a = np.array(([1, 2, 3], [4, 5, 6]))
-print(a[:, 0:2])
+a = np.empty((10, 3))
+print(type(a))
+
+vis2.plot_cones_3D(None, x, None, None)
+
+import matplotlib.pyplot as plt
+
+plt.show()
