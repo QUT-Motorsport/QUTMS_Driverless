@@ -289,3 +289,68 @@ def plot_prototype_points_3D(config, proto_segs_arr, proto_segs, name):
         animate_figure(f"04_{name}_Animated", ax, config.image_dir)
 
 
+def plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, name):
+    fig, ax = init_plot_2D("Ground Plane Fitted", "X", "Y")
+
+    # Plot Prototype Points
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
+
+        ax.scatter(x, y, c=const.mint_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * idx)
+
+                ax.plot(x, y, color=const.colours_01[jdx % len(const.colours_01)])
+
+    max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
+    ax.set_xlim([-max_limit, max_limit])
+    ax.set_ylim([-max_limit, max_limit])
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, name):
+    fig, ax = init_plot_3D("Ground Plane Fitted", "X", "Y", "Z")
+
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
+
+        ax.scatter(x, y, segment[:, 1], color=const.mint_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+
+    # Plot Ground Plane
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * idx)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * idx)
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(x, y, z, color=const.colours_01[jdx % len(const.colours_01)])
+
+    max_limit = max(np.abs([min(x), max(x), min(y), max(y), min(segment[:, 1]), max(segment[:, 1])]))
+    ax.axes.set_xlim(-max_limit, max_limit)
+    ax.axes.set_ylim(-max_limit, max_limit)
+    ax.axes.set_zlim(-max_limit, max_limit)
+
+    # Save Figure
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
