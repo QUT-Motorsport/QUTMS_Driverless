@@ -1,9 +1,9 @@
-from codecs import utf_16_be_decode
 import datetime
 import getopt
 import logging
 from logging import Logger  # For typing
 import os
+import shutil
 
 from . import constants as const
 
@@ -22,6 +22,11 @@ def create_dir(dir) -> None:
         os.mkdir(dir)
 
 
+def remove_dir(dir) -> None:
+    if os.path.isdir(dir):
+        shutil.rmtree(dir)
+
+
 class Config:
     def __init__(self) -> None:
         # Parameters
@@ -34,8 +39,11 @@ class Config:
         self._animate_figures: bool = False
         self._plot_car: bool = False
         self._export_data: bool = False
+        self._process_all: bool = False
+        self._video_from_session: str = ""
 
         # Misc
+        self._pcl_memory: int = 1
         self._timestamp: str
         self._datestamp: str
         self._datetimestamp: str
@@ -271,12 +279,14 @@ class Config:
                 "pc_node=",
                 "loglevel=",
                 "data_path=",
+                "video_from_session=",
                 "create_figures",
                 "show_figures",
                 "animate_figures",
                 "plot_car",
                 "export_data",
                 "print_logs",
+                "process_all",
             ],
         )
 
@@ -287,6 +297,8 @@ class Config:
                 self.loglevel = arg
             elif opt == "--data_path":
                 self.data_path = arg
+            elif opt == "--video_from_session":
+                self.video_from_session = arg
             elif opt == "--create_figures":
                 self.create_figures = True
             elif opt == "--show_figures":
@@ -301,3 +313,5 @@ class Config:
                 self.export_data = True
             elif opt == "--print_logs":
                 self.print_logs = True
+            elif opt == "--process_all":
+                self.process_all = True
