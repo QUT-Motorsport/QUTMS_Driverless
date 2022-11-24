@@ -12,7 +12,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
-from geometry_msgs.msg import TwistWithCovarianceStamped
+from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
