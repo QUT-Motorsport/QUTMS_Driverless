@@ -228,3 +228,34 @@ def label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, grou
     # get matching line
     # see how high above line it is
     #    pass
+
+
+# this function might actually be genius (in comparison)
+# So this works a hell of a lot differently
+# it doesn't see what line a point is closest to, it ONLY uses segment and bin
+# so if you want it to be more accurate, you need more bins and segments
+# actually it doesn't even look like the old ones use the point norm
+def label_points_3(point_cloud, segments, bins, seg_bin_z_ind, ground_plane):
+    # Map segments with no lines to nearest segment with lines
+    ground_plane = map_segments_2(ground_plane)
+
+    ground_lines_arr = np.empty((point_cloud.shape[0], 2))
+
+    # For every segment
+    min_seg = np.min(segments)
+    for i, ground_set in enumerate(ground_plane):
+        curr_seg = i - min_seg
+        ground_lines_arr[segments == curr_seg, :] = np.array([ground_set[0][0], ground_set[0][1]])
+        # For each line in segment
+        for j, ground_line in enumerate(ground_set):
+            curr_bin = ground_line[4]
+            line_ind = ((segments == curr_seg) & (bins >= curr_bin)).nonzero()[0]
+            ground_lines_arr[line_ind, :] = np.array([ground_line[0], ground_line[1]])
+
+    discretised_ground_heights = (const.BIN_SIZE * bins[seg_bin_z_ind]) * ground_lines_arr[:, 0] + ground_lines_arr[
+        :, 1
+    ]
+    point_line_dists = point_cloud["z"][seg_bin_z_ind] - discretised_ground_heights  # should there be an abs() here?
+
+    point_labels = np.abs(point_line_dists) <= const.T_D_GROUND
+    return point_labels
