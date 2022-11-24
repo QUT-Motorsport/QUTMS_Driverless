@@ -6,6 +6,7 @@ from . import object_processor as op
 from . import point_classifier as pc
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
+from . import visualiser_2 as vis2
 from .. import constants as const
 from ..utils import Config  # For typing
 
@@ -98,6 +99,8 @@ def locate_cones(config, point_cloud):
         # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
         # vis.plot_object_centers_2D(config, object_points, object_centers, "14_Objects_2D")
         # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, "14_Reconstructed_Objects")
+        vis2.plot_cones_2D(config, point_cloud, point_labels, cones, "15_Cones")
+        # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
 
         if config.show_figures:
             plt.show()
