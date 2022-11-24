@@ -90,6 +90,25 @@ def get_ground_lines(proto_seg_points):
         return 0
 
 
+# Multiprocessing version of get_ground_plane_single_core
+def get_ground_plane_mp(config, proto_segs_arr, proto_segs):
+    batches = [proto_segs_arr[proto_seg_ind].tolist() for proto_seg_ind in range(len(proto_segs_arr))]
+
+    core_count = math.floor(mp.cpu_count() * const.CPU_UTILISATION)
+    pool = mp.Pool(core_count)
+
+    config.logger.info(f"Mapping Ground Plane using {core_count} / {mp.cpu_count()} cores...")
+    line_batches = pool.starmap(get_ground_lines, [[batch] for batch in batches])
+    pool.close()
+    pool.join()
+
+    ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)
+    for segment_counter in range(len(proto_segs_arr)):
+        ground_plane[proto_segs[segment_counter]] = line_batches[segment_counter]
+
+    return ground_plane
+
+
 def get_ground_plane_single_core(proto_segs_arr, proto_segs):
     # Computing the ground plane
     ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)
