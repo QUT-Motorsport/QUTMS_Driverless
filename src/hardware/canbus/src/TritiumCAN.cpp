@@ -293,10 +293,10 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) 
     }
     msg->data = msgData;
 
-    std::cout << "ID: " << std::hex << msg.id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
-              << ", DLC: " << (int)msg.dlc << ", Data: [";
+    std::cout << "ID: " << std::hex << msg->id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
+              << ", DLC: " << (int)msg->dlc << ", Data: [";
     for (int i = 0; i < DLC; i++) {
-        std::cout << std::hex << (int)msg.data[i] << std::dec << ", ";
+        std::cout << std::hex << (int)msg->data[i] << std::dec << ", ";
     }
     std::cout << "]" << std::endl;
 
