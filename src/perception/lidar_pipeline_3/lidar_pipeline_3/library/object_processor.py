@@ -133,7 +133,7 @@ def cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_cen
     
     f2_matching_ind = (0.3 * expected_point_counts <= rec_point_counts) * (rec_point_counts <= 1.5 * expected_point_counts)
 
-    return reconstructed_centers[f1_matching_ind][f2_matching_ind]
+    return reconstructed_centers[f1_matching_ind][f2_matching_ind], object_line_dists
 
 # if average is straight up higher than a cone, ignore it
 
