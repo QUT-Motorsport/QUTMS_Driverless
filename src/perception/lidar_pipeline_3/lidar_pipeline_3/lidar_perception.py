@@ -33,8 +33,8 @@ def cone_msg(x_coord: float, y_coord: float, col: int) -> Cone:
 
     return Cone(
         location=location,
-        # color=Cone.UNKNOWN,
-        color=col,
+        color=Cone.UNKNOWN,
+        # color=col,
     )
 
 
@@ -82,9 +82,9 @@ class ConeDetectionNode(Node):
         detected_cones = []  # List of Cones
         for cone in cone_locations:
             # add cone to msg list
-            if cone[1] > average_y and cone[1] < average_y + y_cutoff:
+            if cone[1] > average_y + 3 and cone[1] < average_y + y_cutoff:
                 colour = Cone.BLUE
-            elif cone[1] < average_y and cone[1] > average_y - y_cutoff:
+            elif cone[1] < average_y - 3 and cone[1] > average_y - y_cutoff:
                 colour = Cone.YELLOW
             else:
                 colour = Cone.UNKNOWN
@@ -118,7 +118,7 @@ def local_data_stream():
 def main(args=sys.argv[1:]):
     # Init config
     config: Config = utils.Config()
-    config.update(args)
+    # config.update(args)
 
     # Check if logs should be printed
     if not config.print_logs:
