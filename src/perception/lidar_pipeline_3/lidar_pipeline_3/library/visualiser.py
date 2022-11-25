@@ -456,7 +456,7 @@ def plot_object_centers_2D(config, object_points, object_centers, objects, objec
 
     obj_point_counts = [str(len(obj)) for obj in objects]
     for i, obj_center in enumerate(object_centers):
-        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, round(object_line_dists[i], 2), c='white', fontsize=8)
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, round(object_line_dists[i], 2), c="white", fontsize=8)
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])
@@ -478,8 +478,8 @@ def plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_c
     rec_norms = np.linalg.norm(reconstructed_centers[:, :2], axis=1)
     rec_point_counts = [str(len(rec)) for rec in reconstructed_objects]
     for i, obj_center in enumerate(reconstructed_centers):
-        ax.text(obj_center[0] - 0.5, obj_center[1] - 1.3, rec_point_counts[i], c='white', fontsize=4)
-        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, round(rec_norms[i], 2), c='white', fontsize=4)
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 1.3, rec_point_counts[i], c="white", fontsize=4)
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, round(rec_norms[i], 2), c="white", fontsize=4)
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])

@@ -51,7 +51,7 @@ def locate_cones(config, point_cloud):
     config.logger.info(f"DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
-    #object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
+    # object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
     config.logger.info("DONE: Object Points Grouped")
 
     if object_points.size == 0:
@@ -68,7 +68,16 @@ def locate_cones(config, point_cloud):
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
 
-    cone_centers, cone_points = op.cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_objects, reconstructed_centers)
+    cone_centers, cone_points = op.cone_filter(
+        segments,
+        bins,
+        ground_lines_arr,
+        obj_segs,
+        obj_bins,
+        object_centers,
+        reconstructed_objects,
+        reconstructed_centers,
+    )
 
     # cones = cones.tolist()
     # for cone in cones:

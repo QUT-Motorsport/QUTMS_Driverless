@@ -120,7 +120,13 @@ def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, 
     ax.scatter(cone_centers[:, 0], cone_centers[:, 1], c=RGBA.WHITE.value, marker=".")
 
     for i, cone_center in enumerate(cone_centers):
-        ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
+        ax.text(
+            cone_center[0] - 0.5,
+            cone_center[1] - 1,
+            round(np.mean(cone_points[i]["intensity"]), 2),
+            c="white",
+            fontsize=4,
+        )
 
     calibrate_axis(ax)
 

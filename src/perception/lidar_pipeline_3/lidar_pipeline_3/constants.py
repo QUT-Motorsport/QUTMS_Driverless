@@ -30,7 +30,7 @@ CONE_HEIGHT = 0.30
 LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
 LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
 
-HACH_LOWER_ERR = 0.3 # 0.087 - 0.3 < 0 so min bound should probably just be zero lol
+HACH_LOWER_ERR = 0.3  # 0.087 - 0.3 < 0 so min bound should probably just be zero lol
 HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
 
 # Derived Parameters
