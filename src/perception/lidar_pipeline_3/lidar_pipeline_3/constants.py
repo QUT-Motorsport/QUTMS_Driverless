@@ -30,7 +30,7 @@ CONE_HEIGHT = 0.30
 LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
 LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
 
-HACH_LOWER_ERR = 0.3
+HACH_LOWER_ERR = 0.3 # 0.087 - 0.3 < 0 so min bound should probably just be zero lol
 HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
 
 # Derived Parameters
@@ -64,7 +64,7 @@ def hex_to_rgb(hex):
     return tuple(int(hex.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def normalise_rgb(rgb):
+def rgb_to_normalised_rgba(rgb):
     return tuple([c / 255 for c in rgb] + [1])
 
 
@@ -86,13 +86,13 @@ class Colour(Enum):
 
 
 class RGBA(Enum):
-    MS_ORANGE = normalise_rgb(hex_to_rgb(Colour.MS_ORANGE.value))
-    MS_BLUE = normalise_rgb(hex_to_rgb(Colour.MS_BLUE.value))
-    WHITE = normalise_rgb(hex_to_rgb(Colour.WHITE.value))
-    DARK_GREY = normalise_rgb(hex_to_rgb(Colour.DARK_GREY.value))
-    LIGHT_GREY = normalise_rgb(hex_to_rgb(Colour.LIGHT_GREY.value))
-    GREY = normalise_rgb(hex_to_rgb(Colour.GREY.value))
-    MINT = normalise_rgb(hex_to_rgb(Colour.MINT.value))
-    BLUE = normalise_rgb(hex_to_rgb(Colour.BLUE.value))
-    GREEN = normalise_rgb(hex_to_rgb(Colour.GREEN.value))
-    RED = normalise_rgb(hex_to_rgb(Colour.RED.value))
+    MS_ORANGE = rgb_to_normalised_rgba(hex_to_rgb(Colour.MS_ORANGE.value))
+    MS_BLUE = rgb_to_normalised_rgba(hex_to_rgb(Colour.MS_BLUE.value))
+    WHITE = rgb_to_normalised_rgba(hex_to_rgb(Colour.WHITE.value))
+    DARK_GREY = rgb_to_normalised_rgba(hex_to_rgb(Colour.DARK_GREY.value))
+    LIGHT_GREY = rgb_to_normalised_rgba(hex_to_rgb(Colour.LIGHT_GREY.value))
+    GREY = rgb_to_normalised_rgba(hex_to_rgb(Colour.GREY.value))
+    MINT = rgb_to_normalised_rgba(hex_to_rgb(Colour.MINT.value))
+    BLUE = rgb_to_normalised_rgba(hex_to_rgb(Colour.BLUE.value))
+    GREEN = rgb_to_normalised_rgba(hex_to_rgb(Colour.GREEN.value))
+    RED = rgb_to_normalised_rgba(hex_to_rgb(Colour.RED.value))
