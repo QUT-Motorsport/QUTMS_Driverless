@@ -8,7 +8,7 @@
     <license>MIT</license>
 
     <!-- Messages -->
-    <depend>fs_msgs</depend>
+    <depend>driverless_msgs</depend>
     <depend>ackermann_msgs</depend>
 
     <export>
