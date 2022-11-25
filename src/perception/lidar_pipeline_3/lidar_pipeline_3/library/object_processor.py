@@ -11,7 +11,7 @@ def group_points(object_points):
     # move these into constants file
 
     # Cluster object points
-    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(object_points[:, :2])
+    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(np.column_stack((object_points['x'], object_points['y'])))
     labels = clustering.labels_
 
     # All object ids
@@ -21,7 +21,7 @@ def group_points(object_points):
     object_centers = np.empty((unq_labels.size, 3))
     for idx, label in enumerate(unq_labels):
         objects[idx] = object_points[np.where(labels == label)]
-        object_centers[idx] = np.mean(objects[idx], axis=0)
+        object_centers[idx] = np.mean(np.column_stack((objects[idx]['x'], objects[idx]['y'], objects[idx]['z'])), axis=0)
 
     return object_centers, objects
 
@@ -55,11 +55,9 @@ def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_ce
                 np.column_stack((search_points["x"], search_points["y"])) - object_centers[i, :2], axis=1
             )
             in_range_points = search_points[distances <= const.CONE_DIAM / 2]
-            matching_points = np.vstack(
-                (matching_points, np.column_stack((in_range_points["x"], in_range_points["y"], in_range_points["z"])))
-            )
+            matching_points = np.append(matching_points, in_range_points)
 
-        reconstructed_centers[i] = np.mean(matching_points, axis=0)
+        reconstructed_centers[i] = np.mean(np.column_stack((matching_points['x'], matching_points['y'], matching_points['z'])), axis=0)
         reconstructed_objs[i] = matching_points  # add error margin?
 
     return obj_segs, obj_bins, reconstructed_objs, reconstructed_centers
@@ -133,7 +131,7 @@ def cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_cen
     
     f2_matching_ind = (0.3 * expected_point_counts <= rec_point_counts) * (rec_point_counts <= 1.5 * expected_point_counts)
 
-    return reconstructed_centers[f1_matching_ind][f2_matching_ind], object_line_dists
+    return reconstructed_centers[f1_matching_ind][f2_matching_ind], reconstructed_objects[f1_matching_ind][f2_matching_ind]
 
 # if average is straight up higher than a cone, ignore it
 

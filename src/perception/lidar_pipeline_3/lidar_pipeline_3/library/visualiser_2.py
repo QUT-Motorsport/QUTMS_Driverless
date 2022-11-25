@@ -104,7 +104,7 @@ def calibrate_axis(ax, x=None, y=None, z=None):
     ax.axes.set_ylim(-max_limit, max_limit)
 
 
-def plot_cones_2D(config, point_cloud, point_labels, cones, name):
+def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, name):
     fig, ax = init_plot_2D("Cone Locations Identified", "X", "Y")
     ax.scatter(
         point_cloud["x"],
@@ -117,8 +117,10 @@ def plot_cones_2D(config, point_cloud, point_labels, cones, name):
         vmax=1.0,
     )
 
-    for cone in cones:
-        ax.scatter(cone[0], cone[1], c=RGBA.WHITE.value, marker=".")
+    ax.scatter(cone_centers[:, 0], cone_centers[:, 1], c=RGBA.WHITE.value, marker=".")
+
+    for i, cone_center in enumerate(cone_centers):
+        ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
 
     calibrate_axis(ax)
 
