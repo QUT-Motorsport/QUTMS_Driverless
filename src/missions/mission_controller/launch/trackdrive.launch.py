@@ -10,7 +10,7 @@ def generate_launch_description():
                 executable="torch_detector",
             ),
             Node(
-                package="lidar_pipeline_2",
+                package="lidar_pipeline_3",
                 executable="lidar_perception",
             ),
             Node(
