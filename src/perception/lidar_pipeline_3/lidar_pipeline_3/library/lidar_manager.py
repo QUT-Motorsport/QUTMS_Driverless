@@ -69,7 +69,8 @@ def locate_cones(config, point_cloud):
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
 
-    cones = op.cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_centers)
+    cones = op.cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_objects, reconstructed_centers)
+
     # cones = cones.tolist()
     # for cone in cones:
     #     print(cone)
@@ -97,8 +98,8 @@ def locate_cones(config, point_cloud):
         #   config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
         # )
         # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
-        # vis.plot_object_centers_2D(config, object_points, object_centers, "14_Objects_2D")
-        # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, "14_Reconstructed_Objects")
+        # vis.plot_object_centers_2D(config, object_points, object_centers, objects, "14_Objects_2D")
+        # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
         vis2.plot_cones_2D(config, point_cloud, point_labels, cones, "15_Cones")
         # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
 

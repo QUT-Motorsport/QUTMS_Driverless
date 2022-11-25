@@ -27,6 +27,9 @@ CONE_DIAM = 0.15
 CONE_WIDTH = 0.075
 CONE_HEIGHT = 0.30
 
+LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
+LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
+
 HACH_LOWER_ERR = 0.3
 HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
 
@@ -34,6 +37,10 @@ HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
 SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
 BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
 HALF_AREA_CONE_HEIGHT = CONE_HEIGHT * (2 - math.sqrt(2)) / 2  # 0.08787
+
+# Expected number of points on a cone at a given distance
+NUMER = CONE_HEIGHT * CONE_DIAM
+DENOM = 8 * math.tan(LIDAR_VERTICAL_RES / 2) * math.tan(LIDAR_HORIZONTAL_RES / 2)
 
 # Visualiser
 # Default Values

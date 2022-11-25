@@ -36,7 +36,7 @@ def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_ce
     seg_search_half = np.floor_divide(const.CONE_DIAM, seg_widths)
 
     # do i even car about all the points in a recon object? wouldnt i just want the cetner, and num points?
-    reconstructed_objs = []
+    reconstructed_objs = np.empty(object_centers.shape[0], dtype=object)
     reconstructed_centers = np.empty((object_centers.shape[0], 3))
     for i in range(object_centers.shape[0]):
         matching_points = objects[i]
@@ -60,7 +60,7 @@ def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_ce
             )
 
         reconstructed_centers[i] = np.mean(matching_points, axis=0)
-        reconstructed_objs.append(matching_points)  # add error margin?
+        reconstructed_objs[i] = matching_points  # add error margin?
 
     return obj_segs, obj_bins, reconstructed_objs, reconstructed_centers
 
@@ -94,6 +94,11 @@ def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_
     return reconstructed_objects
 
 
+# Number of points expected to be on a cone at a given distance
+def get_expected_point_count(distance):
+    return const.NUMER / (np.square(distance) * const.DENOM)
+
+
 # get height of object
 # get ground line
 # check height above ground line
@@ -102,24 +107,33 @@ def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_
 # of the object center. I doubt it's possible for an object center
 # to be in a segment or bin where no points were due to the small
 # epsilon in DBSCAN. If you introduce the noise cluster back, you will though
-def cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_centers):
+def cone_filter(segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_objects, reconstructed_centers):
+    # Filter 1: Height of object compared to expected height of cone
     seg_bin_ind = (obj_segs == segments) * (obj_bins == bins)
 
+    # i think i chose to use object center here instead of rec cause i thought that implied
+    # a line was guranteed to have been computed, a thus exist in ground_lines_arr
+    # but huge angled walls can cause an object center to not actually be on any of its points
+    # so maybe use reconstructed instead? maybe have a try-catch to and ignore any objects that
+    # don't have a line computed in their bin. they're probably not cones anyway 
     discretised_ground_heights = (
         (const.BIN_SIZE * bins[seg_bin_ind]) * ground_lines_arr[seg_bin_ind, 0]
     ) + ground_lines_arr[seg_bin_ind, 1]
     object_line_dists = np.abs(object_centers[:, 2] - discretised_ground_heights)
 
     # Upper bound cone height, lower bound take err margin
-    matching_ind = (const.HALF_AREA_CONE_HEIGHT - const.HACH_LOWER_ERR <= object_line_dists) * (
+    f1_matching_ind = (const.HALF_AREA_CONE_HEIGHT - const.HACH_LOWER_ERR <= object_line_dists) * (
         object_line_dists <= const.HALF_AREA_CONE_HEIGHT + const.HACH_UPPER_ERR
     )
 
-    # for rec in reconstructed_centers[matching_ind]:
-    #    print(rec, )
+    # Filter 2: How many points do we expect to be on a cone at a given distance?
+    rec_norms = np.linalg.norm(reconstructed_centers[f1_matching_ind][:, :2], axis=1)
+    rec_point_counts = np.array([len(rec) for rec in reconstructed_objects[f1_matching_ind]])
+    expected_point_counts = get_expected_point_count(rec_norms)
+    
+    f2_matching_ind = (0.3 * expected_point_counts <= rec_point_counts) * (rec_point_counts <= 1.5 * expected_point_counts)
 
-    return object_centers[matching_ind]
-
+    return reconstructed_centers[f1_matching_ind][f2_matching_ind]
 
 # if average is straight up higher than a cone, ignore it
 
