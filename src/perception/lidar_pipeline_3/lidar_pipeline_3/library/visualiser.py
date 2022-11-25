@@ -449,10 +449,14 @@ def plot_object_points_2D(config, object_points, name):
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def plot_object_centers_2D(config, object_points, object_centers, name):
+def plot_object_centers_2D(config, object_points, object_centers, objects, name):
     fig, ax = init_plot_2D("Object Centers", "X", "Y")
-    plot = ax.scatter(object_points[:, 0], object_points[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
-    plot = ax.scatter(object_centers[:, 0], object_centers[:, 1], c=const.mint_hex, marker="x")
+    ax.scatter(object_points[:, 0], object_points[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2)
+    ax.scatter(object_centers[:, 0], object_centers[:, 1], c=const.mint_hex, marker="x")
+
+    obj_point_counts = [str(len(obj)) for obj in objects]
+    for i, obj_center in enumerate(object_centers):
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, obj_point_counts[i], c='white', fontsize=4)
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])
@@ -462,13 +466,20 @@ def plot_object_centers_2D(config, object_points, object_centers, name):
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def plot_reconstructed_objects_2D(config, reconstructed_objects, name):
+def plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, name):
     fig, ax = init_plot_2D("Reconstructed Objects", "X", "Y")
 
     for reconstructed_object in reconstructed_objects:
-        plot = ax.scatter(
+        ax.scatter(
             reconstructed_object[:, 0], reconstructed_object[:, 1], c=const.red_hex, marker="s", s=(72.0 / fig.dpi) ** 2
         )
+    ax.scatter(reconstructed_centers[:, 0], reconstructed_centers[:, 1], c=const.mint_hex, marker="x")
+
+    rec_norms = np.linalg.norm(reconstructed_centers[:, :2], axis=1)
+    rec_point_counts = [str(len(rec)) for rec in reconstructed_objects]
+    for i, obj_center in enumerate(reconstructed_centers):
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 1.3, rec_point_counts[i], c='white', fontsize=4)
+        ax.text(obj_center[0] - 0.5, obj_center[1] - 2, round(rec_norms[i], 2), c='white', fontsize=4)
 
     max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.set_xlim([-max_limit, max_limit])
