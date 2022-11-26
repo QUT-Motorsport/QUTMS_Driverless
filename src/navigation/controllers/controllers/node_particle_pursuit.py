@@ -147,15 +147,15 @@ class ParticlePursuit(Node):
 
     #------------------------------
     # repulsive force constants:
-    d_min: float = 20          # min repulsive force distance (max. repulsion at or below)     [cm IF SIM, m IF NOT SIM]
-    d_max: float = 60          # max repulsive force distance (zero repulsion at or above)     [cm IF SIM, m IF NOT SIM]
-    k_repulsive: float = 7.5      # repulsive force gain
+    d_min: float = 1.3             # min repulsive force distance (max. repulsion at or below)    
+    d_max: float = 2.0           # max repulsive force distance (zero repulsion at or above)     
+    k_repulsive: float = 10      # repulsive force gain
     
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
     #      cone_danger < 0: corners taken wider
-    #      ** dont set to 1 **
-    cone_danger: float = 15     
+    #      ** dont set to 1.0 **
+    cone_danger: float = 18     
     
 
     def __init__(self):
@@ -256,13 +256,18 @@ class ParticlePursuit(Node):
                                        / (self.d_min**(1-self.cone_danger) - self.d_max**(1-self.cone_danger)), 0, 1)
 
         # determine attractive and repulsive forces acting on car
-        print(pos_lookahead)
         f_attractive: float = self.k_attractive * (get_distance(pos_lookahead, pos_car))        # car is attracted to lookahead
         f_repulsive: float = self.k_repulsive * danger_level                                    # car is repulsed by nearest cone
         
         # determine angles of forces acting on car (angles in rads)
         attractive_heading: float = angle(pos_car, pos_lookahead)
         repulsive_heading: float = angle(pos_car, pos_nearestCone) + pi                        # opposite heading of position
+
+        # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
+        if repulsive_heading > car_heading and repulsive_heading <= car_heading + pi:
+            repulsive_heading = car_heading + 0.5 * pi
+        else:
+            repulsive_heading = car_heading - 0.5 * pi
 
         # get coords of vectors (forces) acting on car, relative to the car as origin
         pos_attractive_relCar: List[float] = [f_attractive * cos(attractive_heading), f_attractive * sin(attractive_heading)]
@@ -275,14 +280,8 @@ class ParticlePursuit(Node):
         des_heading_ang: float = angle([0,0], pos_resultant_relCar)
         steering_angle = wrap_to_pi(car_heading - des_heading_ang) * self.Kp_ang
 
-
-        ## get the angle between the two vectors (forces) acting on the car
-        #vector_theta = angle_between(pos_attractive_relCar, pos_repulsive_relcar)
-
-        ## compute the magnitude and heading of the resultant vector
-        #f_resultant: float = f_attractive**2 + f_repulsive**2 + 2*f_attractive*f_repulsive*cos(vector_theta)        
-        #resultant_heading: float 
-
+        print("d_nearestCone: " + str(d_nearestCone))
+        print("danger_level: " + str(danger_level))
 
         #----------------
         # Determine velocity
@@ -308,8 +307,9 @@ class ParticlePursuit(Node):
             if vel > self.vel_min:
                 calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
         
-
+        #----------------
         # publish message
+        #----------------
         control_msg = AckermannDrive()
         control_msg.steering_angle = steering_angle
         control_msg.acceleration = calc_throttle
