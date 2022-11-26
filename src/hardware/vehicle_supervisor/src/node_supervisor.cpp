@@ -154,9 +154,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
-        // input range: 0 to 1
-        // torque to car range: 50 to 100
-        this->last_torque = 50 + 50 * msg.acceleration;  // convert to percentage
+        // input range: -1 to 0, 0 to 1
+        // torque to car range: 50 to 100 for accel, 40 to 0 for regen
+
+        // compute torque from accel and braking
+        if (msg.acceleration >= 0) {
+            // accel is positive -> accel (0.0 -> 1.0)
+            this->last_torque = 50 + 50 * msg.acceleration;
+        } else {
+            // accel is negative -> braking (0.0 -> -1.0)
+            this->last_torque = 40 + 40 * msg.acceleration;
+        }
     }
 
     void heartbeat_callback() {
