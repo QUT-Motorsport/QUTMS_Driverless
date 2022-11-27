@@ -161,7 +161,7 @@ class PySlam(Node):
 
         # publish local map msg
         local_map_msg = ConeDetectionStamped()
-        local_map_msg.header.stamp = self.get_clock().now().to_msg()
+        local_map_msg.header.stamp = vel_msg.header.stamp
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
