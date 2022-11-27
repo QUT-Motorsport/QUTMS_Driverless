@@ -4,10 +4,12 @@
 #include "CAN_RES.h"
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
+#include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/state.hpp"
@@ -39,6 +41,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
+    rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
@@ -47,6 +50,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     bool res_alive = 0;
     float last_torque = 0;
+
+    const int NUM_MOTORS = 4;
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
@@ -84,6 +89,33 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             default:
                 break;
+        }
+
+        uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
+        uint8_t vesc_id = msg.id & 0xFF;
+
+        if (vesc_id < NUM_MOTORS) {
+            switch (vesc_masked_id) {
+                case VESC_CAN_PACKET_STATUS: {
+                    int32_t rpm;
+                    float current;
+                    float duty;
+
+                    // data vector to uint8_t array
+                    uint8_t data[8];
+                    for (int i = 0; i < 8; i++) {
+                        data[i] = msg.data[i];
+                    }
+
+                    // extract and publish RPM
+                    Parse_VESC_CANPacketStatus(data, &rpm, &current, &duty);
+
+                    driverless_msgs::msg::MotorRPM rpmMsg;
+                    rpmMsg.index = vesc_id;
+                    rpmMsg.rpm = rpm;
+                    this->motorRPM_pub->publish(rpmMsg);
+                }
+            }
         }
 
         uint32_t qutms_masked_id = msg.id & ~0xF;
@@ -304,6 +336,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // RES
         this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
+
+        // Motor RPM
+        this->motorRPM_pub = this->create_publisher<driverless_msgs::msg::MotorRPM>("motor_rpm", 10);
 
         // Steering
         this->steering_reading_pub =
