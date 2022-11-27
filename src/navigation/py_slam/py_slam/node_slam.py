@@ -19,7 +19,7 @@ from py_slam.cone_props import ConeProps
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.6  # nn kdtree nearch
+RADIUS = 1.8  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 15  # minimum frames before confirming cones
 FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be removed
@@ -336,7 +336,7 @@ class PySlam(Node):
         local_coords = local_coords.reshape(-1, 2)
 
         # get any cones that are within -10m to 10m beside car
-        side_idxs = np.where(np.logical_and(local_coords[:, 1] > -10, local_coords[:, 1] < 10))[0]
+        side_idxs = np.where(np.logical_and(local_coords[:, 1] > -10, local_coords[:, 1] < 7.5))[0]
         # get any cones that are within 15m in front of car
         forward_idxs = np.where(np.logical_and(local_coords[:, 0] > 0, local_coords[:, 0] < 15))[0]
         # combine indexes
