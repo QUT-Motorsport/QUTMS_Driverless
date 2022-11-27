@@ -36,14 +36,11 @@ class ReactiveController(Node):
         ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(ebs_test))
         if ebs_test:
-            self.Kp_ang = -0.1  # shallow steering, straight line
-            self.vel_max = 45.0 / 3.6  # 40km/h in m/s
-            self.Kp_vel = 1
-            self.vel_min = self.vel_max / 2  # m/s
-            self.throttle_max = 0.2
+            self.Kp_ang = 0.1  # shallow steering, straight line
+            self.vel_max = 45.0 / 3.6
 
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/sim/cone_detection", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
