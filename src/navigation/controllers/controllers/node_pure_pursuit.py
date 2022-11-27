@@ -4,14 +4,13 @@ import numpy as np
 import scipy.spatial
 from transforms3d.euler import quat2euler
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped, Reset
-from geometry_msgs.msg import PoseWithCovarianceStamped, TwistStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 from typing import List, Tuple
 
@@ -106,15 +105,12 @@ class PurePursuit(Node):
 
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/pose_with_covariance")
-        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=30, slop=0.3)
-        synchronizer.registerCallback(self.callback)
+        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
@@ -128,11 +124,7 @@ class PurePursuit(Node):
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
-    def callback(
-        self,
-        pose_msg: PoseWithCovarianceStamped,
-        vel_msg: TwistStamped,
-    ):
+    def callback(self, msg: PoseWithCovarianceStamped):
         if not self.r2d:
             return
 
@@ -143,14 +135,14 @@ class PurePursuit(Node):
         # i, j, k angles in rad
         theta = quat2euler(
             [
-                pose_msg.pose.pose.orientation.w,
-                pose_msg.pose.pose.orientation.x,
-                pose_msg.pose.pose.orientation.y,
-                pose_msg.pose.pose.orientation.z,
+                msg.pose.pose.orientation.w,
+                msg.pose.pose.orientation.x,
+                msg.pose.pose.orientation.y,
+                msg.pose.pose.orientation.z,
             ]
         )[2]
         # get the position of the center of gravity
-        position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
+        position_cog: List[float] = [msg.pose.pose.position.x, msg.pose.pose.position.y]
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
@@ -162,29 +154,16 @@ class PurePursuit(Node):
         # velocity control
         rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD_VEL)
         intensity = rvwp[2]
-        vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
 
         # target velocity proportional to angle
         target_vel: float = self.vel_max - intensity * self.Kp_vel
         if target_vel < self.vel_min:
             target_vel = self.vel_min
 
-        # increase proportionally as it approaches target
-        throttle_scalar: float = 1 - (vel / target_vel)
-        calc_brake = 0.0
-        if throttle_scalar > 0:
-            calc_throttle = self.throttle_max * throttle_scalar
-        # if its over maximum, brake propotionally unless under minimum
-        else:
-            calc_throttle = 0.0
-            if vel > self.vel_min:
-                calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
-
         # publish message
-        control_msg = AckermannDrive()
-        control_msg.steering_angle = -steering_angle
-        control_msg.acceleration = calc_throttle
-        control_msg.jerk = calc_brake  # using jerk for brake for now
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = -steering_angle
+        control_msg.drive.speed = target_vel
 
         self.control_publisher.publish(control_msg)
 
