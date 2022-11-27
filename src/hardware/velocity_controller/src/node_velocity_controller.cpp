@@ -13,6 +13,7 @@ class Velocity_Controller : public rclcpp::Node {
     float Kd_vel = 0;
 
     float integral_error = 0;
+    float prev_error = 0;
 
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
@@ -60,8 +61,12 @@ class Velocity_Controller : public rclcpp::Node {
 
         this->integral_error += error;
 
+        float derivative_error = error - this->prev_error;
+
         // calculate control variable
-        float accel = (this->Kp_vel * error) + (this->Ki_vel * integral_error);
+        float accel = (this->Kp_vel * error) + (this->Ki_vel * integral_error) + (this->Kd_vel * derivative_error);
+
+        this->prev_error = error;
 
         // limit output accel to be between -1 (braking) and 1 (accel)
         if (accel > 1) {
