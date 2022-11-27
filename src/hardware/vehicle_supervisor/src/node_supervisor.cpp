@@ -344,9 +344,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->steering_reading_pub =
             this->create_publisher<driverless_msgs::msg::SteeringReading>("steering_reading", 10);
 
-        // Ackermann
+        // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+            "accel_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
