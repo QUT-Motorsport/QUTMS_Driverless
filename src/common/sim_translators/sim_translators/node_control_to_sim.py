@@ -42,7 +42,7 @@ class ControlToSim(Node):
         if calc_throttle <= 0:
             calc_throttle = 0.0  #  cut throttle
 
-        sim_control.steering = drive_msg.drive.steering_angle / math.pi
+        sim_control.steering = -0.1 * drive_msg.drive.steering_angle / math.pi
         sim_control.throttle = calc_throttle
         sim_control.brake = 0.0
         self.publisher.publish(sim_control)
