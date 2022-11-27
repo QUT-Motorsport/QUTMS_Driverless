@@ -91,7 +91,13 @@ class DisplayDetections(Node):
 
     def vision_callback2(self, msg: ConeDetectionStamped):
         # subscribed to vision cone detections
-        debug_img = draw_markers(msg.cones)  # draw cones on image
+        cones = []
+        for cone in msg.cones:
+            new = cone
+            new.location.x = cone.location.x - 0.1
+            cones.append(new)
+
+        debug_img = draw_markers(cones)  # draw cones on image
         debug_img = draw_steering(
             debug_img, self.steering_angle, self.velocity
         )  # draw steering angle and vel data on image
@@ -101,7 +107,13 @@ class DisplayDetections(Node):
 
     def lidar_callback(self, msg: ConeDetectionStamped):
         # subscribed to lidar cone detections
-        debug_img = draw_markers(msg.cones)
+        cones = []
+        for cone in msg.cones:
+            new = cone
+            new.location.x = cone.location.x + 1.65
+            cones.append(new)
+
+        debug_img = draw_markers(cones)
         debug_img = draw_steering(debug_img, self.steering_angle, self.velocity)
         self.lidar_img_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
