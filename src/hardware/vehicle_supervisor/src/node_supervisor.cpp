@@ -5,7 +5,7 @@
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
 #include "QUTMS_can.h"
-#include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/res.hpp"
@@ -33,7 +33,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     // Can publisher and subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
-    rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
+    rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
 
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
@@ -153,17 +153,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
     }
 
-    void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
+    void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
         // input range: -1 to 0, 0 to 1
         // torque to car range: 50 to 100 for accel, 40 to 0 for regen
 
         // compute torque from accel and braking
-        if (msg.acceleration >= 0) {
+        if (msg.drive.acceleration >= 0) {
             // accel is positive -> accel (0.0 -> 1.0)
-            this->last_torque = 50 + 50 * msg.acceleration;
+            this->last_torque = 50 + 50 * msg.drive.acceleration;
         } else {
             // accel is negative -> braking (0.0 -> -1.0)
-            this->last_torque = 40 + 40 * msg.acceleration;
+            this->last_torque = 40 + 40 * msg.drive.acceleration;
         }
     }
 
@@ -310,7 +310,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->create_publisher<driverless_msgs::msg::SteeringReading>("steering_reading", 10);
 
         // Ackermann
-        this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
+        this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
             "driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
