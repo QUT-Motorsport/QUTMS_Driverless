@@ -13,7 +13,7 @@
     <depend>controllers</depend>
     <depend>py_slam</depend>
     <depend>vision_pipeline</depend>
-    <depend>lidar_pipeline_2</depend>
+    <depend>lidar_pipeline_3</depend>
     <depend>planners</depend>
 
     <export>

@@ -14,7 +14,7 @@ MAP_SCALE = 4
 MAP_HEIGHT = (10 + 170) * MAP_SCALE
 MAP_WIDTH = (50 + 50) * MAP_SCALE
 
-SCALE = 20
+SCALE = 30
 WIDTH = 20 * SCALE  # 15m either side
 HEIGHT = 20 * SCALE  # 30m forward
 

@@ -25,10 +25,10 @@ from typing import Callable, List, Tuple
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
-CAMERA_FOV = 110  # degrees
-FOCAL_CONST = 420
+CAMERA_FOV = 130  # degrees
+FOCAL_CONST = 400
 MAX_RANGE = 15  # m
-MIN_RANGE = 2  # m
+MIN_RANGE = 3  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -47,7 +47,7 @@ CONE_DISPLAY_PARAMETERS = [
 ]
 
 # cone heights in metres
-HEIGHTS = [0.3, 0.3, 0.35, 0.35, 0.3]
+HEIGHTS = [0.3, 0.3, 0.4, 0.4, 0.3]
 
 ConeMsgColour = int  # define arbitrary variable type
 
@@ -84,11 +84,17 @@ def cone_distance(
 def cone_distance_bbox(
     colour_frame_cone_bounding_box: Rect,
     colour: ConeMsgColour,
-):
+    bearing: float,
+) -> float:
     """
     Calculate distance using the bounding box height to known heights.
     """
-    return (HEIGHTS[colour] * FOCAL_CONST) / colour_frame_cone_bounding_box.height
+    cone_height = HEIGHTS[colour]
+    bearing_scalar = abs(bearing) * 0.01
+    # print("height", FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height)
+    # print("scale height", FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height * bearing_scalar)
+
+    return FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height  # * bearing_scalar
 
 
 def cone_bearing(
@@ -189,13 +195,13 @@ class VisionProcessor(Node):
 
             # using bounding box sizes for distance
             # distance, d_rect = cone_distance(bounding_box, depth_frame)
-            distance = cone_distance_bbox(bounding_box, cone_colour)
+            bearing = cone_bearing(bounding_box, colour_camera_info_msg)
+            distance = cone_distance_bbox(bounding_box, cone_colour, bearing)
 
             # filter on distance
             if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
                 continue
 
-            bearing = cone_bearing(bounding_box, colour_camera_info_msg)
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
