@@ -1,9 +1,10 @@
-from math import sqrt
+from math import atan2, pi, sqrt
 
 from colour import Color
 import cv2
 import numpy as np
 from scipy.interpolate import UnivariateSpline
+from scipy.spatial import distance
 
 from cv_bridge import CvBridge
 import message_filters
@@ -39,7 +40,8 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 left_mid_col = (245, 215, 66)
 right_mid_col = (66, 194, 245)
-S = 0.5
+
+LOOKAHEAD = 6  # m
 
 
 def approximate_b_spline_path(
@@ -56,8 +58,8 @@ def approximate_b_spline_path(
 
     distances = calc_distance_vector(x, y)
 
-    spl_i_x = UnivariateSpline(distances, x, k=order, s=S)
-    spl_i_y = UnivariateSpline(distances, y, k=order, s=S)
+    spl_i_x = UnivariateSpline(distances, x, k=order)
+    spl_i_y = UnivariateSpline(distances, y, k=order)
 
     sampled = np.linspace(0.0, distances[-1], n_path_points)
     return evaluate_spline(sampled, spl_i_x, spl_i_y)
@@ -77,7 +79,9 @@ def calc_distance_vector(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return distances
 
 
-def evaluate_spline(sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: UnivariateSpline):
+def evaluate_spline(
+    sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: UnivariateSpline
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Evaluates the given spline at the given points.
     * param sampled: The points to evaluate the spline at.
@@ -101,8 +105,27 @@ def evaluate_spline(sampled: np.ndarray, spl_i_x: UnivariateSpline, spl_i_y: Uni
     )
 
 
+def get_RVWP(path: np.ndarray, lookahead: float) -> np.ndarray:
+    """
+    Retrieve angle between two points
+    * param car_pos: [x,y] coords of point 1
+    * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
+    * param rvwp_lookahead: distance to look ahead for the RVWP
+    * return: RVWP position as [x,y,i]
+    """
+    dists: np.ndarray = distance.cdist(
+        path,  # search all path points for x,y cols up to 3rd col (intensity)
+        [[0, 0]],
+        "euclidean",
+    )
+
+    # find the index of the point that is closest to the lookahead distance
+    idx = np.argmin(np.abs(dists - lookahead))
+    return path[idx]
+
+
 class VectorReactiveController(Node):
-    Kp_ang: float = 0.5
+    Kp_ang: float = -0.1
     Kp_vel: float = 2
     vel_max: float = 4  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
@@ -111,7 +134,7 @@ class VectorReactiveController(Node):
     r2d: bool = True
     in_dist: float = 2  # m
     mid_dist: float = 5  # m
-    prev_angle: float = 0
+    prev_angle: float = 0.0
 
     def __init__(self):
         super().__init__("vector_reactive_controller")
@@ -157,16 +180,22 @@ class VectorReactiveController(Node):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
-        control_msg = AckermannDrive()
-        control_msg.speed = 0.0
-        control_msg.steering_angle = 0.0
-        control_msg.acceleration = 0.0
-        control_msg.jerk = 0.0
+        speed = 0.0
+        steering_angle = 0.0
 
         cones: List[Cone] = cone_msg.cones
 
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
+        orange_cones = [c for c in cones if c.color == Cone.ORANGE_BIG]
+
+        # add orange cones to left and right arrays
+        orange_avg = np.mean([c.location.y for c in orange_cones])
+        for c in orange_cones:
+            if c.location.y > orange_avg:
+                left_cones.append(c)
+            else:
+                right_cones.append(c)
 
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
@@ -270,17 +299,16 @@ class VectorReactiveController(Node):
                     thickness=2,
                 )
 
-        # self.get_logger().info(f"Midpoints: {midpoints}")
+        self.get_logger().debug(f"Midpoints: {midpoints}")
 
         target: Optional[Point] = None
 
         # if we found midpoints
-        if len(midpoints) > 0:
-            orderSpline = len(midpoints)
-            if orderSpline == 1:
-                orderSpline = 1
-            else:
-                orderSpline = min(2, len(midpoints))
+        if len(midpoints) > 1:
+            midpoints.append(ORIGIN)
+            orderSpline = len(midpoints) - 1
+            if orderSpline > 3:
+                orderSpline = 3
 
             midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
 
@@ -302,60 +330,43 @@ class VectorReactiveController(Node):
                     thickness=2,
                 )
 
-            target = ORIGIN
-            numMid = 0
+            spline = np.concatenate((splineX.reshape(-1, 1), splineY.reshape(-1, 1)), axis=1)
+            rvwp = get_RVWP(spline, LOOKAHEAD)
 
-            # find all points closer than 5m and average and send it there
-            for p in midpoints:
-                if dist(ORIGIN, p) < self.mid_dist:
-                    target = target + p
-                    numMid = numMid + 1
-
-            if numMid > 0:
-                # average points
-                target = target * (1 / numMid)
-
-            # self.get_logger().info(f"Target: {target}")
-
-        if target is not None:
-            steering_angle = 0.0
-            if dist(ORIGIN, target) > 4:
-                steering_angle = self.prev_angle
-            else:
-                # steering control
-                steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
-            self.get_logger().debug(f"Target angle: {steering_angle}")
-
-            self.prev_angle = steering_angle
+            self.get_logger().debug(f"Target: {rvwp}")
+            steering_angle = np.degrees(atan2(rvwp[0], rvwp[1]) - pi / 2)
 
             cv2.drawMarker(
                 debug_img,
-                loc_to_img_pt(target.x, target.y).to_tuple(),
+                loc_to_img_pt(rvwp[0], rvwp[1]).to_tuple(),
                 (0, 255, 0),
                 markerType=cv2.MARKER_TRIANGLE_UP,
                 markerSize=5,
                 thickness=2,
             )
 
-            debug_img = draw_steering(debug_img, steering_angle, 0)  # draw steering angle and vel data on image
-
-            # publish message
-            control_msg.steering_angle = -1.0 * steering_angle
+            debug_img = draw_steering(debug_img, -steering_angle, 0)  # draw steering angle and vel data on image
 
             # velocity control
-            calc_throttle = 0.2
             vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
             # increase proportionally as it approaches target
             throttle_scalar: float = 1 - (vel / self.vel_max)
             if throttle_scalar > 0:
-                calc_throttle = self.throttle_max * throttle_scalar
+                speed = self.throttle_max * throttle_scalar
             elif throttle_scalar <= 0:
-                calc_throttle = 0.0  # if its over maximum, cut throttle
+                speed = 0.0  # if its over maximum, cut throttle
 
-            control_msg.acceleration = calc_throttle
+        else:
+            steering_angle = self.prev_angle
+            speed = 1.0
 
+        control_msg = AckermannDrive()
+        control_msg.steering_angle = steering_angle * self.Kp_ang
+        control_msg.acceleration = speed
         self.control_publisher.publish(control_msg)
         self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+        self.prev_angle = steering_angle
 
 
 def main(args=None):
