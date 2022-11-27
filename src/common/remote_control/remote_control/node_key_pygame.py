@@ -5,7 +5,7 @@ import pygame
 import rclpy
 from rclpy.node import Node
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 
 from .functions_pygame import bounds, game_elements
 
@@ -14,9 +14,9 @@ class PyGameNode(Node):
     def __init__(self):
         super().__init__("gui")
         self.get_logger().info("PyGame Node Initalised")
-        self.keypress_publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+        self.keypress_publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 10)
 
-    def publish_command(self, control_message: AckermannDrive):
+    def publish_command(self, control_message: AckermannDriveStamped):
         self.keypress_publisher.publish(control_message)
 
 
@@ -70,10 +70,10 @@ def py_game_main(py_game_node: PyGameNode, steering_intensity: float = 0.1, thro
         steering, throttle, brake = bounds(steering, throttle, brake)  # returns floats to publish
         game_elements(win, steering, throttle, brake)
 
-        msg = AckermannDrive()
-        msg.acceleration = throttle
-        msg.steering_angle = steering * math.pi
-        msg.jerk = brake
+        msg = AckermannDriveStamped()
+        msg.drive.acceleration = throttle
+        msg.drive.steering_angle = steering * math.pi
+        msg.drive.jerk = brake
 
         py_game_node.publish_command(msg)
 
