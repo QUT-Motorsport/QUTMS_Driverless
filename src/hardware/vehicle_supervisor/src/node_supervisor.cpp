@@ -129,7 +129,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                              steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
-                if (abs(steering_0 - steering_1) < 5) {
+                if (abs(steering_0 - steering_1) < 10) {
                     driverless_msgs::msg::SteeringReading reading;
                     reading.steering_angle = steering_0;
                     reading.adc_0 = adc_0;
