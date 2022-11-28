@@ -84,14 +84,14 @@ class ReactiveController(Node):
 
         # if we have two cones, check if they are greater than 5 meters apart
         # if closest_left is not None and closest_right is not None:
-            # if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
-            #     # if so - remove the furthest cone from the targeting
-            #     left_dist = dist(ORIGIN, cone_to_point(closest_left))
-            #     right_dist = dist(ORIGIN, cone_to_point(closest_right))
-            #     if left_dist <= right_dist:
-            #         closest_right = None
-            #     else:
-            #         closest_left = None
+        # if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
+        #     # if so - remove the furthest cone from the targeting
+        #     left_dist = dist(ORIGIN, cone_to_point(closest_left))
+        #     right_dist = dist(ORIGIN, cone_to_point(closest_right))
+        #     if left_dist <= right_dist:
+        #         closest_right = None
+        #     else:
+        #         closest_left = None
 
         target: Optional[Point] = None
         if closest_left is not None and closest_right is not None:
