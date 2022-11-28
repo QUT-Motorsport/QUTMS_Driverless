@@ -23,6 +23,7 @@ setup(
             "reactive_control = controllers.node_reactive_control:main",
             "reactive_v2 = controllers.node_reactive_v2:main",
             "pure_pursuit = controllers.node_pure_pursuit:main",
+            "vector_reactive_control = controllers.node_reactive_vector_control:main",
         ],
     },
 )

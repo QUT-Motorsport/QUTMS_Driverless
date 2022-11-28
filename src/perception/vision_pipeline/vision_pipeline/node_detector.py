@@ -12,7 +12,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from builtin_interfaces.msg import Time
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
@@ -25,10 +24,10 @@ from typing import Callable, List, Tuple
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
 
-CAMERA_FOV = 130  # degrees
-FOCAL_CONST = 400
-MAX_RANGE = 15  # m
-MIN_RANGE = 3  # m
+CAMERA_FOV = 100  # degrees
+FOCAL_CONST = 360
+MAX_RANGE = 16  # m
+MIN_RANGE = 2  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -90,11 +89,12 @@ def cone_distance_bbox(
     Calculate distance using the bounding box height to known heights.
     """
     cone_height = HEIGHTS[colour]
-    bearing_scalar = abs(bearing) * 0.01
-    # print("height", FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height)
-    # print("scale height", FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height * bearing_scalar)
 
-    return FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height  # * bearing_scalar
+    distance = FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height
+
+    bearing_scalar = abs(bearing) * 0.005
+    distance_corrected = distance * (1 + bearing_scalar)
+    return distance_corrected
 
 
 def cone_bearing(
@@ -190,7 +190,7 @@ class VisionProcessor(Node):
             if bounding_box.area < 10:
                 continue
             # filter by aspect ratio
-            if bounding_box.aspect_ratio < 0.4:
+            if bounding_box.aspect_ratio < 0.4 or bounding_box.aspect_ratio > 1.5:
                 continue
 
             # using bounding box sizes for distance
@@ -206,10 +206,6 @@ class VisionProcessor(Node):
             draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
-
-        #     print(i, "dist:", distance)
-        #     i += 1
-        # print("\n")
 
         detection_msg = ConeDetectionStamped(
             header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),

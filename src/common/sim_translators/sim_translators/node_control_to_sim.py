@@ -23,7 +23,7 @@ class ControlToSim(Node):
 
     def control_callback(self, msg: AckermannDrive):
         sim_control = ControlCommand()
-        sim_control.steering = msg.steering_angle / math.pi
+        sim_control.steering = -msg.steering_angle / math.pi
         sim_control.throttle = msg.acceleration  # accel used for throttle
         sim_control.brake = msg.jerk  # jerk used for brake
         self.publisher.publish(sim_control)
