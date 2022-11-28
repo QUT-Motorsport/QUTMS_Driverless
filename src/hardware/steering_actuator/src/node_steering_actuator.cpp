@@ -1,5 +1,5 @@
-#include <map>
 #include <chrono>
+#include <map>
 
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "can_interface.hpp"
@@ -325,15 +325,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void as_state_callback(const driverless_msgs::msg::State msg) {
         this->state = msg;
-        // if (msg.state == driverless_msgs::msg::State::DRIVING ||
-        //     msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
-        //     msg.state == driverless_msgs::msg::State::EMERGENCY) {
-        //     // Enable motor
-        //     this->motor_enabled = true;
-        // } else {
-        //     this->motor_enabled = false;
-        // }
-        this->motor_enabled = true;
+        if (msg.state == driverless_msgs::msg::State::DRIVING ||
+            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
+            msg.state == driverless_msgs::msg::State::EMERGENCY) {
+            // Enable motor
+            this->motor_enabled = true;
+        } else {
+            this->motor_enabled = false;
+        }
     }
 
     void steering_reading_callback(const driverless_msgs::msg::SteeringReading msg) {
@@ -349,15 +348,17 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     void update_steering() {
         auto current_update = std::chrono::high_resolution_clock::now();
-        double elapsed_time_seconds = std::chrono::duration<double, std::milli>(current_update-last_update).count() / 1000;
+        double elapsed_time_seconds =
+            std::chrono::duration<double, std::milli>(current_update - last_update).count() / 1000;
         this->last_update = current_update;
 
         double error = this->requested_steering_angle - this->current_steering_angle;
-        this->integral_error += error*elapsed_time_seconds;
+        this->integral_error += error * elapsed_time_seconds;
         double derivative_error = (error - this->prev_error) / elapsed_time_seconds;
 
-        double target = Kp*error + Ki*this->integral_error + Kd*derivative_error;
-        RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki, integral_error, Kd, derivative_error, target);
+        double target = Kp * error + Ki * this->integral_error + Kd * derivative_error;
+        RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
+                    integral_error, Kd, derivative_error, target);
 
         // left hand down is +, rhd is -
         this->target_position(target);
@@ -399,7 +400,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // Steering parameters
         this->declare_parameter<int>(PARAM_ACCELERATION, 0);
         this->declare_parameter<int>(PARAM_VELOCITY, 0);
-        
+
         // PID controller parameters
         this->declare_parameter<float>(PARAM_KP, 0);
         this->declare_parameter<float>(PARAM_KI, 0);
