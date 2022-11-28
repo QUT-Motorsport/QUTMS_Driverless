@@ -30,6 +30,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         vision_pipeline \
     && rm -rf ./src
 
-# tell ROS to use Fast DDS
+# tell ROS to use Cyclone DDS
 ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/cyclonedds_config.xml
+ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
