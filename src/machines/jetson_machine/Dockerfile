@@ -29,3 +29,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         jetson_machine \
         vision_pipeline \
     && rm -rf ./src
+
+# tell ROS to use Fast DDS
+ENV RMW_IMPLEMENTATION="rmw_fastrtps_cpp"

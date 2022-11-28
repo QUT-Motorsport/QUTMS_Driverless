@@ -133,5 +133,5 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 # delete source
 RUN rm -rf ./src
 
-# force ROS to use Jetson interface
-ENV CYCLONEDDS_URI="<CycloneDDS><Domain><General><NetworkInterfaceAddress>enp6s0</NetworkInterfaceAddress></General></Domain></CycloneDDS>"
+# tell ROS to use Fast DDS
+ENV RMW_IMPLEMENTATION="rmw_fastrtps_cpp"
