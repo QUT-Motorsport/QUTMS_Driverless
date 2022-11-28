@@ -26,7 +26,7 @@ class ReactiveController(Node):
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
-    target_cone_count = 1
+    target_cone_count = 2
     r2d: bool = True
 
     def __init__(self):
@@ -83,15 +83,15 @@ class ReactiveController(Node):
             ]
 
         # if we have two cones, check if they are greater than 5 meters apart
-        if closest_left is not None and closest_right is not None:
-            if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
-                # if so - remove the furthest cone from the targeting
-                left_dist = dist(ORIGIN, cone_to_point(closest_left))
-                right_dist = dist(ORIGIN, cone_to_point(closest_right))
-                if left_dist <= right_dist:
-                    closest_right = None
-                else:
-                    closest_left = None
+        # if closest_left is not None and closest_right is not None:
+        # if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
+        #     # if so - remove the furthest cone from the targeting
+        #     left_dist = dist(ORIGIN, cone_to_point(closest_left))
+        #     right_dist = dist(ORIGIN, cone_to_point(closest_right))
+        #     if left_dist <= right_dist:
+        #         closest_right = None
+        #     else:
+        #         closest_left = None
 
         target: Optional[Point] = None
         if closest_left is not None and closest_right is not None:
@@ -102,12 +102,12 @@ class ReactiveController(Node):
         elif closest_left is not None:
             target = Point(
                 x=closest_left.location.x,
-                y=closest_left.location.y - 5,
+                y=closest_left.location.y - 3,
             )
         elif closest_right is not None:
             target = Point(
                 x=closest_right.location.x,
-                y=closest_right.location.y + 5,
+                y=closest_right.location.y + 3,
             )
 
         if target is not None:
