@@ -45,7 +45,7 @@ class ConeDetectionNode(Node):
 
         self.config: Config = _config
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
+            PointCloud2, self.config.pc_node, self.pc_callback,
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 
@@ -66,7 +66,7 @@ class ConeDetectionNode(Node):
         if len(cone_locations) == 0:
             return
 
-        detected_cones = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
+        detected_cones = [cone_msg(cone[0], cone[1], None) for cone in cone_locations]
 
         detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
         self.cone_publisher.publish(detection_msg)
