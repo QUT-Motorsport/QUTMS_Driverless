@@ -18,7 +18,7 @@ def locate_cones(config, point_cloud, start_time):
     # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
-        # vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
+        vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
 
     # Remove points behind car
     point_cloud = point_cloud[point_cloud["x"] > 0]
@@ -33,15 +33,15 @@ def locate_cones(config, point_cloud, start_time):
     config.logger.info(f"{point_cloud.shape[0]} points remain after filtering point cloud")
 
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
-    config.logger.info(f"DONE: Segments and Bins")
+    config.logger.info("DONE: Segments and Bins")
 
     proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(point_cloud["z"], segments, bins, point_norms)
-    config.logger.info(f"DONE: Prototype Points")
+    config.logger.info("DONE: Prototype Points")
 
     # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
     # ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
     ground_plane = gpe.get_ground_plane_single_core(proto_segs_arr, proto_segs)
-    config.logger.info(f"DONE: Ground Plane Mapped")
+    config.logger.info("DONE: Ground Plane Mapped")
 
     # point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
     # point_labels = pc.label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, ground_plane)
@@ -49,7 +49,7 @@ def locate_cones(config, point_cloud, start_time):
     # point_labels = pc.label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, ground_plane)
     # point_labels = pc.label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
     point_labels, ground_lines_arr = pc.label_points_6(point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane)
-    config.logger.info(f"DONE: Points Labelled")
+    config.logger.info("DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
     # object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
@@ -60,14 +60,14 @@ def locate_cones(config, point_cloud, start_time):
         return None
 
     object_centers, objects = op.group_points(object_points)  # maybe improve speed?
-    config.logger.info(f"DONE: Objects Identified")
+    config.logger.info("DONE: Objects Identified")
 
-    # print(object_centers.shape[0])
     ground_points = point_cloud[~point_labels]
     # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
     obj_segs, obj_bins, reconstructed_objects, reconstructed_centers = op.reconstruct_objects_2(
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
+    config.logger.info("DONE: Objects Reconstructed")
 
     cone_centers, cone_points = op.cone_filter(
         segments,
@@ -79,6 +79,7 @@ def locate_cones(config, point_cloud, start_time):
         reconstructed_objects,
         reconstructed_centers,
     )
+    config.logger.info("DONE: Cones Identified")
 
     duration = time.perf_counter() - start_time
 
