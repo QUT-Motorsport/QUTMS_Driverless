@@ -52,7 +52,7 @@ bool TCPClient::_connect() {
 
 void TCPClient::_disconnect() { close(this->sock); }
 
-bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
+bool TCPClient::send_data(std::shared_ptr<std::vector<uint8_t>> data) {
     if (this->sock != -1) {
         // this->_connect();
         {
@@ -69,8 +69,8 @@ bool TCPClient::send_data(std::shared_ptr<std::vector<char>> data) {
     return true;
 }
 
-std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
-    char buf[RECV_SIZE];
+std::shared_ptr<std::vector<uint8_t>> TCPClient::recieve_data() {
+    uint8_t buf[RECV_SIZE];
     int b;
     // this->_connect();
     {
@@ -80,6 +80,6 @@ std::shared_ptr<std::vector<char>> TCPClient::recieve_data() {
         }
     }
     // this->_disconnect();
-    auto vec = std::make_shared<std::vector<char>>(buf, buf + b);
+    auto vec = std::make_shared<std::vector<uint8_t>>(buf, buf + b);
     return vec;
 }
