@@ -1,23 +1,21 @@
 import logging
+import numpy as np
 import sys
 import time
-
-import numpy as np
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
+import ros2_numpy as rnp
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2
 
-import ros2_numpy as rnp
-
 from . import constants as const
-from . import utils, video_stitcher
 from .library import lidar_manager
+from . import utils
 
 # For typing
 from .utils import Config
