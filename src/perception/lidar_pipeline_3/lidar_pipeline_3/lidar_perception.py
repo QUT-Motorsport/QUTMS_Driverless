@@ -45,7 +45,7 @@ class ConeDetectionNode(Node):
 
         self.config: Config = _config
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
+            PointCloud2, self.config.pc_node, self.pc_callback,
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
 
@@ -63,30 +63,10 @@ class ConeDetectionNode(Node):
 
         cone_locations = lidar_manager.locate_cones(self.config, point_cloud, start_time)
 
-        if cone_locations == []:
+        if len(cone_locations) == 0:
             return
 
-        # average y value of cones
-        y_cutoff = 8
-        average_y = 0
-        count = 1
-        for cone in cone_locations:
-            if abs(cone[1]) < y_cutoff:
-                average_y += cone[1]
-                count += 1
-        average_y /= count
-
-        # define message component - list of Cone type messages
-        detected_cones = []  # List of Cones
-        for cone in cone_locations:
-            # add cone to msg list
-            if cone[1] > average_y + 3 and cone[1] < average_y + y_cutoff:
-                colour = Cone.BLUE
-            elif cone[1] < average_y - 3 and cone[1] > average_y - y_cutoff:
-                colour = Cone.YELLOW
-            else:
-                colour = Cone.UNKNOWN
-            detected_cones.append(cone_msg(cone[0], cone[1], colour))
+        detected_cones = [cone_msg(cone[0], cone[1], None) for cone in cone_locations]
 
         detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
         self.cone_publisher.publish(detection_msg)
