@@ -1,3 +1,4 @@
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,7 +12,7 @@ from .. import constants as const
 from ..utils import Config  # For typing
 
 
-def locate_cones(config, point_cloud):
+def locate_cones(config, point_cloud, start_time):
     config.logger.info(f"Point Cloud received with {point_cloud.shape[0]} points")
 
     # Visualise inital point cloud before filtering
@@ -79,6 +80,8 @@ def locate_cones(config, point_cloud):
         reconstructed_centers,
     )
 
+    duration = time.perf_counter() - start_time
+
     # cones = cones.tolist()
     # for cone in cones:
     #     print(cone)
@@ -111,8 +114,9 @@ def locate_cones(config, point_cloud):
         # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
         # vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
         # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
-        vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
+        # vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
         # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
+        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_centers, cone_points, duration, "15_Cones")
 
         # reintro structured array for lidar colouring
 
