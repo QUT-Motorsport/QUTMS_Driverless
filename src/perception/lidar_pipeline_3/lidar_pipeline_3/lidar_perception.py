@@ -16,7 +16,7 @@ from sensor_msgs.msg import PointCloud2
 import ros2_numpy as rnp
 
 from . import constants as const
-from . import utils  # , video_stitcher
+from . import utils, video_stitcher
 from .library import lidar_manager
 
 # For typing
@@ -63,7 +63,7 @@ class ConeDetectionNode(Node):
         )  # x y z intensity ring
         point_cloud = np.frombuffer(point_cloud_msg.data, dtype_list)
 
-        cone_locations = lidar_manager.locate_cones(self.config, point_cloud)
+        cone_locations = lidar_manager.locate_cones(self.config, point_cloud, start_time)
 
         if cone_locations == []:
             return
@@ -133,12 +133,12 @@ def main(args=sys.argv[1:]):
     config.logger.info(f"args = {args}")
 
     # Init data stream
-    # if config.video_from_session:
-    # video_stitcher.stitch_figures(
-    #     f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
-    #     f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
-    # )
-    if config.data_path:
+    if config.video_from_session:
+        video_stitcher.stitch_figures(
+            f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
+            f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
+        )
+    elif config.data_path:
         # Use local data source
         local_data_stream()
     else:
