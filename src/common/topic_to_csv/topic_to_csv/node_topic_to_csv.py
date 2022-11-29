@@ -7,13 +7,15 @@ import rclpy
 from rclpy.node import Node
 from rosidl_runtime_py.convert import message_to_ordereddict
 
+from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Imu
 
 from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
 SUBSCRIPTIONS: List[Tuple[str, Any]] = [
-    (Imu, "imu"),
+    # (Imu, "imu/data"),
+    (TwistStamped, "imu/velocity"),
 ]
 
 
@@ -44,16 +46,18 @@ class NodeTopicToCSV(Node):
 
     def msg_callback(self, msg: Any, topic: str):
         msg_dict = flatten_msg_dict(message_to_ordereddict(msg))
-        print(msg_dict)
+        # print(msg_dict)
 
-        if topic not in self.csv_writers:
+        topic_readable = topic.replace("/", "_")
+        if topic_readable not in self.csv_writers:
+
             csv_folder = Path("./csv_data")
             csv_folder.mkdir(exist_ok=True)
-            f = open(csv_folder / f"{topic}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
-            self.csv_writers[topic] = csv.DictWriter(f, fieldnames=msg_dict.keys())
-            self.csv_writers[topic].writeheader()
+            f = open(csv_folder / f"{topic_readable}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
+            self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys())
+            self.csv_writers[topic_readable].writeheader()
 
-        self.csv_writers[topic].writerow(msg_dict)
+        self.csv_writers[topic_readable].writerow(msg_dict)
 
 
 def main():

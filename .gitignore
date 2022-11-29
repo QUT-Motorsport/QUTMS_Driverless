@@ -1,6 +1,9 @@
 # map paths
 maps.store
 
+# topic to csv
+csv_data
+
 # Colcon build
 build/
 install/
