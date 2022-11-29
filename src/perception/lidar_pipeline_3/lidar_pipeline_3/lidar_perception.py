@@ -16,7 +16,7 @@ from sensor_msgs.msg import PointCloud2
 import ros2_numpy as rnp
 
 from . import constants as const
-from . import utils
+from . import utils, video_stitcher
 from .library import lidar_manager
 
 # For typing
