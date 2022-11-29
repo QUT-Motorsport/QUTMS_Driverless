@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
 SUBSCRIPTIONS: List[Tuple[str, Any]] = [
-    # (Imu, "imu/data"),
-    (TwistStamped, "imu/velocity"),
+    (Imu, "imu/data"),
+    # (TwistStamped, "imu/velocity"),
 ]
 
 
@@ -32,6 +32,8 @@ def flatten_msg_dict(msg_dict: OrderedDict, parent_key: str = "", sep: str = "."
 
 class NodeTopicToCSV(Node):
     csv_writers: Dict[str, csv.DictWriter]
+    records: int = 0
+    start_time: float = 0
 
     def __init__(self) -> None:
         super().__init__("topic_to_csv")
@@ -39,6 +41,7 @@ class NodeTopicToCSV(Node):
         self.csv_writers = {}
 
         for type_, topic in SUBSCRIPTIONS:
+            self.get_logger().info(f"Subscribing to {topic}")
             callback = lambda x: self.msg_callback(x, topic)
             self.create_subscription(type_, topic, callback, 10)
 
@@ -57,7 +60,15 @@ class NodeTopicToCSV(Node):
             self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys())
             self.csv_writers[topic_readable].writeheader()
 
+            self.start_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
+
         self.csv_writers[topic_readable].writerow(msg_dict)
+
+        # get frequency
+        self.records += 1
+        if self.records % 100 == 0:
+            now = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
+            self.get_logger().info(f"Frequency: {self.records / (now - self.start_time)}")
 
 
 def main():
