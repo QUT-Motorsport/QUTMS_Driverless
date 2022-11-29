@@ -7,8 +7,8 @@
 
 steering:
   ros__parameters:
-    velocity: 1000
-    acceleration: 300
-    Kp: -40.0
-    Ki: -5.0
+    velocity: 1500
+    acceleration: 500
+    Kp: -30.0
+    Ki: 0.0
     Kd: 0.0
