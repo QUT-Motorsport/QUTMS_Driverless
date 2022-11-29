@@ -132,9 +132,12 @@ def cone_filter(
         object_line_dists <= const.HALF_AREA_CONE_HEIGHT + const.HACH_UPPER_ERR
     )
 
+    filtered_rec_centers = reconstructed_centers[f1_matching_ind]
+    filtered_rec_objects = reconstructed_objects[f1_matching_ind]
+
     # Filter 2: How many points do we expect to be on a cone at a given distance?
-    rec_norms = np.linalg.norm(reconstructed_centers[f1_matching_ind][:, :2], axis=1)
-    rec_point_counts = np.array([len(rec) for rec in reconstructed_objects[f1_matching_ind]])
+    rec_norms = np.linalg.norm(filtered_rec_centers[:, :2], axis=1)
+    rec_point_counts = np.array([len(rec) for rec in filtered_rec_objects])
     expected_point_counts = get_expected_point_count(rec_norms)
 
     f2_matching_ind = (0.3 * expected_point_counts <= rec_point_counts) * (
@@ -142,8 +145,8 @@ def cone_filter(
     )
 
     return (
-        reconstructed_centers[f1_matching_ind][f2_matching_ind],
-        reconstructed_objects[f1_matching_ind][f2_matching_ind],
+        filtered_rec_centers[f2_matching_ind],
+        filtered_rec_objects[f2_matching_ind],
     )
 
 
