@@ -26,6 +26,7 @@ CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing gro
 CONE_DIAM = 0.15
 CONE_WIDTH = 0.075
 CONE_HEIGHT = 0.30
+LIDAR_HEIGHT_ABOVE_GROUND = 0.15
 
 LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
 LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
