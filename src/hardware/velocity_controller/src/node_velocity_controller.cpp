@@ -65,6 +65,9 @@ class Velocity_Controller : public rclcpp::Node {
 
         // calculate control variable
         float accel = (this->Kp_vel * error) + (this->Ki_vel * integral_error) + (this->Kd_vel * derivative_error);
+        
+        RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f accel: %f", Kp_vel, error, Ki_vel,
+                    integral_error, Kd_vel, derivative_error, accel);
 
         this->prev_error = error;
 
