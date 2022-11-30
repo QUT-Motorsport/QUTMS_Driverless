@@ -86,7 +86,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba install -y --file ./conda_requirements
 
 # lidar
-COPY ./src/perception/lidar_pipeline_2/conda_requirements ./conda_requirements
+COPY ./src/perception/lidar_pipeline_3/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
@@ -103,13 +103,8 @@ RUN rm -f ./conda_requirements
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
+# copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-
-# build lidar cython
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    cd src/perception/lidar_pipeline_2/lidar_pipeline_2/library/cy_library && \
-    python setup.py build_ext --inplace
 
 # run a ros build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
@@ -127,8 +122,9 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         car_status \
         py_slam \
         driverless_common \
-        lidar_pipeline_2 \
-        planners
+        lidar_pipeline_3 \
+        planners \
+        velocity_controller
 
 # delete source
 RUN rm -rf ./src

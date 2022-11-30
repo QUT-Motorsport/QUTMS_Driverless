@@ -39,15 +39,15 @@ def generate_launch_description():
                 executable="display",
             ),
             Node(
-                package="lidar_pipeline_2",
+                package="lidar_pipeline_3",
                 executable="lidar_perception",
             ),
             # MISSION CONTROL NODE HERE
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("sensors") / "launch" / "sensors.launch.py")
-                ),
-            ),
+            # IncludeLaunchDescription(
+            #     launch_description_source=PythonLaunchDescriptionSource(
+            #         launch_file_path=str(get_package_share_path("sensors") / "launch" / "sensors.launch.py")
+            #     ),
+            # ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("models") / "launch" / "robot_description.launch.py")
