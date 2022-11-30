@@ -1,5 +1,0 @@
-canbus:
-  ros__parameters:
-      Kp_vel: 1
-      Ki_vel: 0
-      Kd_vel: 0

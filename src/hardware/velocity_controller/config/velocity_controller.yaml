@@ -1,0 +1,5 @@
+velocity_controller:
+  ros__parameters:
+      Kp_vel: 0.1
+      Ki_vel: 0.0
+      Kd_vel: 0.0

@@ -23,7 +23,7 @@ def generate_launch_description():
                 package="velocity_controller",
                 executable="velocity_controller",
                 parameters=[
-                    get_package_share_path("velocity_controller") / "config" / "controller.yaml",
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
                 ],
             ),
             Node(

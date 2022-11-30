@@ -27,4 +27,10 @@ target_include_directories(velocity_controller PUBLIC
 install(TARGETS velocity_controller
   DESTINATION lib/${PROJECT_NAME})
 
+# config folder
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()
