@@ -129,7 +129,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         py_slam \
         driverless_common \
         lidar_pipeline_3 \
-        planners
+        planners \
+        velocity_controller
 
 # delete source
 RUN rm -rf ./src
