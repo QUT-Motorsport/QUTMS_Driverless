@@ -16,6 +16,12 @@
 
 using std::placeholders::_1;
 
+void copy_n(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
+    for (int i = 0; i < n; i++) {
+        dest[i] = vec[i];
+    }
+}
+
 class ASSupervisor : public rclcpp::Node, public CanInterface {
    private:
     DVL_HeartbeatState_t DVL_heartbeat;
@@ -61,7 +67,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
 
                 this->res_alive = 1;
-                // run state machine (will update state from "start" to "select mission")
                 this->run_fsm();
                 break;
             }
@@ -70,7 +75,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // RES Reciever Status Packet
                 this->_internal_status_time = this->now();  // Debug information
 
-                Parse_RES_Heartbeat((uint8_t*)&msg.data[0], &this->RES_status);
+                Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
 
                 this->res_alive = 1;
                 // Log RES state
@@ -88,16 +93,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         uint32_t qutms_masked_id = msg.id & ~0xF;
         switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
-                // ignore type
                 uint8_t VCU_ID = msg.id & 0xF;
-
                 RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
                 // data vector to uint8_t array
                 uint8_t data[8];
-                for (int i = 0; i < 8; i++) {
-                    data[i] = msg.data[i];
-                }
+                copy_n(msg.data, data, 8);
 
                 // update heartbeat data for this specific VCU
                 if (VCU_ID == VCU_ID_CTRL) {
@@ -115,9 +116,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             case (VCU_TransmitSteering_ID): {
                 // data vector to uint8_t array
                 uint8_t data[8];
-                for (int i = 0; i < 8; i++) {
-                    data[i] = msg.data[i];
-                }
+                copy_n(msg.data, data, 8);
 
                 int16_t steering_0_raw;
                 int16_t steering_1_raw;
@@ -317,7 +316,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<ASSupervisor>());
     rclcpp::shutdown();
