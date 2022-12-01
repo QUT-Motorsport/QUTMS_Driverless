@@ -167,9 +167,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
 
-        auto sw_heartbeat = Compose_SW_Heartbeat(&this->SW_heartbeat);
-        this->can_pub->publish(this->_d_2_f(sw_heartbeat.id, true, sw_heartbeat.data, sizeof(heartbeat.data)));
-
         // ROScube publisher
         this->ros_state.header.stamp = this->now();
         this->ros_state.state = this->DVL_heartbeat.stateID;
@@ -280,17 +277,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
         this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
-        // Configure logger level
-        this->get_logger().set_level(rclcpp::Logger::Level::Debug);
-
         // CAN
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "canbus_rosbound", 10, std::bind(&ASSupervisor::canbus_callback, this, _1));
-
-        if (this->can_pub == nullptr || this->can_sub == nullptr) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to create CAN topic pub sub");
-        }
 
         // State
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("as_status", 10);
@@ -307,7 +297,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Ackermann
         this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-            "/driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+            "driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
