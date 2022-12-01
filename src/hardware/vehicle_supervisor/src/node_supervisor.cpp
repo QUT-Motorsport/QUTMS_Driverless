@@ -192,6 +192,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
+            // reset mission selections
+            this->ros_state.mission = driverless_msgs::msg::State::MISSION_NONE;
+            this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
+
             // transition to select mission when res switch is backwards
             if (!this->RES_status.sw_k2) {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_SELECT_MISSION;
@@ -200,11 +204,20 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Select Mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
-            // read SW hearbeat here
+            if (this->SW_heartbeat.flags._SW_Flags.MISSION_SELECTED) {
+                this->ros_state.mission = this->SW_heartbeat.missionID;
+            }
 
-            if (ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
+            if (this->ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
                 // transition to Check EBS state when mission is selected
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
+
+                // set the DVL mission IDs according to selection
+                if (this->ros_state.mission == driverless_msgs::msg::State::MANUAL_DRIVING) {
+                    this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
+                } else {
+                    this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
+                }
             }
         }
 
@@ -265,13 +278,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
    public:
     ASSupervisor() : Node("vehicle_supervisor") {
-        // Setup ROS states
+        // Setup inital states
         this->ros_state.state = driverless_msgs::msg::State::START;
-        this->ros_state.mission = driverless_msgs::msg::State::MISSION_NONE;
-
-        // Setup DVL states
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
-        this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
         // CAN
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
