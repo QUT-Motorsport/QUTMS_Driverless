@@ -45,8 +45,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     driverless_msgs::msg::State ros_state;
 
-    rclcpp::Time _internal_status_time;
-
     bool res_alive = 0;
     float last_torque = 0;
 
@@ -73,8 +71,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             case (0x180 + RES_NODE_ID): {
                 // RES Reciever Status Packet
-                this->_internal_status_time = this->now();  // Debug information
-
                 Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
 
                 this->res_alive = 1;
