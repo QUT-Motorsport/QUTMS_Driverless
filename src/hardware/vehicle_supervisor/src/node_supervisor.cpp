@@ -136,15 +136,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     // go to emergency
                     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
                 }
+
+                break;
             }
             case (SW_Heartbeat_ID): {
                 // data vector to uint8_t array
                 uint8_t data[3];
-                copy_n(msg.data, data, 3);
+                copy_data(msg.data, data, 3);
 
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
                 RCLCPP_INFO(this->get_logger(), "Mission Selected: %d Mission Id: %d",
                             this->SW_heartbeat.flags._SW_Flags.MISSION_SELECTED, this->SW_heartbeat.missionID);
+
+                break;
             }
 
             default:
