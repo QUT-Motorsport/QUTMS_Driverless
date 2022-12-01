@@ -16,8 +16,8 @@
 
 using std::placeholders::_1;
 
-void copy_n(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
-    for (int i = 0; i < n; i++) {
+void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
+    for (size_t i = 0; i < n; i++) {
         dest[i] = vec[i];
     }
 }
@@ -98,7 +98,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
                 // data vector to uint8_t array
                 uint8_t data[8];
-                copy_n(msg.data, data, 8);
+                copy_data(msg.data, data, 8);
 
                 // update heartbeat data for this specific VCU
                 if (VCU_ID == VCU_ID_CTRL) {
@@ -116,7 +116,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             case (VCU_TransmitSteering_ID): {
                 // data vector to uint8_t array
                 uint8_t data[8];
-                copy_n(msg.data, data, 8);
+                copy_data(msg.data, data, 8);
 
                 int16_t steering_0_raw;
                 int16_t steering_1_raw;
