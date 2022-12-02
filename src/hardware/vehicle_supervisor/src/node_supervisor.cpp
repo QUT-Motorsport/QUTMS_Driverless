@@ -87,12 +87,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
 
         uint32_t qutms_masked_id = msg.id & ~0xF;
-        RCLCPP_INFO(this->get_logger(), "ID: %08x", qutms_masked_id);
-
         switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
                 uint8_t VCU_ID = msg.id & 0xF;
-                RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
+                RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
                 // data vector to uint8_t array
                 uint8_t data[8];
@@ -120,8 +118,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 uint16_t adc_1;
 
                 Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
-                RCLCPP_DEBUG(this->get_logger(), "Steering 0: %i  Steering 1: %i ADC 0: %i ADC 1: %i", steering_0_raw,
-                             steering_1_raw, adc_0, adc_1);
+                // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                // steering_0_raw,
+                //              steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
                 if (abs(steering_0 - steering_1) < 10) {
@@ -143,7 +142,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 copy_data(msg.data, data, 4);
 
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
-                RCLCPP_INFO(this->get_logger(), "Mission State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
+                RCLCPP_INFO(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
                             this->SW_heartbeat.missionID);
 
                 break;
@@ -173,7 +172,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void res_alive_callback() {
         if (!this->res_alive) {
-            RCLCPP_DEBUG(this->get_logger(), "Attemping to start RES");
+            this->ros_state.mission == driverless_msgs::msg::State::EMERGENCY;
+            RCLCPP_DEBUG(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -247,8 +247,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
 
-            if (this->EBS_VCU_heartbeat.stateID != VCU_STATE_EBS_DRIVE ||
-                this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.DET_PWR_EBS == 0) {
+            if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.DET_PWR_EBS == 0) {
                 // if EBS VCU not in driving or EBS activated -> go to emergency
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
                 this->DVL_heartbeat.torqueRequest = 0;

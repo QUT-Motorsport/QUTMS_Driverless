@@ -190,11 +190,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                         }
                     }
 
-                    RCLCPP_DEBUG(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
-                    RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
 
                     if (this->current_state != this->desired_state) {
-                        RCLCPP_DEBUG(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
+                        RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
                         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
                                   out);
                         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
