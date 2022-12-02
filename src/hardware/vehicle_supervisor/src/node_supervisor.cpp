@@ -137,8 +137,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             }
             case (SW_Heartbeat_ID): {
                 // data vector to uint8_t array
-                uint8_t data[3];
-                copy_data(msg.data, data, 3);
+                uint8_t data[4];
+                copy_data(msg.data, data, 4);
 
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
                 RCLCPP_INFO(this->get_logger(), "Mission Selected: %d Mission Id: %d",
