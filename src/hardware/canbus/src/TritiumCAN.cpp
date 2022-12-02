@@ -190,9 +190,32 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     // auto rxData = this->tcpClient->recieve_data();
 
     auto rxData = this->rxClient->recieve_data();
-    if (rxData->size() < 16) {
-        // invalid
-        return msgs;
+
+    while (rxData != nullptr) {
+        if (rxData->size() < 16) {
+            break;
+        }
+
+        int numCANBytes = rxData->size() - 16;
+        int numCAN = numCANBytes / CAN_MSG_LEN;
+
+        // std::cout << ", Num CAN: " << numCAN << std::endl;
+
+        for (int i = 0; i < numCAN; i++) {
+            uint8_t data[CAN_MSG_LEN];
+            std::copy(rxData->begin() + 16 + i * CAN_MSG_LEN, rxData->begin() + 16 + (i + 1) * CAN_MSG_LEN, data);
+
+            driverless_msgs::msg::Can msg;
+            bool result = this->process_can_msg(data, &msg);
+            if (result) {
+                msgs->push_back(msg);
+            } else {
+                std::cout << "RX - INVALID CAN PACKET " << std::endl;
+            }
+        }
+
+        // check queue for more stuff
+        rxData = this->rxClient->recieve_data();
     }
 
     // uint64_t protocolVersion = 0;
@@ -211,27 +234,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     // }
     // std::cout << ", Client Identifier: " << std::hex << clientIdentifier << std::dec;
 
-    int numCANBytes = rxData->size() - 16;
-    int numCAN = numCANBytes / CAN_MSG_LEN;
-
-    // std::cout << ", Num CAN: " << numCAN << std::endl;
-
-    for (int i = 0; i < numCAN; i++) {
-        uint8_t data[CAN_MSG_LEN];
-        std::copy(rxData->begin() + 16 + i * CAN_MSG_LEN, rxData->begin() + 16 + (i + 1) * CAN_MSG_LEN, data);
-
-        driverless_msgs::msg::Can msg;
-        bool result = this->process_can_msg(data, &msg);
-        if (result) {
-            msgs->push_back(msg);
-        }
-
-        // std::cout << "ID: " << std::hex << (long)msg.id << std::dec << ", DLC: " << (int)msg.dlc << ", DATA: [";
-        // for (int j = 0; j < msg.dlc; j++) {
-        //     std::cout << std::hex << (int)msg.data[j] << std::dec << ", ";
-        // }
-        // std::cout << "]" << std::endl;
-    }
+    
 
     return msgs;
 }
@@ -258,11 +261,13 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) 
     if (extended) {
         if (((canID & 0xE0000000) != 0)) {
             // extended, so only lowest 29 bits should have values, top 3 bits should be 0
+            std::cout << "bad extended id" << std::endl;
             return false;
         }
     } else {
         if (((canID & (~0x7FF)) != 0)) {
             // standard, so only lowest 11 bits should have values, top 21 bits should be 0
+            std::cout << "bad standard id" << std::endl;
             return false;
         }
     }
@@ -273,32 +278,36 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) 
 
     if (DLC > 8) {
         // DLC cannot be greater than 8
+        std::cout << "bad DLC" << std::endl;
         return false;
     }
 
     msg->dlc = DLC;
 
+    // TODO: why aren't all the bytes 0 lol
+/*
     if (DLC < 8) {
         for (int i = DLC; i < 8; i++) {
             if (data[6 + i] != 0) {
                 // all bytes after dlc amount should be 0
+                std::cout << "bad data" << std::endl;
                 return false;
             }
         }
     }
-
+*/
     std::vector<uint8_t> msgData;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < msg->dlc; i++) {
         msgData.push_back(data[6 + i]);
     }
     msg->data = msgData;
 
-    std::cout << "ID: " << std::hex << msg->id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
-              << ", DLC: " << (int)msg->dlc << ", Data: [";
-    for (int i = 0; i < DLC; i++) {
-        std::cout << std::hex << (int)msg->data[i] << std::dec << ", ";
-    }
-    std::cout << "]" << std::endl;
+    // std::cout << "RX - ID: " << std::hex << msg->id << std::dec << ", Flags: " << std::hex << (int)flags << std::dec
+    //           << ", DLC: " << (int)msg->dlc << ", Data: [";
+    // for (int i = 0; i < DLC; i++) {
+    //     std::cout << std::hex << (int)msg->data[i] << std::dec << ", ";
+    // }
+    // std::cout << "]" << std::endl;
 
     return true;
 }
