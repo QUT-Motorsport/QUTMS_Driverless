@@ -247,11 +247,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
 
-            if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.DET_PWR_EBS == 0) {
-                // if EBS VCU not in driving or EBS activated -> go to emergency
-                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-                this->DVL_heartbeat.torqueRequest = 0;
-            }
+            // if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.DET_PWR_EBS == 0) {
+            //     // if EBS VCU not in driving or EBS activated -> go to emergency
+            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            //     this->DVL_heartbeat.torqueRequest = 0;
+            // }
         }
 
         // EBS Activated state
