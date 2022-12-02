@@ -271,7 +271,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Emergency state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
-            if (!this->RES_status.sw_k2) {
+            if (!this->RES_status.estop && !this->RES_status.sw_k2) {
                 // transition to start when RES swtiched back
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
             }
