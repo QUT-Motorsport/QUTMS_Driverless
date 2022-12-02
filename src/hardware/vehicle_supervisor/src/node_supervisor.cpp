@@ -204,9 +204,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Select Mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
-            if (this->SW_heartbeat.flags._SW_Flags.MISSION_SELECTED) {
-                this->ros_state.mission = this->SW_heartbeat.missionID;
-            }
+            // if (this->SW_heartbeat.flags._SW_Flags.MISSION_SELECTED) {
+            //     this->ros_state.mission = this->SW_heartbeat.missionID;
+            // }
+            this->ros_state.mission = driverless_msgs::msg::State::TRACKDRIVE;
 
             if (this->ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
                 // transition to Check EBS state when mission is selected
