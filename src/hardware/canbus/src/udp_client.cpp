@@ -122,7 +122,7 @@ std::shared_ptr<std::vector<uint8_t>> UDPClient::recieve_data() {
 
         if (num < 0) {
             // nothing to read, so return nullptr
-            //std::cout << "Failed to recieve on socket: " << this->sock << std::endl;
+            // std::cout << "Failed to recieve on socket: " << this->sock << std::endl;
             return nullptr;
         } else {
             auto rxData = std::make_shared<std::vector<uint8_t>>(buf, buf + num);

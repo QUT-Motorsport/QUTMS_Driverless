@@ -234,8 +234,6 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
     // }
     // std::cout << ", Client Identifier: " << std::hex << clientIdentifier << std::dec;
 
-    
-
     return msgs;
 }
 
@@ -285,17 +283,17 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) 
     msg->dlc = DLC;
 
     // TODO: why aren't all the bytes 0 lol
-/*
-    if (DLC < 8) {
-        for (int i = DLC; i < 8; i++) {
-            if (data[6 + i] != 0) {
-                // all bytes after dlc amount should be 0
-                std::cout << "bad data" << std::endl;
-                return false;
+    /*
+        if (DLC < 8) {
+            for (int i = DLC; i < 8; i++) {
+                if (data[6 + i] != 0) {
+                    // all bytes after dlc amount should be 0
+                    std::cout << "bad data" << std::endl;
+                    return false;
+                }
             }
         }
-    }
-*/
+    */
     std::vector<uint8_t> msgData;
     for (int i = 0; i < msg->dlc; i++) {
         msgData.push_back(data[6 + i]);
