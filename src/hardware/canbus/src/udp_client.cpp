@@ -117,10 +117,12 @@ std::shared_ptr<std::vector<uint8_t>> UDPClient::recieve_data() {
 
         socklen_t addrLen = sizeof(recvAddr);
 
-        int num = recvfrom(sock, buf, UDP_RECV_SIZE, 0, (sockaddr *)&recvAddr, &addrLen);
+        // use MSG_DONTWAIT so it returns instantly if nothing to read
+        int num = recvfrom(sock, buf, UDP_RECV_SIZE, MSG_DONTWAIT, (sockaddr *)&recvAddr, &addrLen);
 
         if (num < 0) {
-            std::cout << "Failed to recieve on socket: " << this->sock << std::endl;
+            // nothing to read, so return nullptr
+            // std::cout << "Failed to recieve on socket: " << this->sock << std::endl;
             return nullptr;
         } else {
             auto rxData = std::make_shared<std::vector<uint8_t>>(buf, buf + num);
