@@ -45,7 +45,7 @@ class ConeDetectionNode(Node):
 
         self.config: Config = _config
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback,
+            PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
 
@@ -96,7 +96,7 @@ def local_data_stream():
 def main(args=sys.argv[1:]):
     # Init config
     config: Config = utils.Config()
-    # config.update(args)
+    config.update(args)
 
     # Check if logs should be printed
     if not config.print_logs:

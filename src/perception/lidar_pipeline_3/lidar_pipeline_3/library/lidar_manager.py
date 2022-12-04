@@ -64,12 +64,12 @@ def locate_cones(config, point_cloud, start_time):
 
     ground_points = point_cloud[~point_labels]
     # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
-    obj_segs, obj_bins, reconstructed_objects, reconstructed_centers = op.reconstruct_objects_2(
+    obj_segs, obj_bins, reconstructed_objects, reconstructed_centers, avg_object_intensity = op.reconstruct_objects_2(
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
     config.logger.info("DONE: Objects Reconstructed")
 
-    cone_centers, cone_points = op.cone_filter(
+    cone_centers, cone_points, cone_intensities = op.cone_filter(
         segments,
         bins,
         ground_lines_arr,
@@ -78,6 +78,7 @@ def locate_cones(config, point_cloud, start_time):
         object_centers,
         reconstructed_objects,
         reconstructed_centers,
+        avg_object_intensity,
     )
     config.logger.info("DONE: Cones Identified")
 
@@ -117,7 +118,7 @@ def locate_cones(config, point_cloud, start_time):
         # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
         # vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
         # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
-        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_centers, cone_points, duration, "15_Cones")
+        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
 
         # reintro structured array for lidar colouring
 
