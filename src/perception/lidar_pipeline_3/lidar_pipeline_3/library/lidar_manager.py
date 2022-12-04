@@ -118,7 +118,7 @@ def locate_cones(config, point_cloud, start_time):
         # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
         # vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
         # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
-        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_centers, cone_points, duration, "15_Cones")
+        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
 
         # reintro structured array for lidar colouring
 
