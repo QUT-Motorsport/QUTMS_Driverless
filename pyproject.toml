@@ -1,12 +1,5 @@
 [tool.black]
 line-length = 120
-exclude = '''
-(
-  /(
-    src/hardware/velocity_controller/model_testing
-  )/
-)
-'''
 
 [tool.isort]
 line_length = 120
