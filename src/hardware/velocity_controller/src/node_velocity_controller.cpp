@@ -2,6 +2,7 @@
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -21,6 +22,10 @@ class Velocity_Controller : public rclcpp::Node {
     rclcpp::Subscription<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_sub;
 
     ackermann_msgs::msg::AckermannDriveStamped target_ackermann;
+
+    std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler;
+    std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle;
+
     // velocity of each wheel in m/s
     float motor_velocities[4];
 
@@ -98,18 +103,30 @@ class Velocity_Controller : public rclcpp::Node {
         this->accel_pub->publish(accel_cmd);
     }
 
+    void update_parameters(const rcl_interfaces::msg::ParameterEvent& event) {
+        (void)event;
+
+        this->get_parameter("Kp_vel", this->Kp_vel);
+        this->get_parameter("Ki_vel", this->Ki_vel);
+        this->get_parameter("max_integral_torque", this->max_integral_torque);
+        this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
+        this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
+
+        RCLCPP_INFO(this->get_logger(),
+                    "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
+                    Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
+    }
+
    public:
     Velocity_Controller() : Node("velocity_controller") {
         // PID controller parameters
         this->declare_parameter<float>("Kp_vel", 0);
         this->declare_parameter<float>("Ki_vel", 0);
-        this->declare_parameter<float>("histerisis_kickin_ms", 0);
+        this->declare_parameter<float>("max_integral_torque", 0);
+        this->declare_parameter<float>("histerisis_kick_ms", 0);
         this->declare_parameter<float>("histerisis_reset_ms", 0);
 
-        this->get_parameter("Kp_vel", this->Kp_vel);
-        this->get_parameter("Ki_vel", this->Ki_vel);
-        this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
-        this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
+        this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
@@ -128,6 +145,12 @@ class Velocity_Controller : public rclcpp::Node {
 
         // Acceleration command publisher
         this->accel_pub = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("accel_command", 10);
+
+        // Param callback
+
+        this->param_event_handler = std::make_shared<rclcpp::ParameterEventHandler>(this);
+        this->param_cb_handle = this->param_event_handler->add_parameter_event_callback(
+            std::bind(&Velocity_Controller::update_parameters, this, std::placeholders::_1));
     }
 };
 
