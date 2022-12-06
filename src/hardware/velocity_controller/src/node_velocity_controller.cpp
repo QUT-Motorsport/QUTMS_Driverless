@@ -10,10 +10,11 @@ class Velocity_Controller : public rclcpp::Node {
    private:
     float Kp_vel = 0;
     float Ki_vel = 0;
-    float Kd_vel = 0;
+    float max_integral_torque = 0;
+    float histerisis_kickin_ms = 0;
+    float histerisis_reset_ms = 0;
 
     float integral_error = 0;
-    float prev_error = 0;
 
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
@@ -58,18 +59,27 @@ class Velocity_Controller : public rclcpp::Node {
 
         // calculate error
         float error = this->target_ackermann.drive.speed - av_velocity;
-
         this->integral_error += error;
 
-        float derivative_error = error - this->prev_error;
+        // clip the integral error based on max_integral_torque
+        if (this->integral_error < 0) {
+            this->integral_error = 0;
+        } else if (this->integral_error > (this->max_integral_torque / this->Ki_vel)) {
+            this->integral_error = this->max_integral_torque / this->Ki_vel;
+        }
+
+        if (av_velocity < this->histerisis_reset_ms) {
+            this->integral_error = 0;
+        }
 
         // calculate control variable
-        float accel = (this->Kp_vel * error) + (this->Ki_vel * integral_error) + (this->Kd_vel * derivative_error);
-        
-        RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f accel: %f", Kp_vel, error, Ki_vel,
-                    integral_error, Kd_vel, derivative_error, accel);
+        float p_term = this->Kp_vel * error;
+        float i_term = this->Ki_vel * integral_error;
 
-        this->prev_error = error;
+        float accel = p_term;
+        if (av_velocity > this->histerisis_kickin_ms) {
+            accel += i_term;
+        }
 
         // limit output accel to be between -1 (braking) and 1 (accel)
         if (accel > 1) {
@@ -93,11 +103,13 @@ class Velocity_Controller : public rclcpp::Node {
         // PID controller parameters
         this->declare_parameter<float>("Kp_vel", 0);
         this->declare_parameter<float>("Ki_vel", 0);
-        this->declare_parameter<float>("Kd_vel", 0);
+        this->declare_parameter<float>("histerisis_kickin_ms", 0);
+        this->declare_parameter<float>("histerisis_reset_ms", 0);
 
         this->get_parameter("Kp_vel", this->Kp_vel);
         this->get_parameter("Ki_vel", this->Ki_vel);
-        this->get_parameter("Kd_vel", this->Kd_vel);
+        this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
+        this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
 
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
@@ -116,9 +128,6 @@ class Velocity_Controller : public rclcpp::Node {
 
         // Acceleration command publisher
         this->accel_pub = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("accel_command", 10);
-
-        // PID parameters
-        RCLCPP_INFO(this->get_logger(), "PID parameters: Kp %f Kf %f Kd %f", this->Kp_vel, this->Ki_vel, this->Kd_vel);
     }
 };
 
