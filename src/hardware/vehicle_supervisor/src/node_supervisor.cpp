@@ -542,6 +542,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Motor RPM
         this->motorRPM_pub = this->create_publisher<driverless_msgs::msg::MotorRPM>("motor_rpm", 10);
+        this->wss_vel_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("vehicle_wss", 10);
 
         // Steering
         this->steering_reading_pub =
