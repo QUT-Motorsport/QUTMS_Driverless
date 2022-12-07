@@ -134,6 +134,18 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     this->DVL_drivingDynamics1._fields.speed_actual = rpm / (21.0 * 4.50) * M_PI * WHEEL_DIAMETER / 60;
 
                     wheel_speeds[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * this->WHEEL_DIAMETER / 60;
+
+                    float av_velocity = 0;
+
+                    for (int i = 0; i < MOTOR_COUNT; i++) {
+                        av_velocity += this->wheel_speeds[i];
+                    }
+                    av_velocity = av_velocity / MOTOR_COUNT;
+
+                    driverless_msgs::msg::WSSVelocity vel_msg;
+                    vel_msg.velocity = av_velocity;
+                    vel_msg.header.stamp = this->now();
+                    this->wss_vel_pub->publish(vel_msg);
                 }
             }
         }
@@ -251,18 +263,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->ros_state.header.stamp = this->now();
         this->ros_state.state = this->DVL_heartbeat.stateID;
         this->state_pub->publish(this->ros_state);
-
-        float av_velocity = 0;
-
-        for (int i = 0; i < MOTOR_COUNT; i++) {
-            av_velocity += this->wheel_speeds[i];
-        }
-        av_velocity = av_velocity / MOTOR_COUNT;
-
-        driverless_msgs::msg::WSSVelocity vel_msg;
-        vel_msg.velocity = av_velocity;
-        vel_msg.header.stamp = this->now();
-        this->wss_vel_pub->publish(vel_msg);
     }
 
     void res_alive_callback() {
