@@ -5,14 +5,12 @@ import cv2
 import numpy as np
 
 from cv_bridge import CvBridge
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
-from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
@@ -52,36 +50,26 @@ def closest_point_on_curve(point: Point, curve: np.ndarray) -> Point:
 
 
 class BetterReactiveController(Node):
-    throttle_max: float = 0.1
     prev_steering_angle: float = 0
-    vel_max: float = 8  # m/s = 7.2km/h
-    Kp_prev: float = 0.4
-    Kp_dist: float = 0.05
-    Kp_angle: float = -20
+    Kp_angle: float = 20
+    targ_vel: float = 4  # m/s
     r2d: bool = True  # for reset
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     def __init__(self):
         super().__init__("better_reactive_controller")
 
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-
         # debug image
         self.create_subscription(Image, "/debug_imgs/vision_det_img", self.img_callback, 1)
-        #  subscribers
-        # vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection")
-        # synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[detection_sub, vel_sub],
-        #     queue_size=30,
-        #     slop=0.3,
-        # )
+        # cone detections
         self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        # sim
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
 
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 
@@ -95,7 +83,6 @@ class BetterReactiveController(Node):
         self.prev_steering_angle = 0
         self.r2d = True
 
-    # def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistWithCovarianceStamped):
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()  # begin a timer
@@ -103,11 +90,8 @@ class BetterReactiveController(Node):
             return
 
         # safety critical, set to 0 if not good detection
-        control_msg = AckermannDrive()
-        control_msg.speed = 0.0
-        control_msg.steering_angle = 0.0
-        control_msg.acceleration = 0.0
-        control_msg.jerk = 0.0  # use as brake
+        speed = 0.0
+        steering_angle = 0.0
 
         cones: List[Cone] = cone_msg.cones
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
@@ -167,19 +151,10 @@ class BetterReactiveController(Node):
 
         best_curve_steering_angle: float = A[np.abs(errors).argmin()] * self.Kp_angle
 
-        # velocity control
-        # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
-        # # increase proportionally as it approaches target
-        # throttle_scalar: float = 1 - (vel / self.vel_max)
-        # if throttle_scalar > 0:
-        #     calc_throttle = self.throttle_max * throttle_scalar
-        # elif throttle_scalar <= 0:
-        #     calc_throttle = 0.0  # if its over maximum, cut throttle
-        calc_throttle = 0.2
-
         # publish message
-        control_msg.steering_angle = -degrees(best_curve_steering_angle)
-        control_msg.acceleration = calc_throttle
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = degrees(best_curve_steering_angle)
+        control_msg.drive.speed = self.targ_vel
         self.control_publisher.publish(control_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time

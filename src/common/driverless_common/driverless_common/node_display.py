@@ -5,7 +5,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathStamped, TrackDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
@@ -39,7 +39,7 @@ class DisplayDetections(Node):
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback2, 1)
 
         # steering angle target sub
-        self.create_subscription(AckermannDrive, "/driving_command", self.steering_callback, 1)
+        self.create_subscription(AckermannDriveStamped, "/driving_command", self.steering_callback, 1)
 
         # path spline sub
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
@@ -74,10 +74,10 @@ class DisplayDetections(Node):
 
         self.get_logger().info("---Cone display node initialised---")
 
-    def steering_callback(self, msg: AckermannDrive):
+    def steering_callback(self, msg: AckermannDriveStamped):
         # get most recent driving command msg from a controller
-        self.steering_angle = msg.steering_angle
-        self.velocity = msg.speed
+        self.steering_angle = msg.drive.steering_angle
+        self.velocity = msg.drive.speed
 
     def vision_callback(self, msg: ConeDetectionStamped):
         # subscribed to vision cone detections

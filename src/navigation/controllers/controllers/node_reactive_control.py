@@ -1,10 +1,12 @@
+from math import atan2, cos, sin, sqrt
+
 import numpy as np
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
 from driverless_common.point import Point, cone_to_point, dist
@@ -22,7 +24,6 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 class ReactiveController(Node):
     Kp_ang: float = 2
-    Kp_vel: float = 2
     vel_max: float = 2  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
@@ -35,18 +36,15 @@ class ReactiveController(Node):
         ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(ebs_test))
         if ebs_test:
-            self.Kp_ang = -0.1  # shallow steering, straight line
-            self.vel_max = 45 / 3.6  # 40km/h in m/s
-            self.Kp_vel = 1
-            self.vel_min = self.vel_max / 2  # m/s
-            self.throttle_max = 0.2
+            self.Kp_ang = 0.1  # shallow steering, straight line
+            self.vel_max = 45.0 / 3.6
 
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/sim/cone_detection", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
@@ -55,17 +53,14 @@ class ReactiveController(Node):
         self.prev_steering_angle = 0
         self.r2d = True
 
-    def callback(self, cone_msg: ConeDetectionStamped):
+    def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
-        control_msg = AckermannDrive()
-        control_msg.speed = 0.0
-        control_msg.steering_angle = 0.0
-        control_msg.acceleration = 0.0
-        control_msg.jerk = 1.0
+        speed = 0.0
+        steering_angle = 0.0
 
-        cones: List[Cone] = cone_msg.cones
+        cones: List[Cone] = msg.cones
 
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
@@ -114,10 +109,13 @@ class ReactiveController(Node):
             # steering control
             steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")
+            speed = self.vel_max
 
-            # publish message
-            control_msg.steering_angle = steering_angle
-            control_msg.acceleration = self.throttle_max
+        # publish message
+        control_msg = AckermannDriveStamped()
+        control_msg.header.stamp = msg.header.stamp
+        control_msg.drive.steering_angle = steering_angle
+        control_msg.drive.speed = speed
 
         self.control_publisher.publish(control_msg)
 

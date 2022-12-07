@@ -22,6 +22,7 @@ set(msg_files
   "msg/Cone.msg"
   "msg/ConeDetectionStamped.msg"
   "msg/CarStatus.msg"
+  "msg/MotorRPM.msg"
   "msg/PathPoint.msg"
   "msg/PathStamped.msg"
   "msg/Can.msg"

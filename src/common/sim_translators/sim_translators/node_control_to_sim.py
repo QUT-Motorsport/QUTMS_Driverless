@@ -1,19 +1,31 @@
 import math
+from math import sqrt
 
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from fs_msgs.msg import ControlCommand
+from nav_msgs.msg import Odometry
 
 
 class ControlToSim(Node):
+    Kp_vel: float = 2
+
     def __init__(self):
         super().__init__("control_to_sim")
 
-        # sub to drive
-        self.create_subscription(AckermannDrive, "/driving_command", self.control_callback, 1)
+        # subscribers
+        vel_sub = message_filters.Subscriber(self, Odometry, "/testing_only/odom")
+        drive_sub = message_filters.Subscriber(self, AckermannDriveStamped, "/driving_command")
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[drive_sub, vel_sub],
+            queue_size=20,
+            slop=0.2,
+        )
+        synchronizer.registerCallback(self.callback)
 
         # publish to sim
         self.oldpublisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 1)
@@ -21,11 +33,18 @@ class ControlToSim(Node):
 
         self.get_logger().info("---Sim control translator initialised---")
 
-    def control_callback(self, msg: AckermannDrive):
+    def callback(self, drive_msg: AckermannDriveStamped, vel_msg: Odometry):
         sim_control = ControlCommand()
-        sim_control.steering = -msg.steering_angle / math.pi
-        sim_control.throttle = msg.acceleration  # accel used for throttle
-        sim_control.brake = msg.jerk  # jerk used for brake
+
+        # proportional velocity control
+        curr_vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+        calc_throttle = self.Kp_vel * (drive_msg.drive.speed - curr_vel)
+        if calc_throttle <= 0:
+            calc_throttle = 0.0  #  cut throttle
+
+        sim_control.steering = -0.1 * drive_msg.drive.steering_angle / math.pi
+        sim_control.throttle = calc_throttle
+        sim_control.brake = 0.0
         self.publisher.publish(sim_control)
         self.oldpublisher.publish(sim_control)
 

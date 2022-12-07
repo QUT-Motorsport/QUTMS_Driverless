@@ -1,7 +1,7 @@
 #include <chrono>
 #include <map>
 
-#include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "canopen.hpp"
 #include "driverless_msgs/msg/can.hpp"
@@ -76,7 +76,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::TimerBase::SharedPtr c5e_config_request_timer;
 
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
-    rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
+    rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
@@ -340,8 +340,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->update_steering();
     }
 
-    void driving_command_callback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
-        float cappedAngle = std::fmax(std::fmin(msg->steering_angle, 90), -90);
+    void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
+        float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 90), -90);
         this->requested_steering_angle = cappedAngle;
         this->update_steering();
     }
@@ -418,7 +418,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->steering_reading_sub = this->create_subscription<driverless_msgs::msg::SteeringReading>(
             "steering_reading", 10, std::bind(&SteeringActuator::steering_reading_callback, this, _1));
 
-        this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
+        this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
             "driving_command", 10, std::bind(&SteeringActuator::driving_command_callback, this, _1));
 
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(

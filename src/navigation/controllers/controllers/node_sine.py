@@ -1,10 +1,10 @@
-import math
+from math import pi, sin
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 
 
 class SineController(Node):
@@ -17,18 +17,18 @@ class SineController(Node):
         # timed callback
         self.create_timer(self.interval, self.timer_callback)
 
-        self.sine_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.sine_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 
     def timer_callback(self):
-        self.translate = 2 * math.pi / 5
+        translate = 2 * pi / 5
         self.count += self.interval
-        control_msg = AckermannDrive()
-        control_msg.steering_angle = math.sin(self.count * self.translate) * math.pi
-        control_msg.acceleration = 0.1
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = sin(self.count * translate) * pi
+        control_msg.drive.speed = 0.5
         self.get_logger().info(
-            "Angle: " + str(control_msg.steering_angle) + "\tAcceleration: " + str(control_msg.acceleration)
+            "Angle: " + str(control_msg.drive.steering_angle) + "\tSpeed: " + str(control_msg.drive.speed)
         )
         self.sine_publisher.publish(control_msg)
 

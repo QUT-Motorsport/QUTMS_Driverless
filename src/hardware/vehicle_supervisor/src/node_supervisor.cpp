@@ -4,10 +4,12 @@
 #include "CAN_RES.h"
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
+#include "CAN_VESC.h"
 #include "QUTMS_can.h"
-#include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/state.hpp"
@@ -33,12 +35,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     // Can publisher and subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
-    rclcpp::Subscription<ackermann_msgs::msg::AckermannDrive>::SharedPtr ackermann;
+    rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
 
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
+    rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
@@ -47,6 +50,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     bool res_alive = 0;
     float last_torque = 0;
+
+    const int NUM_MOTORS = 4;
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
@@ -84,6 +89,33 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             default:
                 break;
+        }
+
+        uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
+        uint8_t vesc_id = msg.id & 0xFF;
+
+        if (vesc_id < NUM_MOTORS) {
+            switch (vesc_masked_id) {
+                case VESC_CAN_PACKET_STATUS: {
+                    int32_t rpm;
+                    float current;
+                    float duty;
+
+                    // data vector to uint8_t array
+                    uint8_t data[8];
+                    for (int i = 0; i < 8; i++) {
+                        data[i] = msg.data[i];
+                    }
+
+                    // extract and publish RPM
+                    Parse_VESC_CANPacketStatus(data, &rpm, &current, &duty);
+
+                    driverless_msgs::msg::MotorRPM rpmMsg;
+                    rpmMsg.index = vesc_id;
+                    rpmMsg.rpm = rpm;
+                    this->motorRPM_pub->publish(rpmMsg);
+                }
+            }
         }
 
         uint32_t qutms_masked_id = msg.id & ~0xF;
@@ -153,10 +185,18 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
     }
 
-    void ackermann_callback(const ackermann_msgs::msg::AckermannDrive msg) {
-        // input range: 0 to 1
-        // torque to car range: 50 to 100
-        this->last_torque = 50 + 50 * msg.acceleration;  // convert to percentage
+    void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
+        // input range: -1 to 0, 0 to 1
+        // torque to car range: 50 to 100 for accel, 40 to 0 for regen
+
+        // compute torque from accel and braking
+        if (msg.drive.acceleration >= 0) {
+            // accel is positive -> accel (0.0 -> 1.0)
+            this->last_torque = 50 + 50 * msg.drive.acceleration;
+        } else {
+            // accel is negative -> braking (0.0 -> -1.0)
+            this->last_torque = 40 + 40 * msg.drive.acceleration;
+        }
     }
 
     void heartbeat_callback() {
@@ -297,13 +337,16 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // RES
         this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
 
+        // Motor RPM
+        this->motorRPM_pub = this->create_publisher<driverless_msgs::msg::MotorRPM>("motor_rpm", 10);
+
         // Steering
         this->steering_reading_pub =
             this->create_publisher<driverless_msgs::msg::SteeringReading>("steering_reading", 10);
 
-        // Ackermann
-        this->ackermann = this->create_subscription<ackermann_msgs::msg::AckermannDrive>(
-            "driving_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+        // Ackermann -> sub to acceleration command
+        this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
+            "accel_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
