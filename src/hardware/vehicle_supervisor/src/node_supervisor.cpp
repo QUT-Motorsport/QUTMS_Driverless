@@ -16,6 +16,7 @@
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
+#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -39,15 +40,16 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Can publisher and subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
-    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub;
 
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
+    rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
 
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub;
@@ -63,6 +65,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     float last_torque = 0;
 
     const int NUM_MOTORS = 4;
+    // velocity of each wheel in m/s
+    float wheel_speeds[4];
+    const int MOTOR_COUNT = 4;
+    const float WHEEL_DIAMETER = 0.4064;
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
@@ -125,7 +131,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     rpmMsg.index = vesc_id;
                     rpmMsg.rpm = rpm;
                     this->motorRPM_pub->publish(rpmMsg);
-                    this->DVL_drivingDynamics1._fields.speed_actual = rpm / (21.0 * 4.50) * M_PI * 0.4064 / 60;
+                    this->DVL_drivingDynamics1._fields.speed_actual = rpm / (21.0 * 4.50) * M_PI * WHEEL_DIAMETER / 60;
+
+                    wheel_speeds[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * this->WHEEL_DIAMETER / 60;
                 }
             }
         }
@@ -243,6 +251,18 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->ros_state.header.stamp = this->now();
         this->ros_state.state = this->DVL_heartbeat.stateID;
         this->state_pub->publish(this->ros_state);
+
+        float av_velocity = 0;
+
+        for (int i = 0; i < MOTOR_COUNT; i++) {
+            av_velocity += this->wheel_speeds[i];
+        }
+        av_velocity = av_velocity / MOTOR_COUNT;
+
+        driverless_msgs::msg::WSSVelocity vel_msg;
+        vel_msg.velocity = av_velocity;
+        vel_msg.header.stamp = this->now();
+        this->wss_vel_pub->publish(vel_msg);
     }
 
     void res_alive_callback() {
