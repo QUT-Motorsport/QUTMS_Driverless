@@ -39,6 +39,7 @@ class PySlam(Node):
     properties = np.array([])
 
     last_timestamp = 0.0
+    last_rpm = 0.0
 
     motor_vels: List[float] = [0.0, 0.0, 0.0, 0.0]
 
@@ -46,22 +47,22 @@ class PySlam(Node):
         super().__init__("py_slam")
 
         # sync subscribers using IMU
-        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
-        lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
-        vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
-        )
-        vision_synchronizer.registerCallback(self.callback)
-        lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
-        )
-        lidar_synchronizer.registerCallback(self.callback)
+        # vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
+        # vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
+        # lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
+        # vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
+        #     fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
+        # )
+        # vision_synchronizer.registerCallback(self.callback)
+        # lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
+        #     fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
+        # )
+        # lidar_synchronizer.registerCallback(self.callback)
 
         # subscribers using WSS
-        # self.create_subscription(MotorRPM, "/motor_rpm", self.motor_callback, 10)
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 10)
-        # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 10)
+        self.create_subscription(MotorRPM, "/motor_rpm", self.motor_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 10)
 
         # map reset on r2d
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
@@ -82,30 +83,20 @@ class PySlam(Node):
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
 
-    # def motor_callback(self, msg: MotorRPM):
-    #     motorRPM = msg.rpm / (21.0 * 4.50)
-    #     self.motor_vels[msg.index] = motorRPM * pi * WHEEL_RADIUS / 60
+    def motor_callback(self, msg: MotorRPM):
+        motorRPM = msg.rpm / (21.0 * 4.50)
+        self.motor_vels[msg.index] = motorRPM * pi * WHEEL_RADIUS / 60
 
-    def callback(self, vel_msg: TwistStamped, detection_msg: ConeDetectionStamped):
-        # def callback(self, detection_msg: ConeDetectionStamped):
+        if self.last_rpm == 0:
+            self.last_rpm == time.time()
+        self.dt = time.time() - self.last_rpm
+        self.last_rpm = time.time()
+
+        self.predict(np.average(self.motor_vels))
+
+    def callback(self, detection_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()
-
-        # get velocity timestep
-        if self.last_timestamp == 0.0:
-            self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-            return
-        self.dt = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
-        # for rosbag repeat
-        if self.dt < -1:
-            self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-            self.state[0:3] = [0.0, 0.0, 0.0]
-            return
-        self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-
-        # predict car location
-        self.predict(vel_msg)
-        # self.predict(np.average(self.motor_vels))
 
         if detection_msg.header.frame_id == "velodyne":
             Q = Q_LIDAR
@@ -168,7 +159,7 @@ class PySlam(Node):
 
         # publish track msg
         track_msg = TrackDetectionStamped()
-        track_msg.header.stamp = vel_msg.header.stamp
+        track_msg.header.stamp = detection_msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
@@ -177,7 +168,7 @@ class PySlam(Node):
 
         # publish local map msg
         local_map_msg = ConeDetectionStamped()
-        local_map_msg.header.stamp = vel_msg.header.stamp
+        local_map_msg.header.stamp = detection_msg.header.stamp
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
@@ -186,7 +177,7 @@ class PySlam(Node):
 
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = vel_msg.header.stamp
+        pose_msg.header.stamp = detection_msg.header.stamp
         pose_msg.header.frame_id = "track"
         pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
@@ -203,7 +194,7 @@ class PySlam(Node):
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
-        t.header.stamp = vel_msg.header.stamp
+        t.header.stamp = detection_msg.header.stamp
         t.header.frame_id = "track"
         t.child_frame_id = "car"
 
