@@ -1,4 +1,5 @@
 from math import atan2, cos, sin, sqrt
+import time
 
 import numpy as np
 
@@ -23,24 +24,26 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
 class ReactiveController(Node):
-    Kp_ang: float = 2
-    vel_max: float = 2  # m/s = 7.2km/h
+    Kp_ang: float = 2.0
+    vel_max: float = 3.0  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
-    target_cone_count = 2
-    r2d: bool = True
+    target_cone_count = 3
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("reactive_controller")
 
-        ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
-        self.get_logger().info("EBS Control: " + str(ebs_test))
-        if ebs_test:
-            self.Kp_ang = 0.1  # shallow steering, straight line
-            self.vel_max = 45.0 / 3.6
+        self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
+        self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
-        self.create_subscription(ConeDetectionStamped, "/sim/cone_detection", self.callback, 1)
-        # self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        if self.ebs_test:
+            self.Kp_ang = 10.0
+            self.vel_max = 30.0 / 3.6
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.target_cone_count = 2
+        else:
+            self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
@@ -51,6 +54,7 @@ class ReactiveController(Node):
 
     def reset_callback(self, msg: Reset):
         self.prev_steering_angle = 0
+        time.sleep(5)
         self.r2d = True
 
     def callback(self, msg: ConeDetectionStamped):
@@ -61,6 +65,14 @@ class ReactiveController(Node):
         steering_angle = 0.0
 
         cones: List[Cone] = msg.cones
+
+        if msg.header.frame_id == "velodyne" and self.ebs_test:
+            # change colour of cones based on on y pos as this is lidar scan
+            for i in range(len(cones)):
+                if cones[i].location.y > 0:
+                    cones[i].color = LEFT_CONE_COLOUR
+                else:
+                    cones[i].color = RIGHT_CONE_COLOUR
 
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
@@ -105,7 +117,7 @@ class ReactiveController(Node):
                 y=closest_right.location.y + 3,
             )
 
-        if target is not None:
+        if target is not None and self.r2d:
             # steering control
             steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")
