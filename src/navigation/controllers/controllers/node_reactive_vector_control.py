@@ -12,7 +12,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Image
@@ -125,14 +125,14 @@ def get_RVWP(path: np.ndarray, lookahead: float) -> np.ndarray:
 
 
 class VectorReactiveController(Node):
-    Kp_ang: float = -0.1
-    Kp_vel: float = 2
-    vel_max: float = 4  # m/s = 7.2km/h
+    Kp_ang: float = -2.0
+    Kp_vel: float = 2.0
+    vel_max: float = 2.0  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s
     throttle_max: float = 0.2
     target_cone_count = 3
     r2d: bool = True
-    in_dist: float = 2  # m
+    in_dist: float = 3  # m
     mid_dist: float = 5  # m
     prev_angle: float = 0.0
 
@@ -142,7 +142,7 @@ class VectorReactiveController(Node):
         ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(ebs_test))
         if ebs_test:
-            self.Kp_ang = -0.1  # shallow steering, straight line
+            self.Kp_ang = 0.1  # shallow steering, straight line
             self.vel_max = 45 / 3.6  # 40km/h in m/s
             self.Kp_vel = 1
             self.vel_min = self.vel_max / 2  # m/s
@@ -150,7 +150,8 @@ class VectorReactiveController(Node):
 
         # subscribers for sim
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/sim/cone_detection")
+        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/slam/local")
+        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[detection_sub, vel_sub],
             queue_size=30,
@@ -164,7 +165,7 @@ class VectorReactiveController(Node):
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
 
         self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
 
@@ -303,14 +304,38 @@ class VectorReactiveController(Node):
 
         target: Optional[Point] = None
 
+        midpoints.append(ORIGIN)
+        sorted_midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
+        midpoints = []
+
+        i = 0
+        while i < len(sorted_midpoints):
+            midpoint = sorted_midpoints[i]
+            for j in range(i + 1, len(sorted_midpoints)):
+                if dist(midpoint, sorted_midpoints[j]) < 2:
+                    sum_ = midpoint + sorted_midpoints[j]
+                    midpoint = Point(sum_.x / 2, sum_.y / 2)
+                else:
+                    i = j - 1
+                    break
+            midpoints.append(midpoint)
+            i += 1
+
+        for p in midpoints:
+            cv2.drawMarker(
+                debug_img,
+                loc_to_img_pt(p.x, p.y).to_tuple(),
+                (0, 0, 255),
+                markerType=cv2.MARKER_TRIANGLE_UP,
+                markerSize=20,
+                thickness=2,
+            )
+
         # if we found midpoints
-        if len(midpoints) > 1:
-            midpoints.append(ORIGIN)
+        if len(midpoints) > 2:
             orderSpline = len(midpoints) - 1
             if orderSpline > 3:
                 orderSpline = 3
-
-            midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
 
             x = [p.x for p in midpoints]
             y = [p.y for p in midpoints]
@@ -345,24 +370,21 @@ class VectorReactiveController(Node):
                 thickness=2,
             )
 
-            debug_img = draw_steering(debug_img, -steering_angle, 0)  # draw steering angle and vel data on image
+            debug_img = draw_steering(debug_img, steering_angle, 0)  # draw steering angle and vel data on image
 
-            # velocity control
-            vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
-            # increase proportionally as it approaches target
-            throttle_scalar: float = 1 - (vel / self.vel_max)
-            if throttle_scalar > 0:
-                speed = self.throttle_max * throttle_scalar
-            elif throttle_scalar <= 0:
-                speed = 0.0  # if its over maximum, cut throttle
+            # # velocity control
+            # vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
+            # # increase proportionally as it approaches target
+            # throttle_scalar: float = 1 - (vel / self.vel_max)
+            # if throttle_scalar > 0:
+            #     speed = self.throttle_max * throttle_scalar
+            # elif throttle_scalar <= 0:
+            #     speed = 0.0  # if its over maximum, cut throttle
+            speed = self.vel_max
 
-        else:
-            steering_angle = self.prev_angle
-            speed = 1.0
-
-        control_msg = AckermannDrive()
-        control_msg.steering_angle = steering_angle * self.Kp_ang
-        control_msg.acceleration = speed
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = steering_angle * self.Kp_ang
+        control_msg.drive.speed = speed
         self.control_publisher.publish(control_msg)
         self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
