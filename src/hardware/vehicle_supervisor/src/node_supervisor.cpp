@@ -32,6 +32,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     VCU_HeartbeatState_t EBS_VCU_heartbeat;
     SW_HeartbeatState_t SW_heartbeat;
     RES_Status_t RES_status;
+    DVL_DrivingDynamics1_Data_u DVL_drivingDynamics1;
+    DVL_SystemStatus_Data_u DVL_systemStatus;
 
     // Can publisher and subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
@@ -47,6 +49,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
+
+    rclcpp::TimerBase::SharedPtr dataLogger_timer;
 
     driverless_msgs::msg::State ros_state;
 
@@ -225,6 +229,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->res_alive = 0;
     }
 
+    void dataLogger_callback() {
+        // system status
+        auto systemStatusMsg = Compose_DVL_SystemStatus(&this->DVL_systemStatus);
+        this->can_pub->publish(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data)));
+
+        // very small delay between messages
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        // driving dynamics 1
+        auto drivingDynamics1Msg = Compose_DVL_DrivingDynamics1(&this->DVL_drivingDynamics1);
+        this->can_pub->publish(this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data)));
+    }
+
     void shutdown_callback(const driverless_msgs::msg::Shutdown msg) {
         if (msg.emergency_shutdown) {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
@@ -379,6 +396,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // RES Alive
         this->res_alive_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
                                                         std::bind(&ASSupervisor::res_alive_callback, this));
+
+        // Data Logger
+        this->dataLogger_timer = this->create_wall_timer(std::chrono::milliseconds(100),
+                                                        std::bind(&ASSupervisor::dataLogger_callback, this));
 
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
