@@ -21,19 +21,11 @@ from . import utils
 from .utils import Config
 
 
-def cone_msg(x_coord: float, y_coord: float, colour: int) -> Cone:
-    # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
-    location: Point = Point(
-        x=x_coord,
-        y=y_coord,
-        z=const.LIDAR_HEIGHT_ABOVE_GROUND,
-    )
+def cone_msg(x: float, y: float) -> Cone:
+    location: Point = Point(x=x, y=y, z=const.LIDAR_HEIGHT_ABOVE_GROUND)
 
-    return Cone(
-        location=location,
-        color=Cone.UNKNOWN,
-        # color=colour,
-    )
+    # This LiDAR Pipeline does not identify cone colour
+    return Cone(location=location, color=Cone.UNKNOWN)
 
 
 class ConeDetectionNode(Node):
