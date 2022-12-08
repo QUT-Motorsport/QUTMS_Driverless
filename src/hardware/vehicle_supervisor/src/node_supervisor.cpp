@@ -227,11 +227,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
 
-        if (this->RES_status.estop) {
-            // transition to E-Stop state when RES reports E-Stop or loss of signal
-            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-        }
-
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             // reset mission selections
@@ -314,6 +309,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // transition to start when RES swtiched back
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
             }
+        }
+
+        // E-stop overrides - these are checked no matter what state we are in
+        if (this->RES_status.estop) {
+            // transition to E-Stop state when RES reports E-Stop or loss of signal
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+        }
+
+        if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+            // transition to E-Stop state when EBS VCU reports shutdown
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
         }
     }
 
