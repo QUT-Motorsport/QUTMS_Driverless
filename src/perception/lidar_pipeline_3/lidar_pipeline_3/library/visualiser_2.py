@@ -83,6 +83,7 @@ def init_plot_3D(title, xlabel, ylabel, zlabel):
 
 
 def add_logo(fig, dpi, small):
+    return
     if small:
         logo_size = 0.1
     else:
