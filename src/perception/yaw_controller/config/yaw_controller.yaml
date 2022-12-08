@@ -1,8 +1,0 @@
-canbus:
-  ros__parameters:
-    target_velocity: 11
-    Kp_yaw: 0.0
-    Ki_yaw: 0.0
-    Kp_yaw_rate: 1.0
-    Ki_yaw_rate: 0.0
-    max_integral_steering: 20.0

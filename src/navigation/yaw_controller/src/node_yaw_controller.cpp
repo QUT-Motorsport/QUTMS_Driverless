@@ -33,6 +33,7 @@ class YawController : public rclcpp::Node {
     float Ki_yaw_rate = 0;
     float max_integral_steering = 0;
     float target_velocity = 0;
+    float integral_kickin = 0;
 
     void velocity_callback(const geometry_msgs::msg::TwistStamped msg) { current_yaw_rate = msg.twist.angular.z; }
 
@@ -53,13 +54,19 @@ class YawController : public rclcpp::Node {
         float error = target_yaw_rate - current_yaw_rate;
         integral_yaw_rate += error;
 
+        if (abs(error) < integral_kickin) {
+            integral_yaw_rate = 0;
+        }
+
         // clip the integral error based on max_integral_steering
-        float max_integral_error = max_integral_steering / Ki_yaw;
+        float max_integral_error = max_integral_steering / Ki_yaw_rate;
         if (integral_yaw_rate > max_integral_error) {
             integral_yaw_rate = max_integral_error;
         } else if (integral_yaw_rate < -max_integral_error) {
             integral_yaw_rate = -max_integral_error;
         }
+
+        RCLCPP_INFO(this->get_logger(), "integral_yaw_rate: %f", integral_yaw_rate);
 
         // calculate control variable
         float p_term = Kp_yaw_rate * error;
@@ -83,6 +90,12 @@ class YawController : public rclcpp::Node {
         this->get_parameter("Kp_yaw_rate", this->Kp_yaw_rate);
         this->get_parameter("Ki_yaw_rate", this->Ki_yaw_rate);
         this->get_parameter("max_integral_steering", this->max_integral_steering);
+        this->get_parameter("integral_kickin", this->integral_kickin);
+
+        RCLCPP_INFO(this->get_logger(),
+                    "target_velocity: %f Kp_yaw: %f Ki_yaw: %f Kp_yaw_rate: %f Ki_yaw_rate: %f max_integral_steering: "
+                    "%f integral_kickin: %f",
+                    target_velocity, Kp_yaw, Ki_yaw, Kp_yaw_rate, Ki_yaw_rate, max_integral_steering, integral_kickin);
     }
 
    public:
@@ -93,6 +106,7 @@ class YawController : public rclcpp::Node {
         this->declare_parameter<float>("Kp_yaw_rate", 0);
         this->declare_parameter<float>("Ki_yaw_rate", 0);
         this->declare_parameter<float>("max_integral_steering", 0);
+        this->declare_parameter<float>("integral_kickin", 0);
 
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
