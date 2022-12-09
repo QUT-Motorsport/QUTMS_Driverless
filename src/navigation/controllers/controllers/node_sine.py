@@ -6,8 +6,10 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 
+from driverless_common.shutdown_node import ShutdownNode
 
-class SineController(Node):
+
+class SineController(ShutdownNode):
     count = 0
     interval = 0.02
 

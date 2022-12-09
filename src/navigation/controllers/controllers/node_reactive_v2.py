@@ -15,6 +15,7 @@ from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
@@ -49,7 +50,7 @@ def closest_point_on_curve(point: Point, curve: np.ndarray) -> Point:
     return closest_point
 
 
-class BetterReactiveController(Node):
+class BetterReactiveController(ShutdownNode):
     prev_steering_angle: float = 0
     Kp_angle: float = 20
     targ_vel: float = 4  # m/s

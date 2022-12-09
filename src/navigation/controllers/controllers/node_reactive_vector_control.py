@@ -21,6 +21,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from driverless_common.draw import draw_map, draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.marker import marker_array_from_cone_detection, marker_array_from_map, path_marker_msg
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Optional, Tuple
 
@@ -124,7 +125,7 @@ def get_RVWP(path: np.ndarray, lookahead: float) -> np.ndarray:
     return path[idx]
 
 
-class VectorReactiveController(Node):
+class VectorReactiveController(ShutdownNode):
     Kp_ang: float = -2.0
     Kp_vel: float = 2.0
     vel_max: float = 2.0  # m/s = 7.2km/h

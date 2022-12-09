@@ -7,8 +7,10 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDrive
 
+from driverless_common.shutdown_node import ShutdownNode
 
-class RandomController(Node):
+
+class RandomController(ShutdownNode):
     target: float = 0.0
 
     change_interval = 1  # s

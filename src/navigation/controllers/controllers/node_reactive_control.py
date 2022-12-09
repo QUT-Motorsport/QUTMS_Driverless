@@ -11,6 +11,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Optional, Tuple
 
@@ -23,7 +24,7 @@ LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
-class ReactiveController(Node):
+class ReactiveController(ShutdownNode):
     Kp_ang: float = 2.0
     vel_max: float = 3.0  # m/s = 7.2km/h
     vel_min: float = vel_max / 2  # m/s

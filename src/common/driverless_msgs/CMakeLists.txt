@@ -28,6 +28,7 @@ set(msg_files
   "msg/Can.msg"
   "msg/RES.msg"
   "msg/Reset.msg"
+  "msg/Shutdown.msg"
   "msg/State.msg"
   "msg/ConeWithCovariance.msg"
   "msg/TrackDetectionStamped.msg"

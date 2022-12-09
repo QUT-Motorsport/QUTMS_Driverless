@@ -14,7 +14,6 @@ mission_pkg = get_package_share_directory("mission_controller")  # path to the m
 
 
 class MissionControl(Node):
-    target_mission: str = "inspection"  # default mission
     mission_launched: bool = False
 
     def __init__(self):
@@ -29,19 +28,19 @@ class MissionControl(Node):
     def gui_srv(self, request, response):  # service callback from terminal selection
         self.get_logger().info("Selected: " + request.mission)
         if request.mission != "R2D":
-            self.target_mission = request.mission
+            target_mission = request.mission
             launch_a_launch_file(
-                launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
+                launch_file_path=(mission_pkg + "/" + target_mission + ".launch.py"), launch_file_arguments={}
             )
             return response
 
     def callback(self, status: State):
         if status.mission != State.MISSION_NONE and not self.mission_launched:
-            self.target_mission = INT_MISSION_TYPE[status.mission].value
-            self.get_logger().info("Mission started: " + str(self.target_mission))
+            target_mission = INT_MISSION_TYPE[status.mission].value
+            self.get_logger().info("Mission started: " + target_mission)
             self.mission_launched = True
             launch_a_launch_file(
-                launch_file_path=(mission_pkg + "/" + self.target_mission + ".launch.py"), launch_file_arguments={}
+                launch_file_path=(mission_pkg + "/" + target_mission + ".launch.py"), launch_file_arguments={}
             )
 
 

@@ -12,6 +12,7 @@
 #include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/reset.hpp"
+#include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -36,6 +37,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
+    rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub;
 
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
@@ -223,6 +225,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->res_alive = 0;
     }
 
+    void shutdown_callback(const driverless_msgs::msg::Shutdown msg) {
+        if (msg.emergency_shutdown) {
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            run_fsm();
+        } else if (msg.finished_engage_ebs) {
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_ACTIVATE_EBS;
+            run_fsm();
+        } else if (msg.finished) {
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+            run_fsm();
+        }
+    }
+
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
@@ -281,22 +296,22 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
-
-            // if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.DET_PWR_EBS == 0) {
-            //     // if EBS VCU not in driving or EBS activated -> go to emergency
-            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            //     this->DVL_heartbeat.torqueRequest = 0;
-            // }
         }
 
         // EBS Activated state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
             // this state activates the EBS without tripping shutdown
             // used at end of missions
+
+            // if the vcu says its braking, we go to finished
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_BRAKING) {
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+            }
         }
 
         // Finished state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
+            this->DVL_heartbeat.torqueRequest = 0;
             if (!this->RES_status.sw_k2) {
                 // transition to start when RES swtiched back
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
@@ -364,6 +379,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // RES Alive
         this->res_alive_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
                                                         std::bind(&ASSupervisor::res_alive_callback, this));
+
+        // Shutdown emergency
+        this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
+            "shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
     }
 };
 

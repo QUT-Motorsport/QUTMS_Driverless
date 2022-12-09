@@ -10,6 +10,7 @@ from rclpy.publisher import Publisher
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
+from driverless_common.node_display import ShutdownNode
 from driverless_common.point import Point, cone_to_point, dist
 
 from typing import Any, List, Optional, Tuple
@@ -23,7 +24,7 @@ LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
-class BangController(Node):
+class BangController(ShutdownNode):
     # config
     target_vel = 30.0 / 3.6
     target_cone_count = 3

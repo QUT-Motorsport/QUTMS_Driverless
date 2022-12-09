@@ -28,4 +28,10 @@ target_include_directories(yaw_controller PUBLIC
 install(TARGETS yaw_controller
   DESTINATION lib/${PROJECT_NAME})
 
+# config folder
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()
