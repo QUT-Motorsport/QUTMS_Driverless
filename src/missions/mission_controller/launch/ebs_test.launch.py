@@ -22,5 +22,12 @@ def generate_launch_description():
                     get_package_share_path("yaw_controller") / "config" / "yaw_controller.yaml",
                 ],
             ),
+            Node(
+                package="velocity_controller",
+                executable="velocity_controller",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
+            ),
         ]
     )

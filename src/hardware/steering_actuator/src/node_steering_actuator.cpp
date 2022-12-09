@@ -347,21 +347,23 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
     void update_steering() {
-        auto current_update = std::chrono::high_resolution_clock::now();
-        double elapsed_time_seconds =
-            std::chrono::duration<double, std::milli>(current_update - last_update).count() / 1000;
-        this->last_update = current_update;
+        if (this->motor_enabled) {
+            auto current_update = std::chrono::high_resolution_clock::now();
+            double elapsed_time_seconds =
+                std::chrono::duration<double, std::milli>(current_update - last_update).count() / 1000;
+            this->last_update = current_update;
 
-        double error = this->requested_steering_angle - this->current_steering_angle;
-        this->integral_error += error * elapsed_time_seconds;
-        double derivative_error = (error - this->prev_error) / elapsed_time_seconds;
+            double error = this->requested_steering_angle - this->current_steering_angle;
+            this->integral_error += error * elapsed_time_seconds;
+            double derivative_error = (error - this->prev_error) / elapsed_time_seconds;
 
-        double target = Kp * error + Ki * this->integral_error + Kd * derivative_error;
-        RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
-                    integral_error, Kd, derivative_error, target);
+            double target = Kp * error + Ki * this->integral_error + Kd * derivative_error;
+            RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
+                        integral_error, Kd, derivative_error, target);
 
-        // left hand down is +, rhd is -
-        this->target_position(target);
+            // left hand down is +, rhd is -
+            this->target_position(target);
+        }
     }
 
     void target_position(int32_t target) {

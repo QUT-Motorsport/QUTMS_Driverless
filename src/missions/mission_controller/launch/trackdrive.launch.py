@@ -9,5 +9,12 @@ def generate_launch_description():
                 package="controllers",
                 executable="reactive_control",
             ),
+            Node(
+                package="velocity_controller",
+                executable="velocity_controller",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
+            ),
         ]
     )
