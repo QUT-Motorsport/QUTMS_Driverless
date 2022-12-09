@@ -39,7 +39,9 @@ class YawController : public rclcpp::Node {
     float integral_kickin = 0;
 
     void shutdown_callback(const driverless_msgs::msg::State msg) {
-        if (msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
+        if (msg.state == driverless_msgs::msg::State::START ||
+            msg.state == driverless_msgs::msg::State::SELECT_MISSION ||
+            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
             msg.state == driverless_msgs::msg::State::FINISHED || msg.state == driverless_msgs::msg::State::EMERGENCY) {
             rclcpp::shutdown();
         }

@@ -405,6 +405,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
+
+            if (this->RES_status.bt_k3) {
+                // transition to finished state when RES R2D button is pressed
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+            }
         }
 
         // EBS Activated state
