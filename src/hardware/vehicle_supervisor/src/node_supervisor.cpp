@@ -9,6 +9,7 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/reset.hpp"
@@ -16,7 +17,6 @@
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
-#include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -255,7 +255,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void dataLogger_callback() {
         // system status
         auto systemStatusMsg = Compose_DVL_SystemStatus(&this->DVL_systemStatus);
-        this->can_pub->publish(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data)));
+        this->can_pub->publish(
+            this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data)));
 
         driverless_msgs::msg::SystemStatus systemStatus_ROSmsg;
         systemStatus_ROSmsg.as_state = this->DVL_systemStatus._fields.AS_state;
@@ -274,8 +275,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // driving dynamics 1
         auto drivingDynamics1Msg = Compose_DVL_DrivingDynamics1(&this->DVL_drivingDynamics1);
-        this->can_pub->publish(this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data)));
-    
+        this->can_pub->publish(
+            this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data)));
+
         driverless_msgs::msg::DrivingDynamics1 drivingDynamics1_ROSmsg;
         drivingDynamics1_ROSmsg.speed_actual = this->DVL_drivingDynamics1._fields.speed_actual;
         drivingDynamics1_ROSmsg.speed_target = this->DVL_drivingDynamics1._fields.speed_target;
@@ -285,7 +287,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         drivingDynamics1_ROSmsg.brake_hydr_target = this->DVL_drivingDynamics1._fields.brake_hydr_target;
         drivingDynamics1_ROSmsg.motor_moment_actual = this->DVL_drivingDynamics1._fields.motor_moment_actual;
         drivingDynamics1_ROSmsg.motor_moment_target = this->DVL_drivingDynamics1._fields.motor_moment_target;
-    
+
         this->logging_drivingDynamics1_pub->publish(drivingDynamics1_ROSmsg);
     }
 
@@ -309,11 +311,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Starting state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_START) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
-            
+
             // reset mission selections
             this->ros_state.mission = driverless_msgs::msg::State::MISSION_NONE;
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
-            
 
             // transition to select mission when res switch is backwards
             if (!this->RES_status.sw_k2) {
@@ -346,7 +347,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                         break;
                 }
 
-
                 // transition to Check EBS state when mission is selected
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
 
@@ -372,7 +372,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Ready state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_READY) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_READY;
-            
+
             if (this->RES_status.bt_k3) {
                 // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_RELEASE_EBS;
@@ -382,7 +382,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Release brake state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_RELEASE_EBS) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_DRIVING;
-            
+
             if (EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_DRIVE) {
                 // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
@@ -395,7 +395,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Driving state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_DRIVING) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_DRIVING;
-            
+
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
         }
@@ -403,7 +403,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // EBS Activated state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_ACTIVATE_EBS) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_FINISH;
-            
+
             // this state activates the EBS without tripping shutdown
             // used at end of missions
 
@@ -416,7 +416,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Finished state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_FINISHED) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_FINISH;
-            
+
             this->DVL_heartbeat.torqueRequest = 0;
             if (!this->RES_status.sw_k2) {
                 // transition to start when RES swtiched back
@@ -426,8 +426,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Emergency state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_EMERGENCY) {
-                this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_EBRAKE;
-            
+            this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_EBRAKE;
+
             this->DVL_heartbeat.torqueRequest = 0;
             if (!this->RES_status.estop && !this->RES_status.sw_k2) {
                 // transition to start when RES swtiched back
@@ -512,18 +512,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Data Logger
         this->dataLogger_timer = this->create_wall_timer(std::chrono::milliseconds(100),
-                                                        std::bind(&ASSupervisor::dataLogger_callback, this));
-    
-        this->logging_drivingDynamics1_pub = this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("dataLogger/drivingDynamics1", 10);
-        this->logging_systemStatus_pub = this->create_publisher<driverless_msgs::msg::SystemStatus>("dataLogger/systemStatus", 10);
+                                                         std::bind(&ASSupervisor::dataLogger_callback, this));
 
+        this->logging_drivingDynamics1_pub =
+            this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("dataLogger/drivingDynamics1", 10);
+        this->logging_systemStatus_pub =
+            this->create_publisher<driverless_msgs::msg::SystemStatus>("dataLogger/systemStatus", 10);
 
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
             "shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
     }
-
-
 };
 
 int main(int argc, char *argv[]) {
