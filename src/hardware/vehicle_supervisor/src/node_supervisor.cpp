@@ -322,10 +322,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             }
         }
 
-        // Select Mission state
+        // Select mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
+            if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_SELECT_MISSION) {
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_WAIT_FOR_MISSION;
+            }
+        }
 
+        // Wait for mission state
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_WAIT_FOR_MISSION) {
+            this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
             if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_MISSION_ACK) {
                 this->ros_state.mission = this->SW_heartbeat.missionID;
             }
