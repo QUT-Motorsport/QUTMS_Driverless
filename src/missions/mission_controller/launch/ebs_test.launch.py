@@ -10,10 +10,6 @@ def generate_launch_description():
                 package="mission_controller",
                 executable="ebs_test_mission",
             ),
-            Node(
-                package="lidar_pipeline_3",
-                executable="lidar_perception",
-            ),
             # Node(
             #     package="controllers",
             #     executable="reactive_control",

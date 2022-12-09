@@ -103,6 +103,12 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
+# mission controller
+COPY ./src/missions/mission_controller/conda_requirements ./conda_requirements
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./conda_requirements
+
 # cleanup
 RUN rm -f ./conda_requirements
 
@@ -130,7 +136,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
         driverless_common \
         lidar_pipeline_3 \
         planners \
-        velocity_controller
+        velocity_controller \
+        mission_controller
 
 # delete source
 RUN rm -rf ./src
