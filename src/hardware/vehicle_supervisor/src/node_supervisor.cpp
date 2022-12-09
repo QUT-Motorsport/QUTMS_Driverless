@@ -214,7 +214,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void res_alive_callback() {
         if (!this->res_alive) {
-            this->ros_state.mission = driverless_msgs::msg::State::EMERGENCY;
+            this->ros_state.state = driverless_msgs::msg::State::EMERGENCY;
             RCLCPP_DEBUG(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
