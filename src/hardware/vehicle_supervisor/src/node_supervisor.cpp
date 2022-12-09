@@ -383,7 +383,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_RELEASE_BRAKE) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_DRIVING;
             
-            if (EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_RELEASE_BRAKE) {
+            if (EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_DRIVING) {
                 // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
                 driverless_msgs::msg::Reset reset_msg;
