@@ -226,8 +226,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // convert requested accel to estimated motor torque
         float torqueValue = msg.drive.acceleration * 9 * 4.5 * 4;
 
-        this->DVL_drivingDynamics1._fields.motor_moment_target = torqueValue;
-        this->DVL_drivingDynamics1._fields.motor_moment_actual = torqueValue;
+        this->DVL_drivingDynamics1._fields.motor_moment_target = (int8_t)torqueValue;
+        this->DVL_drivingDynamics1._fields.motor_moment_actual = (int8_t)torqueValue;
 
         this->run_fsm();
     }
