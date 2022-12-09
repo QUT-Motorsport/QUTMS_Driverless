@@ -25,12 +25,11 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
 class ReactiveController(ShutdownNode):
-    Kp_ang: float = 2.0
-    vel_max: float = 3.0  # m/s = 7.2km/h
-    vel_min: float = vel_max / 2  # m/s
-    throttle_max: float = 0.2
-    target_cone_count = 3
-    r2d: bool = False
+    Kp_ang: float
+    target_vel: float
+    target_accel: float
+    target_cone_count: int
+    pub_accel: bool
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -39,24 +38,28 @@ class ReactiveController(ShutdownNode):
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
         if self.ebs_test:
-            self.Kp_ang = 10.0
-            self.vel_max = 30.0 / 3.6
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-            self.target_cone_count = 2
+            self.Kp_ang = 2.0
+            self.target_vel = 20.0 / 3.6
+            self.target_accel = 0.3
+            self.target_cone_count = 3
+            self.pub_accel = True
+
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
+            self.Kp_ang = 2.0
+            self.target_vel = 3.0
+            self.target_accel = 0.0
+            self.target_cone_count = 3
+            self.pub_accel = False
             self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
-        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
-
-    def reset_callback(self, msg: Reset):
-        self.prev_steering_angle = 0
-        time.sleep(5)
-        self.r2d = True
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -122,15 +125,18 @@ class ReactiveController(ShutdownNode):
             # steering control
             steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")
-            speed = self.vel_max
+            speed = self.target_vel
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.header.stamp = msg.header.stamp
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
+        control_msg.drive.acceleration = self.target_accel
 
         self.control_publisher.publish(control_msg)
+        if self.pub_accel:
+            self.accel_publisher.publish(control_msg)
 
 
 def main(args=None):
