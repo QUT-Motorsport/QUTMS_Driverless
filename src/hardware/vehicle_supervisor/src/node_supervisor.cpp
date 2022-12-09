@@ -183,6 +183,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     // go to emergency
                     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
                 }
+                this->run_fsm();
 
                 this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)steering_0;
 
@@ -196,6 +197,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
                 RCLCPP_INFO(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
                             this->SW_heartbeat.missionID);
+
+                this->run_fsm();
 
                 break;
             }
@@ -219,6 +222,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
 
         this->DVL_drivingDynamics1._fields.steering_angle_target = (int8_t)msg.drive.steering_angle;
+
+        this->run_fsm();
     }
 
     void heartbeat_callback() {
@@ -243,6 +248,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->can_pub->publish(this->_d_2_f(0x00, false, p2, sizeof(p2)));
         }
         this->res_alive = 0;
+
+        this->run_fsm();
     }
 
     void dataLogger_callback() {
@@ -368,6 +375,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             
             if (this->RES_status.bt_k3) {
                 // transition to Driving state when RES R2D button is pressed
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_RELEASE_BRAKE;
+            }
+        }
+
+        // Release brake state
+        if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_RELEASE_BRAKE) {
+            if (EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_RELEASE_BRAKE) {
+                // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
                 driverless_msgs::msg::Reset reset_msg;
                 reset_msg.reset = true;
