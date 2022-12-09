@@ -14,7 +14,7 @@ class InspectionMission(ShutdownNode):
         super().__init__("inspection_mission")
         self.timer = self.create_timer(30, self.timer_callback)
         self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "shutdown", 1)
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.reset_sub = self.create_subscription(Reset, "reset", self.reset_callback, 10)
 
         self.get_logger().info("---Inspection mission initialised---")
 

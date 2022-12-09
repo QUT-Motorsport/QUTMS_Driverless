@@ -10,7 +10,7 @@ class MissionType(Enum):
 
 INT_MISSION_TYPE = {
     1: MissionType.MANUAL_DRIVING,
-    2: MissionType.EBS_TEST,
-    3: MissionType.INSPECTION,
+    2: MissionType.INSPECTION,
+    3: MissionType.EBS_TEST,
     4: MissionType.TRACKDRIVE,
 }
