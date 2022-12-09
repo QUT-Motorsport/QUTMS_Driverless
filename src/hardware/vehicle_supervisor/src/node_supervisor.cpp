@@ -334,11 +334,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
         }
 
-        if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
-            // transition to E-Stop state when EBS VCU reports shutdown
-            this->DVL_heartbeat.torqueRequest = 0;
-            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-        }
+        // if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+        //     // transition to E-Stop state when EBS VCU reports shutdown
+        //     this->DVL_heartbeat.torqueRequest = 0;
+        //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+        // }
     }
 
    public:
