@@ -121,7 +121,7 @@ class YawController : public rclcpp::Node {
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "as_state", 10, std::bind(&YawController::shutdown_callback, this, _1));
+            "as_status", 10, std::bind(&YawController::shutdown_callback, this, _1));
         this->velocity_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             "imu/velocity", 10, std::bind(&YawController::velocity_callback, this, _1));
         this->imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
