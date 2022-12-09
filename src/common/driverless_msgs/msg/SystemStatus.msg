@@ -1,0 +1,8 @@
+uint8 as_state
+uint8 ebs_state
+uint8 ami_state
+uint8 steering_state
+uint8 service_brake_state
+uint8 lap_counter
+uint8 cones_count_actual
+uint32 cones_count_all
