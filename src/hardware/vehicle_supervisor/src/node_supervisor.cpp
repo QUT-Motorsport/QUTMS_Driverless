@@ -223,6 +223,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         this->DVL_drivingDynamics1._fields.steering_angle_target = (int8_t)msg.drive.steering_angle;
 
+        // convert requested accel to estimated motor torque
+        float torqueValue = msg.drive.acceleration * 9 * 4.5 * 4;
+
+        this->DVL_drivingDynamics1._fields.motor_moment_target = torqueValue;
+        this->DVL_drivingDynamics1._fields.motor_moment_actual = torqueValue;
+
         this->run_fsm();
     }
 
