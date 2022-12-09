@@ -15,6 +15,8 @@
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
+#include "driverless_msgs/msg/system_status.hpp"
+#include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -46,6 +48,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
+
+    rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub;
+    rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
     rclcpp::TimerBase::SharedPtr res_alive_timer;
@@ -245,12 +250,36 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         auto systemStatusMsg = Compose_DVL_SystemStatus(&this->DVL_systemStatus);
         this->can_pub->publish(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data)));
 
+        driverless_msgs::msg::SystemStatus systemStatus_ROSmsg;
+        systemStatus_ROSmsg.as_state = this->DVL_systemStatus._fields.AS_state;
+        systemStatus_ROSmsg.ebs_state = this->DVL_systemStatus._fields.EBS_state;
+        systemStatus_ROSmsg.ami_state = this->DVL_systemStatus._fields.AMI_state;
+        systemStatus_ROSmsg.steering_state = this->DVL_systemStatus._fields.steering_state;
+        systemStatus_ROSmsg.service_brake_state = this->DVL_systemStatus._fields.service_brake_state;
+        systemStatus_ROSmsg.lap_counter = this->DVL_systemStatus._fields.lap_counter;
+        systemStatus_ROSmsg.cones_count_actual = this->DVL_systemStatus._fields.cones_count_actual;
+        systemStatus_ROSmsg.cones_count_all = this->DVL_systemStatus._fields.cones_count_all;
+
+        this->logging_systemStatus_pub->publish(systemStatus_ROSmsg);
+
         // very small delay between messages
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         // driving dynamics 1
         auto drivingDynamics1Msg = Compose_DVL_DrivingDynamics1(&this->DVL_drivingDynamics1);
         this->can_pub->publish(this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data)));
+    
+        driverless_msgs::msg::DrivingDynamics1 drivingDynamics1_ROSmsg;
+        drivingDynamics1_ROSmsg.speed_actual = this->DVL_drivingDynamics1._fields.speed_actual;
+        drivingDynamics1_ROSmsg.speed_target = this->DVL_drivingDynamics1._fields.speed_target;
+        drivingDynamics1_ROSmsg.steering_angle_actual = this->DVL_drivingDynamics1._fields.steering_angle_actual;
+        drivingDynamics1_ROSmsg.steering_angle_target = this->DVL_drivingDynamics1._fields.steering_angle_target;
+        drivingDynamics1_ROSmsg.brake_hydr_actual = this->DVL_drivingDynamics1._fields.brake_hydr_actual;
+        drivingDynamics1_ROSmsg.brake_hydr_target = this->DVL_drivingDynamics1._fields.brake_hydr_target;
+        drivingDynamics1_ROSmsg.motor_moment_actual = this->DVL_drivingDynamics1._fields.motor_moment_actual;
+        drivingDynamics1_ROSmsg.motor_moment_target = this->DVL_drivingDynamics1._fields.motor_moment_target;
+    
+        this->logging_drivingDynamics1_pub->publish(drivingDynamics1_ROSmsg);
     }
 
     void shutdown_callback(const driverless_msgs::msg::Shutdown msg) {
@@ -467,6 +496,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Data Logger
         this->dataLogger_timer = this->create_wall_timer(std::chrono::milliseconds(100),
                                                         std::bind(&ASSupervisor::dataLogger_callback, this));
+    
+        this->logging_drivingDynamics1_pub = this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("dataLogger/drivingDynamics1", 10);
+        this->logging_systemStatus_pub = this->create_publisher<driverless_msgs::msg::SystemStatus>("dataLogger/systemStatus", 10);
+
 
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(

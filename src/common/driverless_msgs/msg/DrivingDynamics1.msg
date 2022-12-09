@@ -1,0 +1,8 @@
+uint8 speed_actual
+uint8 speed_target
+int8 steering_angle_actual
+int8 steering_angle_target
+uint8 brake_hydr_actual
+uint8 brake_hydr_target
+int8 motor_moment_actual
+int8 motor_moment_target
