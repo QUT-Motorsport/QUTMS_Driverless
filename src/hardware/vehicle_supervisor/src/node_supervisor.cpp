@@ -390,6 +390,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // transition to Driving state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_RELEASE_EBS;
             }
+
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+                // transition to E-Stop state when EBS VCU reports shutdown
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            }
         }
 
         // Release brake state
@@ -403,6 +408,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 reset_msg.reset = true;
                 this->reset_pub->publish(reset_msg);
             }
+
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+                // transition to E-Stop state when EBS VCU reports shutdown
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+            }
         }
 
         // Driving state
@@ -415,6 +425,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             if (this->RES_status.bt_k3) {
                 // transition to finished state when RES R2D button is pressed
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+            }
+
+            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+                // transition to E-Stop state when EBS VCU reports shutdown
+                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
         }
 
@@ -459,12 +474,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_heartbeat.torqueRequest = 0;
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
         }
-
-        // if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
-        //     // transition to E-Stop state when EBS VCU reports shutdown
-        //     this->DVL_heartbeat.torqueRequest = 0;
-        //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-        // }
     }
 
     void reset_dataLogger() {
