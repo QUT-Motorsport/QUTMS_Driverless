@@ -6,10 +6,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription(
         [
-            Node(
-                package="mission_controller",
-                executable="ebs_test_mission",
-            ),
+            # Node(
+            #     package="mission_controller",
+            #     executable="ebs_test_mission",
+            # ),
             # Node(
             #     package="controllers",
             #     executable="reactive_control",
