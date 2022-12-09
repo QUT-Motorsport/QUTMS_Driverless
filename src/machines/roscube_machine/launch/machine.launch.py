@@ -51,7 +51,7 @@ def generate_launch_description():
             ),
             Node(
                 package="mission_controller",
-                executable="mission_controller",
+                executable="mission_control",
             ),
             # MISSION CONTROL NODE HERE
             IncludeLaunchDescription(
