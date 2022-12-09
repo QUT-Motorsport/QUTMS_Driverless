@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
-#include "driverless_msgs/msg/shutdown.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/imu.hpp"
@@ -15,7 +15,7 @@ class YawController : public rclcpp::Node {
    private:
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_sub;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
-    rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub;
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr shutdown_sub;
 
     rclcpp::TimerBase::SharedPtr yaw_timer;
     rclcpp::TimerBase::SharedPtr yaw_rate_timer;
@@ -38,8 +38,9 @@ class YawController : public rclcpp::Node {
     float target_velocity = 0;
     float integral_kickin = 0;
 
-    void shutdown_callback(const driverless_msgs::msg::Shutdown msg) {
-        if (msg.emergency_shutdown || msg.finished_engage_ebs || msg.finished) {
+    void shutdown_callback(const driverless_msgs::msg::State msg) {
+        if (msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
+            msg.state == driverless_msgs::msg::State::FINISHED || msg.state == driverless_msgs::msg::State::EMERGENCY) {
             rclcpp::shutdown();
         }
     }
@@ -119,8 +120,8 @@ class YawController : public rclcpp::Node {
 
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
-        this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
-            "shutdown", 10, std::bind(&YawController::shutdown_callback, this, _1));
+        this->shutdown_sub = this->create_subscription<driverless_msgs::msg::State>(
+            "as_state", 10, std::bind(&YawController::shutdown_callback, this, _1));
         this->velocity_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             "imu/velocity", 10, std::bind(&YawController::velocity_callback, this, _1));
         this->imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
