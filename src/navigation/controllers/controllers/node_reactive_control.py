@@ -1,14 +1,10 @@
-from math import atan2, cos, sin, sqrt
-import time
-
 import numpy as np
 
 import rclpy
-from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
@@ -30,6 +26,7 @@ class ReactiveController(ShutdownNode):
     target_accel: float
     target_cone_count: int
     pub_accel: bool
+    ebs_test: bool
 
     def __init__(self):
         super().__init__("reactive_controller")
@@ -39,22 +36,20 @@ class ReactiveController(ShutdownNode):
 
         if self.ebs_test:
             self.Kp_ang = 2.0
-            self.target_vel = 20.0 / 3.6
-            self.target_accel = 0.3
-            self.target_cone_count = 3
+            self.target_vel = 0.0  # m/s
+            self.target_accel = 0.5
+            self.target_cone_count = 2
             self.pub_accel = True
 
-            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
-            self.target_vel = 3.0
+            self.target_vel = 3.0  # m/s
             self.target_accel = 0.0
             self.target_cone_count = 3
             self.pub_accel = False
-            self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
-
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+            self.create_subscription(ConeDetectionStamped, "slam/local", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)

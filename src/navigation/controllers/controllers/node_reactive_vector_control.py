@@ -1,4 +1,4 @@
-from math import atan2, pi, sqrt
+from math import atan2, pi
 
 from colour import Color
 import cv2
@@ -7,19 +7,14 @@ from scipy.interpolate import UnivariateSpline
 from scipy.spatial import distance
 
 from cv_bridge import CvBridge
-import message_filters
 import rclpy
-from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
-from geometry_msgs.msg import TwistStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
-from visualization_msgs.msg import Marker, MarkerArray
 
-from driverless_common.draw import draw_map, draw_markers, draw_steering, loc_to_img_pt
-from driverless_common.marker import marker_array_from_cone_detection, marker_array_from_map, path_marker_msg
+from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
 
@@ -126,59 +121,44 @@ def get_RVWP(path: np.ndarray, lookahead: float) -> np.ndarray:
 
 
 class VectorReactiveController(ShutdownNode):
-    Kp_ang: float = -2.0
-    Kp_vel: float = 2.0
-    vel_max: float = 2.0  # m/s = 7.2km/h
-    vel_min: float = vel_max / 2  # m/s
-    throttle_max: float = 0.2
-    target_cone_count = 3
-    r2d: bool = True
-    in_dist: float = 3  # m
-    mid_dist: float = 5  # m
-    prev_angle: float = 0.0
+    Kp_ang: float
+    target_vel: float
+    target_accel: float
+    in_dist: float  # m
+    pub_accel: bool
+    ebs_test: bool
 
     def __init__(self):
         super().__init__("vector_reactive_controller")
 
-        ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
-        self.get_logger().info("EBS Control: " + str(ebs_test))
-        if ebs_test:
-            self.Kp_ang = 0.1  # shallow steering, straight line
-            self.vel_max = 45 / 3.6  # 40km/h in m/s
-            self.Kp_vel = 1
-            self.vel_min = self.vel_max / 2  # m/s
-            self.throttle_max = 0.2
+        self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
+        self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
-        # subscribers for sim
-        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        # detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/slam/local")
-        detection_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[detection_sub, vel_sub],
-            queue_size=30,
-            slop=0.3,
-        )
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[detection_sub, vel_sub], queue_size=20, slop=0.2)
-        synchronizer.registerCallback(self.callback)
+        if self.ebs_test:
+            self.Kp_ang = -2.0
+            self.target_vel = 0.0  # m/s
+            self.target_accel = 0.5
+            self.in_dist = 2.0
+            self.pub_accel = True
 
-        # for on car
-        # self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.callback, 1)
+        else:
+            self.Kp_ang = -2.0
+            self.target_vel = 2.0  # m/s
+            self.target_accel = 0.0
+            self.in_dist = 2.0
+            self.pub_accel = False
+            self.create_subscription(ConeDetectionStamped, "slam/local", self.callback, 1)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
-
-        self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
+        self.vector_publisher: Publisher = self.create_publisher(Image, "debug_imgs/vector_reactive_img", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
-        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
-    def reset_callback(self, msg: Reset):
-        self.prev_steering_angle = 0
-        self.r2d = True
-
-    def callback(self, cone_msg: ConeDetectionStamped, vel_msg: TwistStamped):
-        # def callback(self, cone_msg: ConeDetectionStamped):
+    def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
         # safety critical, set to 0 if not good detection
@@ -372,24 +352,20 @@ class VectorReactiveController(ShutdownNode):
             )
 
             debug_img = draw_steering(debug_img, steering_angle, 0)  # draw steering angle and vel data on image
+            speed = self.target_vel
 
-            # # velocity control
-            # vel = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2)
-            # # increase proportionally as it approaches target
-            # throttle_scalar: float = 1 - (vel / self.vel_max)
-            # if throttle_scalar > 0:
-            #     speed = self.throttle_max * throttle_scalar
-            # elif throttle_scalar <= 0:
-            #     speed = 0.0  # if its over maximum, cut throttle
-            speed = self.vel_max
-
+        # publish message
         control_msg = AckermannDriveStamped()
+        control_msg.header.stamp = cone_msg.header.stamp
         control_msg.drive.steering_angle = steering_angle * self.Kp_ang
         control_msg.drive.speed = speed
-        self.control_publisher.publish(control_msg)
-        self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+        control_msg.drive.acceleration = self.target_accel
 
-        self.prev_angle = steering_angle
+        self.control_publisher.publish(control_msg)
+        if self.pub_accel:
+            self.accel_publisher.publish(control_msg)
+
+        self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 
 def main(args=None):
