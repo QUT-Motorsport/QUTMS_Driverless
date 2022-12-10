@@ -21,6 +21,7 @@ setup(
         "console_scripts": [
             "sine = controllers.node_sine:main",
             "random = controllers.node_random:main",
+            "constant = controllers.node_constant:main",
             "reactive_control = controllers.node_reactive_control:main",
             "reactive_v2 = controllers.node_reactive_v2:main",
             "pure_pursuit = controllers.node_pure_pursuit:main",
