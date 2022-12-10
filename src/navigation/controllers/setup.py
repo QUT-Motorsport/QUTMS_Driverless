@@ -26,6 +26,7 @@ setup(
             "pure_pursuit = controllers.node_pure_pursuit:main",
             "vector_reactive_control = controllers.node_reactive_vector_control:main",
             "bang_control = controllers.node_bang_control:main",
+            "simple_straight_control = controllers.node_simple_straight_control:main",
         ],
     },
 )
