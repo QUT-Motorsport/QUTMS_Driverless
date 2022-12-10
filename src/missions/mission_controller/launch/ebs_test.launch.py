@@ -11,5 +11,18 @@ def generate_launch_description():
                 executable="reactive_control",
                 parameters=[{"ebs_control": True}],
             ),
+            # Node(
+            #     package="controllers",
+            #     executable="vector_reactive_control",
+            #     parameters=[{"ebs_control": True}],
+            # ),
+            # Node(
+            #     package="controllers",
+            #     executable="simple_straight_control",
+            # ),
+            # Node(
+            #     package="controllers",
+            #     executable="constant",
+            # ),
         ]
     )
