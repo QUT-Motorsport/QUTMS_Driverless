@@ -24,7 +24,7 @@ class InspectionMission(ShutdownNode):
 
     def timer_callback(self):
         if self.started:
-            shutdown_msg = Shutdown(finished=True)
+            shutdown_msg = Shutdown(finished_engage_ebs=True)
             self.shutdown_pub.publish(shutdown_msg)
 
 

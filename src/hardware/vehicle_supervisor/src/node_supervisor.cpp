@@ -125,6 +125,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     rpmMsg.index = vesc_id;
                     rpmMsg.rpm = rpm;
                     this->motorRPM_pub->publish(rpmMsg);
+                    this->DVL_drivingDynamics1._fields.speed_actual = rpm / (21.0 * 4.50) * M_PI * 0.4064 / 60;
                 }
             }
         }
@@ -222,6 +223,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
 
         this->DVL_drivingDynamics1._fields.steering_angle_target = (int8_t)msg.drive.steering_angle;
+        this->DVL_drivingDynamics1._fields.speed_target = (int8_t)msg.drive.speed;
 
         // convert requested accel to estimated motor torque
         float torqueValue = msg.drive.acceleration * 9 * 4.5 * 4;
@@ -422,10 +424,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // update torque with last saved value
             this->DVL_heartbeat.torqueRequest = this->last_torque;
 
-            if (this->RES_status.bt_k3) {
-                // transition to finished state when RES R2D button is pressed
-                this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
-            }
+            // if (this->RES_status.bt_k3) {
+            //     // transition to finished state when RES R2D button is pressed
+            //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
+            // }
 
             if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
                 // transition to E-Stop state when EBS VCU reports shutdown
