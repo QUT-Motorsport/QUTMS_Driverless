@@ -1,3 +1,6 @@
+# ignore .pt now, not enough LFS - models downloadable from drive
+*.pt
+
 # map paths
 maps.store
 
