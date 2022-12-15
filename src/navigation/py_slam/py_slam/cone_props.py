@@ -72,7 +72,7 @@ class ConeProps:
         elif self.blue_count > self.yellow_count and self.blue_count > self.orange_count:
             self.colour = Cone.BLUE
 
-        if self.orange_count > 10:
+        if self.orange_count > 10 or self.orange_count > self.yellow_count or self.orange_count > self.blue_count:
             self.colour = Cone.ORANGE_BIG
 
         self.tracked = True
