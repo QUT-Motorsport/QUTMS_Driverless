@@ -114,7 +114,15 @@ def get_expected_point_count(distance):
 # to be in a segment or bin where no points were due to the small
 # epsilon in DBSCAN. If you introduce the noise cluster back, you will though
 def cone_filter(
-    segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_objects, reconstructed_centers, avg_object_intensity
+    segments,
+    bins,
+    ground_lines_arr,
+    obj_segs,
+    obj_bins,
+    object_centers,
+    reconstructed_objects,
+    reconstructed_centers,
+    avg_object_intensity,
 ):
     # Filter 1: Height of object compared to expected height of cone
     seg_bin_ind = (obj_segs == segments) * (obj_bins == bins)

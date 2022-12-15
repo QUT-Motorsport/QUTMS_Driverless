@@ -1,4 +1,5 @@
 import math
+
 from PIL import Image
 from matplotlib import font_manager
 import matplotlib.colors as mpl_colors
@@ -7,11 +8,12 @@ import numpy as np
 
 from .. import constants as const
 from ..constants import RGBA, Colour
-#import constants as const
-#from constants import RGBA, Colour
+
+# import constants as const
+# from constants import RGBA, Colour
 
 font_dirs = [const.WORKING_DIR + "/library/resources/fonts"]
-#font_dirs = ["C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/fonts"]
+# font_dirs = ["C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/fonts"]
 font_files = font_manager.findSystemFonts(fontpaths=font_dirs)
 
 for font_file in font_files:
@@ -91,7 +93,7 @@ def add_logo(fig, dpi, small):
 
     # Add Logo
     im = Image.open(const.WORKING_DIR + "/library/resources/qutms_logo_white.png")
-    #im = Image.open("C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/qutms_logo_white.png")
+    # im = Image.open("C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/qutms_logo_white.png")
     im_width, im_height = im.size
 
     fig_width, fig_height = fig.get_size_inches() * dpi  # fig.dpi
@@ -168,7 +170,21 @@ def plot_cones_3D(config, point_cloud, point_labels, cones, name):
         animate_figure(f"05_{name}_Animated", ax, config.image_dir)
 
 
-def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, name):
+def plot_detailed_2D(
+    config,
+    point_cloud,
+    segments,
+    bins,
+    ground_plane,
+    point_labels,
+    reconstructed_objects,
+    reconstructed_centers,
+    cone_intensities,
+    cone_centers,
+    cone_points,
+    duration,
+    name,
+):
     fig, ax = init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
 
     # Plot Ground Plane
@@ -184,7 +200,13 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
                 x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * non_empty_segs[idx])
                 y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * non_empty_segs[idx])
 
-                ax.plot(x, y, color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2], linewidth=(72.0 / fig.dpi) ** 2, zorder=1)
+                ax.plot(
+                    x,
+                    y,
+                    color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1,
+                )
 
     # Plot Point Cloud with Labels
     ax.scatter(
@@ -195,7 +217,14 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
         s=(72.0 / fig.dpi) ** 2,
         linewidths=0,
     )
-    ax.scatter(reconstructed_centers[:, 0], reconstructed_centers[:, 1], c=RGBA.MS_ORANGE.value, marker='x', s=12, linewidths=2*(72.0 / fig.dpi) ** 2,)
+    ax.scatter(
+        reconstructed_centers[:, 0],
+        reconstructed_centers[:, 1],
+        c=RGBA.MS_ORANGE.value,
+        marker="x",
+        s=12,
+        linewidths=2 * (72.0 / fig.dpi) ** 2,
+    )
     ax.scatter(
         point_cloud["x"][point_labels],
         point_cloud["y"][point_labels],
@@ -203,47 +232,234 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
         marker="s",
         s=(72.0 / fig.dpi) ** 2,
         linewidths=0,
-        label='test',
+        label="test",
     )
 
-    max_intensity = max([np.max(i['intensity']) for i in cone_points])
+    max_intensity = max([np.max(i["intensity"]) for i in cone_points])
     for i, cone_center in enumerate(cone_centers):
-        #ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity']) / 255, cmap=plt.cm.gist_rainbow, marker=".")
-        ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity'] / max_intensity), cmap=plt.cm.gray_r, marker=".", s=24, linewidths=(72.0 / fig.dpi) ** 2,)
-        #ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
-        #ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_center[0], 1):.1f}, {round(cone_center[1], 1):.1f})', c='white', fontsize=3)
-        ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_intensities[i], 1):.1f}', c='white', fontsize=3)
-    
-    for i, rec_center in enumerate(reconstructed_centers):
-        ax.text(rec_center[0] - 0.7, rec_center[1] + 0.45, f'{len(reconstructed_objects[i]):<5}', c=Colour.MS_ORANGE.value, fontsize=4)
+        # ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity']) / 255, cmap=plt.cm.gist_rainbow, marker=".")
+        ax.scatter(
+            cone_center[0],
+            cone_center[1],
+            c=np.mean(cone_points[i]["intensity"] / max_intensity),
+            cmap=plt.cm.gray_r,
+            marker=".",
+            s=24,
+            linewidths=(72.0 / fig.dpi) ** 2,
+        )
+        # ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
+        # ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_center[0], 1):.1f}, {round(cone_center[1], 1):.1f})', c='white', fontsize=3)
+        ax.text(
+            cone_center[0] - 1.15, cone_center[1] - 0.75, f"({round(cone_intensities[i], 1):.1f}", c="white", fontsize=3
+        )
 
-    ax.text(.01, .99, f'Non Ground Points: {np.count_nonzero(point_labels)}', ha='left', va='top', c=Colour.RED.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .95, f'Ground Points: {np.count_nonzero(point_labels == 0)}', ha='left', va='top', c=Colour.GREEN.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .91, f'Ground Lines: {ground_line_count}', ha='left', va='top', c=Colour.LIGHT_BLUE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .87, f'Objects: {reconstructed_centers.shape[0]}', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .83, f'Cones: {cone_centers.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    
-    #ax.text(.01, .12, f'Non Empty Segments: {non_empty_segs.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    #ax.text(.01, .08, f'Max Bin Assigned: {np.max(bins)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .04, f'Current Hz: {round(1 / duration, 1)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    
-    ax.text(1.01, .99, 'Parameters', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .96, f'LIDAR_RANGE = {round(const.LIDAR_RANGE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .93, f'DELTA_ALPHA = {round(const.DELTA_ALPHA, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .90, f'BIN_SIZE = {round(const.BIN_SIZE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .87, f'T_M = {round(const.T_M, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .84, f'T_M_SMALL = {round(const.T_M_SMALL, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .81, f'T_B = {round(const.T_B, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .78, f'T_RMSE = {round(const.T_RMSE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .75, f'REGRESS_BTWN_BINS = {round(const.REGRESS_BETWEEN_BINS, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .72, f'T_D_GROUND = {round(const.T_D_GROUND, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .69, f'CONE_DIAM = {round(const.CONE_DIAM, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .66, f'CONE_HEIGHT = {round(const.CONE_HEIGHT, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .63, f'LIDAR_VERT_RES = {round(const.LIDAR_VERTICAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .60, f'LIDAR_HORIZ_RES = {round(const.LIDAR_HORIZONTAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
+    for i, rec_center in enumerate(reconstructed_centers):
+        ax.text(
+            rec_center[0] - 0.7,
+            rec_center[1] + 0.45,
+            f"{len(reconstructed_objects[i]):<5}",
+            c=Colour.MS_ORANGE.value,
+            fontsize=4,
+        )
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Non Ground Points: {np.count_nonzero(point_labels)}",
+        ha="left",
+        va="top",
+        c=Colour.RED.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.95,
+        f"Ground Points: {np.count_nonzero(point_labels == 0)}",
+        ha="left",
+        va="top",
+        c=Colour.GREEN.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.91,
+        f"Ground Lines: {ground_line_count}",
+        ha="left",
+        va="top",
+        c=Colour.LIGHT_BLUE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.87,
+        f"Objects: {reconstructed_centers.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.MS_ORANGE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.83,
+        f"Cones: {cone_centers.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # ax.text(.01, .12, f'Non Empty Segments: {non_empty_segs.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    # ax.text(.01, .08, f'Max Bin Assigned: {np.max(bins)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.04,
+        f"Current Hz: {round(1 / duration, 1)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    ax.text(1.01, 0.99, "Parameters", ha="left", va="top", c=Colour.MS_ORANGE.value, fontsize=6, transform=ax.transAxes)
+    ax.text(
+        1.01,
+        0.96,
+        f"LIDAR_RANGE = {round(const.LIDAR_RANGE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.93,
+        f"DELTA_ALPHA = {round(const.DELTA_ALPHA, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.90,
+        f"BIN_SIZE = {round(const.BIN_SIZE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.87,
+        f"T_M = {round(const.T_M, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.84,
+        f"T_M_SMALL = {round(const.T_M_SMALL, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.81,
+        f"T_B = {round(const.T_B, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.78,
+        f"T_RMSE = {round(const.T_RMSE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.75,
+        f"REGRESS_BTWN_BINS = {round(const.REGRESS_BETWEEN_BINS, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.72,
+        f"T_D_GROUND = {round(const.T_D_GROUND, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.69,
+        f"CONE_DIAM = {round(const.CONE_DIAM, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.66,
+        f"CONE_HEIGHT = {round(const.CONE_HEIGHT, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.63,
+        f"LIDAR_VERT_RES = {round(const.LIDAR_VERTICAL_RES, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.60,
+        f"LIDAR_HORIZ_RES = {round(const.LIDAR_HORIZONTAL_RES, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
 
     calibrate_axis(ax)
 
     # Save Figure
-    add_logo(fig, dpi=225*2, small=True)
-    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225*2)
+    add_logo(fig, dpi=225 * 2, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225 * 2)
