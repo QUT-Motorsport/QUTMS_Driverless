@@ -1,2 +1,2 @@
 std_msgs/Header header
-uint8 velocity
+float32 velocity

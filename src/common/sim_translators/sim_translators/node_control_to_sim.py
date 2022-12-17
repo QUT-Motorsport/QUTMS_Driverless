@@ -18,7 +18,7 @@ class ControlToSim(Node):
         super().__init__("control_to_sim")
 
         # subscribers
-        vel_sub = message_filters.Subscriber(self, Odometry, "/testing_only/odom")
+        vel_sub = message_filters.Subscriber(self, Odometry, "/fsds/testing_only/odom")
         drive_sub = message_filters.Subscriber(self, AckermannDriveStamped, "/driving_command")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[drive_sub, vel_sub],
@@ -28,7 +28,6 @@ class ControlToSim(Node):
         synchronizer.registerCallback(self.callback)
 
         # publish to sim
-        self.oldpublisher: Publisher = self.create_publisher(ControlCommand, "/control_command", 1)
         self.publisher: Publisher = self.create_publisher(ControlCommand, "/fsds/control_command", 1)
 
         self.get_logger().info("---Sim control translator initialised---")
@@ -46,7 +45,6 @@ class ControlToSim(Node):
         sim_control.throttle = calc_throttle
         sim_control.brake = 0.0
         self.publisher.publish(sim_control)
-        self.oldpublisher.publish(sim_control)
 
 
 def main(args=None):

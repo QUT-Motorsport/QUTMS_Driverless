@@ -23,8 +23,8 @@ class ConeDetectionTranslator(Node):
         super().__init__("cone_detection_translator")
 
         # sub to testing only sim topics
-        self.create_subscription(Track, "/testing_only/track", self.track_callback, 10)
-        self.create_subscription(Odometry, "/testing_only/odom", self.odom_callback, 10)
+        self.create_subscription(Track, "/fsds/testing_only/track", self.track_callback, 10)
+        self.create_subscription(Odometry, "/fsds/testing_only/odom", self.odom_callback, 10)
 
         # could also be /lidar/cone_detection
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/sim/cone_detection", 1)

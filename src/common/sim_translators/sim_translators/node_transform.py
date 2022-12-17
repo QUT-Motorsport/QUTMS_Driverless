@@ -3,7 +3,8 @@ from tf2_ros import TransformBroadcaster
 import rclpy
 from rclpy.node import Node
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped
+from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
 
 
 class TF2Publisher(Node):
@@ -14,9 +15,9 @@ class TF2Publisher(Node):
         self.broadcaster = TransformBroadcaster(self)
 
         # callback function on each message
-        self.create_subscription(PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance", self.callback, 1)
+        self.create_subscription(Odometry, "/fsds/testing_only/odom", self.callback, 1)
 
-    def callback(self, msg: PoseWithCovarianceStamped):
+    def callback(self, msg: Odometry):
         t = TransformStamped()
         # Read message content and assign it to
         # corresponding tf variables
