@@ -11,19 +11,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import (
-    ConeDetectionStamped,
-    ConeWithCovariance,
-    MotorRPM,
-    Reset,
-    TrackDetectionStamped,
-    WSSVelocity,
-)
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
 from py_slam.cone_props import ConeProps
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
@@ -36,6 +29,10 @@ FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be r
 WHEEL_RADIUS = 0.4064  # for wheel speeds
 
 
+def stamp_to_seconds(stamp) -> float:
+    return stamp.sec + stamp.nanosec / 1e9
+
+
 def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
@@ -45,34 +42,16 @@ class PySlam(Node):
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
 
-    last_timestamp = 0.0
-    last_rpm = 0.0
+    last_timestamp: Optional[float] = None
 
     motor_vels: List[float] = [0.0, 0.0, 0.0, 0.0]
 
     def __init__(self):
         super().__init__("py_slam")
 
-        # sync subscribers using IMU
-        imu_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        vel_sub = message_filters.Subscriber(self, WSSVelocity, "/vehicle_wss")
-        vision_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/vision/cone_detection2")
-        lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
-        vision_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[vel_sub, vision_sub], queue_size=20, slop=0.2
-        )
-        vision_synchronizer.registerCallback(self.callback)
-        lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[imu_sub, vel_sub, lidar_sub], queue_size=20, slop=0.2
-        )
-        lidar_synchronizer.registerCallback(self.callback)
-
-        # subscribers using WSS
-        # self.create_subscription(MotorRPM, "/motor_rpm", self.motor_callback, 10)
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 10)
-        # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 10)
-
-        # map reset on r2d
+        self.create_subscription(TwistStamped, "/imu/velocity", self.velocity_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.velocity_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
@@ -85,47 +64,37 @@ class PySlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
 
+    def velocity_callback(self, msg: TwistStamped):
+        if self.last_timestamp is None:
+            self.last_timestamp = stamp_to_seconds(msg.header.stamp)
+            return
+
+        self.dt = stamp_to_seconds(msg.header.stamp) - self.last_timestamp
+
+        # rosbag repeat - reset location
+        if self.dt < -1:
+            self.last_timestamp = stamp_to_seconds(msg.header.stamp)
+            self.state[0:3] = [0.0, 0.0, 0.0]
+            return
+
+        self.last_timestamp = stamp_to_seconds(msg.header.stamp)
+
+        # predict with velocity
+        self.predict(msg)
+
+    def vision_callback(self, msg: ConeDetectionStamped):
+        self.process_detection(msg, Q_CAM)
+
+    def lidar_callback(self, msg: ConeDetectionStamped):
+        self.process_detection(msg, Q_LIDAR)
+
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
 
-    # def motor_callback(self, msg: MotorRPM):
-    #     motorRPM = msg.rpm / (21.0 * 4.50)
-    #     self.motor_vels[msg.index] = motorRPM * pi * WHEEL_RADIUS / 60
-
-    #     if self.last_rpm == 0:
-    #         self.last_rpm == time.time()
-    #     self.dt = time.time() - self.last_rpm
-    #     self.last_rpm = time.time()
-
-    #     self.predict(np.average(self.motor_vels))
-
-    def callback(self, imu_msg: TwistStamped, vel_msg: WSSVelocity, detection_msg: ConeDetectionStamped):
-        self.get_logger().debug("Received detection")
-        start: float = time.perf_counter()
-
-        # get velocity timestep
-        if self.last_timestamp == 0.0:
-            self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-            return
-        self.dt = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9 - self.last_timestamp
-        # for rosbag repeat
-        if self.dt < -1:
-            self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-            self.state[0:3] = [0.0, 0.0, 0.0]
-            return
-        self.last_timestamp = detection_msg.header.stamp.sec + detection_msg.header.stamp.nanosec / 1e9
-
-        # predict car location
-        self.predict(imu_msg, vel_msg)
-
-        if detection_msg.header.frame_id == "velodyne":
-            Q = Q_LIDAR
-        else:
-            Q = Q_CAM
-
+    def process_detection(self, detection_msg: ConeDetectionStamped, Q):
         # process detected cones
         track_as_2d = np.array([])
         for detection in detection_msg.cones:
@@ -227,17 +196,15 @@ class PySlam(Node):
         t.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
         self.broadcaster.sendTransform(t)
 
-        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
-
-    def predict(self, imu_msg: TwistStamped, vel_msg: WSSVelocity):
+    def predict(self, vel_msg: TwistStamped):
         """
         Predict step of the EKF
         * param imu_msg: TwistStamped message containing ang vel
         * param vel_msg: WSSVelocity message containing avg wheel speeds
         """
 
-        ddist = vel_msg.velocity * self.dt  # distance
-        dtheta = -imu_msg.twist.angular.z * self.dt  # change in angle
+        ddist = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2) * self.dt  # distance
+        dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
