@@ -6,7 +6,6 @@ from sklearn.neighbors import KDTree
 from tf2_ros import TransformBroadcaster
 from transforms3d.euler import euler2quat, quat2euler
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -18,15 +17,14 @@ from py_slam.cone_props import ConeProps
 
 from typing import List, Optional, Tuple
 
-R = np.diag([0.1, 0.001]) ** 2  # motion model
+R = np.diag([0.01, 0.01]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.8  # nn kdtree nearch
-LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
+RADIUS_LIDAR = 1  # nn kdtree nearch
+RADIUS_CAM = 1.8
+LEAF_SIZE = 5  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 10  # minimum frames before confirming cones
 FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be removed
-
-WHEEL_RADIUS = 0.4064  # for wheel speeds
 
 
 def stamp_to_seconds(stamp) -> float:
@@ -39,7 +37,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 class PySlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma = np.diag([0.5, 0.5, 0.001])
+    sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
 
     last_timestamp: Optional[float] = None
@@ -50,7 +48,7 @@ class PySlam(Node):
         super().__init__("py_slam")
 
         self.create_subscription(TwistStamped, "/imu/velocity", self.velocity_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.velocity_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
@@ -81,12 +79,13 @@ class PySlam(Node):
 
         # predict with velocity
         self.predict(msg)
+        self.publish_localisation(msg)
 
     def vision_callback(self, msg: ConeDetectionStamped):
-        self.process_detection(msg, Q_CAM)
+        self.detection_callback(msg, Q_CAM, RADIUS_CAM)
 
     def lidar_callback(self, msg: ConeDetectionStamped):
-        self.process_detection(msg, Q_LIDAR)
+        self.detection_callback(msg, Q_LIDAR, RADIUS_LIDAR)
 
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")
@@ -94,11 +93,11 @@ class PySlam(Node):
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
 
-    def process_detection(self, detection_msg: ConeDetectionStamped, Q):
+    def detection_callback(self, msg: ConeDetectionStamped, Q, RADIUS: float):
         # process detected cones
         track_as_2d = np.array([])
-        for detection in detection_msg.cones:
-            detection = ConeProps(detection, detection_msg.header.frame_id)  # detection with properties
+        for detection in msg.cones:
+            detection = ConeProps(detection, msg.header.frame_id)  # detection with properties
 
             # transform detection to map
             rotation_mat = np.array(
@@ -140,7 +139,7 @@ class PySlam(Node):
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
 
-            if not detection.tracked and detection_msg.header.frame_id == "velodyne":
+            if not detection.tracked and msg.header.frame_id == "velodyne":
                 detection.set_world_coords(map_coords)
                 self.properties = np.append(self.properties, detection)
                 # initialise new landmark
@@ -151,7 +150,7 @@ class PySlam(Node):
 
         # publish track msg
         track_msg = TrackDetectionStamped()
-        track_msg.header.stamp = detection_msg.header.stamp
+        track_msg.header.stamp = msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
@@ -160,16 +159,20 @@ class PySlam(Node):
 
         # publish local map msg
         local_map_msg = ConeDetectionStamped()
-        local_map_msg.header.stamp = detection_msg.header.stamp
+        local_map_msg.header.stamp = msg.header.stamp
         local_map_msg.header.frame_id = "car"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
                 local_map_msg.cones.append(detection.local_cone_as_msg)
         self.local_publisher.publish(local_map_msg)
 
+        # publish localisation msg
+        self.publish_localisation(msg)
+
+    def publish_localisation(self, msg):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = detection_msg.header.stamp
+        pose_msg.header.stamp = msg.header.stamp
         pose_msg.header.frame_id = "track"
         pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
@@ -186,7 +189,7 @@ class PySlam(Node):
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
-        t.header.stamp = detection_msg.header.stamp
+        t.header.stamp = msg.header.stamp
         t.header.frame_id = "track"
         t.child_frame_id = "car"
 

@@ -24,6 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "slam = py_slam.node_slam:main",
+            "wss_slam = py_slam.node_wss_slam:main",
         ],
     },
 )
