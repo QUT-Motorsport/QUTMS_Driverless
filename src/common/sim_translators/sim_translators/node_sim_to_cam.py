@@ -21,16 +21,6 @@ class CamSimulator(Node):
     def __init__(self):
         super().__init__("cam_simulator")
 
-        # OLD FSDS BUILD sync sub to depth and camera
-        colour_sub_old = message_filters.Subscriber(self, Image, "/fsds/camera/image_rect_color")
-        depth_sub_old = message_filters.Subscriber(self, Image, "/fsds/camera/depth_registered")
-        synchronizer_old = message_filters.ApproximateTimeSynchronizer(
-            fs=[colour_sub_old, depth_sub_old],
-            queue_size=20,
-            slop=0.1,
-        )
-        synchronizer_old.registerCallback(self.callback)
-
         # sync sub to depth and camera
         colour_sub = message_filters.Subscriber(self, Image, "/fsds/image_rect_color/image_color")
         depth_sub = message_filters.Subscriber(self, Image, "/fsds/depth_registered/image_color")

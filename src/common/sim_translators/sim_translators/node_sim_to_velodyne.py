@@ -10,7 +10,6 @@ class SimToVelodyne(Node):
         super().__init__("sim_to_velodyne")
 
         # subscriber to lidar
-        self.create_subscription(PointCloud2, "/lidar/Lidar2", self.callback, 1)
         self.create_subscription(PointCloud2, "/fsds/lidar/Lidar2", self.callback, 1)
 
         # publishers for split pose and velocity

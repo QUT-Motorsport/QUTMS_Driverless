@@ -35,6 +35,7 @@ set(msg_files
   "msg/SteeringReading.msg"
   "msg/SystemStatus.msg"
   "msg/DrivingDynamics1.msg"
+  "msg/WSSVelocity.msg"
 )
 
 set(srv_files

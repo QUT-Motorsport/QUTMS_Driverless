@@ -73,7 +73,7 @@ class MapPathPlanner(Node):
         super().__init__("map_path_planner")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(Track, "/testing_only/track", self.map_callback, 10)
+        self.create_subscription(Track, "/fsds/testing_only/track", self.map_callback, 10)
 
         # publishers
         self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/track", 1)
