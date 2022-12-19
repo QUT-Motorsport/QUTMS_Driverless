@@ -1,5 +1,3 @@
-import os
-
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -23,7 +21,7 @@ def generate_launch_description():
                 parameters=[
                     {
                         "robot_description": Command(
-                            ["xacro ", f"{get_package_share_path('models') / 'urdf'}/", urdf_model]
+                            ["xacro ", f"{get_package_share_path('vehicle_urdf') / 'urdf'}/", urdf_model]
                         )
                     }
                 ],

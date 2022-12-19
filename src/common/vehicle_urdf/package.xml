@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>models</name>
+    <name>vehicle_urdf</name>
     <version>0.0.0</version>
     <description>URDF Models</description>
     <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
@@ -14,7 +14,6 @@
     <depend>xacro</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>
-    <depend>transforms</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

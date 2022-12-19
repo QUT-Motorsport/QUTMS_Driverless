@@ -1,18 +1,34 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>roscube_machine</name>
-  <version>0.0.0</version>
-  <description>Machine Packge for ROSCube</description>
-  <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
-  <license>MIT</license>
+    <name>roscube_machine</name>
+    <version>0.0.0</version>
+    <description>Machine Packge for ROSCube</description>
+    <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
+    <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+    <!-- Packages -->
+    <depend>sensors</depend>
+    <depend>rosboard</depend>
+    <depend>controllers</depend>
+    <depend>steering_actuator</depend>
+    <depend>canbus</depend>
+    <depend>vehicle_urdf</depend>
+    <depend>vehicle_supervisor</depend>
+    <depend>keyboard_control</depend>
+    <depend>car_status</depend>
+    <depend>py_slam</depend>
+    <depend>driverless_common</depend>
+    <depend>lidar_pipeline_3</depend>
+    <depend>planners</depend>
+    <depend>velocity_controller</depend>
+    <depend>mission_controller</depend>
 
-  <export>
-    <build_type>ament_cmake</build_type>
-  </export>
+    <exec_depend>ros2launch</exec_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 </package>

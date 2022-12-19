@@ -15,11 +15,11 @@
     <depend>ackermann_msgs</depend>
     <depend>std_msgs</depend>
     <depend>geometry_msgs</depend>
-    <depend>builtin_interfaces</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>
-    <!-- <depend>mission_controller</depend> -->
-    <depend>models</depend>
+    <depend>vehicle_urdf</depend>
+
+    <exec_depend>ros2launch</exec_depend>
 
     <export>
         <build_type>ament_python</build_type>
