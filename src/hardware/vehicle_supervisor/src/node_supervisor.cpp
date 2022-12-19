@@ -16,8 +16,8 @@
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
-#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
+#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
