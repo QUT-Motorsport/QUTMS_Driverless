@@ -18,7 +18,7 @@ install(DIRECTORY
 )
 
 # urdf folder
-install(DIRECTORYs
+install(DIRECTORY
   urdf
   DESTINATION share/${PROJECT_NAME}
 )
