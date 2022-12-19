@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,13 +13,13 @@ from .. import constants as const
 from ..utils import Config  # For typing
 
 
-def locate_cones(config, point_cloud):
+def locate_cones(config, point_cloud, start_time):
     config.logger.info(f"Point Cloud received with {point_cloud.shape[0]} points")
 
     # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
-        # vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
+        vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
 
     # Remove points behind car
     point_cloud = point_cloud[point_cloud["x"] > 0]
@@ -32,15 +34,15 @@ def locate_cones(config, point_cloud):
     config.logger.info(f"{point_cloud.shape[0]} points remain after filtering point cloud")
 
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
-    config.logger.info(f"DONE: Segments and Bins")
+    config.logger.info("DONE: Segments and Bins")
 
     proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(point_cloud["z"], segments, bins, point_norms)
-    config.logger.info(f"DONE: Prototype Points")
+    config.logger.info("DONE: Prototype Points")
 
     # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
     # ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
     ground_plane = gpe.get_ground_plane_single_core(proto_segs_arr, proto_segs)
-    config.logger.info(f"DONE: Ground Plane Mapped")
+    config.logger.info("DONE: Ground Plane Mapped")
 
     # point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
     # point_labels = pc.label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, ground_plane)
@@ -48,7 +50,7 @@ def locate_cones(config, point_cloud):
     # point_labels = pc.label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, ground_plane)
     # point_labels = pc.label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
     point_labels, ground_lines_arr = pc.label_points_6(point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane)
-    config.logger.info(f"DONE: Points Labelled")
+    config.logger.info("DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
     # object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
@@ -56,19 +58,19 @@ def locate_cones(config, point_cloud):
 
     if object_points.size == 0:
         config.logger.info("No objects points detected")
-        return None
+        return []
 
     object_centers, objects = op.group_points(object_points)  # maybe improve speed?
-    config.logger.info(f"DONE: Objects Identified")
+    config.logger.info("DONE: Objects Identified")
 
-    # print(object_centers.shape[0])
     ground_points = point_cloud[~point_labels]
     # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
-    obj_segs, obj_bins, reconstructed_objects, reconstructed_centers = op.reconstruct_objects_2(
+    obj_segs, obj_bins, reconstructed_objects, reconstructed_centers, avg_object_intensity = op.reconstruct_objects_2(
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
+    config.logger.info("DONE: Objects Reconstructed")
 
-    cone_centers, cone_points = op.cone_filter(
+    cone_centers, cone_points, cone_intensities = op.cone_filter(
         segments,
         bins,
         ground_lines_arr,
@@ -77,7 +79,11 @@ def locate_cones(config, point_cloud):
         object_centers,
         reconstructed_objects,
         reconstructed_centers,
+        avg_object_intensity,
     )
+    config.logger.info("DONE: Cones Identified")
+
+    duration = time.perf_counter() - start_time
 
     # cones = cones.tolist()
     # for cone in cones:
@@ -95,24 +101,41 @@ def locate_cones(config, point_cloud):
 
     # Create visualisations
     if config.create_figures:
-        # vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
-        # vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
-        # vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
-        # vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
-        # vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
-        # vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
-        # vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
-        # vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
-        # vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
-        # vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
-        # vis.plot_labelled_points_3D(
-        #   config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
-        # )
-        # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
-        # vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
-        # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
+        vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
+        vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
+        vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
+        vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
+        vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
+        vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
+        vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
+        vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
+        vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
+        vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
+        vis.plot_labelled_points_3D(config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D")
+        vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
+        vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
+        vis.plot_reconstructed_objects_2D(
+            config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects"
+        )
         vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
-        # vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
+        vis2.plot_cones_3D(
+            config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D"
+        )
+        vis2.plot_detailed_2D(
+            config,
+            point_cloud,
+            segments,
+            bins,
+            ground_plane[np.unique(segments)],
+            point_labels,
+            reconstructed_objects,
+            reconstructed_centers,
+            cone_intensities,
+            cone_centers,
+            cone_points,
+            duration,
+            "17_detailed_2D",
+        )
 
         # reintro structured array for lidar colouring
 

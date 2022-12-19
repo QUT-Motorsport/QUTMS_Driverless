@@ -16,26 +16,18 @@ from sensor_msgs.msg import PointCloud2
 import ros2_numpy as rnp
 
 from . import constants as const
-from . import utils  # , video_stitcher
+from . import utils
 from .library import lidar_manager
 
 # For typing
 from .utils import Config
 
 
-def cone_msg(x_coord: float, y_coord: float, col: int) -> Cone:
-    # {Cone.YELLOW, Cone.BLUE, Cone.ORANGE_SMALL}
-    location: Point = Point(
-        x=x_coord,
-        y=y_coord,
-        z=0.15,
-    )
+def cone_msg(x: float, y: float) -> Cone:
+    location: Point = Point(x=x, y=y, z=const.LIDAR_HEIGHT_ABOVE_GROUND)
 
-    return Cone(
-        location=location,
-        color=Cone.UNKNOWN,
-        # color=col,
-    )
+    # This LiDAR Pipeline does not identify cone colour
+    return Cone(location=location, color=Cone.UNKNOWN)
 
 
 class ConeDetectionNode(Node):
@@ -63,32 +55,12 @@ class ConeDetectionNode(Node):
         )  # x y z intensity ring
         point_cloud = np.frombuffer(point_cloud_msg.data, dtype_list)
 
-        cone_locations = lidar_manager.locate_cones(self.config, point_cloud)
+        cone_locations = lidar_manager.locate_cones(self.config, point_cloud, start_time)
 
-        if cone_locations == []:
+        if len(cone_locations) == 0:
             return
 
-        # average y value of cones
-        y_cutoff = 8
-        average_y = 0
-        count = 1
-        for cone in cone_locations:
-            if abs(cone[1]) < y_cutoff:
-                average_y += cone[1]
-                count += 1
-        average_y /= count
-
-        # define message component - list of Cone type messages
-        detected_cones = []  # List of Cones
-        for cone in cone_locations:
-            # add cone to msg list
-            if cone[1] > average_y + 3 and cone[1] < average_y + y_cutoff:
-                colour = Cone.BLUE
-            elif cone[1] < average_y - 3 and cone[1] > average_y - y_cutoff:
-                colour = Cone.YELLOW
-            else:
-                colour = Cone.UNKNOWN
-            detected_cones.append(cone_msg(cone[0], cone[1], colour))
+        detected_cones = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
 
         detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
         self.cone_publisher.publish(detection_msg)
@@ -118,7 +90,7 @@ def local_data_stream():
 def main(args=sys.argv[1:]):
     # Init config
     config: Config = utils.Config()
-    # config.update(args)
+    config.update(args)
 
     # Check if logs should be printed
     if not config.print_logs:
@@ -133,12 +105,12 @@ def main(args=sys.argv[1:]):
     config.logger.info(f"args = {args}")
 
     # Init data stream
-    # if config.video_from_session:
-    # video_stitcher.stitch_figures(
-    #     f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
-    #     f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
-    # )
-    if config.data_path:
+    if config.video_from_session:
+        video_stitcher.stitch_figures(
+            f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
+            f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
+        )
+    elif config.data_path:
         # Use local data source
         local_data_stream()
     else:

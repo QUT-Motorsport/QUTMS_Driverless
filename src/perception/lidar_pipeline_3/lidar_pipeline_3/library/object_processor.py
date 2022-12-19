@@ -42,8 +42,10 @@ def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_ce
     # do i even car about all the points in a recon object? wouldnt i just want the cetner, and num points?
     reconstructed_objs = np.empty(object_centers.shape[0], dtype=object)
     reconstructed_centers = np.empty((object_centers.shape[0], 3))
+    avg_object_intensity = np.empty(object_centers.shape[0])
     for i in range(object_centers.shape[0]):
         matching_points = objects[i]
+        avg_object_intensity[i] = np.mean(matching_points["intensity"])
 
         curr_seg = obj_segs[i]
         curr_bin = obj_bins[i]
@@ -66,7 +68,7 @@ def reconstruct_objects_2(ground_points, ground_segments, ground_bins, object_ce
         )
         reconstructed_objs[i] = matching_points  # add error margin?
 
-    return obj_segs, obj_bins, reconstructed_objs, reconstructed_centers
+    return obj_segs, obj_bins, reconstructed_objs, reconstructed_centers, avg_object_intensity
 
 
 def reconstruct_objects(point_cloud, object_centers, objects, DELTA_ALPHA, CONE_DIAM, BIN_SIZE):
@@ -112,7 +114,15 @@ def get_expected_point_count(distance):
 # to be in a segment or bin where no points were due to the small
 # epsilon in DBSCAN. If you introduce the noise cluster back, you will though
 def cone_filter(
-    segments, bins, ground_lines_arr, obj_segs, obj_bins, object_centers, reconstructed_objects, reconstructed_centers
+    segments,
+    bins,
+    ground_lines_arr,
+    obj_segs,
+    obj_bins,
+    object_centers,
+    reconstructed_objects,
+    reconstructed_centers,
+    avg_object_intensity,
 ):
     # Filter 1: Height of object compared to expected height of cone
     seg_bin_ind = (obj_segs == segments) * (obj_bins == bins)
@@ -132,9 +142,13 @@ def cone_filter(
         object_line_dists <= const.HALF_AREA_CONE_HEIGHT + const.HACH_UPPER_ERR
     )
 
+    filtered_rec_centers = reconstructed_centers[f1_matching_ind]
+    filtered_rec_objects = reconstructed_objects[f1_matching_ind]
+    filtered_avg_intensity = avg_object_intensity[f1_matching_ind]
+
     # Filter 2: How many points do we expect to be on a cone at a given distance?
-    rec_norms = np.linalg.norm(reconstructed_centers[f1_matching_ind][:, :2], axis=1)
-    rec_point_counts = np.array([len(rec) for rec in reconstructed_objects[f1_matching_ind]])
+    rec_norms = np.linalg.norm(filtered_rec_centers[:, :2], axis=1)
+    rec_point_counts = np.array([len(rec) for rec in filtered_rec_objects])
     expected_point_counts = get_expected_point_count(rec_norms)
 
     f2_matching_ind = (0.3 * expected_point_counts <= rec_point_counts) * (
@@ -142,8 +156,9 @@ def cone_filter(
     )
 
     return (
-        reconstructed_centers[f1_matching_ind][f2_matching_ind],
-        reconstructed_objects[f1_matching_ind][f2_matching_ind],
+        filtered_rec_centers[f2_matching_ind],
+        filtered_rec_objects[f2_matching_ind],
+        filtered_avg_intensity[f2_matching_ind],
     )
 
 

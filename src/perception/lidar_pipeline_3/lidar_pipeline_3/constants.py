@@ -25,8 +25,9 @@ T_D_MAX = 100  # Maximum distance a point can be from the origin to even be cons
 CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing ground plane mapping (0.0 - 1.0)
 CONE_DIAM = 0.15
 CONE_WIDTH = 0.075
-CONE_HEIGHT = 0.30
+CONE_HEIGHT = 0.45
 
+LIDAR_HEIGHT_ABOVE_GROUND = 0.15
 LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
 LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
 
@@ -77,6 +78,8 @@ class Colour(Enum):
     GREY = "#555555"
     MINT = "#30FDC3"
     BLUE = "#9CDCFE"
+    DIM_BLUE = "#225E67"
+    LIGHT_BLUE = "#43BCCD"
     GREEN = "#23CE6B"
     RED = "#B9314F"
 
@@ -94,5 +97,7 @@ class RGBA(Enum):
     GREY = rgb_to_normalised_rgba(hex_to_rgb(Colour.GREY.value))
     MINT = rgb_to_normalised_rgba(hex_to_rgb(Colour.MINT.value))
     BLUE = rgb_to_normalised_rgba(hex_to_rgb(Colour.BLUE.value))
+    DIM_BLUE = rgb_to_normalised_rgba(hex_to_rgb(Colour.DIM_BLUE.value))
+    LIGHT_BLUE = rgb_to_normalised_rgba(hex_to_rgb(Colour.LIGHT_BLUE.value))
     GREEN = rgb_to_normalised_rgba(hex_to_rgb(Colour.GREEN.value))
     RED = rgb_to_normalised_rgba(hex_to_rgb(Colour.RED.value))
