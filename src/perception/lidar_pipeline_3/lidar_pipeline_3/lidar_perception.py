@@ -60,7 +60,7 @@ class ConeDetectionNode(Node):
         if len(cone_locations) == 0:
             return
 
-        detected_cones = [cone_msg(cone[0], cone[1], None) for cone in cone_locations]
+        detected_cones = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
 
         detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
         self.cone_publisher.publish(detection_msg)
