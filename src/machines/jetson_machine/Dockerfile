@@ -26,9 +26,10 @@ COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
     colcon build --symlink-install --packages-up-to \
-        jetson_machine \
-        vision_pipeline \
-    && rm -rf ./src
+        jetson_machine
+
+# delete source
+RUN rm -rf ./src
 
 # tell ROS to use Cyclone DDS
 ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"

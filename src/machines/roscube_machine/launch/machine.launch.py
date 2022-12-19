@@ -54,7 +54,9 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("models") / "launch" / "robot_description.launch.py")
+                    launch_file_path=str(
+                        get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py"
+                    )
                 ),
                 launch_arguments=[
                     ("urdf_model", "qev3.urdf.xacro"),

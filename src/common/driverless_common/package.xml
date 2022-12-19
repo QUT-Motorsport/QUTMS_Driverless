@@ -16,6 +16,8 @@
     <!-- Custom packages -->
     <depend>rosboard</depend>
 
+    <exec_depend>ros2launch</exec_depend>
+
     <export>
         <build_type>ament_python</build_type>
     </export>

@@ -122,22 +122,7 @@ COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
-        roscube_machine \
-        sensors \
-        rosboard \
-        controllers \
-        steering_actuator \
-        canbus \
-        models \
-        vehicle_supervisor \
-        keyboard_control \
-        car_status \
-        py_slam \
-        driverless_common \
-        lidar_pipeline_3 \
-        planners \
-        velocity_controller \
-        mission_controller
+        roscube_machine
 
 # delete source
 RUN rm -rf ./src
