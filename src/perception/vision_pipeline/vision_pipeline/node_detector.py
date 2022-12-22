@@ -220,7 +220,7 @@ class VisionProcessor(Node):
         depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.depth_debug_img_publisher.publish(depth_msg)
 
-        self.get_logger().info(
+        self.get_logger().debug(
             f"Total Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(1/(time.perf_counter() - start), 2)}"
         )
         self.start = time.perf_counter()

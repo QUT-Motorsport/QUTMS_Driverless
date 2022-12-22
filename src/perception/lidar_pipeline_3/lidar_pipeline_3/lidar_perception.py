@@ -70,7 +70,7 @@ class ConeDetectionNode(Node):
         self.config.logger.info(
             f"Current Hz: {round(1 / duration, 2)}\t| Average Hz: {round(1 / self.average_runtime, 2)}"
         )
-        self.get_logger().info(f"Time: {round(duration, 4)}\t| Average Hz: {round(1 / self.average_runtime, 2)}")
+        self.get_logger().debug(f"Time: {round(duration, 4)}\t| Average Hz: {round(1 / self.average_runtime, 2)}")
 
 
 def real_time_stream(args: list, config: Config) -> None:
