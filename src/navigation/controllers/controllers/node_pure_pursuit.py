@@ -110,7 +110,6 @@ class PurePursuit(Node):
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
-        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array

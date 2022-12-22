@@ -63,8 +63,6 @@ class BetterReactiveController(ShutdownNode):
         self.create_subscription(Image, "/debug_imgs/vision_det_img", self.img_callback, 1)
         # cone detections
         self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
-        # sim
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
@@ -72,7 +70,6 @@ class BetterReactiveController(ShutdownNode):
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 
         self.get_logger().info("---Better Reactive Controller Node Initalised---")
-        self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
 
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
@@ -89,64 +86,68 @@ class BetterReactiveController(ShutdownNode):
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
 
-        # compute 10 quadratic curves based on different steering angles
-        # find the best curve that reduces the error from curve to each cone
-        # use the steering angle of that curve
-        A: np.ndarray = np.linspace(-0.1, 0.1, 15)
-        x: np.ndarray = np.linspace(0, 10, 100)
-        curves: List[np.ndarray] = []
-        # compute the error for each curve
-        errors: List[float] = []
-        for a in A:
-            y = a * x**2
-            curves.append(y)
+        if len(left_cones) != 0 and len(right_cones) != 0:
+            # compute 10 quadratic curves based on different steering angles
+            # find the best curve that reduces the error from curve to each cone
+            # use the steering angle of that curve
+            A: np.ndarray = np.linspace(-0.1, 0.1, 15)
+            x: np.ndarray = np.linspace(0, 10, 100)
+            curves: List[np.ndarray] = []
+            # compute the error for each curve
+            errors: List[float] = []
+            for a in A:
+                y = a * x**2
+                curves.append(y)
 
-            error = 0
-            for cone in left_cones:
-                # find the closest point on the curve to the cone
-                closest_point: Point = closest_point_on_curve(cone_to_point(cone), y)
-                # compute the error
-                error += dist(cone_to_point(cone), closest_point) * WEIGHT / len(left_cones)
+                error = 0
+                for cone in left_cones:
+                    # find the closest point on the curve to the cone
+                    closest_point: Point = closest_point_on_curve(cone_to_point(cone), y)
+                    # compute the error
+                    error += dist(cone_to_point(cone), closest_point) * WEIGHT / len(left_cones)
 
-            for cone in right_cones:
-                # find the closest point on the curve to the cone
-                closest_point: Point = closest_point_on_curve(cone_to_point(cone), y)
-                # compute the error
-                error += dist(cone_to_point(cone), closest_point) * -WEIGHT / len(right_cones)
+                for cone in right_cones:
+                    # find the closest point on the curve to the cone
+                    closest_point: Point = closest_point_on_curve(cone_to_point(cone), y)
+                    # compute the error
+                    error += dist(cone_to_point(cone), closest_point) * -WEIGHT / len(right_cones)
 
-            errors.append(error)
+                errors.append(error)
 
+                for i in range(len(x)):
+                    # draw each element in target spline
+                    cv2.drawMarker(
+                        self.debug_img,
+                        loc_to_img_pt(x[i], y[i]).to_tuple(),
+                        (0, 0, 255),
+                        markerType=cv2.MARKER_SQUARE,
+                        markerSize=1,
+                        thickness=2,
+                    )
+
+            # find the best curve
+            best_curve: np.ndarray = curves[np.abs(errors).argmin()]
             for i in range(len(x)):
                 # draw each element in target spline
                 cv2.drawMarker(
                     self.debug_img,
-                    loc_to_img_pt(x[i], y[i]).to_tuple(),
-                    (0, 0, 255),
+                    loc_to_img_pt(x[i], best_curve[i]).to_tuple(),
+                    (0, 255, 0),
                     markerType=cv2.MARKER_SQUARE,
                     markerSize=1,
                     thickness=2,
                 )
+            self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
 
-        # find the best curve
-        best_curve: np.ndarray = curves[np.abs(errors).argmin()]
-        for i in range(len(x)):
-            # draw each element in target spline
-            cv2.drawMarker(
-                self.debug_img,
-                loc_to_img_pt(x[i], best_curve[i]).to_tuple(),
-                (0, 255, 0),
-                markerType=cv2.MARKER_SQUARE,
-                markerSize=1,
-                thickness=2,
-            )
-        self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
+            steering_angle: float = A[np.abs(errors).argmin()] * self.Kp_angle
 
-        best_curve_steering_angle: float = A[np.abs(errors).argmin()] * self.Kp_angle
+            speed = self.targ_vel
 
         # publish message
         control_msg = AckermannDriveStamped()
-        control_msg.drive.steering_angle = degrees(best_curve_steering_angle)
-        control_msg.drive.speed = float(self.targ_vel)
+        control_msg.header.stamp = cone_msg.header.stamp
+        control_msg.drive.steering_angle = degrees(steering_angle)
+        control_msg.drive.speed = float(speed)
         self.control_publisher.publish(control_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
