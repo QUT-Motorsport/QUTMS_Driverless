@@ -17,7 +17,7 @@ find_package(pcl_ros REQUIRED)
 
 set (SOURCES
   src/node_detector.cpp
-  PCL_DBSCAN/dbscan.cpp
+  src/dbscan.cpp
 )
 
 add_executable(detector src/node_detector.cpp ${SOURCES})

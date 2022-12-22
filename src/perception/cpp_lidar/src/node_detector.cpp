@@ -15,6 +15,7 @@
 #include <rclcpp/time.hpp>
 
 #include "../PCL_DBSCAN/dbscan.hpp"
+#include "dbscan.h"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -26,9 +27,9 @@ const int max_cluster_size = 500;
 const float min_cluster_distance = 1.0;
 
 const float min_x = 0.0;
-const float max_x = 15.0;
-const float min_y = -6.0;
-const float max_y = 6.0;
+const float max_x = 25.0;
+const float min_y = -10.0;
+const float max_y = 10.0;
 const float min_z = -0.4;
 const float max_z = 0.3;
 const float max_z_ground = -0.05;
@@ -128,29 +129,40 @@ class LiDARProcessor : public rclcpp::Node {
         pcl::PointCloud<pcl::PointXYZI>::Ptr non_ground(new pcl::PointCloud<pcl::PointXYZI>);
         *non_ground = *non_ground_seg + *non_ground_crop;
 
-        // pointcloud to vector of tuples
-        std::vector<std::tuple<float, float, float>> points;
-        for (auto point : non_ground->points) {
-            points.push_back(std::make_tuple(point.x, point.y, point.z));
-        }
+        // APPROX 1.5ms
+
+        // pointcloud to vector of Points
+        std::vector<Point> points2 = pointcloudToVector(non_ground);
+        RCLCPP_INFO(this->get_logger(), "size: %ld", points2.size());
+
         // DBSCAN clustering
-        std::vector<std::vector<size_t>> db_idxs =
-            dbscan(points, min_cluster_distance, min_cluster_size, max_cluster_size);
+        DBSCAN ds(min_cluster_size, max_cluster_size, min_cluster_distance, points2);
+        ds.run();
 
-        // Create clusters
+        // create pointcloud from clusters
         pcl::PointCloud<pcl::PointXYZI>::Ptr clusters(new pcl::PointCloud<pcl::PointXYZI>);
-        for (auto idxs : db_idxs) {
-            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZI>);
-            for (auto idx : idxs) {
-                cloud_cluster->push_back((*non_ground)[idx]);
+        // get number of clusters
+        int num_clusters = ds.getNumClusters();
+        for (int i = 0; i < num_clusters; i++) {
+            // get cluster
+            std::vector<Point> cluster = ds.getClusteredPoints(i);
+            if (cluster.size() < min_cluster_size) {
+                continue;
             }
-            cloud_cluster->width = cloud_cluster->size();
-            cloud_cluster->height = 1;
-            cloud_cluster->is_dense = true;
-
-            std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size() << " data points."
+            // create pointcloud from cluster
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+            for (auto point : cluster) {
+                pcl::PointXYZI pcl_point;
+                pcl_point.x = point.x;
+                pcl_point.y = point.y;
+                pcl_point.z = point.z;
+                pcl_point.intensity = i;
+                cluster_cloud->points.push_back(pcl_point);
+            }
+            std::cout << "PointCloud representing the Cluster: " << cluster_cloud->size() << " data points."
                       << std::endl;
-            *clusters += *cloud_cluster;
+            // add to clusters
+            *clusters += *cluster_cloud;
         }
 
         // Publish the ground point cloud
@@ -171,9 +183,27 @@ class LiDARProcessor : public rclcpp::Node {
 
         RCLCPP_INFO(this->get_logger(), "time: %f", (clock() - start) / (double)CLOCKS_PER_SEC);
     }
+
+    vector<Point> pointcloudToVector(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud) {
+        int num_points = cloud->points.size();
+        std::vector<Point> points2;
+        Point *p = (Point *)calloc(num_points, sizeof(Point));
+        int i = 0;
+        while (i < num_points) {
+            p[i].clusterID = UNCLASSIFIED;
+            p[i].x = cloud->points[i].x;
+            p[i].y = cloud->points[i].y;
+            p[i].z = cloud->points[i].z;
+            p[i].i = cloud->points[i].intensity;
+            points2.push_back(p[i]);
+            ++i;
+        }
+
+        return points2;
+    }
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
     auto lidar_node = std::make_shared<LiDARProcessor>();
