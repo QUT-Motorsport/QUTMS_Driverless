@@ -10,9 +10,12 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from fs_msgs.msg import ControlCommand
 from nav_msgs.msg import Odometry
 
+from driverless_msgs import Reset
+
 
 class ControlToSim(Node):
     Kp_vel: float = 2
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("control_to_sim")
@@ -27,12 +30,20 @@ class ControlToSim(Node):
         )
         synchronizer.registerCallback(self.callback)
 
+        self.create_subscription(Reset, "/reset", self.reset_callback, 1)
+
         # publish to sim
         self.publisher: Publisher = self.create_publisher(ControlCommand, "/fsds/control_command", 1)
 
         self.get_logger().info("---Sim control translator initialised---")
 
+    def reset_callback(self, reset_msg: Reset):
+        self.r2d = True
+
     def callback(self, drive_msg: AckermannDriveStamped, vel_msg: Odometry):
+        if not self.r2d:
+            return
+
         sim_control = ControlCommand()
 
         # proportional velocity control
