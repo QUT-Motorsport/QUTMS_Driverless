@@ -154,7 +154,7 @@ class TrackPlanner(Node):
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
         self.marker_publisher: Publisher = self.create_publisher(Marker, "/markers/delaunay_lines", 1)
-        self.img_publisher: Publisher = self.create_publisher(Image, "/planner/debug_img", 1)
+        self.img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/delaunay_debug_img", 1)
 
         self.get_logger().info("---Delaunay Planner Node Initalised---")
 
