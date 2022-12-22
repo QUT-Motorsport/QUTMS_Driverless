@@ -156,8 +156,8 @@ class VisionProcessor(Node):
 
         # publishers
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection2", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/debug_img2", 1)
-        self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/vision/depth_debug_img", 1)
+        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbs_img", 1)
+        self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_depth_img", 1)
 
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
@@ -220,8 +220,9 @@ class VisionProcessor(Node):
         depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
         self.depth_debug_img_publisher.publish(depth_msg)
 
-        self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time
-        self.get_logger().debug(f"EST. FPS: {str(1/(time.perf_counter() - start))}")
+        self.get_logger().info(
+            f"Total Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(1/(time.perf_counter() - start), 2)}"
+        )
         self.start = time.perf_counter()
 
 
