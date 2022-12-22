@@ -10,7 +10,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.draw import *
@@ -54,7 +54,6 @@ class BetterReactiveController(ShutdownNode):
     prev_steering_angle: float = 0
     Kp_angle: float = 20
     targ_vel: float = 4  # m/s
-    r2d: bool = True  # for reset
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     def __init__(self):
@@ -67,8 +66,6 @@ class BetterReactiveController(ShutdownNode):
         # sim
         # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
-
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
 
@@ -80,15 +77,9 @@ class BetterReactiveController(ShutdownNode):
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
 
-    def reset_callback(self, msg: Reset):
-        self.prev_steering_angle = 0
-        self.r2d = True
-
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()  # begin a timer
-        if not self.r2d:
-            return
 
         # safety critical, set to 0 if not good detection
         speed = 0.0
@@ -155,7 +146,7 @@ class BetterReactiveController(ShutdownNode):
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = degrees(best_curve_steering_angle)
-        control_msg.drive.speed = self.targ_vel
+        control_msg.drive.speed = float(self.targ_vel)
         self.control_publisher.publish(control_msg)
 
         self.get_logger().debug(f"Total Time: {str(time.perf_counter() - start)}\n")  # log time

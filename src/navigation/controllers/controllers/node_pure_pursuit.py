@@ -9,7 +9,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import PathStamped, Reset
+from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
 from typing import List, Tuple
@@ -98,7 +98,6 @@ class PurePursuit(Node):
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
-    r2d: bool = True  # for reset
 
     def __init__(self):
         super().__init__("pure_pursuit")
@@ -107,17 +106,11 @@ class PurePursuit(Node):
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
-
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")
-
-    def reset_callback(self, reset_msg: Reset):
-        self.path = np.array([])
-        self.r2d = True
 
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
@@ -125,9 +118,6 @@ class PurePursuit(Node):
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
     def callback(self, msg: PoseWithCovarianceStamped):
-        if not self.r2d:
-            return
-
         # Only start once the path has been recieved
         if self.path.size == 0:
             return

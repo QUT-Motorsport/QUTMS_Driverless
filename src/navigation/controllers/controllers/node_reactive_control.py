@@ -116,7 +116,7 @@ class ReactiveController(ShutdownNode):
                 y=closest_right.location.y + 3,
             )
 
-        if target is not None and self.r2d:
+        if target is not None:
             # steering control
             steering_angle = self.Kp_ang * np.degrees(np.arctan2(target.y, target.x))
             self.get_logger().debug(f"Target angle: {steering_angle}")

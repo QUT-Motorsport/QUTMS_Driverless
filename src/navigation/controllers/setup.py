@@ -23,7 +23,7 @@ setup(
             "random = controllers.node_random:main",
             "constant = controllers.node_constant:main",
             "reactive_control = controllers.node_reactive_control:main",
-            "reactive_v2 = controllers.node_reactive_v2:main",
+            "reactive_trajectory = controllers.node_reactive_trajectory:main",
             "pure_pursuit = controllers.node_pure_pursuit:main",
             "vector_reactive_control = controllers.node_reactive_vector_control:main",
             "bang_control = controllers.node_bang_control:main",
