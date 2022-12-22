@@ -7,7 +7,8 @@ matplotlib
 opencv
 pandas
 Pillow
-protobuf
+numpy==1.23
+protobuf==3.20.1
 PyYAML
 requests
 ros-humble-ackermann-msgs
