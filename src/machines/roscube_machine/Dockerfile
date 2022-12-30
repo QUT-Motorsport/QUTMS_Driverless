@@ -49,8 +49,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
 
-# models
-COPY ./src/models/models/conda_requirements ./conda_requirements
+# vehicle urdf
+COPY ./src/common/vehicle_urdf/conda_requirements ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
