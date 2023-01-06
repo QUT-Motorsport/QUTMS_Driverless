@@ -18,8 +18,6 @@ rm -rf Mambaforge-$(uname)-$(uname -m).sh
 git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 cd ~/QUTMS_Driverless
 
-## Pre commit for git
-pre-commit install
 ## Make directory for people to drop their rosbags in
 mkdir bags/
 
@@ -62,6 +60,10 @@ colcon build
 ## Build initial driverless packages
 cd ~/QUTMS_Driverless
 colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
+
+## Pre commit for git
+source ~/.bashrc
+pre-commit install
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
