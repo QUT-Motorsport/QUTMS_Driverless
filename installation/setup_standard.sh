@@ -21,7 +21,6 @@ sudo apt update
 sudo apt install -y ros-humble-desktop ros-dev-tools
 sudo rosdep init
 rosdep update
-source /opt/ros/humble/setup.bash
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 
 ## Clone Driverless repo
@@ -47,6 +46,9 @@ if [ $torch == "yes" ]; then
     echo "Download any ML models from the Google Drive into the models folder (see wiki)"
     sleep 7
 fi
+
+## Source ROS
+source /opt/ros/humble/setup.bash
 
 ## Install FSDS
 cd ~
