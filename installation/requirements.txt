@@ -19,4 +19,3 @@ tqdm
 transforms3d
 simplejpeg
 pygame
-pre-commit
