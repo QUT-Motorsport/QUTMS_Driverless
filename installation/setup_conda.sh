@@ -62,4 +62,4 @@ cd ~/QUTMS_Driverless
 colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Wrap up
-echo "Thank you for installing, explore the rest of the wiki
+echo "Thank you for installing, explore the rest of the wiki"
