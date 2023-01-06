@@ -9,21 +9,23 @@ sudo apt install git
 sudo apt install python3-pip
 pip install pre-commit
 
-## Clone Driverless repo
-git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
-
 ## Download and install mambaforge
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
 conda config --set auto_activate_base false
 
-cd ~/QUTMS_Driverless/installation
-pre-commit install
 
+## Clone Driverless repo
+git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
+cd ~/QUTMS_Driverless
+
+## Pre commit for git
+pre-commit install
 ## Make directory for people to drop their rosbags in
 mkdir bags/
 
 ## Create driverless development environment
+cd ~/QUTMS_Driverless/installation
 mamba env create --name driverless_env --file humble_py39_dev_env.yml
 conda config --env --add channels conda-forge
 conda config --env --add channels robostack-humble
