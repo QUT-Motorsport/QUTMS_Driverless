@@ -12,7 +12,7 @@ pip install pre-commit
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
 conda config --set auto_activate_base false
-
+rm -rf Mambaforge-$(uname)-$(uname -m).sh
 
 ## Clone Driverless repo
 git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
