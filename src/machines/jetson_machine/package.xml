@@ -3,7 +3,7 @@
 <package format="3">
     <name>jetson_machine</name>
     <version>0.0.0</version>
-    <description>Machine Packge for Nvidia Jetson</description>
+    <description>Machine Package for Nvidia Jetson</description>
     <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
     <license>MIT</license>
 

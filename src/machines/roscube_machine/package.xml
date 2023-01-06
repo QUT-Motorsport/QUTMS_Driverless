@@ -20,6 +20,8 @@
     <depend>keyboard_control</depend>
     <depend>car_status</depend>
     <depend>py_slam</depend>
+    <depend>qutms_sbg_driver</depend>
+    <depend>velodyne</depend>
     <depend>driverless_common</depend>
     <depend>lidar_pipeline_3</depend>
     <depend>planners</depend>
