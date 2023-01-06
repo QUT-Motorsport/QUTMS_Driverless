@@ -4,9 +4,8 @@ cd ~
 
 ## Pre-reqs
 sudo apt update
-sudo apt upgrade
-sudo apt install git
-sudo apt install python3-pip
+sudo apt upgrade -y
+sudo apt install -y git python3-pip
 pip install pre-commit
 
 ## Download and install mambaforge
@@ -38,8 +37,11 @@ echo "alias a='conda activate driverless_env && . install/setup.bash'" >> ~/.bas
 conda activate driverless_env
 
 ## Check if user is going to work with vision
+echo ""
 echo "Do you have an Nvidia GPU and are developing ML vision systems? ('yes' or 'no')"
+echo ""
 read torch
+echo ""
 if [ $torch == "yes" ]; then
     mamba install -y pytorch torchvision pytorch-cuda=11.6 -c pytorch -c nvidia
     echo "export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH" >> ~/.bashrc
