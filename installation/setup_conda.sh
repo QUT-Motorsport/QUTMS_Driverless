@@ -10,7 +10,7 @@ sudo apt install python3-pip
 pip install pre-commit
 
 ## Clone Driverless repo
-git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
+git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 
 ## Download and install mambaforge
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
