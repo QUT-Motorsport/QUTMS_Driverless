@@ -50,7 +50,7 @@ fi
 
 ## Install FSDS
 cd ~
-# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
+git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
 cd ~/Formula-Student-Driverless-Simulator
 AirSim/setup.sh
 
