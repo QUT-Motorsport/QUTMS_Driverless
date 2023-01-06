@@ -16,7 +16,7 @@
     <depend>ackermann_msgs</depend>
     <depend>driverless_msgs</depend>
     <depend>message_filters</depend>
-    <depend>sim_translator</depend>
+    <depend>sim_translators</depend>
     <depend>visualization_msgs</depend>
 
     <export>

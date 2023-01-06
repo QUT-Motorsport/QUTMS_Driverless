@@ -11,6 +11,7 @@
 
     <!-- Packages -->
     <depend>robot_state_publisher</depend>
+    <depend>joint_state_publisher</depend>
     <depend>xacro</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>

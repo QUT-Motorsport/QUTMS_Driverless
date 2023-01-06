@@ -20,3 +20,16 @@
 [submodule "src/perception/cpp_lidar/PCL_DBSCAN"]
 	path = src/perception/cpp_lidar/PCL_DBSCAN
 	url = https://github.com/QUT-Motorsport/PCL_DBSCAN.git
+[submodule "src/common/joint_state_publisher"]
+	path = src/common/joint_state_publisher
+	url = https://github.com/ros/joint_state_publisher.git
+	branch = ros2
+[submodule "src/hardware/zed_ros2_driver/zed-ros2-wrapper"]
+	path = src/hardware/zed_ros2_driver/zed-ros2-wrapper
+	url = https://github.com/stereolabs/zed-ros2-wrapper.git
+[submodule "src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver"]
+	path = src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver
+	url = https://github.com/QUT-Motorsport/QUTMS_SBG_Driver.git
+[submodule "src/hardware/sbg_ros2_driver/QUTMS_SBG_msgs"]
+	path = src/hardware/sbg_ros2_driver/QUTMS_SBG_msgs
+	url = https://github.com/QUT-Motorsport/QUTMS_SBG_msgs.git

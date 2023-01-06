@@ -20,6 +20,7 @@ default_section = "THIRDPARTY"
 known_thirdparty = ["launch"]
 known_ros = ["rclpy", "message_filters", "cv_bridge", "rosidl_runtime_py"]
 known_messages = ["*.msg"]
+known_srvs = ["*.srv"]
 known_testing = ["testing"]
 known_srvs = ["*.srv"]
 known_typing = ["typing", "mypy_extensions", "typing_extensions"]

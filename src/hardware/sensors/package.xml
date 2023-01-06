@@ -9,7 +9,7 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <depend>sbg_driver</depend>
+    <depend>qutms_sbg_driver</depend>
     <depend>velodyne</depend>
 
     <exec_depend>ros2launch</exec_depend>

@@ -52,18 +52,19 @@ RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download
     chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
     ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
 
-COPY dev_environment.yml /tmp/dev_environment.yml
+# CHANGE THIS WHEN UPGRADING TO HUMBLE
+COPY galactic_environment.yml /tmp/environment.yml
 
 ARG PYTHON_VERSION_OVERRIDE
-# if PYTHON_VERSION_OVERRIDE defined, find the line in dev_environment.yml with ###PYTHON_VERSION### and replace and
+# if PYTHON_VERSION_OVERRIDE defined, find the line in environment.yml with ###PYTHON_VERSION### and replace and
 # the line below with the overridden python entry
 RUN if [[ -z "${PYTHON_VERSION_OVERRIDE}" ]] ; \
-    then echo "No PYTHON_VERSION_OVERRIDE. Will not modify dev_environment.yml."; \
-    else sed -i "/###PYTHON_VERSION###/,+1 c \  - python=${PYTHON_VERSION_OVERRIDE}" /tmp/dev_environment.yml; \
+    then echo "No PYTHON_VERSION_OVERRIDE. Will not modify environment.yml."; \
+    else sed -i "/###PYTHON_VERSION###/,+1 c \  - python=${PYTHON_VERSION_OVERRIDE}" /tmp/environment.yml; \
     fi
 
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    mamba env create --name driverless_env --file dev_environment.yml && \
+    mamba env create --name driverless_env --file environment.yml && \
     conda activate driverless_env && \
     conda config --env --add channels conda-forge && \
     conda config --env --add channels robostack-experimental && \
