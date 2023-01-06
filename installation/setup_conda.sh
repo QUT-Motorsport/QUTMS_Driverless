@@ -31,7 +31,7 @@ conda config --env --add channels robostack-humble
 
 source ~/mambaforge/bin/activate
 ## Create an alias for ease
-echo "alias a='conda activate driverless_env && . install/setup.bash'" >> ~/.bashrc
+echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
 
 ## Install package requirements
 conda activate driverless_env
