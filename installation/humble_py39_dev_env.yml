@@ -20,6 +20,30 @@ dependencies:
   - pre-commit
   # for some reason, not installed in base python?
   - typing-extensions
+  - colour
+  - cython
+  - dataclasses
+  - eigen
+  - ipython
+  - matplotlib
+  - opencv
+  - pandas
+  - Pillow
+  - numpy==1.23
+  - protobuf
+  - PyYAML
+  - requests
+  - ros-humble-ackermann-msgs
+  - ros-humble-ament-cmake-nose
+  - ros-humble-joint-state-publisher
+  - ros-humble-xacro
+  - ros-humble-pcl-ros
+  - scikit-learn
+  - scipy
+  - seaborn
+  - tornado
+  - tqdm
+  - transforms3d
   - pip
   - pip:
     - colcon-common-extensions
@@ -27,6 +51,8 @@ dependencies:
     - colcon-argcomplete
     - colcon-bash
     - colcon-zsh
+    - simplejpeg
+    - pygame
 variables:
   # fix for WSL RVIZ2
   LIBGL_ALWAYS_INDIRECT:
