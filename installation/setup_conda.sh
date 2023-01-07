@@ -3,18 +3,23 @@
 cd ~
 
 ## Pre-reqs
+echo "---Installing pre-reqs---"
+echo ""
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y git python3-pip pre-commit
-pip install pre-commit
 
 ## Download and install mambaforge
+echo "---Installing mambaforge---"
+echo ""
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
 conda config --set auto_activate_base false
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
 
 ## Clone Driverless repo
+echo "---Cloning Driverless repo---"
+echo ""
 git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 cd ~/QUTMS_Driverless
 
@@ -22,6 +27,8 @@ cd ~/QUTMS_Driverless
 mkdir bags/
 
 ## Create driverless development environment
+echo "---Creating driverless env---"
+echo ""
 cd ~/QUTMS_Driverless/installation
 mamba env create --name driverless_env --file humble_py39_dev_env.yml
 conda config --env --add channels conda-forge
@@ -35,43 +42,56 @@ echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~
 conda activate driverless_env
 
 ## Check if user is going to work with vision
+echo "---Machine Learning Vision---"
 echo ""
 echo "Do you have an Nvidia GPU and are developing ML vision systems? ('yes' or 'no')"
-echo ""
 read torch
 echo ""
 if [ $torch == "yes" ]; then
     mamba install -y pytorch torchvision pytorch-cuda=11.6 -c pytorch -c nvidia
     echo "export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH" >> ~/.bashrc
     echo "Download any ML models from the Google Drive into the models folder (see wiki)"
+    echo ""
     sleep 7
 fi
 
 ## Install FSDS
+echo "---Installing FSDS---"
+echo ""
 cd ~
 git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
 cd ~/Formula-Student-Driverless-Simulator
 AirSim/setup.sh
 
 ## Build FSDS package
+echo "---Building FSDS packages---"
+echo ""
 cd ~/Formula-Student-Driverless-Simulator/ros2
 colcon build
 
 ## Build initial driverless packages
+echo "---Building Driverless packages---"
+echo ""
 cd ~/QUTMS_Driverless
 colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Pre commit for git
+echo "---Installing pre-commit---"
+echo ""
 pre-commit install
 
 ## Check if user wants to install WSL version of GitKraken
+echo "---GitKraken---"
+echo ""
 echo "Do you wish to use Gitkraken to manage your repo? If so it is recommended to install the WSL version now ('yes' or 'no')"
 read gitkraken
+echo ""
 if [ $gitkraken == "yes" ]; then
     wget https://release.gitkraken.com/linux/gitkraken-amd64.deb
     sudo dpkg -i ./gitkraken-amd64.deb
     sudo apt-get install -f -y
     rm gitkraken-amd64.deb
+    echo ""
 fi
 
 ## Wrap up
