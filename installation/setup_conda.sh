@@ -3,32 +3,40 @@
 cd ~
 
 ## Pre-reqs
+echo ""
 echo "---Installing pre-reqs---"
 echo ""
+sleep 3
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y git python3-pip pre-commit
 
 ## Download and install mambaforge
+echo ""
 echo "---Installing mambaforge---"
 echo ""
+sleep 3
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
 conda config --set auto_activate_base false
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
 
 ## Clone Driverless repo
+echo ""
 echo "---Cloning Driverless repo---"
 echo ""
-git clone --recurse-submodules -b not-quite-refactor https://github.com/QUT-Motorsport/QUTMS_Driverless.git
+sleep 3
+git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 cd ~/QUTMS_Driverless
 
 ## Make directory for people to drop their rosbags in
 mkdir bags/
 
 ## Create driverless development environment
+echo ""
 echo "---Creating driverless env---"
 echo ""
+sleep 3
 cd ~/QUTMS_Driverless/installation
 mamba env create --name driverless_env --file humble_py39_dev_env.yml
 conda config --env --add channels conda-forge
@@ -42,6 +50,7 @@ echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~
 conda activate driverless_env
 
 ## Check if user is going to work with vision
+echo ""
 echo "---Machine Learning Vision---"
 echo ""
 echo "Do you have an Nvidia GPU and are developing ML vision systems? ('yes' or 'no')"
@@ -56,31 +65,40 @@ if [ $torch == "yes" ]; then
 fi
 
 ## Install FSDS
+echo ""
 echo "---Installing FSDS---"
 echo ""
+sleep 3
 cd ~
 git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
 cd ~/Formula-Student-Driverless-Simulator
 AirSim/setup.sh
 
 ## Build FSDS package
+echo ""
 echo "---Building FSDS packages---"
 echo ""
+sleep 3
 cd ~/Formula-Student-Driverless-Simulator/ros2
 colcon build
 
 ## Build initial driverless packages
+echo ""
 echo "---Building Driverless packages---"
 echo ""
+sleep 3
 cd ~/QUTMS_Driverless
 colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Pre commit for git
+echo ""
 echo "---Installing pre-commit---"
 echo ""
+sleep 3
 pre-commit install
 
 ## Check if user wants to install WSL version of GitKraken
+echo ""
 echo "---GitKraken---"
 echo ""
 echo "Do you wish to use Gitkraken to manage your repo? If so it is recommended to install the WSL version now ('yes' or 'no')"
