@@ -15,13 +15,13 @@ find_package(rclcpp REQUIRED)
 add_compile_definitions(QUTMS_CAN_BMU)
 
 include_directories(include)
-include_directories(${CMAKE_SOURCE_DIR}/../../common/can/include/)
+include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
 
 set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_BMU.c
-  ${CMAKE_SOURCE_DIR}/../../common/can/src/canopen.cpp
-  ${CMAKE_SOURCE_DIR}/../../common/can/src/can_interface.cpp
+  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/canopen.cpp
+  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
