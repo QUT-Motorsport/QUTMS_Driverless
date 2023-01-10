@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "controllers"
+package_name = "path_follower"
 
 setup(
     name=package_name,
@@ -19,7 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "pure_pursuit = controllers.node_pure_pursuit:main",
+            "pure_pursuit = path_follower.node_pure_pursuit:main",
         ],
     },
 )
