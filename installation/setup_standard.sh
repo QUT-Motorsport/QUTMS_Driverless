@@ -104,9 +104,10 @@ mkdir ~/EUFS
 cd ~/EUFS
 git clone --recurse-submodules https://github.com/QUT-Motorsport/eufs_sim.git
 git clone --recurse-submodules https://gitlab.com/eufs/eufs_msgs.git
+git clone --recurse-submodules https://gitlab.com/eufs/eufs_rviz_plugins.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
-sudo apt install -y gazebo
+sudo apt install -y gazebo ros-humble-velodyne-gazebo-plugins
 
 echo ""
 echo "---Building EUFS packages---"
