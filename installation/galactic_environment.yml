@@ -17,10 +17,7 @@ dependencies:
   - pkg-config
   - make
   - ninja
-  # dev tools
-  - pre-commit
-  # for some reason, not installed in base python?
-  - typing-extensions
+  - typing-extensions # for some reason, not installed in base python?
   - pip
   - pip:
     - colcon-common-extensions

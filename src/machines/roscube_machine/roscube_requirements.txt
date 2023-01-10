@@ -1,0 +1,15 @@
+colour
+cython
+dataclasses
+eigen
+matplotlib
+numpy==1.23
+opencv
+ros-galactic-ament-cmake-nose
+ros-galactic-ackermann-msgs
+ros-galactic-robot-state-publisher
+ros-galactic-xacro
+scipy
+scikit-learn
+tornado
+transforms3d
