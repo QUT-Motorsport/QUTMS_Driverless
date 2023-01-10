@@ -54,7 +54,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
-                        get_package_share_path("velodyne") / "launch" / "velodyne-all-nodes-VLP32C-launch.py.py"
+                        get_package_share_path("velodyne") / "launch" / "velodyne-all-nodes-VLP32C-launch.py"
                     )
                 ),
             ),
