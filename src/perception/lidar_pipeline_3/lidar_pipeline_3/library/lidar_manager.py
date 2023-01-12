@@ -18,10 +18,13 @@ def locate_cones(config, point_cloud, start_time):
     # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
-        vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
+        #vis.plot_point_cloud_2D(config, point_cloud, "00_PointCloud_2D")
 
     # Remove points behind car
     point_cloud = point_cloud[point_cloud["x"] > 0]
+
+    # Remove points that are above the height of cones
+    point_cloud = point_cloud[point_cloud["z"] < const.LHAG_ERR * (const.LIDAR_HEIGHT_ABOVE_GROUND + const.CONE_HEIGHT)]
 
     # Compute point normals
     point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
@@ -34,6 +37,8 @@ def locate_cones(config, point_cloud, start_time):
 
     segments, bins = pcp.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
     config.logger.info("DONE: Segments and Bins")
+
+    #return []
 
     proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(point_cloud["z"], segments, bins, point_norms)
     config.logger.info("DONE: Prototype Points")
@@ -100,27 +105,28 @@ def locate_cones(config, point_cloud, start_time):
 
     # Create visualisations
     if config.create_figures:
-        vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
-        vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
-        vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
-        vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
-        vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
-        vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
-        vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
-        vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
-        vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
-        vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
+        #vis.plot_point_cloud_2D(config, point_cloud, "01_PointCloud_2D")
+        #vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
+        #vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
+        #vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
+        #vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
+        #vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
+        #vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
+        #vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
+        #vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
+        #vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
         vis.plot_labelled_points_3D(
           config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
         )
-        vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
-        vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
-        vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
-        vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
-        vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
-        vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
+        #vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
+        #vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
+        #vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
+        #vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
+        #vis2.plot_cones_3D(config, point_cloud[point_norms <= 100], point_labels[point_norms <= 100], cones, "16_Cones_3D")
+        #vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
 
         # reintro structured array for lidar colouring
+        # Plot Car Model in 3D
 
         if config.show_figures:
             plt.show()
