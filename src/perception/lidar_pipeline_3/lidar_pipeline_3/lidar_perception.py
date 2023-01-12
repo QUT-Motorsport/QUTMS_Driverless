@@ -16,6 +16,7 @@ from sensor_msgs.msg import PointCloud2
 from . import constants as const
 from .library import lidar_manager
 from . import utils
+from . import video_stitcher
 
 # For typing
 from .utils import Config
@@ -37,7 +38,7 @@ class ConeDetectionNode(Node):
 
         self.config: Config = _config
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
+            PointCloud2, self.config.pc_node, self.pc_callback, 1
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 
@@ -55,20 +56,19 @@ class ConeDetectionNode(Node):
 
         cone_locations = lidar_manager.locate_cones(self.config, point_cloud, start_time)
 
-        if len(cone_locations) == 0:
-            return
-
-        detected_cones = [cone_msg(cone[0], cone[1], None) for cone in cone_locations]
-
-        detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
-        self.cone_publisher.publish(detection_msg)
-
         duration = time.perf_counter() - start_time
         self.average_runtime = (self.average_runtime * (self.iteration - 1) + duration) / self.iteration
         self.config.logger.info(
             f"Current Hz: {round(1 / duration, 2)}\t| Average Hz: {round(1 / self.average_runtime, 2)}"
         )
-        self.get_logger().debug(f"Time: {round(duration, 4)}\t| Average Hz: {round(1 / self.average_runtime, 2)}")
+
+        if len(cone_locations) == 0:
+            return
+
+        detected_cones = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
+
+        detection_msg = ConeDetectionStamped(header=point_cloud_msg.header, cones=detected_cones)
+        self.cone_publisher.publish(detection_msg)
 
 
 def real_time_stream(args: list, config: Config) -> None:
