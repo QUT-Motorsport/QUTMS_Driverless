@@ -45,6 +45,13 @@ build_docker_base_1804:
 	--build-arg BASE_IMAGE=ubuntu:18.04 \
 	..
 
+build_docker_base_test:
+	docker build -f Dockerfile.base -t qutms_driverless_base:test \
+	--build-arg USERNAME=$(USERNAME) \
+	--build-arg HOST_UID=$(HOST_UID) \
+	--build-arg BASE_IMAGE=ubuntu:18.04 \
+	..
+
 build_docker_base_l4t:
 	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.0.1 \
 	--build-arg USERNAME=$(USERNAME) \
