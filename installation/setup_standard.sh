@@ -9,7 +9,7 @@ echo ""
 sleep 3
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y git python3-pip pre-commit
+sudo apt install -y git python3-pip pre-commit cmake
 
 ## Set ROS2 repositories
 echo ""
