@@ -17,24 +17,25 @@ dependencies:
   - make
   - ninja
   - typing-extensions # for some reason, not installed in base python?
+  # package requirements (alphabetical)
   - colour
   - cython
   - dataclasses
   - eigen
   - ipython
   - matplotlib
+  - numpy==1.23
   - opencv
   - pandas
   - Pillow
-  - numpy==1.23
   - protobuf
   - PyYAML
   - requests
   - ros-humble-ackermann-msgs
   - ros-humble-ament-cmake-nose
-  - ros-humble-joint-state-publisher
-  - ros-humble-xacro
   - ros-humble-pcl-ros
+  - ros-humble-robot-state-publisher
+  - ros-humble-xacro
   - scikit-learn
   - scipy
   - seaborn
@@ -48,6 +49,7 @@ dependencies:
     - colcon-argcomplete
     - colcon-bash
     - colcon-zsh
+    # package requirements
     - simplejpeg
     - pygame
 variables:

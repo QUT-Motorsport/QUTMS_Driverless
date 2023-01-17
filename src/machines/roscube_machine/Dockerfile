@@ -8,103 +8,104 @@ ARG HOST_GROUP=dialout
 
 WORKDIR /tmp
 
-# sensors
-COPY ./src/hardware/sensors/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
-
-# rosboard
-COPY ./src/common/rosboard/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
-
-# controllers
+# installs for controllers?
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
-COPY ./src/navigation/controllers/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
 
-# steering actuator
-COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # driverless common
+# COPY ./src/common/driverless_common/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# canbus
-COPY ./src/hardware/canbus/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # ros2 dumbpy
+# COPY ./src/common/ros2_numpy/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# vehicle_supervisor
-COPY ./src/hardware/vehicle_supervisor/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # rosboard
+# COPY ./src/common/rosboard/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# vehicle urdf
-COPY ./src/common/vehicle_urdf/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # vehicle urdf
+# COPY ./src/common/vehicle_urdf/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# keyboard control
-COPY ./src/common/keyboard_control/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # keyboard control
+# COPY ./src/common/keyboard_control/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# car status
-COPY ./src/hardware/car_status/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # mission controller
+# COPY ./src/missions/mission_controller/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# py slam
-COPY ./src/navigation/py_slam/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # canbus
+# COPY ./src/hardware/canbus/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# driverless common
-COPY ./src/common/driverless_common/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # vehicle_supervisor
+# COPY ./src/hardware/vehicle_supervisor/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# ros2 dumbpy
-COPY ./src/common/ros2_numpy/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # car status
+# COPY ./src/hardware/car_status/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# lidar
-COPY ./src/perception/lidar_pipeline_3/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # steering actuator
+# COPY ./src/hardware/steering_actuator/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# planner
-COPY ./src/navigation/planners/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # lidar
+# COPY ./src/perception/lidar_pipeline_3/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# velocity controller
-COPY ./src/hardware/velocity_controller/conda_requirements ./conda_requirements
-RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env &&\
-    mamba install -y --file ./conda_requirements
+# # controllers
+# COPY ./src/control/controllers/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
 
-# mission controller
-COPY ./src/missions/mission_controller/conda_requirements ./conda_requirements
+# # velocity controller
+# COPY ./src/hardware/velocity_controller/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
+
+# # py slam
+# COPY ./src/navigation/py_slam/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
+
+# # planner
+# COPY ./src/navigation/planners/conda_requirements ./conda_requirements
+# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+#     conda activate driverless_env &&\
+#     mamba install -y --file ./conda_requirements
+
+COPY ./src/machines/roscube_machine/roscube_requirements.txt ./conda_requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./conda_requirements
