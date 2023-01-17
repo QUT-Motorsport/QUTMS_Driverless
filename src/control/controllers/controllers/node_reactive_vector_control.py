@@ -167,6 +167,14 @@ class VectorReactiveController(ShutdownNode):
 
         cones: List[Cone] = cone_msg.cones
 
+        if cone_msg.header.frame_id == "velodyne":
+            # change colour of cones based on on y pos as this is lidar scan
+            for i in range(len(cones)):
+                if cones[i].location.y > 0:
+                    cones[i].color = LEFT_CONE_COLOUR
+                else:
+                    cones[i].color = RIGHT_CONE_COLOUR
+
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
         orange_cones = [c for c in cones if c.color == Cone.ORANGE_BIG]
