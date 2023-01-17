@@ -35,6 +35,9 @@ class MissionControl(Node):
             return response
 
     def callback(self, status: State):
+        if status.state == State.SELECT_MISSION:
+            self.mission_launched = False
+
         if status.mission != State.MISSION_NONE and not self.mission_launched:
             target_mission = INT_MISSION_TYPE[status.mission].value
             self.get_logger().info("Mission started: " + target_mission)
