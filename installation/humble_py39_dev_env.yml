@@ -40,6 +40,7 @@ dependencies:
   - scipy
   - seaborn
   - tornado
+  - tf_transformations
   - tqdm
   - transforms3d
   - pip

@@ -1,1 +1,3 @@
 ros-galactic-ament-cmake-nose
+tf_transformations
+numpy

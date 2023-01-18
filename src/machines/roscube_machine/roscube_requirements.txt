@@ -13,4 +13,5 @@ ros-galactic-xacro
 scipy
 scikit-learn
 tornado
+tf_transformations
 transforms3d
