@@ -3,7 +3,6 @@ cython
 dataclasses
 eigen
 matplotlib
-numpy==1.23
 opencv
 ros-galactic-ament-cmake-nose
 ros-galactic-ackermann-msgs
@@ -13,5 +12,4 @@ ros-galactic-xacro
 scipy
 scikit-learn
 tornado
-tf_transformations
 transforms3d

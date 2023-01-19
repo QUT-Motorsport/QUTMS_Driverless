@@ -7,7 +7,6 @@ matplotlib
 opencv-python
 pandas
 Pillow
-numpy==1.23
 protobuf
 PyYAML
 requests

@@ -14,12 +14,14 @@ USER ${USERNAME}
 # HACK: Set PYTHONPATH to include base libraries from container (we want tensorrt from the base environment)
 ENV PYTHONPATH=/usr/local/lib/python3.8/dist-packages
 
-# vision pipeline
-COPY ./src/perception/vision_pipeline/trt_requirements.txt ./trt_requirements.txt
+# requirements
+COPY ./src/machines/jetson_machine/jetson_requirements.txt ./requirements
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-    conda activate driverless_env && \
-    pip install -r ./trt_requirements.txt \
-    && rm -f ./trt_requirements.txt
+    conda activate driverless_env &&\
+    pip install -r ./requirements
+
+# cleanup
+RUN rm -f ./requirements
 
 # run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
