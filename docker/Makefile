@@ -61,3 +61,9 @@ build:
 # use make run target=<value>
 run:
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
+
+roscube_srv:
+	systemctl $(a) roscube_startup.service
+
+jetson_srv:
+	systemctl $(a) jetson_startup.service
