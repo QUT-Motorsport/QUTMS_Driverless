@@ -91,7 +91,7 @@ def local_data_stream():
 def main(args=sys.argv[1:]):
     # Init config
     config: Config = utils.Config()
-    config.update(args)
+    # config.update(args)
 
     # Check if logs should be printed
     if not config.print_logs:

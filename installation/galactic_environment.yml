@@ -5,9 +5,7 @@ dependencies:
   # ---------------------------------------------------------------------------
   # ROS Base Env deps
   # ---------------------------------------------------------------------------
-  # tag below used for PYTHON_VERSION_OVERRIDE in Dockerfile.base
-  ###PYTHON_VERSION###
-  - python=3.9
+  - python=3.8
   - ros-galactic-desktop
   - ros-galactic-rosidl-generator-c=2.2.1  # downgrade version for msg generation bug fix
   - ca-certificates
@@ -17,6 +15,7 @@ dependencies:
   - pkg-config
   - make
   - ninja
+  - numpy==1.23
   - typing-extensions # for some reason, not installed in base python?
   - pip
   - pip:

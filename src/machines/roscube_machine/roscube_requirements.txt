@@ -3,11 +3,11 @@ cython
 dataclasses
 eigen
 matplotlib
-numpy==1.23
 opencv
 ros-galactic-ament-cmake-nose
 ros-galactic-ackermann-msgs
 ros-galactic-robot-state-publisher
+ros-galactic-tf-transformations
 ros-galactic-velodyne
 ros-galactic-xacro
 scipy

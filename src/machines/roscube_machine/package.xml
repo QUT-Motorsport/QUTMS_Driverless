@@ -10,7 +10,6 @@
     <buildtool_depend>ament_cmake</buildtool_depend>
 
     <!-- Packages -->
-    <depend>sensors</depend>
     <depend>rosboard</depend>
     <depend>controllers</depend>
     <depend>steering_actuator</depend>

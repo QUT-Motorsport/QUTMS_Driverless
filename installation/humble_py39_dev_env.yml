@@ -16,6 +16,7 @@ dependencies:
   - pkg-config
   - make
   - ninja
+  - numpy==1.23
   - typing-extensions # for some reason, not installed in base python?
   # package requirements (alphabetical)
   - colour
@@ -40,6 +41,7 @@ dependencies:
   - scipy
   - seaborn
   - tornado
+  - tf_transformations
   - tqdm
   - transforms3d
   - pip
