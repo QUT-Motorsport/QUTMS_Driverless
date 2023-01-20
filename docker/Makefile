@@ -50,7 +50,6 @@ build_docker_base_l4t:
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime \
-	--build-arg PYTHON_VERSION_OVERRIDE=3.8 \
 	..
 
 # use make build target=<value>

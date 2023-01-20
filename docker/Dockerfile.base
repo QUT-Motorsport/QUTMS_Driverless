@@ -55,14 +55,6 @@ RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download
 # CHANGE THIS WHEN UPGRADING TO HUMBLE
 COPY installation/galactic_environment.yml /tmp/environment.yml
 
-ARG PYTHON_VERSION_OVERRIDE
-# if PYTHON_VERSION_OVERRIDE defined, find the line in environment.yml with ###PYTHON_VERSION### and replace and
-# the line below with the overridden python entry
-RUN if [[ -z "${PYTHON_VERSION_OVERRIDE}" ]] ; \
-    then echo "No PYTHON_VERSION_OVERRIDE. Will not modify environment.yml."; \
-    else sed -i "/###PYTHON_VERSION###/,+1 c \  - python=${PYTHON_VERSION_OVERRIDE}" /tmp/environment.yml; \
-    fi
-
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba env create --name driverless_env --file environment.yml && \
     conda activate driverless_env && \
