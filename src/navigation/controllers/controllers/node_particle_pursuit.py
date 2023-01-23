@@ -43,6 +43,20 @@ def get_distance(pos_target1: List[float], pos_target2: List[float]) -> float:
     distance = dist(pos_target1, pos_target2)
     return distance
 
+def interpolate_cones(cone_list: List[float, float]) -> List[float, float]:
+    """
+    Interpolates imaginary cones between consecutive cones
+    * param cone_list: List[x,y] coords of all cones on only one side of the track
+    * return: List[x,y] coords of all cones on ones side of the track, including interpolated cones
+    """
+
+    
+
+
+
+    distance = 'hello'
+    return distance
+
 def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> float:
     """
     Gets the position of the nearest cone to the car.
@@ -238,6 +252,9 @@ class ParticlePursuit(Node):
         # order cones by distance from car
         left_cones.sort(key=lambda c: c.location.x)
         right_cones.sort(key=lambda c: c.location.x)
+
+        # interpolate imaginary cones between cones for both left and right sides
+
 
         # make one array with alternating left and right cones
         cones = left_cones + right_cones
