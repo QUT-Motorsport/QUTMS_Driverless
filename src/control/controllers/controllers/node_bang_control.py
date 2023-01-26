@@ -19,6 +19,7 @@ from sensor_msgs.msg import Image
 
 from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import Any, List, Optional, Tuple
 
@@ -64,15 +65,15 @@ class BangController(Node):
     r2d = False
 
     def __init__(self):
-        super().__init__("bang_controller")
+        super().__init__("bang_controller_node")
         # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.detection_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.detection_callback, 1)
-        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
         self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
 
         self.create_timer(self.sample_interval, self.timer_callback)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")

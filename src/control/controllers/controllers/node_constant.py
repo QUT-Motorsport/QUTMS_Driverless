@@ -1,4 +1,5 @@
 import rclpy
+from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -9,11 +10,11 @@ TARGET_STEERING = "target_steering"
 TARGET_ACCELERATION = "target_acceleration"
 
 
-class ConstantController(ShutdownNode):
+class ConstantController(Node):
     pub_interval: float = 0.2
 
     def __init__(self):
-        super().__init__("constant_controller")
+        super().__init__("constant_controller_node")
 
         self.declare_parameter(TARGET_STEERING, 0.0)
         self.declare_parameter(TARGET_ACCELERATION, 0.0)
@@ -21,8 +22,8 @@ class ConstantController(ShutdownNode):
         # timed callback
         self.create_timer(self.pub_interval, self.pub_callback)
 
-        self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
+        self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
     def pub_callback(self):
         control_msg = AckermannDriveStamped()

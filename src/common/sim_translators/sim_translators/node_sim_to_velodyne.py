@@ -7,7 +7,7 @@ from sensor_msgs.msg import PointCloud2
 
 class SimToVelodyne(Node):
     def __init__(self):
-        super().__init__("sim_to_velodyne")
+        super().__init__("velodyne_translator_node")
 
         # subscriber to lidar
         self.create_subscription(PointCloud2, "/fsds/lidar/Lidar2", self.callback, 1)

@@ -14,13 +14,13 @@ class SineController(Node):
     interval = 0.1
 
     def __init__(self):
-        super().__init__("sine_controller")
+        super().__init__("sine_controller_node")
 
         # timed callback
         self.create_timer(0.05, self.timer_callback)
 
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
-        self.driving_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
+        self.driving_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
         self.get_logger().info("---Sine Controller Node Initalised---")
 

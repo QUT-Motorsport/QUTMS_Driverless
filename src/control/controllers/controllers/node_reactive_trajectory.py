@@ -50,22 +50,22 @@ def closest_point_on_curve(point: Point, curve: np.ndarray) -> Point:
     return closest_point
 
 
-class BetterReactiveController(ShutdownNode):
+class BetterReactiveController(Node):
     prev_steering_angle: float = 0
     Kp_angle: float = 20
     targ_vel: float = 4  # m/s
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     def __init__(self):
-        super().__init__("better_reactive_controller")
+        super().__init__("reactive_traj_controller_node")
 
         # debug image
         self.create_subscription(Image, "/debug_imgs/vision_det_img", self.img_callback, 1)
         # cone detections
-        self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 

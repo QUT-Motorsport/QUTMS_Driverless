@@ -17,9 +17,9 @@ class MissionControl(Node):
     mission_launched: bool = False
 
     def __init__(self):
-        super().__init__("mission_control")
+        super().__init__("mission_control_node")
 
-        self.create_subscription(State, "as_status", self.callback, 10)
+        self.create_subscription(State, "/system/as_status", self.callback, 10)
 
         self.create_service(SelectMission, "select_mission", self.gui_srv)
 

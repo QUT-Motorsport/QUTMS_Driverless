@@ -451,7 +451,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    SteeringActuator() : Node("steering") {
+    SteeringActuator() : Node("steering_controller_node") {
         // Steering parameters
         this->declare_parameter<int>(PARAM_ACCELERATION, 0);
         this->declare_parameter<int>(PARAM_VELOCITY, 0);
@@ -466,23 +466,23 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->get_parameter(PARAM_KD, this->Kd);
 
         // Create publisher to topic "canbus_carbound"
-        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
+        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
         // Create subscriber to topic "as_status"
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
+            "/system/as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
 
         // Create subscriber to topic "steering_reading"
         this->steering_reading_sub = this->create_subscription<driverless_msgs::msg::SteeringReading>(
-            "steering_reading", 10, std::bind(&SteeringActuator::steering_reading_callback, this, _1));
+            "/vehicle/steering_reading", 10, std::bind(&SteeringActuator::steering_reading_callback, this, _1));
 
         // Create subscriber to topic "driving_command"
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "driving_command", 10, std::bind(&SteeringActuator::driving_command_callback, this, _1));
+            "/control/driving_command", 10, std::bind(&SteeringActuator::driving_command_callback, this, _1));
 
         // Create subscriber to topic "canbus_rosbound"
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
+            "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(

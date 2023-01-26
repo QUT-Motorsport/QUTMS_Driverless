@@ -111,7 +111,7 @@ class YawController : public rclcpp::Node {
     }
 
    public:
-    YawController() : Node("yaw_controller") {
+    YawController() : Node("yaw_controller_node") {
         this->declare_parameter<float>("target_velocity", 0);
         this->declare_parameter<float>("Kp_yaw", 0);
         this->declare_parameter<float>("Ki_yaw", 0);
@@ -123,7 +123,7 @@ class YawController : public rclcpp::Node {
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "as_status", 10, std::bind(&YawController::shutdown_callback, this, _1));
+            "/system/as_status", 10, std::bind(&YawController::shutdown_callback, this, _1));
         this->velocity_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             "imu/velocity", 10, std::bind(&YawController::velocity_callback, this, _1));
         this->imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
@@ -134,7 +134,7 @@ class YawController : public rclcpp::Node {
             this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&YawController::yaw_rate_callback, this));
 
         this->driving_command_pub =
-            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("driving_command", 10);
+            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
     }
 };
 

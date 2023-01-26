@@ -20,7 +20,7 @@ class ConeDetectionTranslator(Node):
     track: List[FSCone] = []
 
     def __init__(self) -> None:
-        super().__init__("cone_detection_translator")
+        super().__init__("detection_translator_node")
 
         # sub to testing only sim topics
         self.create_subscription(Track, "/fsds/testing_only/track", self.track_callback, 10)

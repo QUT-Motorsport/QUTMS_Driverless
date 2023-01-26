@@ -1,6 +1,7 @@
 import numpy as np
 
 import rclpy
+from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -20,7 +21,7 @@ LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
-class ReactiveController(ShutdownNode):
+class ReactiveController(Node):
     Kp_ang: float
     target_vel: float
     target_accel: float
@@ -29,7 +30,7 @@ class ReactiveController(ShutdownNode):
     ebs_test: bool
 
     def __init__(self):
-        super().__init__("reactive_controller")
+        super().__init__("reactive_controller_node")
 
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
@@ -41,18 +42,18 @@ class ReactiveController(ShutdownNode):
             self.target_cone_count = 2
             self.pub_accel = True
 
-            # self.create_subscription(ConeDetectionStamped, "vision/cone_detection2", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
             self.target_vel = 3.0  # m/s
             self.target_accel = 0.0
             self.target_cone_count = 3
             self.pub_accel = False
-            self.create_subscription(ConeDetectionStamped, "slam/local", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
 

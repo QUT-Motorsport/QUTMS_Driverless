@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 
 class TF2Publisher(Node):
     def __init__(self):
-        super().__init__("transform_publisher")
+        super().__init__("sim_transform_publisher")
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)

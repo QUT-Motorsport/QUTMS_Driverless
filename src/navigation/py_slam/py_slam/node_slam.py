@@ -14,6 +14,7 @@ from rclpy.publisher import Publisher
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
+from driverless_common.shutdown_node import ShutdownNode
 from py_slam.cone_props import ConeProps
 
 from typing import Optional
@@ -45,7 +46,7 @@ class PySlam(Node):
     last_timestamp: Optional[float] = None
 
     def __init__(self):
-        super().__init__("py_slam")
+        super().__init__("slam_node")
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")

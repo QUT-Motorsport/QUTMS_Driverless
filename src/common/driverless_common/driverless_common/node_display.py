@@ -29,7 +29,7 @@ class DisplayDetections(Node):
     velocity: float = 0.0
 
     def __init__(self):
-        super().__init__("display_detections")
+        super().__init__("display_node")
 
         # cone detection subscribers
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
@@ -39,7 +39,7 @@ class DisplayDetections(Node):
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback2, 1)
 
         # steering angle target sub
-        self.create_subscription(AckermannDriveStamped, "/driving_command", self.steering_callback, 1)
+        self.create_subscription(AckermannDriveStamped, "/control/driving_command", self.steering_callback, 1)
 
         # path spline sub
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
@@ -47,8 +47,8 @@ class DisplayDetections(Node):
 
         # track subs
         self.create_subscription(TrackDetectionStamped, "/sim/track", self.sim_track_callback, 1)
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.slam_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/slam/local", self.local_callback, 1)
+        self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.slam_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.local_callback, 1)
 
         # cv2 rosboard image pubs
         self.vision_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img", 1)
