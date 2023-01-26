@@ -1,4 +1,4 @@
-yaw_controller:
+yaw_controller_node:
   ros__parameters:
     target_velocity: 11.0
     Kp_yaw: 0.0
