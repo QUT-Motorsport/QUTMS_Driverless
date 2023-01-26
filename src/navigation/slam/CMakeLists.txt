@@ -15,6 +15,8 @@ find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 set (SOURCES
   src/ekf_slam/ekf_slam.cpp
@@ -35,8 +37,9 @@ ament_target_dependencies(node_ekf_slam
   driverless_msgs
   message_filters
   visualization_msgs
+  tf2
+  tf2_geometry_msgs
 )
-
 
 install(TARGETS node_ekf_slam
   DESTINATION lib/${PROJECT_NAME})

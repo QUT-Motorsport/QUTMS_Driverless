@@ -7,19 +7,24 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
+find_package(rclcpp REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
 
 include_directories(include)
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(yaw_controller src/node_yaw_controller.cpp ${SOURCES})
-ament_target_dependencies(yaw_controller rclcpp driverless_msgs ackermann_msgs sensor_msgs)
+ament_target_dependencies(yaw_controller
+    rclcpp
+    driverless_msgs
+    ackermann_msgs
+    sensor_msgs
+    tf2
+)
 
 target_include_directories(yaw_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

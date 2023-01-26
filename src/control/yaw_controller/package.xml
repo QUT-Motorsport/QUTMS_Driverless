@@ -7,14 +7,12 @@
     <maintainer email="team@qutmotorsport.com">Alistair English, Calvin Johnson</maintainer>
     <license>MIT</license>
 
+    <depend>rclcpp</depend>
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>sensor_msgs</depend>
-
-    <buildtool_depend>ament_cmake</buildtool_depend>
-
-    <test_depend>ament_lint_auto</test_depend>
-    <test_depend>ament_lint_common</test_depend>
+    <depend>ackermann_msgs</depend>
+    <depend>tf2</depend>
 
     <export>
         <build_type>ament_cmake</build_type>

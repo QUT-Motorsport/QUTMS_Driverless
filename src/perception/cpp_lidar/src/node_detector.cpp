@@ -14,7 +14,6 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/time.hpp>
 
-#include "../PCL_DBSCAN/dbscan.hpp"
 #include "dbscan.h"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/rclcpp.hpp"
