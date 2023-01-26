@@ -23,16 +23,23 @@ def generate_launch_description():
                 ],
             ),
             Node(
+                package="velocity_controller",
+                executable="velocity_controller",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
+            ),
+            Node(
                 package="car_status",
                 executable="car_status_node",
             ),
             Node(
-                package="vehicle_supervisor",
-                executable="vehicle_supervisor",
+                package="path_follower",
+                executable="pure_pursuit",
             ),
             Node(
-                package="mission_controller",
-                executable="mission_control",
+                package="vehicle_supervisor",
+                executable="vehicle_supervisor",
             ),
             Node(
                 package="lidar_pipeline_3",
@@ -50,10 +57,6 @@ def generate_launch_description():
                 package="planners",
                 executable="delaunay_planner",
             ),
-            Node(
-                package="controllers",
-                executable="reactive_control",
-            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
@@ -68,9 +71,9 @@ def generate_launch_description():
             #     package="driverless_common",
             #     executable="display",
             # ),
-            Node(
-                package="rosboard",
-                executable="rosboard_node",
-            ),
+            # Node(
+            #     package="rosboard",
+            #     executable="rosboard_node",
+            # ),
         ]
     )
