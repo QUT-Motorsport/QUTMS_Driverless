@@ -57,7 +57,7 @@ class NodeTopicToCSV(Node):
             csv_folder = Path("./csv_data")
             csv_folder.mkdir(exist_ok=True)
             f = open(csv_folder / f"{topic_readable}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
-            self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys())
+            self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys(), extrasaction='ignore')
             self.csv_writers[topic_readable].writeheader()
 
             self.start_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
