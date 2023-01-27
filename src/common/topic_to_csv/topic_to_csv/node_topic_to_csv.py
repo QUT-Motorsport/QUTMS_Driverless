@@ -42,7 +42,7 @@ class NodeTopicToCSV(Node):
 
         for type_, topic in SUBSCRIPTIONS:
             self.get_logger().info(f"Subscribing to {topic}")
-            callback = lambda x: self.msg_callback(x, topic)
+            callback = lambda x, y=topic: self.msg_callback(x, y)
             self.create_subscription(type_, topic, callback, 10)
 
         self.get_logger().info("Node topic_to_csv initalised")
