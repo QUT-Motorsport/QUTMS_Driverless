@@ -1,9 +1,9 @@
 #include <chrono>  // Timer library
 #include <map>     // Container library
-
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
-#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
 #include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
+#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
+#include "CAN_VCU.h"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
@@ -182,7 +182,27 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
-        if (msg.id == 0x5F0) {
+        if (msg.id == VCU_TransmitSteering_ID): {
+            // data vector to uint8_t array
+            uint8_t data[8];
+            copy_data(msg.data, data, 8);
+
+            int16_t steering_0_raw;
+            int16_t steering_1_raw;
+            uint16_t adc_0;
+            uint16_t adc_1;
+
+            Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
+            // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+            // steering_0_raw,
+            //              steering_1_raw, adc_0, adc_1);
+            double steering_0 = steering_0_raw / 10.0;
+            double steering_1 = steering_1_raw / 10.0;
+            if (abs(steering_0 - steering_1) < 10) {
+                this->current_steering_angle = steering_0;
+            } 
+        }
+        else if (msg.id == 0x5F0) {
             // CAN message from the steering actuator
 
             uint32_t id;     // Packet id out
@@ -204,167 +224,141 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             uint32_t param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
             uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
 
-            switch (object_id) {
-                case STATUS_WORD: {
-                    uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
-                    this->current_state = this->parse_state(status_word);
+            if (object_id == STATUS_WORD): {
+                uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
+                this->current_state = this->parse_state(status_word);
 
-                    if (this->motor_enabled) {
-                        if (this->current_state == this->desired_state) {
-                            // enabled transitions
-                            if (this->current_state == states[RTSO]) {
-                                this->desired_state = states[SO];
-                            } else if (this->current_state == states[SO]) {
-                                this->desired_state = states[OE];
-                            } else if (this->current_state == states[OE]) {
-                                // stay here -> no transition
-                            } else {
-                                this->desired_state == states[RTSO];
-                            }
-                        }
-                    } else {
-                        // disabled transitions
-                        this->desired_state = states[RTSO];
-                    }
-
-                    if (shutdown_requested) {
-                        this->desired_state = states[RTSO];
-                        if (this->current_state == this->desired_state) {
-                            rclcpp::shutdown();
+                if (this->motor_enabled) {
+                    if (this->current_state == this->desired_state) {
+                        // enabled transitions
+                        if (this->current_state == states[RTSO]) {
+                            this->desired_state = states[SO];
+                        } else if (this->current_state == states[SO]) {
+                            this->desired_state = states[OE];
+                        } else if (this->current_state == states[OE]) {
+                            // stay here -> no transition
+                        } else {
+                            this->desired_state == states[RTSO];
                         }
                     }
-
-                    // Print current and desired states
-                    RCLCPP_DEBUG(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
-                    RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
-
-                    // State transition stage via state map definitions (seriously figure out what the hell sdo write
-                    // is)
-                    if (this->current_state != this->desired_state) {
-                        RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
-                        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
-                                  out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-
-                    break;
+                } else {
+                    // disabled transitions
+                    this->desired_state = states[RTSO];
                 }
 
-                    // To set the controller to a usable state, we must set the:
-                    // Home Offset = 0
-                    // Motion Profile Type = trapezoidal ramp (0)
-                    // Profile Velocity = PARAM_VELOCITY
-                    // End Velocity = 0
-                    // Profile Acceleration = PARAM_ACCELERATION
-                    // Profile Deceleration = PARAM_ACCELERATION
-                    // Quick Stop Deceleration = PARAM_ACCELERATION
-                    // Max Acceleration = PARAM_ACCELERATION
-                    // Max Deceleration = PARAM_ACCELERATION
-                    // Mode of Operation = 1 (Profile Position)
-
-                case HOME_OFFSET: {
-                    int32_t val = (int32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
-
-                    int32_t desired_val = 0;
-                    if (val != desired_val) {
-                        sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (shutdown_requested) {
+                    this->desired_state = states[RTSO];
+                    if (this->current_state == this->desired_state) {
+                        rclcpp::shutdown();
                     }
-                    break;
                 }
-                case MOTION_PROFILE_TYPE: {
-                    int16_t val = (int16_t)data;
-                    RCLCPP_INFO(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
 
-                    int32_t desired_val = 0;
-                    if (val != desired_val) {
-                        sdo_write(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                // Print current and desired states
+                RCLCPP_DEBUG(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
+                RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
+
+                // State transition stage via state map definitions (seriously figure out what the hell sdo write
+                // is)
+                if (this->current_state != this->desired_state) {
+                    RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
+                    sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
+                                out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case PROFILE_VELOCITY: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "PROFILE_VELOCITY: %u", val);
+            } else if (object_id == HOME_OFFSET) {
+                // To set the controller to a usable state, we must set the:
+                // Home Offset = 0
+                // Motion Profile Type = trapezoidal ramp (0)
+                // Profile Velocity = PARAM_VELOCITY
+                // End Velocity = 0
+                // Profile Acceleration = PARAM_ACCELERATION
+                // Profile Deceleration = PARAM_ACCELERATION
+                // Quick Stop Deceleration = PARAM_ACCELERATION
+                // Max Acceleration = PARAM_ACCELERATION
+                // Max Deceleration = PARAM_ACCELERATION
+                // Mode of Operation = 1 (Profile Position)
+                int32_t val = (int32_t)data;
+                RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
 
-                    if (val != param_velocity) {
-                        sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                int32_t desired_val = 0;
+                if (val != desired_val) {
+                    sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case END_VELOCTITY: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "END_VELOCTITY: %u", val);
+            } else if (object_id == MOTION_PROFILE_TYPE) {
+                int16_t val = (int16_t)data;
+                RCLCPP_INFO(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
 
-                    uint32_t desired_val = 0;
-                    if (val != desired_val) {
-                        sdo_write(C5_E_ID, END_VELOCTITY, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                int32_t desired_val = 0;
+                if (val != desired_val) {
+                    sdo_write(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case PROFILE_ACCELERATION: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
+            } else if (object_id == PROFILE_VELOCITY) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "PROFILE_VELOCITY: %u", val);
 
-                    if (val != param_acceleration) {
-                        sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                if (val != param_velocity) {
+                    sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case PROFILE_DECELERATION: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "PROFILE_DECELERATION: %u", val);
+            } else if (object_id == END_VELOCTITY) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "END_VELOCTITY: %u", val);
 
-                    if (val != param_acceleration) {
-                        sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                uint32_t desired_val = 0;
+                if (val != desired_val) {
+                    sdo_write(C5_E_ID, END_VELOCTITY, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case QUICK_STOP_DECELERATION: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
+            } else if (object_id == PROFILE_ACCELERATION) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
 
-                    if (val != param_acceleration) {
-                        sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                if (val != param_acceleration) {
+                    sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case MAX_ACCELERATION: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "MAX_ACCELERATION: %u", val);
+            } else if (object_id == PROFILE_DECELERATION) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "PROFILE_DECELERATION: %u", val);
 
-                    if (val != param_acceleration) {
-                        sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                if (val != param_acceleration) {
+                    sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case MAX_DECELERATION: {
-                    uint32_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "MAX_DECELERATION: %u", val);
+            } else if (object_id == QUICK_STOP_DECELERATION) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
 
-                    if (val != param_acceleration) {
-                        sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                if (val != param_acceleration) {
+                    sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                case MODE_OF_OPERATION: {
-                    int8_t val = (uint32_t)data;
-                    RCLCPP_INFO(this->get_logger(), "MODE_OF_OPERATION: %i", val);
+            } else if (object_id == MAX_ACCELERATION) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "MAX_ACCELERATION: %u", val);
 
-                    int32_t desired_val = 1;
-                    if (val != desired_val) {
-                        sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    }
-                    break;
+                if (val != param_acceleration) {
+                    sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                }
+            } else if (object_id == MAX_DECELERATION) {
+                uint32_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "MAX_DECELERATION: %u", val);
+
+                if (val != param_acceleration) {
+                    sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                }
+            } else if (object_id == MODE_OF_OPERATION) {
+                int8_t val = (uint32_t)data;
+                RCLCPP_INFO(this->get_logger(), "MODE_OF_OPERATION: %i", val);
+
+                int32_t desired_val = 1;
+                if (val != desired_val) {
+                    sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
             }
         }
@@ -381,12 +375,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         } else {
             this->motor_enabled = false;
         }
-    }
-
-    // Check steering angle reading and upate steering
-    void steering_reading_callback(const driverless_msgs::msg::SteeringReading msg) {
-        this->current_steering_angle = msg.steering_angle;
-        this->update_steering();
     }
 
     // Check steering angle and desired steering angle to update steering

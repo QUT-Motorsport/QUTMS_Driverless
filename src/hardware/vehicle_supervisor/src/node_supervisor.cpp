@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include "can_interface.hpp"
 #include "CAN_DVL.h"
 #include "CAN_RES.h"
 #include "CAN_SW.h"
@@ -7,7 +7,6 @@
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
-#include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
