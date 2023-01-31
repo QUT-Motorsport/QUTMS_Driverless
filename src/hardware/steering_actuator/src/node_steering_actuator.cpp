@@ -106,6 +106,12 @@ const std::string PARAM_KP = "Kp";
 const std::string PARAM_KI = "Ki";
 const std::string PARAM_KD = "Kd";
 
+void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        dest[i] = vec[i];
+    }
+}
+
 // Steering Actuation Class
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
@@ -182,7 +188,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
-        if (msg.id == VCU_TransmitSteering_ID): {
+        if (msg.id == VCU_TransmitSteering_ID) {
             // data vector to uint8_t array
             uint8_t data[8];
             copy_data(msg.data, data, 8);
@@ -201,8 +207,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             if (abs(steering_0 - steering_1) < 10) {
                 this->current_steering_angle = steering_0;
             } 
-        }
-        else if (msg.id == 0x5F0) {
+        } else if (msg.id == 0x5F0) {
             // CAN message from the steering actuator
 
             uint32_t id;     // Packet id out
@@ -224,7 +229,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             uint32_t param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
             uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
 
-            if (object_id == STATUS_WORD): {
+            if (object_id == STATUS_WORD) {
                 uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
                 this->current_state = this->parse_state(status_word);
 
@@ -438,9 +443,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Print state function
     c5e_state parse_state(uint16_t status_word) {
-        for (const auto &[key, state] : states) {
-            if ((status_word & state.mask) == state.state_id) {
-                return state;
+        for (const auto &[key, actuator_state] : states) {
+            if ((status_word & actuator_state.mask) == actuator_state.state_id) {
+                return actuator_state;
             }
         }
         return states[F];
