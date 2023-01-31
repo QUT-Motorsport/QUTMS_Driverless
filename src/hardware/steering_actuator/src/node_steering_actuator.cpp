@@ -1,28 +1,28 @@
-#include <chrono>   // Timer library
-#include <map>      // Container library
+#include <chrono>  // Timer library
+#include <map>     // Container library
 
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"   // ROS Messages
-#include "can_interface.hpp"                                // CAN interface library to convert data array into a canbus frame (data_2_frame)
-#include "canopen.hpp"                                      // CAN library to communicate systems via sdo_read and sdo_write
-#include "driverless_msgs/msg/can.hpp"                      // ROS Messages 
-#include "driverless_msgs/msg/state.hpp"        
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
+#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
+#include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
+#include "driverless_msgs/msg/can.hpp"  // ROS Messages
+#include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
-#include "rclcpp/rclcpp.hpp"                                // C++ Required Libraries
+#include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
 
 using std::placeholders::_1;
 
 const int C5_E_ID = 0x70;
 
 /* State ID Definitions
-* NRTSO   = 0   Not ready to switch on
-* SOD     = 64  Switch on disabled
-* RTSO    = 33  Ready to switch on
-* SO      = 35  Switched on
-* OE      = 39  Operation enabled
-* QSA     = 7   Quick stop active
-* FRA     = 15  Fault reaction active
-* F       = 72  Fault
-*/
+ * NRTSO   = 0   Not ready to switch on
+ * SOD     = 64  Switch on disabled
+ * RTSO    = 33  Ready to switch on
+ * SO      = 35  Switched on
+ * OE      = 39  Operation enabled
+ * QSA     = 7   Quick stop active
+ * FRA     = 15  Fault reaction active
+ * F       = 72  Fault
+ */
 
 typedef enum c5e_state_id {
     NRTSO = 0b0000000000000000,
@@ -36,20 +36,20 @@ typedef enum c5e_state_id {
 } c5e_state_id_t;
 
 /* Object ID Definitions
-* HOME_OFFSET               = 24700
-* MOTION_PROFILE_TYPE       = 24710
-* PROFILE_VELOCITY          = 24705
-* END_VELOCTITY             = 24706
-* PROFILE_ACCELERATION      = 24707
-* PROFILE_DECELERATION      = 24708
-* QUICK_STOP_DECELERATION   = 24709
-* MAX_ACCELERATION          = 24773
-* MAX_DECELERATION          = 24774
-* MODE_OF_OPERATION         = 24672
-* TARGET_POSITION           = 24698
-* CONTROL_WORD              = 24640
-* STATUS_WORD               = 24641
-*/
+ * HOME_OFFSET               = 24700
+ * MOTION_PROFILE_TYPE       = 24710
+ * PROFILE_VELOCITY          = 24705
+ * END_VELOCTITY             = 24706
+ * PROFILE_ACCELERATION      = 24707
+ * PROFILE_DECELERATION      = 24708
+ * QUICK_STOP_DECELERATION   = 24709
+ * MAX_ACCELERATION          = 24773
+ * MAX_DECELERATION          = 24774
+ * MODE_OF_OPERATION         = 24672
+ * TARGET_POSITION           = 24698
+ * CONTROL_WORD              = 24640
+ * STATUS_WORD               = 24641
+ */
 
 typedef enum c5e_object_id {
     HOME_OFFSET = 0x607C,
@@ -109,8 +109,7 @@ const std::string PARAM_KD = "Kd";
 // Steering Actuation Class
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
-    
-    // Creates 
+    // Creates
     rclcpp::TimerBase::SharedPtr c5e_state_request_timer;
     rclcpp::TimerBase::SharedPtr c5e_config_request_timer;
 
@@ -122,18 +121,18 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
-    driverless_msgs::msg::State state;      // State message
-    c5e_state desired_state = states[RTSO]; // Desired State
-    c5e_state current_state = states[RTSO]; // Current State
-    bool motor_enabled = false;             // Enable motors logic
-    double current_steering_angle = 0;      // Current Steering Angle (Angle Sensor)
-    double requested_steering_angle = 0;    // Desired Steering ANgle (Guidance Logic)
-    bool shutdown_requested = false;        // Shutdown logic
+    driverless_msgs::msg::State state;       // State message
+    c5e_state desired_state = states[RTSO];  // Desired State
+    c5e_state current_state = states[RTSO];  // Current State
+    bool motor_enabled = false;              // Enable motors logic
+    double current_steering_angle = 0;       // Current Steering Angle (Angle Sensor)
+    double requested_steering_angle = 0;     // Desired Steering ANgle (Guidance Logic)
+    bool shutdown_requested = false;         // Shutdown logic
 
-    float Kp, Ki, Kd;                       // PID Gain
-    float integral_error = 0;               // Integral Error
-    float prev_error = 0;                   // Derivative Error
-    std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now(); // Timer
+    float Kp, Ki, Kd;          // PID Gain
+    float integral_error = 0;  // Integral Error
+    float prev_error = 0;      // Derivative Error
+    std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();  // Timer
 
     // Request callback for state (via ROS2)
     void c5e_state_request_callback() {
@@ -236,10 +235,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     }
 
                     // Print current and desired states
-                    RCLCPP_INFO(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
-                    RCLCPP_INFO(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
+                    RCLCPP_DEBUG(this->get_logger(), "Parsed state: %s", this->current_state.name.c_str());
+                    RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
 
-                    // State transition stage via state map definitions (seriously figure out what the hell sdo write is)
+                    // State transition stage via state map definitions (seriously figure out what the hell sdo write
+                    // is)
                     if (this->current_state != this->desired_state) {
                         RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
                         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
@@ -399,18 +399,23 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Update Steering
     void update_steering() {
         if (this->motor_enabled) {
-            auto current_update = std::chrono::high_resolution_clock::now();                                        // Update clock
+            auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
             double elapsed_time_seconds =
-                std::chrono::duration<double, std::milli>(current_update - last_update).count() / 1000;             // Calculate time elapsed
-            this->last_update = current_update;                                                                     // Set previous time to current time
+                std::chrono::duration<double, std::milli>(current_update - last_update).count() /
+                1000;                            // Calculate time elapsed
+            this->last_update = current_update;  // Set previous time to current time
 
-            double error = this->requested_steering_angle - this->current_steering_angle;                           // Grab error between steering angle
-            this->integral_error += error * elapsed_time_seconds;                                                   // Grab integral error
-            double derivative_error = (error - this->prev_error) / elapsed_time_seconds;                            // Grab derivative error
+            double error =
+                this->requested_steering_angle - this->current_steering_angle;  // Grab error between steering angle
+            this->integral_error += error * elapsed_time_seconds;               // Grab integral error
+            double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
 
-            double target = Kp * error + Ki * this->integral_error + Kd * derivative_error;                         // PID commands to send to plant
+            double target =
+                -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
             RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
-                        integral_error, Kd, derivative_error, target);                                              // Prirnt PID commands
+                        integral_error, Kd, derivative_error, target);  // Prirnt PID commands
+
+            this->prev_error = error;
 
             // left hand down is +, rhd is -
             this->target_position(target);
@@ -502,19 +507,19 @@ void signal_handler(int signal) { handler(signal); }
 
 // Main loop
 int main(int argc, char *argv[]) {
-    rclcpp::init(argc, argv);                                       // Initialise ROS2
+    rclcpp::init(argc, argv);  // Initialise ROS2
 
-    auto node = std::make_shared<SteeringActuator>();               // Constructs an empty SteeringActuator class
+    auto node = std::make_shared<SteeringActuator>();  // Constructs an empty SteeringActuator class
 
     // Hack
-    signal(SIGINT, signal_handler);                                 // 
-    handler = [node](int signal) {                                  //
-        RCLCPP_INFO(node->get_logger(), "Shutting down motor.");    //
-        node->shutdown();                                           //
-        return signal;                                              //
+    signal(SIGINT, signal_handler);                               //
+    handler = [node](int signal) {                                //
+        RCLCPP_INFO(node->get_logger(), "Shutting down motor.");  //
+        node->shutdown();                                         //
+        return signal;                                            //
     };
 
-    rclcpp::spin(node);                                             //
-    rclcpp::shutdown();                                             //
+    rclcpp::spin(node);  //
+    rclcpp::shutdown();  //
     return 0;
 }

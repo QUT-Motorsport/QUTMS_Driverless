@@ -154,7 +154,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
                 uint8_t VCU_ID = msg.id & 0xF;
-                RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
+                RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
                 // data vector to uint8_t array
                 uint8_t data[8];
