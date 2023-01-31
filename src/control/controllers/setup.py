@@ -28,6 +28,7 @@ setup(
             "bang_control = controllers.node_bang_control:main",
             "simple_straight_control = controllers.node_simple_straight_control:main",
             "straight_control = controllers.node_straight_control:main",
+            "step_response = controllers.node_step_response:main",
         ],
     },
 )
