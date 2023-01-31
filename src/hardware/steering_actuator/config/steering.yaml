@@ -9,6 +9,6 @@ steering_controller_node:
   ros__parameters:
     velocity: 1500
     acceleration: 500
-    Kp: 55.0
-    Ki: 17.19
+    Kp: 80.0
+    Ki: 8.0
     Kd: 11.0

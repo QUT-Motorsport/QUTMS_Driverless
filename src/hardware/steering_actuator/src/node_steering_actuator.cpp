@@ -407,7 +407,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
             double error =
                 this->requested_steering_angle - this->current_steering_angle;  // Grab error between steering angle
-            this->integral_error += error * elapsed_time_seconds;               // Grab integral error
+
+            if (abs(error) < 0.5) return;  // if settled enough
+
+            this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
             double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
 
             double target =
