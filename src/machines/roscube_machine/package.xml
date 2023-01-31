@@ -17,16 +17,17 @@
     <depend>vehicle_urdf</depend>
     <depend>vehicle_supervisor</depend>
     <depend>keyboard_control</depend>
-    <depend>car_status</depend>
-    <depend>py_slam</depend>
-    <depend>sbg_driver</depend>
-    <depend>velodyne</depend>
+    <!-- <depend>car_status</depend> -->
+    <!-- <depend>py_slam</depend> -->
+    <!-- <depend>sbg_driver</depend> -->
+    <!-- <depend>velodyne</depend> -->
     <depend>driverless_common</depend>
-    <depend>lidar_pipeline_3</depend>
-    <depend>planners</depend>
-    <depend>velocity_controller</depend>
-    <depend>mission_controller</depend>
+    <!-- <depend>lidar_pipeline_3</depend> -->
+    <!-- <depend>planners</depend> -->
+    <!-- <depend>velocity_controller</depend> -->
+    <!-- <depend>mission_controller</depend> -->
     <depend>topic_to_csv</depend>
+    <depend>remote_control</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

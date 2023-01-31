@@ -30,29 +30,29 @@ def generate_launch_description():
                 package="vehicle_supervisor",
                 executable="vehicle_supervisor",
             ),
-            Node(
-                package="car_status",
-                executable="car_status_node",
-            ),
+            # Node(
+            #     package="car_status",
+            #     executable="car_status_node",
+            # ),
             Node(
                 package="driverless_common",
                 executable="display",
             ),
-            Node(
-                package="lidar_pipeline_3",
-                executable="lidar_perception",
-            ),
-            Node(
-                package="mission_controller",
-                executable="mission_control",
-            ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(
-                        get_package_share_path("roscube_machine") / "launch" / "sensor_drivers.launch.py"
-                    )
-                ),
-            ),
+            # Node(
+            #     package="lidar_pipeline_3",
+            #     executable="lidar_perception",
+            # ),
+            # Node(
+            #     package="mission_controller",
+            #     executable="mission_control",
+            # ),
+            # IncludeLaunchDescription(
+            #     launch_description_source=PythonLaunchDescriptionSource(
+            #         launch_file_path=str(
+            #             get_package_share_path("roscube_machine") / "launch" / "sensor_drivers.launch.py"
+            #         )
+            #     ),
+            # ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
