@@ -1,9 +1,10 @@
 #include <chrono>  // Timer library
 #include <map>     // Container library
-#include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
-#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
+
 #include "CAN_VCU.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
+#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
+#include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
@@ -118,6 +119,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Creates
     rclcpp::TimerBase::SharedPtr c5e_state_request_timer;
     rclcpp::TimerBase::SharedPtr c5e_config_request_timer;
+    rclcpp::TimerBase::SharedPtr steering_update_timer;
 
     // Creates publisher for Can
     // Creates subscribers for AckermannDriveStamped, State, SteeringReading, and Can
@@ -138,7 +140,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     float Kp, Ki, Kd;          // PID Gain
     float integral_error = 0;  // Integral Error
     float prev_error = 0;      // Derivative Error
-    std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();  // Timer
+    std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();   // Timer
+    std::chrono::high_resolution_clock::time_point last_reading = std::chrono::high_resolution_clock::now();  // Timer
 
     // Request callback for state (via ROS2)
     void c5e_state_request_callback() {
@@ -189,6 +192,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
         if (msg.id == VCU_TransmitSteering_ID) {
+            auto current_reading = std::chrono::high_resolution_clock::now();  // Update clock
+            double elapsed_time_seconds =
+                std::chrono::duration<double, std::milli>(current_reading - last_reading).count() /
+                1000;                              // Calculate time elapsed
+            this->last_reading = current_reading;  // Set previous time to current time
+
             // data vector to uint8_t array
             uint8_t data[8];
             copy_data(msg.data, data, 8);
@@ -206,7 +215,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             double steering_1 = steering_1_raw / 10.0;
             if (abs(steering_0 - steering_1) < 10) {
                 this->current_steering_angle = steering_0;
-            } 
+                RCLCPP_DEBUG(this->get_logger(), "Steering rate: %.2f", (1.0 / elapsed_time_seconds));
+            }
+
         } else if (msg.id == 0x5F0) {
             // CAN message from the steering actuator
 
@@ -266,8 +277,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 // is)
                 if (this->current_state != this->desired_state) {
                     RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
-                    sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id,
-                                out);
+                    sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
             } else if (object_id == HOME_OFFSET) {
@@ -386,7 +396,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
         float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 90), -90);
         this->requested_steering_angle = cappedAngle;
-        this->update_steering();
+        // this->update_steering();
     }
 
     // Update Steering
@@ -484,6 +494,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // Create subscriber to topic "canbus_rosbound"
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
+
+        // Create state request and config timers
+        this->steering_update_timer =
+            this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering, this));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(
