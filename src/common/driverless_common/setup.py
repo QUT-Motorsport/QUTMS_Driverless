@@ -25,6 +25,7 @@ setup(
     entry_points={
         "console_scripts": [
             "display = driverless_common.node_display:main",
+            "topic_to_csv = driverless_common.node_topic_to_csv:main",
         ],
     },
 )
