@@ -6,6 +6,7 @@ from sklearn.neighbors import KDTree
 from tf2_ros import TransformBroadcaster
 from transforms3d.euler import euler2quat, quat2euler
 
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -15,16 +16,17 @@ from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, Tran
 
 from py_slam.cone_props import ConeProps
 
-from typing import List, Optional, Tuple
+from typing import Optional
 
-R = np.diag([0.01, 0.01]) ** 2  # motion model
+R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS_LIDAR = 1  # nn kdtree nearch
-RADIUS_CAM = 1.8
-LEAF_SIZE = 5  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 10  # minimum frames before confirming cones
-FRAME_REM_COUNT = 25  # minimum frames that cones have to be seen in to not be removed
+RADIUS = 1.5  # nn kdtree nearch
+LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
+FRAME_COUNT = 20  # minimum frames before confirming cones
+FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
+X_RANGE = 15  # max x distance from car
+Y_RANGE = 10  # max y distance from car
 
 
 def stamp_to_seconds(stamp) -> float:
@@ -37,55 +39,36 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 class PySlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma = np.diag([0.0, 0.0, 0.0])
+    sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
 
     last_timestamp: Optional[float] = None
 
-    motor_vels: List[float] = [0.0, 0.0, 0.0, 0.0]
-
     def __init__(self):
         super().__init__("py_slam")
 
-        self.create_subscription(TwistStamped, "/imu/velocity", self.velocity_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
+        # sync subscribers
+        vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
+        lidar_sub = message_filters.Subscriber(self, ConeDetectionStamped, "/lidar/cone_detection")
+        lidar_synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[vel_sub, lidar_sub], queue_size=20, slop=0.2
+        )
+        lidar_synchronizer.registerCallback(self.sync_callback)
+
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
-        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
+        self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
+        self.pose_publisher: Publisher = self.create_publisher(
+            PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
+        )
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
-
-    def velocity_callback(self, msg: TwistStamped):
-        if self.last_timestamp is None:
-            self.last_timestamp = stamp_to_seconds(msg.header.stamp)
-            return
-
-        self.dt = stamp_to_seconds(msg.header.stamp) - self.last_timestamp
-
-        # rosbag repeat - reset location
-        if self.dt < -1:
-            self.last_timestamp = stamp_to_seconds(msg.header.stamp)
-            self.state[0:3] = [0.0, 0.0, 0.0]
-            return
-
-        self.last_timestamp = stamp_to_seconds(msg.header.stamp)
-
-        # predict with velocity
-        self.predict(msg)
-        self.publish_localisation(msg)
-
-    def vision_callback(self, msg: ConeDetectionStamped):
-        self.detection_callback(msg, Q_CAM, RADIUS_CAM)
-
-    def lidar_callback(self, msg: ConeDetectionStamped):
-        self.detection_callback(msg, Q_LIDAR, RADIUS_LIDAR)
 
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")
@@ -93,7 +76,35 @@ class PySlam(Node):
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
 
-    def detection_callback(self, msg: ConeDetectionStamped, Q, RADIUS: float):
+    def sync_callback(self, vel_msg: TwistStamped, detection_msg: ConeDetectionStamped):
+        # get velocity timestep
+        if self.last_timestamp is None:
+            self.last_timestamp = stamp_to_seconds(vel_msg.header.stamp)
+            return
+
+        self.dt = stamp_to_seconds(vel_msg.header.stamp) - self.last_timestamp
+
+        # rosbag repeat - reset location
+        if self.dt < -1:
+            self.last_timestamp = stamp_to_seconds(vel_msg.header.stamp)
+            self.state[0:3] = [0.0, 0.0, 0.0]
+            return
+
+        self.last_timestamp = stamp_to_seconds(vel_msg.header.stamp)
+
+        # predict car location
+        self.predict(vel_msg)
+        self.callback(detection_msg)
+
+    def callback(self, msg: ConeDetectionStamped):
+        self.get_logger().debug("Received detection")
+        start: float = time.perf_counter()
+
+        if msg.header.frame_id == "velodyne":
+            Q = Q_LIDAR
+        else:
+            Q = Q_CAM
+
         # process detected cones
         track_as_2d = np.array([])
         for detection in msg.cones:
@@ -169,6 +180,8 @@ class PySlam(Node):
         # publish localisation msg
         self.publish_localisation(msg)
 
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-start)}")  # log time
+
     def publish_localisation(self, msg):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
@@ -202,11 +215,13 @@ class PySlam(Node):
     def predict(self, vel_msg: TwistStamped):
         """
         Predict step of the EKF
-        * param imu_msg: TwistStamped message containing ang vel
-        * param vel_msg: WSSVelocity message containing avg wheel speeds
+        * param pose: tuple of current (x, y, theta) of the car
+        * param cov: current 6x6 covariance matrix of the car
         """
 
-        ddist = sqrt(vel_msg.twist.linear.x**2 + vel_msg.twist.linear.y**2) * self.dt  # distance
+        ddist = (
+            sqrt((vel_msg.twist.linear.x / 2) ** 2 + (vel_msg.twist.linear.y / 2) ** 2) * self.dt
+        )  # magnitude of distance
         dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
@@ -223,8 +238,7 @@ class PySlam(Node):
         """
         Update step of the EKF
         * param index: index of the cone in the map
-        * param detection: ConeProps object containing the cone properties
-        * param Q: measurement noise covariance matrix for this sensor
+        * param cone: tuple of (x, y) of the cone
         """
 
         i = index * 2 + 3  # landmark index, first 3 are vehicle, each landmark has 2 values
@@ -335,9 +349,9 @@ class PySlam(Node):
         local_coords = local_coords.reshape(-1, 2)
 
         # get any cones that are within -10m to 10m beside car
-        side_idxs = np.where(np.logical_and(local_coords[:, 1] > -10, local_coords[:, 1] < 7.5))[0]
+        side_idxs = np.where(np.logical_and(local_coords[:, 1] > -Y_RANGE, local_coords[:, 1] < Y_RANGE))[0]
         # get any cones that are within 15m in front of car
-        forward_idxs = np.where(np.logical_and(local_coords[:, 0] > 0, local_coords[:, 0] < 15))[0]
+        forward_idxs = np.where(np.logical_and(local_coords[:, 0] > 0, local_coords[:, 0] < X_RANGE))[0]
         # combine indexes
         idxs = np.intersect1d(side_idxs, forward_idxs)
 
