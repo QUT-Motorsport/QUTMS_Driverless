@@ -66,6 +66,7 @@ typedef enum c5e_object_id {
     TARGET_POSITION = 0x607A,
     CONTROL_WORD = 0x6040,
     STATUS_WORD = 0x6041,
+    ENC_REVS = 0x608F,
 } c5e_object_id_t;
 
 /* State Structure
@@ -135,6 +136,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     bool motor_enabled = false;              // Enable motors logic
     double current_steering_angle = 0;       // Current Steering Angle (Angle Sensor)
     double requested_steering_angle = 0;     // Desired Steering ANgle (Guidance Logic)
+    double current_enc_revolutions = 0;      // Desired Steering ANgle (Stepper encoder)
     bool shutdown_requested = false;         // Shutdown logic
 
     float Kp, Ki, Kd;          // PID Gain
@@ -396,7 +398,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
         float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 90), -90);
         this->requested_steering_angle = cappedAngle;
-        // this->update_steering();
+        this->update_steering();
     }
 
     // Update Steering
@@ -495,9 +497,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
 
-        // Create state request and config timers
-        this->steering_update_timer =
-            this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering, this));
+        // // Create state request and config timers
+        // this->steering_update_timer =
+        //     this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering,
+        //     this));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(
