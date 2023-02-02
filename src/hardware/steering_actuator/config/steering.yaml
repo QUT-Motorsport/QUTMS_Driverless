@@ -10,5 +10,5 @@ steering_controller_node:
     velocity: 1000
     acceleration: 300
     Kp: 40.0
-    Ki: 3.0
-    Kd: 4.0
+    Ki: 0.0
+    Kd: 0.0

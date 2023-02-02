@@ -137,10 +137,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     c5e_state desired_state = states[RTSO];  // Desired State
     c5e_state current_state = states[RTSO];  // Current State
     bool motor_enabled = false;              // Enable motors logic
-    double current_steering_angle = 0;       // Current Steering Angle (Angle Sensor)
-    double requested_steering_angle = 0;     // Desired Steering ANgle (Guidance Logic)
-    int32_t current_enc_revolutions = 0;      // Current Encoder Revolutions (Stepper encoder)
-    bool shutdown_requested = false;         // Shutdown logic
+    bool offset_saved = false;
+    int offset = 0;
+    bool initial_enc_saved = false;
+    int32_t initial_env;
+    double current_steering_angle = 0;    // Current Steering Angle (Angle Sensor)
+    double requested_steering_angle = 0;  // Desired Steering ANgle (Guidance Logic)
+    int32_t current_enc_revolutions = 0;  // Current Encoder Revolutions (Stepper encoder)
+    bool shutdown_requested = false;      // Shutdown logic
 
     float Kp, Ki, Kd;          // PID Gain
     float integral_error = 0;  // Integral Error
@@ -154,6 +158,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
 
         sdo_read(C5_E_ID, STATUS_WORD, 0x00, &id, (uint8_t *)&out);
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+
+        sdo_read(C5_E_ID, REVOLUTION_POS, 0x00, &id, (uint8_t *)&out);
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
@@ -246,7 +253,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
 
             // To set the controller to a usable state, we must set the:
-            // Home Offset = 0
+            // Home Offset = zero - start
             // Motion Profile Type = trapezoidal ramp (0)
             // Profile Velocity = PARAM_VELOCITY
             // End Velocity = 0
@@ -296,14 +303,27 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-            } else if (object_id == HOME_OFFSET) {
+            }
+            // message received for position revolution
+            else if (object_id == REVOLUTION_POS) {
+                int32_t val = (int32_t)data;
+                this->current_enc_revolutions = val;
+                if (!this->initial_enc_saved) {
+                    this->initial_enc = val;
+                }
+                driverless_msgs::msg::WSSVelocity enc_msg;
+                enc_msg.velocity = this->current_enc_revolutions;
+                this->encoder_pub->publish(enc_msg);
+            }
+            // message received for offset position
+            else if (object_id == HOME_OFFSET) {
                 int32_t val = (int32_t)data;
                 RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
 
-                int32_t desired_val = 0;
-                if (val != desired_val) {
-                    sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&desired_val, 4, &id, out);
+                if (this->offset != 0) {
+                    sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&this->offset, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->offset_saved = true;
                 }
             } else if (object_id == MOTION_PROFILE_TYPE) {
                 int16_t val = (int16_t)data;
@@ -380,15 +400,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-            } else if (object_id == REVOLUTION_POS) {
-                int32_t val = (int32_t)data;
-                RCLCPP_INFO(this->get_logger(), "REVOLUTION_POS: %i", val);
-
-                this->current_enc_revolutions = val;
-                driverless_msgs::msg::WSSVelocity enc_msg;
-                enc_msg.velocity = this->current_enc_revolutions;
-                this->encoder_pub->publish(enc_msg);
-            } 
+                RCLCPP_INFO(this->get_logger(), "OFFSET: %i", this->offset);
+                RCLCPP_INFO(this->get_logger(), "OFFSET SAVED: %i", this->offset_saved);
+            }
         }
     }
 
@@ -414,30 +428,45 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Update Steering
     void update_steering() {
+        // all state transitions passed
         if (this->motor_enabled) {
-            auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
-            double elapsed_time_seconds =
-                std::chrono::duration<double, std::milli>(current_update - last_update).count() /
-                1000;                            // Calculate time elapsed
-            this->last_update = current_update;  // Set previous time to current time
+            // motor has not centred itself with steering ang sensor
+            if (!this->offset_saved) {
+                auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
+                double elapsed_time_seconds =
+                    std::chrono::duration<double, std::milli>(current_update - last_update).count() /
+                    1000;                            // Calculate time elapsed
+                this->last_update = current_update;  // Set previous time to current time
 
-            double error =
-                this->requested_steering_angle - this->current_steering_angle;  // Grab error between steering angle
+                double error = 0.0 - this->current_steering_angle;  // Grab error between steering angle
 
-            if (abs(error) < 0.5) return;  // if settled enough
+                if (abs(error) < 0.5) {  // motor has settled enough
+                    this->offset = this->initial_enc - this->current_enc_revolutions;
+                    this->offset_saved = true;
+                    RCLCPP_INFO("CENTRED STEERING")
+                    return;
+                }
 
-            this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
-            double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
+                this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
+                double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
 
-            double target =
-                -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
-            RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
-                        integral_error, Kd, derivative_error, target);  // Prirnt PID commands
+                // left hand down is +, rhd is -
+                double target =
+                    -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
+                RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
+                            integral_error, Kd, derivative_error, target);  // Prirnt PID commands
 
-            this->prev_error = error;
+                this->prev_error = error;
 
-            // left hand down is +, rhd is -
-            this->target_position(target);
+                this->target_position(target);
+            }
+            // we have set a home offset
+            else if (this->offset_saved) {
+                // convertion rate between angle and number of rotations
+                // right spin is +, left spin is -
+                double target = this->requested_steering_angle * 90.32;
+                this->target_position(target);
+            }
         }
     }
 
@@ -513,8 +542,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         // Create state request and config timers
         this->steering_update_timer =
-            this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering,
-            this));
+            this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering, this));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(
