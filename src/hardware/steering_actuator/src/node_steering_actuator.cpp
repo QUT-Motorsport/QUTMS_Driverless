@@ -8,6 +8,7 @@
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
+#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
 
 using std::placeholders::_1;
@@ -50,6 +51,7 @@ typedef enum c5e_state_id {
  * TARGET_POSITION           = 24698
  * CONTROL_WORD              = 24640
  * STATUS_WORD               = 24641
+ * REVOLUTION_POS            = 24676
  */
 
 typedef enum c5e_object_id {
@@ -66,7 +68,7 @@ typedef enum c5e_object_id {
     TARGET_POSITION = 0x607A,
     CONTROL_WORD = 0x6040,
     STATUS_WORD = 0x6041,
-    ENC_REVS = 0x608F,
+    REVOLUTION_POS = 0x6064,
 } c5e_object_id_t;
 
 /* State Structure
@@ -125,6 +127,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Creates publisher for Can
     // Creates subscribers for AckermannDriveStamped, State, SteeringReading, and Can
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
+    rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr encoder_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
@@ -136,7 +139,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     bool motor_enabled = false;              // Enable motors logic
     double current_steering_angle = 0;       // Current Steering Angle (Angle Sensor)
     double requested_steering_angle = 0;     // Desired Steering ANgle (Guidance Logic)
-    double current_enc_revolutions = 0;      // Desired Steering ANgle (Stepper encoder)
+    int32_t current_enc_revolutions = 0;      // Current Encoder Revolutions (Stepper encoder)
     bool shutdown_requested = false;         // Shutdown logic
 
     float Kp, Ki, Kd;          // PID Gain
@@ -242,6 +245,17 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             uint32_t param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
             uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
 
+            // To set the controller to a usable state, we must set the:
+            // Home Offset = 0
+            // Motion Profile Type = trapezoidal ramp (0)
+            // Profile Velocity = PARAM_VELOCITY
+            // End Velocity = 0
+            // Profile Acceleration = PARAM_ACCELERATION
+            // Profile Deceleration = PARAM_ACCELERATION
+            // Quick Stop Deceleration = PARAM_ACCELERATION
+            // Max Acceleration = PARAM_ACCELERATION
+            // Max Deceleration = PARAM_ACCELERATION
+            // Mode of Operation = 1 (Profile Position)
             if (object_id == STATUS_WORD) {
                 uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
                 this->current_state = this->parse_state(status_word);
@@ -283,17 +297,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
             } else if (object_id == HOME_OFFSET) {
-                // To set the controller to a usable state, we must set the:
-                // Home Offset = 0
-                // Motion Profile Type = trapezoidal ramp (0)
-                // Profile Velocity = PARAM_VELOCITY
-                // End Velocity = 0
-                // Profile Acceleration = PARAM_ACCELERATION
-                // Profile Deceleration = PARAM_ACCELERATION
-                // Quick Stop Deceleration = PARAM_ACCELERATION
-                // Max Acceleration = PARAM_ACCELERATION
-                // Max Deceleration = PARAM_ACCELERATION
-                // Mode of Operation = 1 (Profile Position)
                 int32_t val = (int32_t)data;
                 RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
 
@@ -377,7 +380,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-            }
+            } else if (object_id == REVOLUTION_POS) {
+                int32_t val = (int32_t)data;
+                RCLCPP_INFO(this->get_logger(), "REVOLUTION_POS: %i", val);
+
+                this->current_enc_revolutions = val;
+                driverless_msgs::msg::WSSVelocity enc_msg;
+                enc_msg.velocity = this->current_enc_revolutions;
+                this->encoder_pub->publish(enc_msg);
+            } 
         }
     }
 
@@ -398,7 +409,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
         float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 90), -90);
         this->requested_steering_angle = cappedAngle;
-        this->update_steering();
+        // this->update_steering();
     }
 
     // Update Steering
@@ -481,6 +492,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // Create publisher to topic "canbus_carbound"
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
+        // Create publisher to topic "encoder_reading"
+        this->encoder_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("encoder_reading", 10);
+
         // Create subscriber to topic "as_status"
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "/system/as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
@@ -497,10 +511,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
 
-        // // Create state request and config timers
-        // this->steering_update_timer =
-        //     this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering,
-        //     this));
+        // Create state request and config timers
+        this->steering_update_timer =
+            this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&SteeringActuator::update_steering,
+            this));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(
