@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 # Read in the data
-actual = pd.read_csv('src/control/steering/data/steering_reading copy 15.csv')
-desired = pd.read_csv('src/control/steering/data/driving_command copy 15.csv')
+actual = pd.read_csv('src/control/steering/data/steering_reading_2023-02-01T05:55:34.csv')
+desired = pd.read_csv('src/control/steering/data/driving_command_2023-02-01T05:55:34.csv')
 
 # Plot the data on the same graph
 # Convert time to seconds from start
