@@ -27,7 +27,6 @@
     <!-- <depend>velocity_controller</depend> -->
     <!-- <depend>mission_controller</depend> -->
     <depend>topic_to_csv</depend>
-    <depend>remote_control</depend>
 
     <exec_depend>ros2launch</exec_depend>
 
