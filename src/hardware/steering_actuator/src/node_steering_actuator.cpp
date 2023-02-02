@@ -318,16 +318,17 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             // message received for offset position
             else if (object_id == HOME_OFFSET) {
                 int32_t val = (int32_t)data;
-                RCLCPP_INFO(this->get_logger(), "HOME_OFFSET: %i", val);
+                RCLCPP_DEBUG(this->get_logger(), "HOME_OFFSET: %i", val);
 
-                if (this->offset != 0) {
+                if (abs(this->current_steering_angle) < 0.5) {
+                    RCLCPP_INFO(this->get_logger(), "OFFSET SAVED!!");
                     sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&this->offset, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                     this->offset_saved = true;
                 }
             } else if (object_id == MOTION_PROFILE_TYPE) {
                 int16_t val = (int16_t)data;
-                RCLCPP_INFO(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
+                RCLCPP_DEBUG(this->get_logger(), "MOTION_PROFILE_TYPE: %i", val);
 
                 int32_t desired_val = 0;
                 if (val != desired_val) {
@@ -336,7 +337,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == PROFILE_VELOCITY) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "PROFILE_VELOCITY: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "PROFILE_VELOCITY: %u", val);
 
                 if (val != param_velocity) {
                     sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
@@ -344,7 +345,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == END_VELOCTITY) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "END_VELOCTITY: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "END_VELOCTITY: %u", val);
 
                 uint32_t desired_val = 0;
                 if (val != desired_val) {
@@ -353,7 +354,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == PROFILE_ACCELERATION) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
 
                 if (val != param_acceleration) {
                     sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
@@ -361,7 +362,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == PROFILE_DECELERATION) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "PROFILE_DECELERATION: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "PROFILE_DECELERATION: %u", val);
 
                 if (val != param_acceleration) {
                     sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
@@ -369,7 +370,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == QUICK_STOP_DECELERATION) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
 
                 if (val != param_acceleration) {
                     sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
@@ -377,7 +378,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == MAX_ACCELERATION) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "MAX_ACCELERATION: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "MAX_ACCELERATION: %u", val);
 
                 if (val != param_acceleration) {
                     sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
@@ -385,7 +386,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == MAX_DECELERATION) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "MAX_DECELERATION: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "MAX_DECELERATION: %u", val);
 
                 if (val != param_acceleration) {
                     sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
@@ -393,7 +394,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
             } else if (object_id == MODE_OF_OPERATION) {
                 int8_t val = (uint32_t)data;
-                RCLCPP_INFO(this->get_logger(), "MODE_OF_OPERATION: %i", val);
+                RCLCPP_DEBUG(this->get_logger(), "MODE_OF_OPERATION: %i", val);
 
                 int32_t desired_val = 1;
                 if (val != desired_val) {
@@ -440,10 +441,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 double error = 0.0 - this->current_steering_angle;  // Grab error between steering angle
 
+                RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
+
                 if (abs(error) < 0.5) {  // motor has settled enough
                     this->offset = this->initial_enc - this->current_enc_revolutions;
                     this->offset_saved = true;
-                    RCLCPP_INFO(this->get_logger(), "CENTRED STEERING");
+                    RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
                     return;
                 }
 
@@ -453,8 +456,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 // left hand down is +, rhd is -
                 double target =
                     -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
-                RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
-                            integral_error, Kd, derivative_error, target);  // Prirnt PID commands
+                // RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
+                //             integral_error, Kd, derivative_error, target);  // Prirnt PID commands
 
                 this->prev_error = error;
 
