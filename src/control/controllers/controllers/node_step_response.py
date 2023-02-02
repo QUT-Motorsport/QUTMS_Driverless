@@ -15,7 +15,7 @@ class StepController(Node):
     target: float = 0.0
 
     change_interval = 5  # s
-    pub_interval = 0.1  # s
+    pub_interval = 0.01  # s
 
     step = 0
     max_ang = 50.0
