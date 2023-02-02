@@ -140,7 +140,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     bool offset_saved = false;
     int offset = 0;
     bool initial_enc_saved = false;
-    int32_t initial_env;
+    int32_t initial_enc;
     double current_steering_angle = 0;    // Current Steering Angle (Angle Sensor)
     double requested_steering_angle = 0;  // Desired Steering ANgle (Guidance Logic)
     int32_t current_enc_revolutions = 0;  // Current Encoder Revolutions (Stepper encoder)
@@ -443,7 +443,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 if (abs(error) < 0.5) {  // motor has settled enough
                     this->offset = this->initial_enc - this->current_enc_revolutions;
                     this->offset_saved = true;
-                    RCLCPP_INFO("CENTRED STEERING")
+                    RCLCPP_INFO(this->get_logger(), "CENTRED STEERING");
                     return;
                 }
 
