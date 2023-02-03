@@ -137,7 +137,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     c5e_state desired_state = states[RTSO];  // Desired State
     c5e_state current_state = states[RTSO];  // Current State
     bool motor_enabled = false;              // Enable motors logic
-    bool offset_saved = false;
+    bool centred = false;
+    bool steering_ang_received = false;
     int offset = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
@@ -228,6 +229,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             if (abs(steering_0 - steering_1) < 10) {
                 this->current_steering_angle = steering_0;
                 RCLCPP_DEBUG(this->get_logger(), "Steering rate: %.2f", (1.0 / elapsed_time_seconds));
+                if (!this->steering_ang_received) this->steering_ang_received = true;
             }
 
         } else if (msg.id == 0x5F0) {
@@ -310,6 +312,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 this->current_enc_revolutions = val;
                 if (!this->initial_enc_saved) {
                     this->initial_enc = val;
+                    this->initial_enc_saved = true;
                 }
                 driverless_msgs::msg::WSSVelocity enc_msg;
                 enc_msg.velocity = this->current_enc_revolutions;
@@ -320,11 +323,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 int32_t val = (int32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "HOME_OFFSET: %i", val);
 
-                if (abs(this->current_steering_angle) < 0.5) {
-                    RCLCPP_INFO(this->get_logger(), "OFFSET SAVED!!");
+                int32_t desired_val = 0;
+                if (val != desired_val) {
                     sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&this->offset, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-                    this->offset_saved = true;
                 }
             } else if (object_id == MOTION_PROFILE_TYPE) {
                 int16_t val = (int16_t)data;
@@ -401,8 +403,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
-                RCLCPP_INFO(this->get_logger(), "OFFSET: %i", this->offset);
-                RCLCPP_INFO(this->get_logger(), "OFFSET SAVED: %i", this->offset_saved);
             }
         }
     }
@@ -430,22 +430,22 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Update Steering
     void update_steering() {
         // all state transitions passed
-        if (this->motor_enabled) {
+        if (this->motor_enabled && this->steering_ang_received) {
             // motor has not centred itself with steering ang sensor
-            if (!this->offset_saved) {
+            if (!this->centred) {
                 auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
                 double elapsed_time_seconds =
                     std::chrono::duration<double, std::milli>(current_update - last_update).count() /
                     1000;                            // Calculate time elapsed
                 this->last_update = current_update;  // Set previous time to current time
 
-                double error = 0.0 - this->current_steering_angle;  // Grab error between steering angle
+                double error = -this->current_steering_angle;  // Grab error between steering angle
 
-                RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
+                // RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
                 if (abs(error) < 0.5) {  // motor has settled enough
                     this->offset = this->initial_enc - this->current_enc_revolutions;
-                    this->offset_saved = true;
+                    this->centred = true;
                     RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
                     return;
                 }
@@ -464,10 +464,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 this->target_position(target);
             }
             // we have set a home offset
-            else if (this->offset_saved) {
+            else if (this->centred) {
                 // convertion rate between angle and number of rotations
                 // right spin is +, left spin is -
-                double target = this->requested_steering_angle * 90.32;
+                int32_t target = int32_t(this->requested_steering_angle * 90.32) - this->offset;
+                // RCLCPP_INFO(this->get_logger(), "request: %i, target: %i ", int32_t(this->requested_steering_angle
+                // * 90.32), target); RCLCPP_INFO(this->get_logger(), "offset: %i, current_revs: %i", this->offset,
+                // this->current_enc_revolutions); if (target <= 0) std::max(-7500 - this->offset, target); else if
+                // (target > 0) std::min(7500 - this->offset, target);
                 this->target_position(target);
             }
         }
@@ -483,15 +487,20 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
         uint16_t control_word;
 
-        control_word = 111;
+        if (this->centred)
+            control_word = 0b0101111;
+        else
+            control_word = 0b1101111;
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
-        // Set Control Word
-        control_word = 127;
+        if (this->centred)
+            control_word = 0b0111111;
+        else
+            control_word = 0b1111111;
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
