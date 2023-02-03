@@ -180,7 +180,7 @@ class PySlam(Node):
         # publish localisation msg
         self.publish_localisation(msg)
 
-        self.get_logger().info(f"Wait time: {str(time.perf_counter()-start)}")  # log time
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
     def publish_localisation(self, msg):
         # publish pose msg
