@@ -493,20 +493,22 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
         uint16_t control_word;
 
-        if (this->centred)
+        if (this->centred) {
             control_word = 0b0101111;
-        else
+        } else {
             control_word = 0b1101111;
+        }
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
-        if (this->centred)
+        if (this->centred) {
             control_word = 0b0111111;
-        else
+        } else {
             control_word = 0b1111111;
+        }
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }

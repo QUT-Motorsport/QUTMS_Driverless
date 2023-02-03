@@ -17,7 +17,7 @@ class SineController(Node):
         super().__init__("sine_controller_node")
 
         # timed callback
-        self.create_timer(0.05, self.timer_callback)
+        self.create_timer(0.1, self.timer_callback)
 
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
         self.driving_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
