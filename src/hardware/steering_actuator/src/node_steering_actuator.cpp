@@ -472,8 +472,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             // we have set a home offset
             else if (this->centred) {
                 // convertion rate between angle and number of rotations
-                // right spin is +, left spin is -
-                int32_t target = int32_t(this->requested_steering_angle * 90.32) - this->offset;
+                // make right spin - and left spin + to align with steering ang sensor
+                int32_t target = -(int32_t(this->requested_steering_angle * 90.32) - this->offset);
                 // RCLCPP_INFO(this->get_logger(), "request: %i, target: %i ", int32_t(this->requested_steering_angle
                 // * 90.32), target); RCLCPP_INFO(this->get_logger(), "offset: %i, current_revs: %i", this->offset,
                 // this->current_enc_revolutions); if (target <= 0) std::max(-7500 - this->offset, target); else if
