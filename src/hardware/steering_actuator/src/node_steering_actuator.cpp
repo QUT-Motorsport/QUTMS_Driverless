@@ -447,7 +447,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 double error = -this->current_steering_angle;  // Grab error between steering angle
 
-                // RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
+                RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
                 if (abs(error) < 0.5) {  // motor has settled enough
                     this->offset = this->initial_enc - this->current_enc_revolutions;
@@ -473,7 +473,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             else if (this->centred) {
                 // convertion rate between angle and number of rotations
                 // make right spin - and left spin + to align with steering ang sensor
-                int32_t target = -(int32_t(this->requested_steering_angle * 90.32) - this->offset);
+                float RANDOM_OFFSET_RATIO = 22.857;
+                RCLCPP_INFO(this->get_logger(), "extra: %f", RANDOM_OFFSET_RATIO * this->requested_steering_angle);
+                int32_t target = int32_t(-this->requested_steering_angle * 90.32 - this->offset +
+                                         RANDOM_OFFSET_RATIO * this->requested_steering_angle);
                 // RCLCPP_INFO(this->get_logger(), "request: %i, target: %i ", int32_t(this->requested_steering_angle
                 // * 90.32), target); RCLCPP_INFO(this->get_logger(), "offset: %i, current_revs: %i", this->offset,
                 // this->current_enc_revolutions); if (target <= 0) std::max(-7500 - this->offset, target); else if
