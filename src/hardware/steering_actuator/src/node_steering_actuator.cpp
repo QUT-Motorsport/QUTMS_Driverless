@@ -153,7 +153,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();   // Timer
     std::chrono::high_resolution_clock::time_point last_reading = std::chrono::high_resolution_clock::now();  // Timer
 
-    // Request callback for state (via ROS2)
+    // Request callback for configuration (via ROS2)
+    // These publishings are required to send a 'trigger' to the c5e controller
+    // with the specific object ID (seen in struct above).
+    // Then the c5e controller will send a CAN message back with that ID
     void c5e_state_request_callback() {
         uint32_t id;     // Packet id out
         uint8_t out[8];  // Data out
@@ -166,6 +169,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
     // Request callback for configuration (via ROS2)
+    // These publishings are required to send a 'trigger' to the c5e controller
+    // with the specific object ID (seen in struct above).
+    // Then the c5e controller will send a CAN message back with that ID
     void c5e_config_request_callback() {
         uint32_t id;     // Packet id out
         uint8_t out[8];  // Data out
@@ -204,6 +210,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
+        // Message ID from the VCU reading the steering angle sensor
         if (msg.id == VCU_TransmitSteering_ID) {
             auto current_reading = std::chrono::high_resolution_clock::now();  // Update clock
             double elapsed_time_seconds =
@@ -231,10 +238,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 RCLCPP_DEBUG(this->get_logger(), "Steering rate: %.2f", (1.0 / elapsed_time_seconds));
                 if (!this->steering_ang_received) this->steering_ang_received = true;
             }
-
-        } else if (msg.id == 0x5F0) {
-            // CAN message from the steering actuator
-
+        }
+        // Message ID from the steering actuator
+        else if (msg.id == 0x5F0) {
             uint32_t id;     // Packet id out
             uint8_t out[8];  // Data out
 
