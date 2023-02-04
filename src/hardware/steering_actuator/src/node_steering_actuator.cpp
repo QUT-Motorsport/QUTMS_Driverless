@@ -473,14 +473,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             else if (this->centred) {
                 // convertion rate between angle and number of rotations
                 // make right spin - and left spin + to align with steering ang sensor
-                float RANDOM_OFFSET_RATIO = 22.857;
-                RCLCPP_INFO(this->get_logger(), "extra: %f", RANDOM_OFFSET_RATIO * this->requested_steering_angle);
-                int32_t target = int32_t(-this->requested_steering_angle * 90.32 - this->offset +
-                                         RANDOM_OFFSET_RATIO * this->requested_steering_angle);
-                // RCLCPP_INFO(this->get_logger(), "request: %i, target: %i ", int32_t(this->requested_steering_angle
-                // * 90.32), target); RCLCPP_INFO(this->get_logger(), "offset: %i, current_revs: %i", this->offset,
-                // this->current_enc_revolutions); if (target <= 0) std::max(-7500 - this->offset, target); else if
-                // (target > 0) std::min(7500 - this->offset, target);
+                const float CONVERTION_RATE = -90.32;
+                const float RANDOM_OFFSET_RATIO = 4.0;
+                RCLCPP_INFO(this->get_logger(), "extra: %f", RANDOM_OFFSET_RATIO * abs(this->requested_steering_angle));
+                int32_t target = int32_t(this->requested_steering_angle * CONVERTION_RATE - this->offset +
+                                         RANDOM_OFFSET_RATIO * abs(this->requested_steering_angle));
+
+                target = std::fmax(std::fmin(target, 7500 - this->offset), -7500 - this->offset);
+
                 this->target_position(target);
             }
         }
