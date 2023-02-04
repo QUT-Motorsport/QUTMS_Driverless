@@ -4,9 +4,11 @@
 [submodule "src/common/ros2_numpy/ros2_numpy"]
 	path = src/common/ros2_numpy/ros2_numpy
 	url = https://github.com/Box-Robotics/ros2_numpy.git
+    branch = v2.0.8
 [submodule "src/perception/vision_pipeline/yolov5"]
 	path = src/perception/vision_pipeline/yolov5
 	url = https://github.com/ultralytics/yolov5.git
+    branch = v6.2
 [submodule "src/common/fs_msgs"]
 	path = src/common/fs_msgs
 	url = https://github.com/FS-Driverless/fs_msgs.git
@@ -24,6 +26,7 @@
 [submodule "src/hardware/zed_ros2_driver/zed-ros2-wrapper"]
 	path = src/hardware/zed_ros2_driver/zed-ros2-wrapper
 	url = https://github.com/stereolabs/zed-ros2-wrapper.git
+    branch = foxy-humble-v3.8
 [submodule "src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver"]
 	path = src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver
 	url = https://github.com/QUT-Motorsport/QUTMS_SBG_Driver.git
