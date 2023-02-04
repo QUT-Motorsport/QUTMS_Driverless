@@ -60,7 +60,7 @@ class PySlam(Node):
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/local", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
@@ -180,7 +180,7 @@ class PySlam(Node):
         # publish localisation msg
         self.publish_localisation(msg)
 
-        self.get_logger().info(f"Wait time: {str(time.perf_counter()-start)}")  # log time
+        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
     def publish_localisation(self, msg):
         # publish pose msg
