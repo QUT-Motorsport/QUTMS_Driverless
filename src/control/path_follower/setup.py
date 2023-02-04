@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "path_follower"
+package_name = "path_followers"
 
 setup(
     name=package_name,
@@ -12,14 +12,15 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English",
+    maintainer="Alastair Bradford, Grant van Breda, Damin Guerin",
     maintainer_email="team@qutmotorsport.com",
-    description="Driverless Controllers",
+    description="Driverless Guidance Systems",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "pure_pursuit = path_follower.node_pure_pursuit:main",
+            "particle_pursuit = path_follower.node_particle_pursuit:main",
             "pure_pursuit_kdtree = path_follower.node_pure_pursuit_kdtree:main",
         ],
     },
