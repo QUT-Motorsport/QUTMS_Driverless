@@ -139,7 +139,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     bool motor_enabled = false;              // Enable motors logic
     bool centred = false;
     bool steering_ang_received = false;
-    int offset = 0;
+    int32_t offset = 0;
+    int settled_count = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
     double current_steering_angle = 0;    // Current Steering Angle (Angle Sensor)
@@ -428,7 +429,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Check steering angle and desired steering angle to update steering
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-        float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 90), -90);
+        float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 7500), -7500);
         this->requested_steering_angle = cappedAngle;
         // this->update_steering();
     }
@@ -445,15 +446,21 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     1000;                            // Calculate time elapsed
                 this->last_update = current_update;  // Set previous time to current time
 
-                double error = -this->current_steering_angle;  // Grab error between steering angle
+                double error = -2.0 - this->current_steering_angle;  // Grab error between steering angle and "zero"
 
                 RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
                 if (abs(error) < 0.5) {  // motor has settled enough
-                    this->offset = this->initial_enc - this->current_enc_revolutions;
-                    this->centred = true;
-                    RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
-                    return;
+                    this->settled_count += 1;
+
+                    if (this->settled_count > 200) {
+                        this->offset = this->initial_enc - this->current_enc_revolutions;
+                        this->centred = true;
+                        RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
+                        return;
+                    }
+                } else {
+                    this->settled_count = 0;
                 }
 
                 this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
@@ -473,13 +480,13 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             else if (this->centred) {
                 // convertion rate between angle and number of rotations
                 // make right spin - and left spin + to align with steering ang sensor
-                const float CONVERTION_RATE = -90.32;
-                const float RANDOM_OFFSET_RATIO = 4.0;
-                RCLCPP_INFO(this->get_logger(), "extra: %f", RANDOM_OFFSET_RATIO * abs(this->requested_steering_angle));
-                int32_t target = int32_t(this->requested_steering_angle * CONVERTION_RATE - this->offset +
-                                         RANDOM_OFFSET_RATIO * abs(this->requested_steering_angle));
+                // const float CONVERTION_RATE = -90.32;
+                int32_t target = int32_t(this->requested_steering_angle);  // * CONVERTION_RATE) - this->offset;
 
-                target = std::fmax(std::fmin(target, 7500 - this->offset), -7500 - this->offset);
+                // turning left eqn: int32_t(-83.95*this->requested_steering_angle - 398.92)
+                // turning right eqn: int32_t(-95.68*this->requested_steering_angle - 71.51)
+
+                // target = std::fmax(std::fmin(target, 7500 - this->offset), -7500 - this->offset);
 
                 this->target_position(target);
             }
