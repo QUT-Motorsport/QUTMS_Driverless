@@ -2,10 +2,14 @@ from collections import OrderedDict
 import csv
 import datetime as dt
 from pathlib import Path
+import time
 
 import rclpy
 from rclpy.node import Node
 from rosidl_runtime_py.convert import message_to_ordereddict
+
+from ackermann_msgs.msg import AckermannDriveStamped
+from driverless_msgs.msg import SteeringReading, WSSVelocity
 
 # import your messages to be recorded here
 from geometry_msgs.msg import TwistStamped
@@ -15,8 +19,9 @@ from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
 SUBSCRIPTIONS: List[Tuple[str, Any]] = [
-    (Imu, "imu/data"),
-    (TwistStamped, "imu/velocity"),
+    (WSSVelocity, "encoder_reading"),
+    (SteeringReading, "steering_reading"),
+    (AckermannDriveStamped, "driving_command"),
 ]
 
 
@@ -28,6 +33,7 @@ def flatten_msg_dict(msg_dict: OrderedDict, parent_key: str = "", sep: str = "."
             items.extend(flatten_msg_dict(value, new_key, sep=sep).items())
         else:
             items.append((new_key, value))
+    items.append(("Time", time.time()))
     return OrderedDict(items)
 
 
@@ -54,13 +60,13 @@ class NodeTopicToCSV(Node):
         topic_readable = topic.replace("/", "_")
         if topic_readable not in self.csv_writers:
 
-            csv_folder = Path("./csv_data")
+            csv_folder = Path("./src/csv_data")
             csv_folder.mkdir(exist_ok=True)
             f = open(csv_folder / f"{topic_readable}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
             self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys(), extrasaction="ignore")
             self.csv_writers[topic_readable].writeheader()
 
-            self.start_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
+            # self.start_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
 
         self.csv_writers[topic_readable].writerow(msg_dict)
 

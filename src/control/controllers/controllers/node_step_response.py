@@ -19,7 +19,7 @@ class StepController(Node):
 
     step = 0
     max_ang = 80.0
-    inc = 1500
+    inc = 750
 
     def __init__(self):
         super().__init__("step_controller_node")

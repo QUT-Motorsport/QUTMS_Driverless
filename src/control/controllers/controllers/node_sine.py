@@ -33,11 +33,7 @@ class SineController(Node):
         control_msg.drive.acceleration = 0.1
         self.accel_publisher.publish(control_msg)
         self.driving_publisher.publish(control_msg)
-        print(self.count)
         print(control_msg.drive.steering_angle)
-
-        if round(self.count, 4) % 4 == 0:
-            print("stopped!")
 
 
 def main(args=None):

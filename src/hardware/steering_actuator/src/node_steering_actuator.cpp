@@ -481,10 +481,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 // convertion rate between angle and number of rotations
                 // make right spin - and left spin + to align with steering ang sensor
                 // const float CONVERTION_RATE = -90.32;
-                int32_t target = int32_t(this->requested_steering_angle);  // * CONVERTION_RATE) - this->offset;
+                // int32_t target = int32_t(this->requested_steering_angle);  // * CONVERTION_RATE) - this->offset;
 
-                // turning left eqn: int32_t(-83.95*this->requested_steering_angle - 398.92)
-                // turning right eqn: int32_t(-95.68*this->requested_steering_angle - 71.51)
+                // turning left eqn: -83.95x - 398.92
+                // turning right eqn: -95.68x - 71.51
+                int32_t target;
+                if (this->requested_steering_angle > 0) {
+                    target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
+                } else {
+                    target = int32_t(-95.68 * this->requested_steering_angle - 71.51) - this->offset;
+                }
 
                 // target = std::fmax(std::fmin(target, 7500 - this->offset), -7500 - this->offset);
 
