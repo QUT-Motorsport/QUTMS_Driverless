@@ -20,6 +20,7 @@ from . import video_stitcher
 
 # For typing
 from .utils import Config
+from logging import StreamHandler
 
 
 def cone_msg(x: float, y: float) -> Cone:
@@ -34,7 +35,7 @@ def cone_msg(x: float, y: float) -> Cone:
     """
     location: Point = Point(x=x, y=y, z=const.LIDAR_HEIGHT_ABOVE_GROUND)
 
-    # This LiDAR Pipeline does not identify cone colour
+    # LiDAR Pipeline does not identify cone colour
     return Cone(location=location, color=Cone.UNKNOWN)
 
 
