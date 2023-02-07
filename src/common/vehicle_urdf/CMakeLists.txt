@@ -23,4 +23,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+# mesh folder
+install(DIRECTORY
+  meshes
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()

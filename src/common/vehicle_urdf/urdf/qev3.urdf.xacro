@@ -20,10 +20,6 @@
     <!-- =================================================================== -->
     <!--                             Materials                               -->
     <!-- =================================================================== -->
-    <material name="chassis">
-        <color rgba="0.93 0.46 0.14 1"/>
-    </material>
-
     <material name="wheel">
         <color rgba="0 0 0 1"/>
     </material>
@@ -38,9 +34,9 @@
     <!-- Base link (chassis) -->
     <link name="car">
         <visual>
-            <origin xyz="${chassis_length/6} 0 ${chassis_height/6}" rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+                <mesh filename="file://$(find vehicle_urdf)/meshes/lando.dae"/>
             </geometry>
             <material name="chassis"/>
         </visual>
