@@ -8,7 +8,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 from typing import List
 
-MARKER_HEIGHT = 0.3
+BIG_HEIGHT = 1.5
+SMALL_HEIGHT = 1.0
 MAX_NUM_CONES = 50
 
 
@@ -16,17 +17,21 @@ def marker_array_from_map(detection: TrackDetectionStamped, ground_truth: bool =
     cones: List[ConeWithCovariance] = detection.cones
 
     if ground_truth:  # ground truth markers out of the sim are translucent
-        alpha: float = 0.35
+        alpha: float = 1.0
     else:
         alpha: float = 1.0
 
     markers = []
     for i, cone in enumerate(cones):
+        if cone.cone.color == Cone.ORANGE_BIG:
+            z_scale = BIG_HEIGHT
+        else:
+            z_scale = SMALL_HEIGHT
         markers.append(
             marker_msg(
                 x=cone.cone.location.x,
                 y=cone.cone.location.y,
-                z=MARKER_HEIGHT / 2,
+                z_scale=z_scale,
                 id_=i,
                 header=detection.header,
                 cone_colour=cone.cone.color,
@@ -61,11 +66,15 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
     markers = []
     for i in range(MAX_NUM_CONES):
         if i < len(cones):
+            if cones[i].color == Cone.ORANGE_BIG:
+                z_scale = BIG_HEIGHT
+            else:
+                z_scale = SMALL_HEIGHT
             markers.append(
                 marker_msg(
                     x=cones[i].location.x,
                     y=cones[i].location.y,
-                    z=cones[i].location.z,
+                    z_scale=z_scale,
                     id_=i,
                     header=detection.header,
                     cone_colour=cones[i].color,
@@ -112,7 +121,7 @@ CONE_TO_RGB_MAP = {
 def marker_msg(
     x: float,
     y: float,
-    z: float,
+    z_scale: float,
     id_: int,
     header: Header,
     cone_colour: int,
@@ -123,10 +132,12 @@ def marker_msg(
         header=header,
         ns="cones",
         id=id_,
-        type=Marker.CYLINDER,
+        type=Marker.MESH_RESOURCE,
+        mesh_resource="package://driverless_common/meshes/cone.dae",
+        mesh_use_embedded_materials=False,
         action=Marker.ADD,
-        pose=Pose(position=Point(x=x, y=y, z=z), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
-        scale=Vector3(x=0.2, y=0.2, z=MARKER_HEIGHT),
+        pose=Pose(position=Point(x=x, y=y, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        scale=Vector3(x=1.0, y=1.0, z=z_scale),
         color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
         lifetime=lifetime,
     )

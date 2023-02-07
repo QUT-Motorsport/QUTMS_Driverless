@@ -43,6 +43,7 @@ class DisplayDetections(Node):
 
         # path spline sub
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
+        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 1)
 
         # track subs
         self.create_subscription(TrackDetectionStamped, "/sim/track", self.sim_track_callback, 1)

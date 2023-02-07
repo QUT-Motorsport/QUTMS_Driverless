@@ -268,8 +268,8 @@ class TrackPlanner(Node):
         for l in disp_lines:
             delaunay_lines.append(Point(x=l[0][0], y=l[0][1], z=0.0))
             delaunay_lines.append(Point(x=l[1][0], y=l[1][1], z=0.0))
-            track_colours.append(ColorRGBA(r=0.1, g=0.1, b=0.1, a=0.2))
-            track_colours.append(ColorRGBA(r=0.1, g=0.1, b=0.1, a=0.2))
+            track_colours.append(ColorRGBA(r=0.6, g=0.6, b=0.6, a=0.2))
+            track_colours.append(ColorRGBA(r=0.6, g=0.6, b=0.6, a=0.2))
 
             cv2.line(
                 debug_img,

@@ -81,7 +81,7 @@
     <joint name="velodyne_joint" type="fixed">
         <parent link="car"/>
         <child link="velodyne"/>
-        <origin xyz="1.65 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="1.590 0 -0.15" rpy="0 0 0"/>
     </joint>
 
     <!-- ZED2i -->
@@ -97,7 +97,7 @@
     <joint name="zed2i_joint" type="fixed">
         <parent link="car"/>
         <child link="zed2i"/>
-        <origin xyz="-0.1 0 0.6" rpy="0 0 0"/>
+        <origin xyz="-0.370 0 0.900" rpy="0 0 0"/>
     </joint>
 
     <link name="zed2i_left_camera_optical_frame">
