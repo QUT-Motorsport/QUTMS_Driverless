@@ -147,6 +147,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     double requested_steering_angle = 0;  // Desired Steering ANgle (Guidance Logic)
     int32_t current_enc_revolutions = 0;  // Current Encoder Revolutions (Stepper encoder)
     bool shutdown_requested = false;      // Shutdown logic
+    float center_steering = -2.0;
 
     float Kp, Ki, Kd;          // PID Gain
     float integral_error = 0;  // Integral Error
@@ -429,8 +430,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Check steering angle and desired steering angle to update steering
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-        float cappedAngle = std::fmax(std::fmin(msg->drive.steering_angle, 7500), -7500);
-        this->requested_steering_angle = cappedAngle;
+        this->requested_steering_angle = cappedAngle - this->center_steering;  // -2deg offset
         // this->update_steering();
     }
 
@@ -446,11 +446,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     1000;                            // Calculate time elapsed
                 this->last_update = current_update;  // Set previous time to current time
 
-                double error = -2.0 - this->current_steering_angle;  // Grab error between steering angle and "zero"
+                double error = -this->current_steering_angle;  // Grab error between steering angle and "zero"
 
                 RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
-                if (abs(error) < 0.5) {  // motor has settled enough
+                if (abs(error) < 0.5) {
+                    // motor has settled enough
                     this->settled_count += 1;
 
                     if (this->settled_count > 200) {
@@ -460,6 +461,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                         return;
                     }
                 } else {
+                    // reset settled count to debounce initial overshoots
                     this->settled_count = 0;
                 }
 
@@ -478,22 +480,18 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             }
             // we have set a home offset
             else if (this->centred) {
-                // convertion rate between angle and number of rotations
-                // make right spin - and left spin + to align with steering ang sensor
-                // const float CONVERTION_RATE = -90.32;
-                // int32_t target = int32_t(this->requested_steering_angle);  // * CONVERTION_RATE) - this->offset;
-
                 // turning left eqn: -83.95x - 398.92
                 // turning right eqn: -95.68x - 71.51
-                int32_t target;
-                if (this->requested_steering_angle > 0) {
-                    target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
-                } else {
-                    target = int32_t(-95.68 * this->requested_steering_angle - 71.51) - this->offset;
-                }
+                // int32_t target;
+                // if (this->requested_steering_angle > 0) {
+                //     target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
+                // } else {
+                //     target = int32_t(-95.68 * this->requested_steering_angle - 71.51) - this->offset;
+                // }
 
-                // target = std::fmax(std::fmin(target, 7500 - this->offset), -7500 - this->offset);
+                int32_t target = this->requested_steering_angle;
 
+                target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
                 this->target_position(target);
             }
         }
@@ -603,14 +601,14 @@ int main(int argc, char *argv[]) {
     auto node = std::make_shared<SteeringActuator>();  // Constructs an empty SteeringActuator class
 
     // Hack
-    signal(SIGINT, signal_handler);                               //
-    handler = [node](int signal) {                                //
-        RCLCPP_INFO(node->get_logger(), "Shutting down motor.");  //
-        node->shutdown();                                         //
-        return signal;                                            //
+    signal(SIGINT, signal_handler);
+    handler = [node](int signal) {
+        RCLCPP_INFO(node->get_logger(), "Shutting down motor.");
+        node->shutdown();
+        return signal;
     };
 
-    rclcpp::spin(node);  //
-    rclcpp::shutdown();  //
+    rclcpp::spin(node);
+    rclcpp::shutdown();
     return 0;
 }
