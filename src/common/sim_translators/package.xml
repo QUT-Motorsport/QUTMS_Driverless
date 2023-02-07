@@ -10,6 +10,7 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>fs_msgs</depend>
+    <depend>eufs_msgs</depend>
     <depend>nav_msgs</depend>
     <depend>visualization_msgs</depend>
     <depend>ackermann_msgs</depend>

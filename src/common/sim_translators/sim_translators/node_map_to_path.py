@@ -8,6 +8,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
+from eufs_msgs.msg import ConeArrayWithCovariance
 from fs_msgs.msg import Cone, Track
 
 from typing import List, Tuple
@@ -65,15 +66,49 @@ def angle(p1: List[float], p2: List[float]) -> float:
     return atan2(y_disp, x_disp)
 
 
+def cone_array_with_covariance_to_cone_list(eufs_cones: ConeArrayWithCovariance) -> List[Cone]:
+    internal_cones: List[Cone] = []
+    for eufs_cone in eufs_cones.blue_cones:
+        internal_cone = Cone()
+        internal_cone.location = eufs_cone.point
+        internal_cone.color = Cone.BLUE
+        internal_cones.append(internal_cone)
+
+    for eufs_cone in eufs_cones.yellow_cones:
+        internal_cone = Cone()
+        internal_cone.location = eufs_cone.point
+        internal_cone.color = Cone.YELLOW
+        internal_cones.append(internal_cone)
+
+    for eufs_cone in eufs_cones.orange_cones:
+        internal_cone = Cone()
+        internal_cone.location = eufs_cone.point
+        internal_cone.color = Cone.ORANGE_SMALL
+        internal_cones.append(internal_cone)
+
+    for eufs_cone in eufs_cones.big_orange_cones:
+        internal_cone = Cone()
+        internal_cone.location = eufs_cone.point
+        internal_cone.color = Cone.ORANGE_BIG
+        internal_cones.append(internal_cone)
+
+    for eufs_cone in eufs_cones.unknown_color_cones:
+        internal_cone = Cone()
+        internal_cone.location = eufs_cone.point
+        internal_cone.color = Cone.UNKNOWN
+        internal_cones.append(internal_cone)
+
+    return internal_cones
+
+
 class MapPathPlanner(Node):
     spline_len: int = 3999
-    track: List[Cone] = []
 
     def __init__(self):
         super().__init__("map_path_translator_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(Track, "/fsds/testing_only/track", self.map_callback, 10)
+        self.create_subscription(ConeArrayWithCovariance, "/ground_truth/noisy_track", self.map_callback, 10)
 
         # publishers
         self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
@@ -81,14 +116,10 @@ class MapPathPlanner(Node):
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
-    def map_callback(self, track_msg: Track):
+    def map_callback(self, track_msg: ConeArrayWithCovariance):
         self.get_logger().debug("Received map")
 
-        # track cone list is taken as coords relative to the initial car position
-        if self.track == []:
-            self.track = track_msg.track
-        elif len(self.track) == len(track_msg.track):
-            self.track = track_msg.track
+        cones = cone_array_with_covariance_to_cone_list(track_msg)
 
         yellow_x: List[float] = []
         yellow_y: List[float] = []
@@ -97,7 +128,7 @@ class MapPathPlanner(Node):
         oranges: List[Cone] = []
 
         sim_track: List[ConeWithCovariance] = []
-        for cone in self.track:
+        for cone in cones:
             if cone.color == Cone.YELLOW:
                 yellow_x.append(cone.location.x)
                 yellow_y.append(cone.location.y)
@@ -114,9 +145,13 @@ class MapPathPlanner(Node):
             new_cone.covariance = [0.0, 0.0, 0.0, 0.0]
             sim_track.append(new_cone)
 
+        if len(yellow_x) != len(yellow_y) or len(blue_x) != len(blue_y):
+            self.get_logger().error("Cone coordinates must be balanced")
+            return
+
         # 4 orange cones: 2 blue side, 2 yellow side
         for cone in oranges:
-            if cone.location.x > 7:  # far pair of cones
+            if cone.location.x > 6:  # far pair of cones
                 if cone.location.y > 0:  # blue side
                     blue_x.insert(0, cone.location.x)
                     blue_y.insert(0, cone.location.y)
@@ -166,6 +201,9 @@ class MapPathPlanner(Node):
                 path_point.location.z = 0.0
                 path_point.turn_intensity = change_pc
                 path.append(path_point)
+
+        # Add the first path point to the end of the list to complete the loop
+        path.append(path[0])
 
         path_msg = PathStamped(path=path)
         path_msg.header.frame_id = "track"

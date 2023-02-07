@@ -42,6 +42,7 @@ class DisplayDetections(Node):
         self.create_subscription(AckermannDriveStamped, "/control/driving_command", self.steering_callback, 1)
 
         # path spline sub
+        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 1)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
         self.create_subscription(PathStamped, "/sim/path", self.path_callback, 1)
 
