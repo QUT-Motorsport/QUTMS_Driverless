@@ -118,7 +118,7 @@ def local_data_stream():
 def main(args=sys.argv[1:]):
     # Init config
     config: Config = utils.Config()
-    # config.update(args)
+    config.update(args)
 
     # Check if logs should be printed
     if not config.print_logs:
@@ -129,11 +129,11 @@ def main(args=sys.argv[1:]):
         config.logger.addHandler(stdout_handler)
     
     # Figures warning
-    if config.show_figures or config.create_figures:
+    if config.show_figures:
         print("WARNING: --show_figures flag specified")
         print(
-            "The QUTMS watermark will overlap the matplotlib interactive figures." +
-            " However, it will be formatted correctly on the figures saved in the output direcrory...\n"
+            "The QUTMS watermark will overlap matplotlib interactive figures." +
+            "\nHowever, it will be formatted correctly on the saved figures in the output direcrory...\n"
         )
 
     # Log time and arguments provided

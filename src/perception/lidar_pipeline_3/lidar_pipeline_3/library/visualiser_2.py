@@ -168,7 +168,7 @@ def plot_cones_3D_2(config, point_cloud, point_labels, cone_centers, name):
         )
     
     # Plot car model
-    if False:
+    if True:
         ax.add_collection(create_car_model(config))
     
     dist = const.CAR_PLOT_3D_RANGE
@@ -321,11 +321,11 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
 
 import os
 def create_car_model(config):
-    model_path = "/model"
+    model_path = const.MODEL_DIR
 
     material_file = None
     object_file = None
-    for item in os.listdir(const.WORKING_DIR + model_path):
+    for item in os.listdir(model_path):
         item_split = item.split(".")
         if item_split[-1] == "mtl":
             material_file = item
@@ -334,7 +334,7 @@ def create_car_model(config):
 
     mat_name = None
     materials = dict()
-    with open(const.WORKING_DIR + model_path + "/" + material_file) as file:
+    with open(model_path + "/" + material_file) as file:
         for line in file.readlines():
             values = line.split()
             if not values:
@@ -347,7 +347,7 @@ def create_car_model(config):
     colours = []
     vertices = []
     triangles = []
-    with open(const.WORKING_DIR + model_path + "/" + object_file) as file:
+    with open(model_path + "/" + object_file) as file:
         for line in file.readlines():
             values = line.split()
             if not values:
