@@ -141,6 +141,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     bool steering_ang_received = false;
     int32_t offset = 0;
     int settled_count = 0;
+    int32_t pre_offset_target = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
     double current_steering_angle = 0;    // Current Steering Angle (Angle Sensor)
@@ -208,6 +209,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         sdo_read(C5_E_ID, MODE_OF_OPERATION, 0x00, &id, (uint8_t *)&out);
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+
+        RCLCPP_DEBUG(this->get_logger(), "Requested angle: %.2f, \t Pre-offset %i", this->requested_steering_angle,
+                     this->pre_offset_target);
     }
 
     // Receive message from CAN
@@ -430,7 +434,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Check steering angle and desired steering angle to update steering
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-        this->requested_steering_angle = msg->drive.steering_angle - this->center_steering;  // -2deg offset
+        this->requested_steering_angle = msg->drive.steering_angle;
         // this->update_steering();
     }
 
@@ -446,8 +450,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     1000;                            // Calculate time elapsed
                 this->last_update = current_update;  // Set previous time to current time
 
-                double error = -this->current_steering_angle +
-                               this->center_steering;  // Grab error between steering angle and "zero"
+                // Grab error between steering angle and "zero"
+                double error = -(this->current_steering_angle - this->center_steering);
 
                 RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
@@ -484,10 +488,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 // turning left eqn: -83.95x - 398.92
                 // turning right eqn: -96.19x - 83.79
                 int32_t target;
-                if (this->requested_steering_angle > 0) {
+                if (this->requested_steering_angle > this->center_steering) {
                     target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
+                    this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
                 } else {
                     target = int32_t(-96.19 * this->requested_steering_angle - 83.79) - this->offset;
+                    this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
                 }
 
                 // int32_t target = this->requested_steering_angle;
