@@ -123,10 +123,18 @@ def main(args=sys.argv[1:]):
     # Check if logs should be printed
     if not config.print_logs:
         print("WARNING: --print_logs flag not specified")
-        print("Running lidar_perception without printing to terminal...")
+        print("Running lidar_perception without printing to terminal...\n")
     else:
         stdout_handler: StreamHandler = logging.StreamHandler(sys.stdout)
         config.logger.addHandler(stdout_handler)
+    
+    # Figures warning
+    if config.show_figures or config.create_figures:
+        print("WARNING: --show_figures flag specified")
+        print(
+            "The QUTMS watermark will overlap the matplotlib interactive figures." +
+            " However, it will be formatted correctly on the figures saved in the output direcrory...\n"
+        )
 
     # Log time and arguments provided
     config.logger.info(f"initialised at {config.datetimestamp}")
