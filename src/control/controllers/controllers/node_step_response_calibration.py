@@ -1,6 +1,8 @@
 import math
 import random
 import time
+from pathlib import Path
+from cv_bridge import CvBridge
 
 import cv2
 import matplotlib as mlb
@@ -10,6 +12,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
+from sensor_msgs.msg import Image
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import SteeringReading
@@ -42,7 +45,9 @@ class StepController(Node):
 
         self.create_subscription(SteeringReading, "/vehicle/steering_reading", self.sub_callback_st, 1)
         self.create_subscription(Int32, "/vehicle/encoder_reading", self.sub_callback_en, 1)
+        
         self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.model_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/model_calibration_image", 1)
 
         self.get_logger().info("---Step Controller Node Initalised---")
 
@@ -111,17 +116,21 @@ class StepController(Node):
             axs[1].set_xlim([-90, 5])
             axs[1].set_ylim([0, 8000])
 
-            fig.show()
+            img_dir = Path("./src/csv_data")
+            img_dir.mkdir(parents=True, exist_ok=True)
+            plt.savefig(img_dir / "step_response_calibration.png")
+            plt.close()
 
-            raise SystemExit
+            # load image as cv2 for ros image showing
+            img = cv2.imread(str(img_dir / "step_response_calibration.png"))
+            bridge = CvBridge()
+            img_msg = bridge.cv2_to_imgmsg(img, encoding="bgr8")
+            self.model_img_publisher.publish(img_msg)
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = StepController()
-    try:
-        rclpy.spin(node)
-    except SystemExit:
-        pass
+    rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
