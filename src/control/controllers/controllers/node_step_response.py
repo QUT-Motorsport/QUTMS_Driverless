@@ -18,7 +18,7 @@ class StepController(Node):
     pub_interval = 0.01  # s
 
     step = 0
-    max_ang = 80.0
+    max_ang = 50.0
     inc = 750
 
     def __init__(self):
