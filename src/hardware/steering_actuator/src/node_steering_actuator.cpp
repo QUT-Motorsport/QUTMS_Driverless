@@ -8,7 +8,7 @@
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
-#include "driverless_msgs/msg/wss_velocity.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
 
 using std::placeholders::_1;
@@ -326,8 +326,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     this->initial_enc = val;
                     this->initial_enc_saved = true;
                 }
-                driverless_msgs::msg::WSSVelocity enc_msg;
-                enc_msg.velocity = this->current_enc_revolutions;
+                std_msgs::msg::int32 enc_msg = this->current_enc_revolutions;
                 this->encoder_pub->publish(enc_msg);
             }
             // message received for offset position
@@ -563,7 +562,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
         // Create publisher to topic "encoder_reading"
-        this->encoder_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("encoder_reading", 10);
+        this->encoder_pub = this->create_publisher<std_msgs::msgs:int32>("/vehicle/encoder_reading", 10);
 
         // Create subscriber to topic "as_status"
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
