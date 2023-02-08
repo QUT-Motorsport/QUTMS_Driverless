@@ -14,7 +14,7 @@ from driverless_common.shutdown_node import ShutdownNode
 class StepController(Node):
     target: float = -7500.0
 
-    change_interval = 7  # s
+    change_interval = 5  # s
     pub_interval = 0.01  # s
 
     step = 0
@@ -38,16 +38,19 @@ class StepController(Node):
         self.drive_publisher.publish(control_msg)
 
     def change_callback(self):
-        # if self.step == 0:
-        #     self.target = 0.0
-        #     self.step = 1
-        # elif self.step == 1:
-        #     self.target = self.max_ang
-        #     self.step = 2
+        if self.step == 0:
+            self.target = 0.0
+            self.step = 1
+        elif self.step == 1:
+            self.target = self.max_ang
+            self.step = 2
+        elif self.step == 2:
+            self.target = -self.max_ang
+            self.step = 0
 
-        if self.target < 7500:
-            self.target += self.inc
-            print(self.target)
+        # if self.target < 7500:
+        #     self.target += self.inc
+        #     print(self.target)
 
 
 def main(args=None):
