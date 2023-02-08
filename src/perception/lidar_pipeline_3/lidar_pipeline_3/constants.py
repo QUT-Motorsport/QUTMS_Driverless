@@ -5,6 +5,9 @@ import pathlib
 # Config Parameters
 WORKING_DIR: str = str(pathlib.Path(__file__).parent.resolve())
 OUTPUT_DIR: str = WORKING_DIR + "/output"
+LIBRARY_DIR: str = WORKING_DIR + "/library"
+RESOURCES_DIR: str = LIBRARY_DIR + "/resources"
+MODEL_DIR: str = RESOURCES_DIR + "/models"
 FIGURES_DIR: str = "/figures"
 VIDEOS_DIR: str = "videos"
 
