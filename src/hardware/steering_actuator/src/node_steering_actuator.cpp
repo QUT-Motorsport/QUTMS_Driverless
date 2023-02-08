@@ -430,7 +430,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Check steering angle and desired steering angle to update steering
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-        this->requested_steering_angle = cappedAngle - this->center_steering;  // -2deg offset
+        this->requested_steering_angle = msg->drive.steering_angle - this->center_steering;  // -2deg offset
         // this->update_steering();
     }
 
@@ -446,7 +446,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     1000;                            // Calculate time elapsed
                 this->last_update = current_update;  // Set previous time to current time
 
-                double error = -this->current_steering_angle;  // Grab error between steering angle and "zero"
+                double error = -this->current_steering_angle +
+                               this->center_steering;  // Grab error between steering angle and "zero"
 
                 RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
@@ -481,15 +482,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             // we have set a home offset
             else if (this->centred) {
                 // turning left eqn: -83.95x - 398.92
-                // turning right eqn: -95.68x - 71.51
-                // int32_t target;
-                // if (this->requested_steering_angle > 0) {
-                //     target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
-                // } else {
-                //     target = int32_t(-95.68 * this->requested_steering_angle - 71.51) - this->offset;
-                // }
+                // turning right eqn: -96.19x - 83.79
+                int32_t target;
+                if (this->requested_steering_angle > 0) {
+                    target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
+                } else {
+                    target = int32_t(-96.19 * this->requested_steering_angle - 83.79) - this->offset;
+                }
 
-                int32_t target = this->requested_steering_angle;
+                // int32_t target = this->requested_steering_angle;
 
                 target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
                 this->target_position(target);
