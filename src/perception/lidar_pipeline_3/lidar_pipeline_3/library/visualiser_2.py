@@ -3,18 +3,13 @@ from PIL import Image
 from matplotlib import font_manager
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
 from .. import constants as const
 from ..constants import RGBA, Colour
-#import constants as const
-#from constants import RGBA, Colour
-
-# import constants as const
-# from constants import RGBA, Colour
 
 font_dirs = [const.WORKING_DIR + "/library/resources/fonts"]
-#font_dirs = ["C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/fonts"]
 font_files = font_manager.findSystemFonts(fontpaths=font_dirs)
 
 for font_file in font_files:
@@ -27,14 +22,14 @@ def animate_figure():
     raise NotImplementedError
 
 
-def init_plot_2D(title, xlabel, ylabel):
+def init_plot_2D(title, x_label, y_label):
     # Initialise figure
     fig, ax = plt.subplots(facecolor=RGBA.MS_BLUE.value)
 
     # Strings
     ax.set_title(title, color=RGBA.MS_ORANGE.value, fontweight="bold", fontsize=14)
-    ax.set_xlabel(xlabel, fontweight="bold")
-    ax.set_ylabel(ylabel, fontweight="bold")
+    ax.set_xlabel(x_label, fontweight="bold")
+    ax.set_ylabel(y_label, fontweight="bold")
 
     # Colours
     ax.set_facecolor(RGBA.DARK_GREY.value)
@@ -80,15 +75,21 @@ def init_plot_3D(title, xlabel, ylabel, zlabel):
     ax.set_aspect("equal")
 
     # Set view anlge
-    ax.view_init(elev=34, azim=202)
+    ax.view_init(elev=30, azim=202)
 
     return fig, ax
 
 
+def add_colourbar(fig, plot, title, title_c, tick_c):
+    c_bar = fig.colorbar(plot)
+    c_bar.set_label(title, color=title_c, fontweight="bold", labelpad=10)
+    c_bar.ax.yaxis.set_tick_params(color=tick_c)
+    plt.setp(plt.getp(c_bar.ax.axes, "yticklabels"), color=tick_c)
+
+
 def add_logo(fig, dpi, small):
-    return
     if small:
-        logo_size = 0.1
+        logo_size = 0.085
     else:
         logo_size = 0.125
 
@@ -97,7 +98,7 @@ def add_logo(fig, dpi, small):
     #im = Image.open("C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/qutms_logo_white.png")
     im_width, im_height = im.size
 
-    fig_width, fig_height = fig.get_size_inches() * dpi  # fig.dpi
+    fig_width, fig_height = fig.get_size_inches() * dpi # fig.dpi
     new_height = int(fig_height * logo_size)
     im = im.resize((int(new_height * (im_width / im_height)), new_height))
     fig.figimage(im, 10, 10, alpha=0.75, origin="upper", zorder=3)
@@ -111,6 +112,99 @@ def calibrate_axis(ax, x=None, y=None, z=None):
         max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
     ax.axes.set_xlim(-max_limit, max_limit)
     ax.axes.set_ylim(-max_limit, max_limit)
+
+
+def plot_point_cloud_2D(config, point_cloud, subtitle, name):
+    # Create Figure
+    fig, ax = init_plot_2D(f"Point Cloud {subtitle}", "X", "Y")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_cloud["intensity"] / 255,
+        cmap=plt.cm.gist_rainbow,
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        vmin=0.0,
+        vmax=1.0,
+    )
+
+    calibrate_axis(ax)
+    add_colourbar(fig, plot, "Point Intensity", RGBA.MS_ORANGE.value, RGBA.WHITE.value)
+
+    ax.text(.01, .99, f'Points: {point_cloud.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+
+    # Save Figure
+    add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_cones_3D_2(config, point_cloud, point_labels, cone_centers, name):
+    # Create Figure
+    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=1,
+    )
+
+    # Plot rings around cones
+    theta = np.linspace(0, 2 * np.pi, 201)
+    x = const.CONE_DIAM * np.cos(theta)
+    y = const.CONE_DIAM * np.sin(theta)
+    for center in cone_centers:
+        ax.plot(
+            x + center[0],
+            y + center[1],
+            -const.LIDAR_HEIGHT_ABOVE_GROUND,
+            c=RGBA.WHITE.value,
+        )
+    
+    # Plot car model
+    if False:
+        ax.add_collection(create_car_model(config))
+    
+    dist = const.CAR_PLOT_3D_RANGE
+    calibrate_axis(ax, [-dist, dist], [-dist, dist], [-dist, dist])
+
+    # Save Figure
+    add_logo(fig, dpi=225, small=False)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_cones_3D(config, point_cloud, point_labels, cones, name):
+    # Create Figure
+    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+
+    ax.scatter(cones[:, 0], cones[:, 1], cones[:, 2], c=RGBA.WHITE.value, marker="o", zorder=3)
+    
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        zorder=1,
+    )
+
+    calibrate_axis(ax, point_cloud["x"], point_cloud["y"], point_cloud["z"])
+
+    # Save Figure
+    add_logo(fig, dpi=225, small=False)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+    # Create Animation
+    if config.animate_figures:
+        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
 
 
 def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, name):
@@ -142,33 +236,6 @@ def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, 
     # Save Figure
     add_logo(fig, dpi=225, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
-
-
-def plot_cones_3D(config, point_cloud, point_labels, cones, name):
-    # Create Figure
-    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
-
-    ax.scatter(
-        point_cloud["x"],
-        point_cloud["y"],
-        point_cloud["z"],
-        c=point_labels,
-        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
-        marker="s",
-        s=(72.0 / fig.dpi) ** 2,
-    )
-
-    ax.scatter(cones[:, 0], cones[:, 1], cones[:, 2], c=RGBA.WHITE.value, marker="o")
-
-    calibrate_axis(ax, point_cloud["x"], point_cloud["y"], point_cloud["z"])
-
-    # Save Figure
-    add_logo(fig, dpi=225, small=False)
-    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
-
-    # Create Animation
-    if config.animate_figures:
-        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
 
 
 def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, name):
@@ -250,3 +317,75 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
     # Save Figure
     add_logo(fig, dpi=225*2, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225*2)
+
+
+import os
+def create_car_model(config):
+    model_path = "/model"
+
+    material_file = None
+    object_file = None
+    for item in os.listdir(const.WORKING_DIR + model_path):
+        item_split = item.split(".")
+        if item_split[-1] == "mtl":
+            material_file = item
+        elif item_split[-1] == "obj":
+            object_file = item
+
+    mat_name = None
+    materials = dict()
+    with open(const.WORKING_DIR + model_path + "/" + material_file) as file:
+        for line in file.readlines():
+            values = line.split()
+            if not values:
+                continue
+            if values[0] == "newmtl":
+                mat_name = values[1]
+            if values[0] == "Kd":
+                materials[mat_name] = tuple([float(values[1]), float(values[2]), float(values[3])])
+
+    colours = []
+    vertices = []
+    triangles = []
+    with open(const.WORKING_DIR + model_path + "/" + object_file) as file:
+        for line in file.readlines():
+            values = line.split()
+            if not values:
+                continue
+            if values[0] == "usemtl":
+                mat_name = values[1]
+            elif values[0] == "v":
+                vertices.append(values[1:4])
+            elif values[0] == "f":
+                triangles.append(values[1:4])
+                colours.append(materials[mat_name])
+
+    np_vertices = np.array(vertices, dtype=np.float32)
+    np_triangles = np.array(triangles, dtype=np.int32) - 1
+
+    # Convert model from inches to metres
+    INCH_TO_M = 0.0254
+    x = np_vertices[:, 0] * INCH_TO_M
+    y = np_vertices[:, 2] * INCH_TO_M
+    z = np_vertices[:, 1] * INCH_TO_M
+
+    # Align bottom of model's wheels with the lowest point in point cloud
+    min_z = np.amin(z)
+    point_min_z = -const.LIDAR_HEIGHT_ABOVE_GROUND
+    z_diff = min_z - point_min_z
+    z = z - z_diff
+
+    # Align the front of the model (LiDAR camera location) with origin of point cloud (x=0)
+    x_max = np.amax(x)
+    x = x - x_max
+
+    # Model vertices and faces
+    triangle_vertices = np.array(
+        [
+            np.array([[x[T[0]], y[T[0]], z[T[0]]], [x[T[1]], y[T[1]], z[T[1]]], [x[T[2]], y[T[2]], z[T[2]]]])
+            for T in np_triangles
+        ]
+    )
+
+    collection = Poly3DCollection(triangle_vertices, facecolors=colours, edgecolors=None)
+    return collection
