@@ -144,11 +144,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int32_t pre_offset_target = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
-    double current_steering_angle = 0;    // Current Steering Angle (Angle Sensor)
-    double requested_steering_angle = 0;  // Desired Steering ANgle (Guidance Logic)
-    int32_t current_enc_revolutions = 0;  // Current Encoder Revolutions (Stepper encoder)
-    bool shutdown_requested = false;      // Shutdown logic
-    float center_steering = -2.0;
+    double current_steering_angle = 0;  // Current Steering Angle (Angle Sensor)
+    double center_steering = -2.0;
+    double requested_steering_angle = center_steering;  // Desired Steering ANgle (Guidance Logic)
+    int32_t current_enc_revolutions = 0;                // Current Encoder Revolutions (Stepper encoder)
+    bool shutdown_requested = false;                    // Shutdown logic
 
     float Kp, Ki, Kd;          // PID Gain
     float integral_error = 0;  // Integral Error
@@ -210,8 +210,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         sdo_read(C5_E_ID, MODE_OF_OPERATION, 0x00, &id, (uint8_t *)&out);
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
-        RCLCPP_DEBUG(this->get_logger(), "Requested angle: %.2f, \t Pre-offset %i", this->requested_steering_angle,
-                     this->pre_offset_target);
+        RCLCPP_INFO(this->get_logger(), "Requested angle: %.2f, \t Pre-offset %i", this->requested_steering_angle,
+                    this->pre_offset_target);
     }
 
     // Receive message from CAN
@@ -487,16 +487,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             else if (this->centred) {
                 // turning left eqn: -83.95x - 398.92
                 // turning right eqn: -96.19x - 83.79
-                int32_t target;
-                if (this->requested_steering_angle > this->center_steering) {
-                    target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
-                    this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
-                } else {
-                    target = int32_t(-96.19 * this->requested_steering_angle - 83.79) - this->offset;
-                    this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
-                }
+                // int32_t target;
+                // if (this->requested_steering_angle > this->center_steering) {
+                //     target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
+                //     this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
+                // } else {
+                //     target = int32_t(-96.19 * this->requested_steering_angle - 83.79) - this->offset;
+                //     this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
+                // }
 
-                // int32_t target = this->requested_steering_angle;
+                int32_t target = this->requested_steering_angle;
 
                 target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
                 this->target_position(target);

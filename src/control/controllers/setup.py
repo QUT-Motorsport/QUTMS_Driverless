@@ -29,6 +29,7 @@ setup(
             "simple_straight_control = controllers.node_simple_straight_control:main",
             "straight_control = controllers.node_straight_control:main",
             "step_response = controllers.node_step_response:main",
+            "step_response_calibration = controllers.node_step_response_calibration:main",
         ],
     },
 )
