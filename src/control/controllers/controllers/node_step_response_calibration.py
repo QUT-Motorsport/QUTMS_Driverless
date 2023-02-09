@@ -125,7 +125,9 @@ class StepController(Node):
             img = cv2.imread(str(img_dir / "step_response_calibration.png"))
             bridge = CvBridge()
             img_msg = bridge.cv2_to_imgmsg(img, encoding="bgr8")
-            self.model_img_publisher.publish(img_msg)
+            while True:
+                self.model_img_publisher.publish(img_msg)
+                time.sleep(5)
 
 
 def main(args=None):
