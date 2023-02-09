@@ -16,8 +16,6 @@ from rclpy.subscriber import Subscriber
 # Pseudo-code for subscribing to a ROS topic and bulding
 
 
-
-
 data = pd.read_csv('/Users/stephenwardle/Desktop/DataAnalysis/datasets/calibrate_data.csv') # Placeholder for testing
 data = data.loc[:, ["Angle", "Tic"]]
 data = data.to_numpy()
