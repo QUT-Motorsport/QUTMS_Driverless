@@ -19,7 +19,7 @@ class CamSimulator(Node):
     start: float = 0.0
 
     def __init__(self):
-        super().__init__("cam_simulator")
+        super().__init__("zed_translator_node")
 
         # sync sub to depth and camera
         colour_sub = message_filters.Subscriber(self, Image, "/fsds/image_rect_color/image_color")

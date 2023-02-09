@@ -14,6 +14,7 @@ from rclpy.publisher import Publisher
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped, WSSVelocity
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
+from driverless_common.shutdown_node import ShutdownNode
 from py_slam.cone_props import ConeProps
 
 from typing import List, Optional
@@ -46,20 +47,20 @@ class PySlam(Node):
     motor_vels: List[float] = [0.0, 0.0, 0.0, 0.0]
 
     def __init__(self):
-        super().__init__("py_slam")
+        super().__init__("slam_node")
 
         imu_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
-        wss_sub = message_filters.Subscriber(self, WSSVelocity, "/vehicle_wss")
+        wss_sub = message_filters.Subscriber(self, WSSVelocity, "/vehicle/wheel_speed")
         vel_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[imu_sub, wss_sub], queue_size=10, slop=0.1)
         vel_synchronizer.registerCallback(self.velocity_callback)
 
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
-        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
+        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
 
         # Initialize the transform broadcaster

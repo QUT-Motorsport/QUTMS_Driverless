@@ -140,7 +140,7 @@ class VisionProcessor(Node):
         get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
         enable_cv_filters: bool = False,
     ):
-        super().__init__("vision_processor")
+        super().__init__("vision_processor_node")
 
         # subscribers
         colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")

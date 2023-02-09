@@ -70,13 +70,13 @@ class MapPathPlanner(Node):
     track: List[Cone] = []
 
     def __init__(self):
-        super().__init__("map_path_planner")
+        super().__init__("map_path_translator_node")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(Track, "/fsds/testing_only/track", self.map_callback, 10)
 
         # publishers
-        self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/track", 1)
+        self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/sim/path", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")

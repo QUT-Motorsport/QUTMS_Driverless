@@ -14,6 +14,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, Reset
 
 from driverless_common.draw import draw_markers, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Optional, Tuple
 
@@ -37,7 +38,7 @@ class StraightControl(Node):
     r2d: bool = False
 
     def __init__(self):
-        super().__init__("straight_control")
+        super().__init__("straight_control_node")
 
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
@@ -48,11 +49,11 @@ class StraightControl(Node):
             self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
             self.target_cone_count = 2
         else:
-            self.create_subscription(ConeDetectionStamped, "/slam/local", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
-        self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.reset_sub = self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
         self.get_logger().info("---Awaing Ready to Drive command *OVERRIDDEN*---")

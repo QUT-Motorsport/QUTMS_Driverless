@@ -12,6 +12,8 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
+from driverless_common.shutdown_node import ShutdownNode
+
 from typing import List, Tuple
 
 LOOKAHEAD = 6
@@ -100,14 +102,14 @@ class PurePursuit(Node):
     Kp_brake: float = 0.0
 
     def __init__(self):
-        super().__init__("pure_pursuit")
+        super().__init__("pure_pursuit_node")
 
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
 

@@ -69,15 +69,15 @@ class CanBus : public rclcpp::Node {
     rclcpp::TimerBase::SharedPtr timer_;
 
    public:
-    CanBus() : Node("canbus") {
+    CanBus() : Node("canbus_translator_node") {
         // Can2Ethernet parameters
         this->declare_parameter<std::string>("ip", "");
         this->declare_parameter<int>("port", 0);
 
         this->subscription_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "canbus_carbound", 10, std::bind(&CanBus::canmsg_callback, this, _1));
+            "/can/canbus_carbound", 10, std::bind(&CanBus::canmsg_callback, this, _1));
 
-        this->publisher_ = this->create_publisher<driverless_msgs::msg::Can>("canbus_rosbound", 10);
+        this->publisher_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
 
         std::string _ip;
         int _port;

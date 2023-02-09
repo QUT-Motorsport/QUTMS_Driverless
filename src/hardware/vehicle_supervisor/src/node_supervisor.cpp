@@ -519,7 +519,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    ASSupervisor() : Node("vehicle_supervisor") {
+    ASSupervisor() : Node("vehicle_supervisor_node") {
         // Setup inital states
         this->ros_state.state = driverless_msgs::msg::State::START;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
@@ -527,30 +527,30 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->reset_dataLogger();
 
         // CAN
-        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("canbus_carbound", 10);
+        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "canbus_rosbound", 10, std::bind(&ASSupervisor::canbus_callback, this, _1));
+            "/can/canbus_rosbound", 10, std::bind(&ASSupervisor::canbus_callback, this, _1));
 
         // State
-        this->state_pub = this->create_publisher<driverless_msgs::msg::State>("as_status", 10);
+        this->state_pub = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
 
         // Reset
-        this->reset_pub = this->create_publisher<driverless_msgs::msg::Reset>("reset", 10);
+        this->reset_pub = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
         // RES
-        this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("res_status", 10);
+        this->res_pub = this->create_publisher<driverless_msgs::msg::RES>("/vehicle/res_status", 10);
 
         // Motor RPM
-        this->motorRPM_pub = this->create_publisher<driverless_msgs::msg::MotorRPM>("motor_rpm", 10);
-        this->wss_vel_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("vehicle_wss", 10);
+        this->motorRPM_pub = this->create_publisher<driverless_msgs::msg::MotorRPM>("/vehicle/motor_rpm", 10);
+        this->wss_vel_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("/vehicle/wheel_speed", 10);
 
         // Steering
         this->steering_reading_pub =
-            this->create_publisher<driverless_msgs::msg::SteeringReading>("steering_reading", 10);
+            this->create_publisher<driverless_msgs::msg::SteeringReading>("/vehicle/steering_reading", 10);
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "accel_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+            "/control/accel_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
@@ -565,13 +565,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                                                          std::bind(&ASSupervisor::dataLogger_callback, this));
 
         this->logging_drivingDynamics1_pub =
-            this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("dataLogger/drivingDynamics1", 10);
+            this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
         this->logging_systemStatus_pub =
-            this->create_publisher<driverless_msgs::msg::SystemStatus>("dataLogger/systemStatus", 10);
+            this->create_publisher<driverless_msgs::msg::SystemStatus>("/data_logger/systemStatus", 10);
 
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
-            "shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+            "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
     }
 };
 

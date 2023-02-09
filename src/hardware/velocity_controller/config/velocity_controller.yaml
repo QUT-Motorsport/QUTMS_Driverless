@@ -1,4 +1,4 @@
-velocity_controller:
+velocity_controller_node:
   ros__parameters:
       Kp_vel: 1.0
       Ki_vel: 0.0

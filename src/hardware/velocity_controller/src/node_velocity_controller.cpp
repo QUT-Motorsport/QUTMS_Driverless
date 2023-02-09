@@ -118,7 +118,7 @@ class Velocity_Controller : public rclcpp::Node {
     }
 
    public:
-    Velocity_Controller() : Node("velocity_controller") {
+    Velocity_Controller() : Node("velocity_controller_node") {
         // PID controller parameters
         this->declare_parameter<float>("Kp_vel", 0);
         this->declare_parameter<float>("Ki_vel", 0);
@@ -133,18 +133,19 @@ class Velocity_Controller : public rclcpp::Node {
 
         // Ackermann
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/driving_command", 10, std::bind(&Velocity_Controller::ackermann_callback, this, _1));
+            "/control/driving_command", 10, std::bind(&Velocity_Controller::ackermann_callback, this, _1));
 
         // Velocity updates
         this->motorRPM_sub = this->create_subscription<driverless_msgs::msg::MotorRPM>(
-            "/motor_rpm", 10, std::bind(&Velocity_Controller::rpm_callback, this, _1));
+            "/vehicle/motor_rpm", 10, std::bind(&Velocity_Controller::rpm_callback, this, _1));
 
         // Control loop -> 10ms so runs at double speed heartbeats are sent at
         this->controller_timer = this->create_wall_timer(std::chrono::milliseconds(10),
                                                          std::bind(&Velocity_Controller::controller_callback, this));
 
         // Acceleration command publisher
-        this->accel_pub = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("accel_command", 10);
+        this->accel_pub =
+            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
 
         // Param callback
 

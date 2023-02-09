@@ -16,7 +16,7 @@ WHEEL_DIAMETER = 0.4064
 
 class SimToOdom(Node):
     def __init__(self):
-        super().__init__("sim_to_odom")
+        super().__init__("odom_translator_node")
 
         # subscriber to odom
         self.create_subscription(Odometry, "/fsds/testing_only/odom", self.odom_callback, 1)
@@ -27,8 +27,8 @@ class SimToOdom(Node):
             PoseWithCovarianceStamped, "zed2i/zed_node/pose_with_covariance", 10
         )
         self.vel_publisher: Publisher = self.create_publisher(TwistStamped, "/imu/velocity", 10)
-        self.rpm_publisher: Publisher = self.create_publisher(MotorRPM, "motor_rpm", 10)
-        self.wss_vel_publisher: Publisher = self.create_publisher(WSSVelocity, "vehicle_wss", 10)
+        self.rpm_publisher: Publisher = self.create_publisher(MotorRPM, "/vehicle/motor_rpm", 10)
+        self.wss_vel_publisher: Publisher = self.create_publisher(WSSVelocity, "/vehicle/wheel_speed", 10)
 
         self.get_logger().info("---Sim odometry translator initialised---")
 

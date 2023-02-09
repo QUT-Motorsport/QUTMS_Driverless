@@ -1,6 +1,7 @@
 import numpy as np
 
 import rclpy
+from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -20,20 +21,20 @@ LEFT_CONE_COLOUR = Cone.BLUE
 RIGHT_CONE_COLOUR = Cone.YELLOW
 
 
-class SimpleStraightController(ShutdownNode):
+class SimpleStraightController(Node):
     Kp_ang: float = 2.0
     target_accel: float = 0.5
     x_roi = 3  # m +- horizontal (left right)
     y_roi = 6  # m +  forward
 
     def __init__(self):
-        super().__init__("simple_straight_controller")
-        # self.create_subscription(ConeDetectionStamped, "vision/cone_detection2", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.callback, 1)
-        # self.create_subscription(ConeDetectionStamped, "slam/local", self.callback, 1)
+        super().__init__("simple_straight_controller_node")
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
         self.get_logger().info("---Simple Straight Controller Node Initalised---")
 

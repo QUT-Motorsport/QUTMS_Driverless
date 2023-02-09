@@ -19,11 +19,11 @@ class ControlToSim(Node):
     r2d: bool = False
 
     def __init__(self):
-        super().__init__("control_to_sim")
+        super().__init__("control_translator_node")
 
         # subscribers
         vel_sub = message_filters.Subscriber(self, Odometry, "/fsds/testing_only/odom")
-        drive_sub = message_filters.Subscriber(self, AckermannDriveStamped, "/driving_command")
+        drive_sub = message_filters.Subscriber(self, AckermannDriveStamped, "/control/driving_command")
         synchronizer = message_filters.ApproximateTimeSynchronizer(
             fs=[drive_sub, vel_sub],
             queue_size=20,

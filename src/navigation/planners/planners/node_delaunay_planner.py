@@ -19,6 +19,7 @@ from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker
 
 from driverless_common.marker import delaunay_marker_msg
+from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
@@ -146,10 +147,10 @@ class TrackPlanner(Node):
     ax = fig.add_subplot()
 
     def __init__(self):
-        super().__init__("track_planner")
+        super().__init__("global_planner_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)

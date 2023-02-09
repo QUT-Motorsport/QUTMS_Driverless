@@ -21,10 +21,12 @@ steering_angle: float = 0.0
 
 class KeyboardControllerNode(Node):
     def __init__(self):
-        super().__init__("keyboard_controller")
+        super().__init__("keyboard_controller_node")
 
-        self.drive_command_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
-        self.reset_pub: Publisher = self.create_publisher(Reset, "/reset", 1)
+        self.drive_command_publisher: Publisher = self.create_publisher(
+            AckermannDriveStamped, "/control/driving_command", 1
+        )
+        self.reset_pub: Publisher = self.create_publisher(Reset, "/system/reset", 1)
 
     def publish_drive_command(self, speed: float, steering_angle: float):
         msg = AckermannDriveStamped()

@@ -11,10 +11,10 @@ class InspectionMission(ShutdownNode):
     started: bool = False
 
     def __init__(self):
-        super().__init__("inspection_mission")
+        super().__init__("inspection_logic_node")
         self.timer = self.create_timer(30, self.timer_callback)
-        self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "shutdown", 1)
-        self.reset_sub = self.create_subscription(Reset, "reset", self.reset_callback, 10)
+        self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "/system/shutdown", 1)
+        self.reset_sub = self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         self.get_logger().info("---Inspection mission initialised---")
 

@@ -8,6 +8,7 @@ from scipy.spatial import distance
 
 from cv_bridge import CvBridge
 import rclpy
+from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -120,7 +121,7 @@ def get_RVWP(path: np.ndarray, lookahead: float) -> np.ndarray:
     return path[idx]
 
 
-class VectorReactiveController(ShutdownNode):
+class VectorReactiveController(Node):
     Kp_ang: float
     target_vel: float
     target_accel: float
@@ -129,7 +130,7 @@ class VectorReactiveController(ShutdownNode):
     ebs_test: bool
 
     def __init__(self):
-        super().__init__("vector_reactive_controller")
+        super().__init__("reactive_vector_controller_node")
 
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
@@ -141,20 +142,20 @@ class VectorReactiveController(ShutdownNode):
             self.in_dist = 2.0
             self.pub_accel = True
 
-            # self.create_subscription(ConeDetectionStamped, "vision/cone_detection2", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = -2.0
             self.target_vel = 2.0  # m/s
             self.target_accel = 0.0
             self.in_dist = 2.0
             self.pub_accel = False
-            self.create_subscription(ConeDetectionStamped, "slam/local", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
-        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "driving_command", 1)
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "accel_command", 1)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
-        self.vector_publisher: Publisher = self.create_publisher(Image, "debug_imgs/vector_reactive_img", 1)
+        self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
 

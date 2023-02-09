@@ -1,4 +1,0 @@
-canbus:
-  ros__parameters:
-      drive_kw_max: 15.00
-      regen_kw_max: 15.00

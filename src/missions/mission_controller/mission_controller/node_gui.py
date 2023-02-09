@@ -10,7 +10,7 @@ from .mission_constants import MissionType
 
 class GUINode(Node):
     def __init__(self):
-        super().__init__("gui")
+        super().__init__("mission_control_gui_node")
 
         self.client = self.create_client(SelectMission, "select_mission")
         while not self.client.wait_for_service(timeout_sec=1.0):

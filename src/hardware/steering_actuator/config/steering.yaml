@@ -1,11 +1,11 @@
-# steering:
+# steering_controller_node:
 #   ros__parameters:
 #     d_velocity: 1000
 #     d_acceleration: 10000
 #     d_limits: 6000
 #     d_current: 5000
 
-steering:
+steering_controller_node:
   ros__parameters:
     velocity: 1500
     acceleration: 500

@@ -32,7 +32,7 @@ def cone_msg(x: float, y: float) -> Cone:
 
 class ConeDetectionNode(Node):
     def __init__(self, _config: Config) -> None:
-        super().__init__("cone_detection")
+        super().__init__("lidar_processor_node")
 
         self.iteration: int = 0
         self.average_runtime: float = 0
@@ -41,7 +41,7 @@ class ConeDetectionNode(Node):
         self.pc_subscription: Subscription = self.create_subscription(
             PointCloud2, self.config.pc_node, self.pc_callback, self.config.pcl_memory
         )
-        self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "lidar/cone_detection", 1)
+        self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 
         self.config.logger.info("Waiting for point cloud data...")
 

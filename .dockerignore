@@ -2,3 +2,4 @@
 !src/
 !docker/
 !installation/galactic_environment.yml
+!csv_data/
