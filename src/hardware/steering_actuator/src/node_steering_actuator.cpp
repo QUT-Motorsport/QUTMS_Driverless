@@ -8,8 +8,8 @@
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
-#include "std_msgs/msg/int32.hpp"
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
+#include "std_msgs/msg/int32.hpp"
 
 using std::placeholders::_1;
 
@@ -127,7 +127,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Creates publisher for Can
     // Creates subscribers for AckermannDriveStamped, State, SteeringReading, and Can
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
-    rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr encoder_pub;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
@@ -326,7 +326,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     this->initial_enc = val;
                     this->initial_enc_saved = true;
                 }
-                std_msgs::msg::int32 enc_msg = this->current_enc_revolutions;
+                std_msgs::msg::Int32 enc_msg;
+                enc_msg.data = this->current_enc_revolutions;
                 this->encoder_pub->publish(enc_msg);
             }
             // message received for offset position
@@ -562,15 +563,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
         // Create publisher to topic "encoder_reading"
-        this->encoder_pub = this->create_publisher<std_msgs::msgs:int32>("/vehicle/encoder_reading", 10);
+        this->encoder_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", 10);
 
         // Create subscriber to topic "as_status"
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "/system/as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
-
-        // Create subscriber to topic "steering_reading"
-        this->steering_reading_sub = this->create_subscription<driverless_msgs::msg::SteeringReading>(
-            "/vehicle/steering_reading", 10, std::bind(&SteeringActuator::steering_reading_callback, this, _1));
 
         // Create subscriber to topic "driving_command"
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
