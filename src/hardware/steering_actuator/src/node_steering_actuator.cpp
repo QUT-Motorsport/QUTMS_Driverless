@@ -487,16 +487,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             else if (this->centred) {
                 // turning left eqn: -83.95x - 398.92
                 // turning right eqn: -96.19x - 83.79
-                // int32_t target;
-                // if (this->requested_steering_angle > this->center_steering) {
-                //     target = int32_t(-83.95 * this->requested_steering_angle - 398.92) - this->offset;
-                //     this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
-                // } else {
-                //     target = int32_t(-96.19 * this->requested_steering_angle - 83.79) - this->offset;
-                //     this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
-                // }
+                int32_t target;
+                if (this->requested_steering_angle > this->center_steering) {
+                    target = int32_t(-86.45 * this->requested_steering_angle - 398.92) - this->offset;
+                    // this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
+                } else {
+                    target = int32_t(-94.58 * this->requested_steering_angle - 83.79) - this->offset;
+                    // this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
+                }
 
-                int32_t target = this->requested_steering_angle;
+                // int32_t target = this->requested_steering_angle;
 
                 target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
                 this->target_position(target);

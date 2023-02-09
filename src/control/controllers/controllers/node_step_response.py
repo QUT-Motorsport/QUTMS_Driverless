@@ -12,7 +12,7 @@ from driverless_common.shutdown_node import ShutdownNode
 
 
 class StepController(Node):
-    target: float = -7500.0
+    target: float = 0.0
 
     change_interval = 5  # s
     pub_interval = 0.01  # s
