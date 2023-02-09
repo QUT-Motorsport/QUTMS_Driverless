@@ -28,7 +28,7 @@ class StepController(Node):
         self.create_timer(self.change_interval, self.change_callback)
         self.create_timer(self.pub_interval, self.pub_callback)
 
-        self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/driving_command", 1)
+        self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
         self.get_logger().info("---Step Controller Node Initalised---")
 
