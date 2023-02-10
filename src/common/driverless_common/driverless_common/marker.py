@@ -172,7 +172,7 @@ def path_marker_msg(
     path_colours: list,
 ) -> Marker:
     return Marker(
-        header=Header(frame_id="base_footprint"),
+        header=Header(frame_id="track"),
         ns="current_path",
         id=0,
         type=Marker.LINE_STRIP,
