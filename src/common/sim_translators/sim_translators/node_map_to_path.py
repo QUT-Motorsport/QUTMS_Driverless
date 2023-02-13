@@ -101,26 +101,57 @@ def cone_array_with_covariance_to_cone_list(eufs_cones: ConeArrayWithCovariance)
     return internal_cones
 
 
-# Calculate the euclidian distance in n-space of the route r traversing cities c, ending at the path start.
-PATH_DISTANCE = lambda r,c: np.sum([np.linalg.norm(c[r[p]]-c[r[p-1]]) for p in range(len(r))])
-# Reverse the order of all elements from element i to element k in array r.
-TWO_OPT_SWAP = lambda r,i,k: np.concatenate((r[0:i],r[k:-len(r)+i-1:-1],r[k+1:len(r)]))
+def sort_cones(cones, start_index=None, end_index=None):
+    """
+    This is a function that calculates the nearest-neighbor path between a start and end index for a list of cones.
+    The cones are represented as 2D points in the form of (x, y).
 
-def two_opt(cities,improvement_threshold): # 2-opt Algorithm adapted from https://en.wikipedia.org/wiki/2-opt
-    route = np.arange(cities.shape[0]) # Make an array of row numbers corresponding to cities.
-    improvement_factor = 1 # Initialize the improvement factor.
-    best_distance = PATH_DISTANCE(route,cities) # Calculate the distance of the initial path.
-    while improvement_factor > improvement_threshold: # If the route is still improving, keep going!
-        distance_to_beat = best_distance # Record the distance at the beginning of the loop.
-        for swap_first in range(1,len(route)-2): # From each city except the first and last,
-            for swap_last in range(swap_first+1,len(route)): # to each of the cities following,
-                new_route = TWO_OPT_SWAP(route,swap_first,swap_last) # try reversing the order of these cities
-                new_distance = PATH_DISTANCE(new_route,cities) # and check the total distance with this modification.
-                if new_distance < best_distance: # If the path distance is an improvement,
-                    route = new_route # make this the accepted best route
-                    best_distance = new_distance # and update the distance corresponding to this route.
-        improvement_factor = 1 - best_distance/distance_to_beat # Calculate how much the route has improved.
-    return route # When the route is no longer improving substantially, stop searching and return the route.
+    The function takes 3 parameters:
+    cones: a list of the cones to be sorted.
+    start_index: the index of the starting cone.
+    end_index: the index of the ending cone.
+
+    The function uses a matrix "mat" to store the Euclidean distances between each pair of cones, and uses these
+    distances to calculate the nearest-neighbor path between the start and end indices.
+
+    The path is found by starting at the start_index, finding the index of the closest cone that hasn't already
+    been visited, and adding that index to the "order" list. This process is repeated until the end_index is reached.
+
+    The final path is returned as the "order" list, which contains the indices of the cones in the order they should
+    be visited.
+    """
+    if start_index is None:
+        start_index = 0
+    if end_index is None:
+        end_index = len(cones) - 1
+
+    mat = np.empty((len(cones), len(cones)))
+    for i, a in enumerate(cones):
+        for j, b in enumerate(cones):
+            if i == j:
+                continue
+            mat[i][j] = np.linalg.norm([a[0] - b[0], a[1] - b[1]])
+
+    order = [start_index]
+    # Loop for each cone that needs to be ordered.
+    # -2 accounts for the start and end indices that are manually handled.
+    for unused in range(mat.shape[0] - 2):
+        min_index = -1
+        min_value = 10000
+        # Get the latest ordered cone's index from the 'order' list, and loop through that cone's row in 'mat'.
+        # That cone's row in 'mat' contains the distance between the cone, and every other cone on the track.
+        # We can then easily find the closest unused cone and append it to the 'order' list.
+        for i, dist in enumerate(mat[order[-1]]):
+            if dist >= min_value or dist == 0 or i == end_index or i in order:
+                continue
+
+            min_index = i
+            min_value = dist
+        order.append(min_index)
+    order.append(end_index)
+
+    # Return the ordered cones.
+    return [cones[order[i]] for i in range(len(order))]
 
 
 class MapPathPlanner(Node):
@@ -143,18 +174,18 @@ class MapPathPlanner(Node):
 
         cones = cone_array_with_covariance_to_cone_list(track_msg)
 
-        yellows: List[Tuple[float, float]] = []
-        blues: List[Tuple[float, float]] = []
-        oranges: List[Tuple[float, float]] = []
+        yellows: List[List[float]] = []
+        blues: List[List[float]] = []
+        oranges: List[List[float]] = []
         sim_track: List[ConeWithCovariance] = []
 
         for cone in cones:
             if cone.color == Cone.YELLOW:
-                yellows.append((cone.location.x, cone.location.y))
+                yellows.append([cone.location.x, cone.location.y])
             elif cone.color == Cone.BLUE:
-                blues.append((cone.location.x, cone.location.y))
+                blues.append([cone.location.x, cone.location.y])
             elif cone.color == Cone.ORANGE_BIG:
-                oranges.append((cone.location.x, cone.location.y))
+                oranges.append([cone.location.x, cone.location.y])
 
             new_cone = ConeWithCovariance()
             new_cone.cone.location = cone.location
@@ -165,34 +196,22 @@ class MapPathPlanner(Node):
         parsed_orange_cones = self.parse_orange_cones(oranges)
         if len(parsed_orange_cones) == 0:
             return
-        blues.insert(0, parsed_orange_cones[0])
-        blues.append(parsed_orange_cones[1])
-        yellows.insert(0, parsed_orange_cones[2])
-        yellows.append(parsed_orange_cones[3])
+        blues.insert(0, parsed_orange_cones[1])
+        blues.append(parsed_orange_cones[0])
+        yellows.insert(0, parsed_orange_cones[3])
+        yellows.append(parsed_orange_cones[2])
 
-        # Sort the blue and yellow cones starting from the far orange cone, 
-        # and ending at the close orange cone.
-        blue_route = two_opt(np.asarray(blues), 0.001)
-        yellow_route = two_opt(np.asarray(yellows), 0.001)
-
-        blue_x = [blues[blue_route[i]][0] for i in range(len(blue_route))]
-        blue_y = [blues[blue_route[i]][1] for i in range(len(blue_route))]
-        yellow_x = [yellows[yellow_route[i]][0] for i in range(len(yellow_route))]
-        yellow_y = [yellows[yellow_route[i]][1] for i in range(len(yellow_route))]
-
-        # Check that the cones are ordered correctly, that they move, at least partially, 
-        # positively along the x axis, if they don't, reverse the order to correct it.
-        if blue_x[1] < blue_x[0]: 
-            blue_x = list(reversed(blue_x))
-            blue_y = list(reversed(blue_y))
-
-        if yellow_x[1] < yellow_x[0]: 
-            yellow_x = list(reversed(yellow_x))
-            yellow_y = list(reversed(yellow_y))
+        # Sort the blue and yellow cones starting from the far orange cone, and ending at the close orange cone.
+        ordered_blues = sort_cones(blues)
+        ordered_yellows = sort_cones(yellows)
 
         # retrieves spline lists (x,y)
-        yx, yy = approximate_b_spline_path(yellow_x, yellow_y, self.spline_len)
-        bx, by = approximate_b_spline_path(blue_x, blue_y, self.spline_len)
+        yx, yy = approximate_b_spline_path(
+            [cone[0] for cone in ordered_yellows], [cone[1] for cone in ordered_yellows], self.spline_len
+        )
+        bx, by = approximate_b_spline_path(
+            [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], self.spline_len
+        )
 
         tx: List[float] = []  # target spline x coords
         ty: List[float] = []  # target spline y coords
@@ -237,13 +256,13 @@ class MapPathPlanner(Node):
         sim_track_msg.cones = sim_track
         self.track_publisher.publish(sim_track_msg)
 
-    def parse_orange_cones(self, orange_cones: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    def parse_orange_cones(self, orange_cones: List[List[float]]) -> List[List[float]]:
         """
-        Breaks the big orange starting cones into their position relative to the other blue/yellow cones. 
-        Returns format close_blue, far_blue, close_yellow, far_yellow. 
+        Breaks the big orange starting cones into their position relative to the other blue/yellow cones.
+        Returns format close_blue, far_blue, close_yellow, far_yellow.
         """
         if len(orange_cones) != 4:
-            self.get_logger().fatal('parse_orange_cones called with less than 4 visible cones. Requires 4 cones.')
+            self.get_logger().fatal("parse_orange_cones called with less than 4 visible cones. Requires 4 cones.")
             return []
 
         blue_cones = [cone for cone in orange_cones if cone[1] > 0]
