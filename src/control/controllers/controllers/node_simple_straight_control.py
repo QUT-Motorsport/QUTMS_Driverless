@@ -29,8 +29,8 @@ class SimpleStraightController(Node):
 
     def __init__(self):
         super().__init__("simple_straight_controller_node")
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
@@ -42,7 +42,7 @@ class SimpleStraightController(Node):
         self.get_logger().debug("Received detection")
         steering_angle = 0.0
 
-        cones: List[Cone] = [cone for cone in msg.cones if abs(cone.x) <= self.x_roi and cone.y <= self.y_roi]
+        cones: List[Cone] = [cone for cone in msg.cones]
 
         if msg.header.frame_id == "velodyne":
             # change colour of cones based on on y pos as this is lidar scan
