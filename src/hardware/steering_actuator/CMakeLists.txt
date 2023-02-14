@@ -29,12 +29,20 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
 add_executable(pulse src/node_steering_CAN_pulse.cpp ${SOURCES})
 ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs)
+ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs)
 
 target_include_directories(steering PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
+target_include_directories(pulse PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 install(TARGETS steering
+  DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS pulse
   DESTINATION lib/${PROJECT_NAME})
 
 # config folder
