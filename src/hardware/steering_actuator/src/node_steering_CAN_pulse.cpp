@@ -77,6 +77,9 @@ state_id - State ID Number
 control_word - ?
 */
 
+const std::string PARAM_ACCELERATION = "acceleration";
+const std::string PARAM_VELOCITY = "velocity";
+
 struct c5e_state {
     std::string name;
     uint16_t mask;
@@ -122,7 +125,13 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int32_t pre_offset_target = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
-    bool shutdown_requested = false;         // Shutdown logic
+    bool shutdown_requested = false;  // Shutdown logic
+
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
+    rclcpp::TimerBase::SharedPtr c5e_state_request_timer;
+    rclcpp::TimerBase::SharedPtr c5e_config_request_timer;
+    std::chrono::high_resolution_clock::time_point time_start = std::chrono::high_resolution_clock::now();  // Timer
 
     // Request callback for configuration (via ROS2)
     // These publishings are required to send a 'trigger' to the c5e controller
@@ -137,6 +146,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         sdo_read(C5_E_ID, REVOLUTION_POS, 0x00, &id, (uint8_t *)&out);
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+
+        this->time_start = std::chrono::high_resolution_clock::now();
     }
 
     // Receive message from CAN
@@ -174,6 +185,10 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             // Max Deceleration = PARAM_ACCELERATION
             // Mode of Operation = 1 (Profile Position)
             if (object_id == STATUS_WORD) {
+                auto current_time = std::chrono::high_resolution_clock::now();  // Update clock
+                double elapsed_time_seconds =
+                    std::chrono::duration<double, std::milli>(current_time - this->time_start).count();
+
                 uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
                 this->current_state = this->parse_state(status_word);
 
@@ -216,15 +231,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             }
             // message received for position revolution
             else if (object_id == REVOLUTION_POS) {
-                int32_t val = (int32_t)data;
-                this->current_enc_revolutions = val;
-                if (!this->initial_enc_saved) {
-                    this->initial_enc = val;
-                    this->initial_enc_saved = true;
-                }
-                std_msgs::msg::Int32 enc_msg;
-                enc_msg.data = this->current_enc_revolutions;
-                this->encoder_pub->publish(enc_msg);
             }
         }
     }
@@ -271,12 +277,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
    public:
     SteeringActuator() : Node("steering_controller_node") {
-
         // Create publisher to topic "canbus_carbound"
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
-
-        // Create publisher to topic "encoder_reading"
-        this->encoder_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", 10);
 
         // Create subscriber to topic "canbus_rosbound"
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
@@ -284,10 +286,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(
-            std::chrono::milliseconds(50), std::bind(&SteeringActuator::c5e_state_request_callback, this));
-
-        this->c5e_config_request_timer = this->create_wall_timer(
-            std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
+            std::chrono::milliseconds(1000), std::bind(&SteeringActuator::c5e_state_request_callback, this));
     }
 
     // Shutdown system

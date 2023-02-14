@@ -27,6 +27,7 @@ set (SOURCES
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
+add_executable(pulse src/node_steering_CAN_pulse.cpp ${SOURCES})
 ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs)
 
 target_include_directories(steering PUBLIC
