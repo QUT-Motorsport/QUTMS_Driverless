@@ -19,6 +19,7 @@
 #include "driverless_msgs/msg/system_status.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/int32.hpp"
 
 using std::placeholders::_1;
 
@@ -47,6 +48,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr steering_angle_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
     rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
@@ -200,6 +202,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     reading.adc_0 = adc_0;
                     reading.adc_1 = adc_1;
                     this->steering_reading_pub->publish(reading);
+
+                    std_msgs::msg::Int32 angle_msg;
+                    angle_msg.data = steering_0;
+                    this->steering_angle_pub->publish(angle_msg);
                 } else {
                     // go to emergency
                     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
@@ -547,6 +553,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Steering
         this->steering_reading_pub =
             this->create_publisher<driverless_msgs::msg::SteeringReading>("/vehicle/steering_reading", 10);
+
+        this->steering_angle_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/steering_angle", 10);
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
