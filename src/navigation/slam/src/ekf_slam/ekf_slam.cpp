@@ -15,46 +15,40 @@ double wrap_pi(double x) {
     return m - M_PI;
 }
 
-void compute_motion_model(double dt, double forward_vel, double theta_dot, const Eigen::MatrixXd& mu,
-                          Eigen::MatrixXd& pred_mu_out,
-                          Eigen::MatrixXd& jacobian_out  // G_x
-) {
-    // this function is g()
+int landmark_idx_to_cone_idx(int landmark_idx) { return (landmark_idx - CAR_STATE_SIZE) / LANDMARK_STATE_SIZE; }
 
-    double x, y, theta;
-    get_state_from_mu(mu, x, y, theta);
+int cone_idx_to_landmark_idx(int cone_idx) { return CAR_STATE_SIZE + cone_idx * LANDMARK_STATE_SIZE; }
 
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+int get_cone_colour(ConeColourCount_t cone_colour_count) {
+    std::vector<int> counts = {cone_colour_count.blue, cone_colour_count.yellow, cone_colour_count.orange_big,
+                               cone_colour_count.orange_small};
 
-    // predict new xdot, ydot, x, y, theta position
-    pred_mu_out(0, 0) = x + forward_vel * dt * cos_theta;  // x'
-    pred_mu_out(1, 0) = y + forward_vel * dt * sin_theta;  // y'
-    pred_mu_out(2, 0) = theta + theta_dot * dt;            // theta'
+    auto max_iter = std::max_element(counts.begin(), counts.end());
+    if (*max_iter == 0) {
+        // max count is 0 -> we don't know what colour the cone is
+        return driverless_msgs::msg::Cone::UNKNOWN;
+    }
 
-    // compute jacobian for the robot state (G_x)
-    jacobian_out << 1, 0, -forward_vel * dt * sin_theta, 0, 1, forward_vel * dt * cos_theta, 0, 0, 2;
-}
+    int max_idx = std::distance(counts.begin(), max_iter);
+    switch (max_idx) {
+        case 0:
+            return driverless_msgs::msg::Cone::BLUE;
+        case 1:
+            return driverless_msgs::msg::Cone::YELLOW;
+        case 2:
+            return driverless_msgs::msg::Cone::ORANGE_BIG;
+        case 3:
+            return driverless_msgs::msg::Cone::ORANGE_SMALL;
 
-void update_pred_motion_cov(const Eigen::MatrixXd& motion_jacobian,  // G_x
-                            const Eigen::MatrixXd& cov, Eigen::MatrixXd& pred_cov_out) {
-    // G = ( G_x  0 )
-    //     ( 0    I )
-    Eigen::MatrixXd G = Eigen::MatrixXd::Identity(cov.rows(), cov.cols());
-    G.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = motion_jacobian;
-
-    // R is just identity for car state atm
-    Eigen::MatrixXd R = Eigen::MatrixXd::Zero(cov.rows(), cov.cols());
-    R.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE) * 0.1;
-
-    pred_cov_out = G * cov * G.transpose() + R;
-    // pred_cov_out = G * cov * G.transpose();
+        default:
+            return driverless_msgs::msg::Cone::UNKNOWN;
+    }
 }
 
 std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double search_x, double search_y) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 2 * 2;  // m, threshold^2
+    double min_distance = 3 * 3;  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -71,6 +65,37 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
     }
 
     return idx;
+}
+
+int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_x, double lm_y,
+                           const Eigen::Matrix2d& lm_jacobian, const Eigen::Matrix2d& Q) {
+    mu.conservativeResize(mu.rows() + LANDMARK_STATE_SIZE, Eigen::NoChange);
+    cov.conservativeResize(cov.rows() + LANDMARK_STATE_SIZE, cov.cols() + LANDMARK_STATE_SIZE);
+
+    int new_lm_idx = mu.rows() - LANDMARK_STATE_SIZE;
+
+    mu(new_lm_idx, 0) = lm_x;
+    mu(new_lm_idx + 1, 0) = lm_y;
+
+    // initalise the new covariance rows/cols to zero
+    cov(Eigen::lastN(LANDMARK_STATE_SIZE), Eigen::all).setZero();
+    cov(Eigen::all, Eigen::lastN(LANDMARK_STATE_SIZE)).setZero();
+
+    // initalise the landmark covariances using the jacobian
+    cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = lm_jacobian * Q * lm_jacobian.transpose();
+
+    return new_lm_idx;
+}
+
+Eigen::Matrix2d compute_landmark_jacobian(double theta, double lm_detection_x, double lm_detection_y) {
+    Eigen::Matrix2d landmark_jacobian;
+
+    // clang-format off
+    landmark_jacobian << cos(theta + lm_detection_y), lm_detection_x * -sin(theta + lm_detection_y),
+                         sin(theta + lm_detection_y), lm_detection_x * cos(theta + lm_detection_y);
+    // clang-format on
+
+    return landmark_jacobian;
 }
 
 void compute_expected_z(const Eigen::MatrixXd& mu, int landmark_idx, Eigen::MatrixXd& expected_z_out,
@@ -133,51 +158,37 @@ void EKFslam::position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& p
     this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) = pred_car_cov + this->R;
 }
 
-void EKFslam::position_delta_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu_delta,
-                                     const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov) {
-    this->pred_mu.topLeftCorner(CAR_STATE_SIZE, 1) += pred_car_mu_delta;
-    // 0.1 is arbitrary
-    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += 0.1 * pred_car_cov + this->R;
+void EKFslam::position_delta_predict(const double delta_robot_x, const double delta_robot_theta) {
+    double x, y, theta;
+    get_state_from_mu(this->pred_mu, x, y, theta);
+
+    this->pred_mu(0, 0) = x + delta_robot_x * cos(theta);
+    this->pred_mu(1, 0) = y + delta_robot_x * sin(theta);
+    this->pred_mu(2, 0) = wrap_pi(theta + delta_robot_theta);
+
+    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) += this->R;
 }
 
 void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
     double x, y, theta;
     get_state_from_mu(this->pred_mu, x, y, theta);
 
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
-
     for (driverless_msgs::msg::Cone cone : detected_cones) {
         // landmark (cone) position in global frame
-        double glob_lm_x = x + cone.location.x * cos_theta - cone.location.y * sin_theta;
-        double glob_lm_y = y + cone.location.x * sin_theta + cone.location.y * cos_theta;
+        double glob_lm_x = x + cone.location.x * cos(theta) - cone.location.y * sin(theta);
+        double glob_lm_y = y + cone.location.x * sin(theta) + cone.location.y * cos(theta);
 
-        std::optional<int> associated_idx = find_associated_landmark_idx(this->mu, glob_lm_x, glob_lm_y);
+        std::optional<int> associated_idx = find_associated_landmark_idx(this->pred_mu, glob_lm_x, glob_lm_y);
 
         if (!associated_idx.has_value()) {
             // new landmark
-            this->pred_mu.conservativeResize(this->pred_mu.rows() + 2, Eigen::NoChange);
-            this->pred_cov.conservativeResize(this->pred_cov.rows() + 2, pred_cov.cols() + 2);
-
-            int new_lm_idx = this->pred_mu.rows() - 2;
-
-            this->pred_mu(new_lm_idx, 0) = glob_lm_x;
-            this->pred_mu(new_lm_idx + 1, 0) = glob_lm_y;
-
-            for (int i = 0; i < new_lm_idx; i++) {
-                this->pred_cov(i, new_lm_idx) = 0;
-                this->pred_cov(i, new_lm_idx + 1) = 0;
-                this->pred_cov(new_lm_idx, i) = 0;
-                this->pred_cov(new_lm_idx + 1, i) = 0;
-            }
-
-            Eigen::Matrix2d landmark_jacobian;
-            landmark_jacobian << cos(theta + cone.location.y), cone.location.x * -sin(theta + cone.location.y),
-                sin(theta + cone.location.y), cone.location.x * cos(theta + y);
-            this->pred_cov.bottomRightCorner(2, 2) = landmark_jacobian * this->Q * landmark_jacobian.transpose();
-
-            associated_idx = new_lm_idx;
+            Eigen::Matrix2d landmark_jacobian = compute_landmark_jacobian(theta, cone.location.x, cone.location.y);
+            associated_idx =
+                initalise_new_landmark(this->pred_mu, this->pred_cov, glob_lm_x, glob_lm_y, landmark_jacobian, this->Q);
+            this->initalise_new_cone_colour();
         }
+
+        this->update_cone_colour(cone, associated_idx.value());
 
         // z = (  range  )
         //     ( bearing )
@@ -199,4 +210,41 @@ void EKFslam::correct(const std::vector<driverless_msgs::msg::Cone>& detected_co
 
     this->mu = this->pred_mu;
     this->cov = this->pred_cov;
+}
+
+void EKFslam::initalise_new_cone_colour() { this->cone_colours.push_back({0, 0, 0, 0}); }
+
+void EKFslam::update_cone_colour(driverless_msgs::msg::Cone cone, int associated_landmark_idx) {
+    int cone_colour_idx = landmark_idx_to_cone_idx(associated_landmark_idx);
+    switch (cone.color) {
+        case cone.YELLOW:
+            this->cone_colours.at(cone_colour_idx).yellow += 1;
+            break;
+        case cone.BLUE:
+            this->cone_colours.at(cone_colour_idx).blue += 1;
+            break;
+        case cone.ORANGE_BIG:
+            this->cone_colours.at(cone_colour_idx).orange_big += 1;
+            break;
+        case cone.ORANGE_SMALL:
+            this->cone_colours.at(cone_colour_idx).orange_small += 1;
+            break;
+
+        default:
+            break;
+    }
+}
+
+std::vector<driverless_msgs::msg::Cone> EKFslam::get_cones() {
+    std::vector<driverless_msgs::msg::Cone> cones;
+    for (uint i = 0; i < this->cone_colours.size(); i++) {
+        int lm_idx = cone_idx_to_landmark_idx(i);
+        driverless_msgs::msg::Cone cone;
+        cone.location.x = this->mu(lm_idx, 0);
+        cone.location.y = this->mu(lm_idx + 1, 0);
+        cone.location.z = 0;
+        cone.color = get_cone_colour(this->cone_colours[i]);
+        cones.push_back(cone);
+    }
+    return cones;
 }
