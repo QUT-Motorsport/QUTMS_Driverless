@@ -19,14 +19,13 @@ class StepController(Node):
 
     step = 0
     max_ang = 50.0
-    inc = 750
 
     def __init__(self):
         super().__init__("step_controller_node")
 
         # timed callback
         self.create_timer(self.change_interval, self.change_callback)
-        self.create_timer(self.pub_interval, self.pub_callback)
+        # self.create_timer(self.pub_interval, self.pub_callback)
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
@@ -47,10 +46,9 @@ class StepController(Node):
         elif self.step == 2:
             self.target = -self.max_ang
             self.step = 0
-
-        # if self.target < 7500:
-        #     self.target += self.inc
-        #     print(self.target)
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = self.target
+        self.drive_publisher.publish(control_msg)
 
 
 def main(args=None):
