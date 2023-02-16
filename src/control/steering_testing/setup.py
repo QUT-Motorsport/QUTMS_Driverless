@@ -19,14 +19,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "sine = controllers.node_sine:main",
-            "constant = controllers.node_constant:main",
-            "reactive_control = controllers.node_reactive_control:main",
-            "reactive_trajectory = controllers.node_reactive_trajectory:main",
-            "vector_reactive_control = controllers.node_reactive_vector_control:main",
-            "bang_control = controllers.node_bang_control:main",
-            "simple_straight_control = controllers.node_simple_straight_control:main",
-            "straight_control = controllers.node_straight_control:main",
+            "random = controllers.node_random:main",
+            "step_response = controllers.node_step_response:main",
+            "step_response_calibration = controllers.node_step_response_calibration:main",
         ],
     },
 )

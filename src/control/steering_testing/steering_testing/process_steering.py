@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-# Read in the data
+# Read in the data change path where needed
 actual = pd.read_csv("src/control/steering/data/steering_reading_2023-02-01T05:55:34.csv")
 desired = pd.read_csv("src/control/steering/data/driving_command_2023-02-01T05:55:34.csv")
 
