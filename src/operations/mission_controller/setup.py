@@ -24,10 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "mission_control = mission_controller.node_mission_control:main",
-            "gui = mission_controller.node_gui:main",
-            "ebs_test_mission = mission_controller.node_ebs_test_mission:main",
             "inspection_mission = mission_controller.node_inspection_mission:main",
-            "trackdrive_mission = mission_controller.node_trackdrive_mission:main",
         ],
     },
 )
