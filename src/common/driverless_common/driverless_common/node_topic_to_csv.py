@@ -10,8 +10,6 @@ from rosidl_runtime_py.convert import message_to_ordereddict
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import SteeringReading, WSSVelocity
-
-# import your messages to be recorded here
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Imu
 
