@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "keyboard_control"
+package_name = "terminal_control"
 
 setup(
     name=package_name,
@@ -12,14 +12,14 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English",
+    maintainer="Alistair English, Alastair Bradford",
     maintainer_email="team@qutmotorsport.com",
-    description="Keyboard controller that publishes Ackermann drive messages",
+    description="Keyboard based controller that publishes drive and state messages",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "controller = keyboard_control.node_controller:main",
+            "controller = terminal_control.node_controller:main",
         ],
     },
 )
