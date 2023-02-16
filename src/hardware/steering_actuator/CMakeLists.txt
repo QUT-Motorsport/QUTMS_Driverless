@@ -29,7 +29,7 @@ ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs std_msg
 ament_target_dependencies(steering_adj rclcpp ackermann_msgs driverless_msgs std_msgs)
 ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs std_msgs)
 
-target_include_directories(steering PUBLIC
+target_include_directories(actuator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
