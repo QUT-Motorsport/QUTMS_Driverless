@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "controllers"
+package_name = "steering_testing"
 
 setup(
     name=package_name,
@@ -12,16 +12,16 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English",
+    maintainer="Alastair Bradford, Stephen Wardle, Ryan Best",
     maintainer_email="team@qutmotorsport.com",
-    description="Driverless Controllers",
+    description="Steering actuator testing project",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "random = controllers.node_random:main",
-            "step_response = controllers.node_step_response:main",
-            "step_response_calibration = controllers.node_step_response_calibration:main",
+            "random = steering_testing.node_random:main",
+            "step_response = steering_testing.node_step_response:main",
+            "step_response_calibration = steering_testing.node_step_response_calibration:main",
         ],
     },
 )
