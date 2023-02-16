@@ -17,6 +17,7 @@ STEER_INCREMENT = -5
 
 speed: float = 0.0
 steering_angle: float = 0.0
+state: str = "idle"
 
 
 class KeyboardControllerNode(Node):
@@ -42,12 +43,14 @@ class KeyboardControllerNode(Node):
 def print_state(stdscr):
     global speed
     global steering_angle
+    global state
 
-    stdscr.addstr(0, 0, f"Torque: {speed}           ")
-    stdscr.addstr(1, 0, f"Steering Angle: {steering_angle}     ")
-    stdscr.addstr(3, 0, f"[Space] to zero torque")
-    stdscr.addstr(4, 0, f"[g] to zero steering")
-    stdscr.addstr(5, 0, f"[Enter] to zero everything")
+    stdscr.addstr(0, 0, "Use the WASD keys to control the car")
+    stdscr.addstr(1, 0, f"Torque: {speed}           ")
+    stdscr.addstr(2, 0, f"Steering Angle: {steering_angle}     ")
+    stdscr.addstr(4, 0, f"[Space] to zero torque")
+    stdscr.addstr(5, 0, f"[g] to zero steering")
+    stdscr.addstr(6, 0, f"[Enter] to zero everything")
 
 
 def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
