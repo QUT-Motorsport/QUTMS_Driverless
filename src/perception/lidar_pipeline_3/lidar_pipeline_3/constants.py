@@ -7,11 +7,13 @@ WORKING_DIR: str = str(pathlib.Path(__file__).parent.resolve())
 OUTPUT_DIR: str = WORKING_DIR + "/output"
 LIBRARY_DIR: str = WORKING_DIR + "/library"
 RESOURCES_DIR: str = LIBRARY_DIR + "/resources"
-MODEL_DIR: str = RESOURCES_DIR + "/models"
+FONTS_DIR: str = RESOURCES_DIR + "/fonts"
+MODELS_DIR: str = RESOURCES_DIR + "/models"
+QUTMS_LOGO: str = RESOURCES_DIR + "/qutms_logo_white.png"
 FIGURES_DIR: str = "/figures"
 VIDEOS_DIR: str = "videos"
 
-# Algorithm Parameters
+# Algorithm Parameters | Don't forget algorithm tuning
 LIDAR_RANGE = 25  # Max range of points to process (metres)
 DELTA_ALPHA = (2 * math.pi) / 128  # Delta angle of segments
 BIN_SIZE = 0.14  # Size of bins
@@ -64,8 +66,6 @@ colours_01 = [mint_hex, yellow_hex, red_hex, blue_hex]
 colours_01 = [blue_hex, yellow_hex, red_hex]
 
 # Visualiser 2
-CAR_PLOT_3D_RANGE = 3
-
 def hex_to_rgb(hex_value: str):
     """Converts HEX to RGB.
 
