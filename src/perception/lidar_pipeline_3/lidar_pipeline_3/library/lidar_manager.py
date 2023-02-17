@@ -41,32 +41,23 @@ def locate_cones(config, point_cloud, start_time):
     proto_segs_arr, proto_segs, seg_bin_z_ind = pcp.get_prototype_points(point_cloud["z"], segments, bins, point_norms)
     config.logger.info("DONE: Prototype Points")
 
-    # Multiprocessing Ground Plane Mapping [m b start(x, y) end(x, y) bin]
-    # ground_plane = gpe.get_ground_plane_mp(config, proto_segs_arr, proto_segs)
     ground_plane = gpe.get_ground_plane_single_core(proto_segs_arr, proto_segs)
     config.logger.info("DONE: Ground Plane Mapped")
 
-    # point_labels = pc.label_points(point_cloud, point_norms, seg_bin_z_ind, segments, ground_plane, bins)
-    # point_labels = pc.label_points_2(point_cloud, point_norms, segments, bins, seg_bin_z_ind, ground_plane)
-    # point_labels = pc.label_points_3(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
-    # point_labels = pc.label_points_4(point_cloud, segments, bins, proto_segs, seg_bin_z_ind, ground_plane)
-    # point_labels = pc.label_points_5(point_cloud, segments, bins, seg_bin_z_ind, ground_plane)
     point_labels, ground_lines_arr = pc.label_points_6(point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane)
     config.logger.info("DONE: Points Labelled")
 
     object_points = point_cloud[point_labels]
-    # object_points = np.column_stack((object_points["x"], object_points["y"], object_points["z"]))
     config.logger.info("DONE: Object Points Grouped")
 
     if object_points.size == 0:
         config.logger.info("No objects points detected")
         return []
 
-    object_centers, objects = op.group_points(object_points)  # maybe improve speed?
+    object_centers, objects = op.group_points(object_points)
     config.logger.info("DONE: Objects Identified")
 
     ground_points = point_cloud[~point_labels]
-    # reconstructed_objects = op.reconstruct_objects(point_cloud, object_centers, objects, const.DELTA_ALPHA, const.CONE_DIAM, const.BIN_SIZE)
     obj_segs, obj_bins, reconstructed_objects, reconstructed_centers, avg_object_intensity = op.reconstruct_objects_2(
         ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
     )
@@ -120,12 +111,8 @@ def locate_cones(config, point_cloud, start_time):
         #vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
         #vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
         #vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
-        #vis2.plot_cones_3D(config, point_cloud[point_norms <= 5], point_labels[point_norms <= 5], cone_centers, "16_Cones_3D")
-        vis2.plot_cones_3D_2(config, point_cloud, point_labels, cone_centers, "16_Cones_3D")
+        #vis2.plot_cones_3D(config, point_cloud, segments, ground_plane[np.unique(segments)], point_labels, reconstructed_centers, cone_centers, "16_Cones_3D")
         #vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
-
-        # reintro structured array for lidar colouring
-        # Plot Car Model in 3D
 
         if config.show_figures:
             plt.show()
