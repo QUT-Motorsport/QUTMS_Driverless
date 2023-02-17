@@ -18,7 +18,8 @@ def locate_cones(config, point_cloud, start_time):
     # Visualise inital point cloud before filtering
     if config.create_figures:
         config.setup_image_dir()
-        #vis2.plot_point_cloud_2D(config, point_cloud, "Received", "00_PointCloud_2D")
+        vis2.plot_point_cloud_2D(config, point_cloud, "Received", "00_PointCloud_2D")
+        vis2.plot_point_cloud_3D(config, point_cloud, "Received", "00_PointCloud_3D")
 
     # Remove points behind car
     point_cloud = point_cloud[point_cloud["x"] > 0]
@@ -30,7 +31,7 @@ def locate_cones(config, point_cloud, start_time):
     point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
 
     # Remove points that are outside of range or have a norm of 0
-    mask = point_norms <= const.LIDAR_RANGE  # & (point_norms != 0)
+    mask = point_norms <= const.LIDAR_RANGE # & (point_norms != 0)
     point_norms = point_norms[mask]
     point_cloud = point_cloud[mask]
     config.logger.info(f"{point_cloud.shape[0]} points remain after filtering point cloud")
@@ -95,13 +96,11 @@ def locate_cones(config, point_cloud, start_time):
     # Create visualisations
     if config.create_figures:
         #vis2.plot_point_cloud_2D(config, point_cloud, "Filtered", "01_PointCloud_2D")
-        #vis.plot_segments_2D(config, point_cloud, segments, "03_PointCloudSegments_2D")
-        #vis.plot_bins_2D(config, point_cloud, bins, "05_PointCloudBins_2D")
-        #vis.plot_segments_3D(config, point_cloud, segments, "04_PointCloudSegments_3D")
-        #vis.plot_bins_3D(config, point_cloud, bins, "06_PointCloudBins_3D")
-        #vis.plot_prototype_points_2D(config, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
+        #vis2.plot_segments_2D(config, point_cloud, point_norms, segments, "03_PointCloudSegments_2D")
+        #vis2.plot_bins_2D(config, point_cloud, segments, bins, "05_PointCloudBins_2D")
+        #vis2.plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
         #vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
-        #vis.plot_ground_plane_2D(config, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
+        #vis2.plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
         #vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
         #vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
         #vis.plot_labelled_points_3D(
