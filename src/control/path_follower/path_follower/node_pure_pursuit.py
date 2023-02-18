@@ -1,9 +1,11 @@
 from math import atan2, cos, sin, sqrt
 
+import cv2
 import numpy as np
 import scipy.spatial
 from transforms3d.euler import quat2euler
 
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -11,13 +13,24 @@ from rclpy.publisher import Publisher
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from sensor_msgs.msg import Image
 
+from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
+from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
-LOOKAHEAD = 6
-LOOKAHEAD_VEL = 6
+LOOKAHEAD = 10
+LOOKAHEAD_VEL = 10
+DEBUG = True
+SCALE = 80
+WIDTH = 20 * SCALE  # 15m either side
+HEIGHT = 20 * SCALE  # 30m forward
+OFFSET_X = 15
+OFFSET_Y = 30
+
+cv_bridge = CvBridge()
 
 
 def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
@@ -63,8 +76,9 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, lookahead: float) -> np.nda
         rvwp_index: int = len(path) - 1
     else:
         rvwp_index: int = min_index + lookahead
+    # rvwp_index = np.argmin(np.abs(dists - lookahead))
 
-    print("path indices: ", len(path), "rvwp_index: ", rvwp_index, "min_index: ", min_index)
+    print("close_index: ", min_index, "rvwp_index: ", rvwp_index, "num indices: ", len(path))
     rvwp: np.ndarray = path[rvwp_index]
 
     return rvwp
@@ -93,10 +107,10 @@ def wrap_to_pi(angle: float) -> float:
 
 class PurePursuit(Node):
     path = np.array([])
-    Kp_ang: float = 15
+    Kp_ang: float = -16.0
     Kp_vel: float = 0.08
-    vel_max: float = 4  # m/s
-    vel_min: float = 3  # m/s
+    vel_max: float = 2.0  # m/s
+    vel_min: float = 2.0  # m/s
     throttle_max: float = 0.2
     brake_max: float = 0.12
     Kp_brake: float = 0.0
@@ -110,6 +124,7 @@ class PurePursuit(Node):
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
+        self.debug_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
@@ -138,23 +153,50 @@ class PurePursuit(Node):
 
         # rvwp control
         rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD)
+        rvwp_close: List[float] = get_RVWP(position, self.path, 1)
         # steering control
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         steering_angle = wrap_to_pi(theta - des_heading_ang) * self.Kp_ang
+        print(steering_angle * 3.1415 / 180 / (90 / 26))
 
-        # velocity control
-        rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD_VEL)
-        intensity = rvwp[2]
+        debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
 
-        # target velocity proportional to angle
-        target_vel: float = self.vel_max - intensity * self.Kp_vel
-        if target_vel < self.vel_min:
-            target_vel = self.vel_min
+        if DEBUG:
+            for i in range(0, len(self.path) - 1):
+                cv2.line(
+                    debug_img,
+                    loc_to_img_pt(self.path[i, 0] - OFFSET_X, self.path[i, 1] - OFFSET_Y).to_tuple(),
+                    loc_to_img_pt(self.path[i + 1, 0] - OFFSET_X, self.path[i + 1, 1] - OFFSET_Y).to_tuple(),
+                    (255, 0, 0),
+                    thickness=2,
+                )
+
+            cv2.drawMarker(
+                debug_img,
+                loc_to_img_pt(rvwp[0] - OFFSET_X, rvwp[1] - OFFSET_Y).to_tuple(),
+                (0, 255, 0),
+                markerType=cv2.MARKER_TRIANGLE_UP,
+                markerSize=5,
+                thickness=2,
+            )
+
+            cv2.drawMarker(
+                debug_img,
+                loc_to_img_pt(rvwp_close[0] - OFFSET_X, rvwp_close[1] - OFFSET_Y).to_tuple(),
+                (0, 0, 255),
+                markerType=cv2.MARKER_TRIANGLE_UP,
+                markerSize=5,
+                thickness=2,
+            )
+            text_angle = "Steering: " + str(round(steering_angle, 2))
+            cv2.putText(debug_img, text_angle, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 2)
+
+            self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
         control_msg = AckermannDriveStamped()
-        control_msg.drive.steering_angle = -steering_angle
-        control_msg.drive.speed = target_vel
+        control_msg.drive.steering_angle = steering_angle
+        control_msg.drive.speed = self.vel_min
 
         self.control_publisher.publish(control_msg)
 
