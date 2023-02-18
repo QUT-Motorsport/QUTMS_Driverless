@@ -1,4 +1,4 @@
-from math import atan2, pi
+from math import atan2, pi, sqrt
 
 import numpy as np
 import scipy.interpolate as scipy_interpolate
@@ -125,17 +125,24 @@ def sort_cones(cones, start_index=None, end_index=None):
     if end_index is None:
         end_index = len(cones) - 1
 
-    mat = np.empty((len(cones), len(cones)))
+    cone_count = len(cones)
+    mat = [[0] * cone_count for i in range(cone_count)]
     for i, a in enumerate(cones):
         for j, b in enumerate(cones):
             if i == j:
                 continue
-            mat[i][j] = np.linalg.norm([a[0] - b[0], a[1] - b[1]])
+            # Prevent unnecessary square root calculations. We don't need to
+            # calculate distance if the distance is going to be greater than 5m (sqrt(25)).
+            # So don't square root, or store the distance in the mat.
+            diff = [a[0] - b[0], a[1] - b[1]]
+            dist = diff[0] * diff[0] + diff[1] * diff[1]
+            if dist <= 25:
+                mat[i][j] = sqrt(dist)
 
     order = [start_index]
     # Loop for each cone that needs to be ordered.
     # -2 accounts for the start and end indices that are manually handled.
-    for unused in range(mat.shape[0] - 2):
+    for unused in range(len(mat) - 2):
         min_index = -1
         min_value = 10000
         # Get the latest ordered cone's index from the 'order' list, and loop through that cone's row in 'mat'.
