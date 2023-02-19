@@ -7,9 +7,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
-from eufs_msgs.msg import ConeArrayWithCovariance
-from fs_msgs.msg import Cone, Track
+from driverless_msgs.msg import (
+    Cone,
+    ConeDetectionStamped,
+    ConeWithCovariance,
+    PathPoint,
+    PathStamped,
+    TrackDetectionStamped,
+)
 
 from typing import List, Tuple
 
@@ -64,41 +69,6 @@ def angle(p1: List[float], p2: List[float]) -> float:
     x_disp = p2[0] - p1[0]
     y_disp = p2[1] - p1[1]
     return atan2(y_disp, x_disp)
-
-
-def cone_array_with_covariance_to_cone_list(eufs_cones: ConeArrayWithCovariance) -> List[Cone]:
-    internal_cones: List[Cone] = []
-    for eufs_cone in eufs_cones.blue_cones:
-        internal_cone = Cone()
-        internal_cone.location = eufs_cone.point
-        internal_cone.color = Cone.BLUE
-        internal_cones.append(internal_cone)
-
-    for eufs_cone in eufs_cones.yellow_cones:
-        internal_cone = Cone()
-        internal_cone.location = eufs_cone.point
-        internal_cone.color = Cone.YELLOW
-        internal_cones.append(internal_cone)
-
-    for eufs_cone in eufs_cones.orange_cones:
-        internal_cone = Cone()
-        internal_cone.location = eufs_cone.point
-        internal_cone.color = Cone.ORANGE_SMALL
-        internal_cones.append(internal_cone)
-
-    for eufs_cone in eufs_cones.big_orange_cones:
-        internal_cone = Cone()
-        internal_cone.location = eufs_cone.point
-        internal_cone.color = Cone.ORANGE_BIG
-        internal_cones.append(internal_cone)
-
-    for eufs_cone in eufs_cones.unknown_color_cones:
-        internal_cone = Cone()
-        internal_cone.location = eufs_cone.point
-        internal_cone.color = Cone.UNKNOWN
-        internal_cones.append(internal_cone)
-
-    return internal_cones
 
 
 def sort_cones(cones, start_index=None, end_index=None):
@@ -168,7 +138,7 @@ class MapPathPlanner(Node):
         super().__init__("map_path_translator_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeArrayWithCovariance, "/simulated_noise/track", self.map_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
 
         # publishers
         self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
@@ -176,10 +146,10 @@ class MapPathPlanner(Node):
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
-    def map_callback(self, track_msg: ConeArrayWithCovariance):
+    def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        cones = cone_array_with_covariance_to_cone_list(track_msg)
+        cones = track_msg.cones
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []
