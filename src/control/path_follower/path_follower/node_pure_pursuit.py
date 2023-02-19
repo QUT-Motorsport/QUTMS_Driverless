@@ -85,7 +85,7 @@ class PurePursuit(Node):
     def __init__(self):
         super().__init__("pure_pursuit_node")
 
-        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
