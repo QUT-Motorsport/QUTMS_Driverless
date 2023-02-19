@@ -42,8 +42,8 @@ class ReactiveController(Node):
             self.target_cone_count = 2
             self.pub_accel = True
 
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-            # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
             self.target_vel = 3.0  # m/s

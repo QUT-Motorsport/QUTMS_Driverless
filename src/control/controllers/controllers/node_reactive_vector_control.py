@@ -376,7 +376,7 @@ class VectorReactiveController(Node):
 
         self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
-        self.get_logger().info(f"Time: {time.time() - self.last_time}")
+        self.get_logger().debug(f"Time: {time.time() - self.last_time}")
         self.last_time = time.time()
 
 
