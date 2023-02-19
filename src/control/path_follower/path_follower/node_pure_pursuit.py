@@ -21,8 +21,6 @@ from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
-LOOKAHEAD = 4
-DEBUG = True
 SCALE = 80
 WIDTH = 20 * SCALE  # 15m either side
 HEIGHT = 20 * SCALE  # 30m forward
@@ -39,8 +37,7 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     * param heading: car's heading in rads
     * return: [x,y] position of steering axle
     """
-    # https://fs-driverless.github.io/Formula-Student-Driverless-Simulator/v2.1.0/vehicle_model/
-    cog2axle = 0.4  # m
+    cog2axle = 0.5  # m
     x_axle = pos_cog[0] + cos(heading) * cog2axle
     y_axle = pos_cog[1] + sin(heading) * cog2axle
 
@@ -70,21 +67,19 @@ def get_RVWP(car_pos: List[float], path: np.ndarray, lookahead: float) -> np.nda
         if current_dist > lookahead and current_dist < rvwp_dist:
             # get angle to check if the point is in front of the car
             ang = angle(close, p)
-            if (car_pos[2] - ang) < np.pi / 2 and (car_pos[2] - ang) > -np.pi / 2:
+            error = wrap_to_pi(car_pos[2] - ang)
+            if error < np.pi / 2 and error > -np.pi / 2:
                 rvwp_dist = current_dist
                 rvwp = path[i]
+
+    if rvwp[0] == path[min_index][0] and rvwp[1] == path[min_index][1]:
+        print("RVWP not found @ ", min_index, " | ", close)
+        rvwp = path[min_index + 5]
     return rvwp
 
 
 class PurePursuit(Node):
     path = np.array([])
-    Kp_ang: float = -5.0
-    Kp_vel: float = 0.08
-    vel_max: float = 2.0  # m/s
-    vel_min: float = 2.0  # m/s
-    throttle_max: float = 0.2
-    brake_max: float = 0.12
-    Kp_brake: float = 0.0
     last_time = time.time()
     count = 0
 
@@ -98,6 +93,12 @@ class PurePursuit(Node):
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
         self.debug_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
+
+        # parameters
+        self.Kp_ang = self.declare_parameter("Kp_ang", -2.0).value
+        self.lookahead = self.declare_parameter("lookahead", 4.0).value
+        self.vel_max = self.declare_parameter("vel_max", 8.0).value
+        self.DEBUG = self.declare_parameter("DEBUG", True).value
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
@@ -125,13 +126,13 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = get_RVWP(position, self.path, LOOKAHEAD)
+        rvwp: List[float] = get_RVWP(position, self.path, self.lookahead)
 
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         error = wrap_to_pi(theta - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
 
-        if DEBUG:
+        if self.DEBUG:
             debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
             for i in range(0, len(self.path) - 1):
                 cv2.line(
@@ -139,7 +140,7 @@ class PurePursuit(Node):
                     loc_to_img_pt(self.path[i, 0] - OFFSET_X, self.path[i, 1] - OFFSET_Y).to_tuple(),
                     loc_to_img_pt(self.path[i + 1, 0] - OFFSET_X, self.path[i + 1, 1] - OFFSET_Y).to_tuple(),
                     (255, 0, 0),
-                    thickness=3,
+                    thickness=5,
                 )
 
             cv2.drawMarker(
@@ -147,7 +148,7 @@ class PurePursuit(Node):
                 loc_to_img_pt(rvwp[0] - OFFSET_X, rvwp[1] - OFFSET_Y).to_tuple(),
                 (0, 255, 0),
                 markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=7,
+                markerSize=10,
                 thickness=4,
             )
 
@@ -156,7 +157,7 @@ class PurePursuit(Node):
                 loc_to_img_pt(position[0] - OFFSET_X, position[1] - OFFSET_Y).to_tuple(),
                 (0, 0, 255),
                 markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=7,
+                markerSize=10,
                 thickness=4,
             )
             text_angle = "Steering: " + str(round(steering_angle, 2))
@@ -167,21 +168,13 @@ class PurePursuit(Node):
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = self.vel_min
+        control_msg.drive.speed = self.vel_max
         self.control_publisher.publish(control_msg)
 
         self.count += 1
-        if self.count % 100 == 0:
-            print("cars coords", position)
-            print("rvwp coords", rvwp)
-            print("desired heading", np.rad2deg(des_heading_ang))
-            print("current heading", np.rad2deg(theta))
-            print("error", np.rad2deg(error))
-            print("wheel angles", np.rad2deg(steering_angle) / (90 / 26))
+        if self.count % 100 == 0 and self.DEBUG:
             self.count = 0
-
-            print("Time: ", time.time() - self.last_time, "\n")
-
+            self.get_logger().debug(f"Process time: {time.time() - self.last_time:.2f}")
         self.last_time = time.time()
 
 
