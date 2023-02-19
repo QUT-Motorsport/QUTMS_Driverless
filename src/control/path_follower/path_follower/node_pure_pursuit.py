@@ -16,18 +16,13 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.common import angle, dist, wrap_to_pi
-from driverless_common.draw import loc_to_img_pt
 from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
-SCALE = 80
-WIDTH = 20 * SCALE  # 15m either side
-HEIGHT = 20 * SCALE  # 30m forward
-OFFSET_X = 15
-OFFSET_Y = 30
-
 cv_bridge = CvBridge()
+WIDTH = 1000
+HEIGHT = 1000
 
 
 def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
@@ -82,6 +77,10 @@ class PurePursuit(Node):
     path = np.array([])
     last_time = time.time()
     count = 0
+    img_initialised = False
+    scale = 1
+    x_offset = 0
+    y_offset = 0
 
     def __init__(self):
         super().__init__("pure_pursuit_node")
@@ -97,8 +96,8 @@ class PurePursuit(Node):
         # parameters
         self.Kp_ang = self.declare_parameter("Kp_ang", -2.0).value
         self.lookahead = self.declare_parameter("lookahead", 4.0).value
-        self.vel_max = self.declare_parameter("vel_max", 8.0).value
-        self.DEBUG = self.declare_parameter("DEBUG", True).value
+        self.vel_max = self.declare_parameter("vel_max", 7.0).value
+        self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
@@ -106,6 +105,31 @@ class PurePursuit(Node):
         # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
+
+        if not self.img_initialised:
+            # get dimensions of the path
+            path_x_min = np.min(self.path[:, 0])
+            path_x_max = np.max(self.path[:, 0])
+            path_y_min = np.min(self.path[:, 1])
+            path_y_max = np.max(self.path[:, 1])
+
+            # scale the path to fit in a 1000x1000 image, pixels per meter
+            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
+
+            # add a border around the path for all elements
+            self.scale *= 0.90
+
+            # set offsets to the corner of the image
+            self.x_offset = -path_x_min * self.scale
+            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
+            self.y_offset = -path_y_min * self.scale
+            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
+
+            self.img_initialised = True
+
+            print("Path dimensions: ", path_x_min, path_x_max, path_y_min, path_y_max)
+            print("Scale: ", self.scale)
+            print("Offsets: ", self.x_offset, self.y_offset)
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved
@@ -132,20 +156,26 @@ class PurePursuit(Node):
         error = wrap_to_pi(theta - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
 
-        if self.DEBUG:
+        if self.DEBUG_IMG:
             debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
             for i in range(0, len(self.path) - 1):
                 cv2.line(
                     debug_img,
-                    loc_to_img_pt(self.path[i, 0] - OFFSET_X, self.path[i, 1] - OFFSET_Y).to_tuple(),
-                    loc_to_img_pt(self.path[i + 1, 0] - OFFSET_X, self.path[i + 1, 1] - OFFSET_Y).to_tuple(),
+                    (
+                        int(self.path[i, 0] * self.scale + self.x_offset),
+                        int(self.path[i, 1] * self.scale + self.y_offset),
+                    ),
+                    (
+                        int(self.path[i + 1, 0] * self.scale + self.x_offset),
+                        int(self.path[i + 1, 1] * self.scale + self.y_offset),
+                    ),
                     (255, 0, 0),
                     thickness=5,
                 )
 
             cv2.drawMarker(
                 debug_img,
-                loc_to_img_pt(rvwp[0] - OFFSET_X, rvwp[1] - OFFSET_Y).to_tuple(),
+                (int(rvwp[0] * self.scale + self.x_offset), int(rvwp[1] * self.scale + self.y_offset)),
                 (0, 255, 0),
                 markerType=cv2.MARKER_TRIANGLE_UP,
                 markerSize=10,
@@ -154,15 +184,18 @@ class PurePursuit(Node):
 
             cv2.drawMarker(
                 debug_img,
-                loc_to_img_pt(position[0] - OFFSET_X, position[1] - OFFSET_Y).to_tuple(),
+                (int(position[0] * self.scale + self.x_offset), int(position[1] * self.scale + self.y_offset)),
                 (0, 0, 255),
                 markerType=cv2.MARKER_TRIANGLE_UP,
                 markerSize=10,
                 thickness=4,
             )
-            text_angle = "Steering: " + str(round(steering_angle, 2))
-            cv2.putText(debug_img, text_angle, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 4)
+            cv2.flip(debug_img, 1, debug_img)
 
+            text_angle = "Steering: " + str(round(steering_angle, 2))
+            cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
+            text_vel = "Velocity: " + str(round(self.vel_max, 2))
+            cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
@@ -172,7 +205,7 @@ class PurePursuit(Node):
         self.control_publisher.publish(control_msg)
 
         self.count += 1
-        if self.count % 100 == 0 and self.DEBUG:
+        if self.count % 100 == 0:
             self.count = 0
             self.get_logger().debug(f"Process time: {time.time() - self.last_time:.2f}")
         self.last_time = time.time()
