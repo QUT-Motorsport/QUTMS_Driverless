@@ -15,6 +15,7 @@ from driverless_msgs.msg import (
     PathStamped,
     TrackDetectionStamped,
 )
+from fs_msgs.msg import Track
 
 from typing import List, Tuple
 
@@ -139,6 +140,7 @@ class MapPathPlanner(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
+        self.create_subscription(Track, "/fsds/testing_only/track", self.map_callback, 10)
 
         # publishers
         self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
