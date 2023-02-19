@@ -85,7 +85,7 @@ class PurePursuit(Node):
     def __init__(self):
         super().__init__("pure_pursuit_node")
 
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
@@ -94,8 +94,8 @@ class PurePursuit(Node):
         self.debug_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
 
         # parameters
-        self.Kp_ang = self.declare_parameter("Kp_ang", -2.0).value
-        self.lookahead = self.declare_parameter("lookahead", 4.0).value
+        self.Kp_ang = self.declare_parameter("Kp_ang", -1.5).value
+        self.lookahead = self.declare_parameter("lookahead", 3.0).value
         self.vel_max = self.declare_parameter("vel_max", 7.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
