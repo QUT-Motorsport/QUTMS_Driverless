@@ -30,9 +30,9 @@ class NodeTopicToCSV(Node):
             elif cone.cone.color == 1:
                 colour = "unknown"
             elif cone.cone.color == 2:
-                colour = "orange"
+                colour = "big_orange"
             elif cone.cone.color == 3:
-                colour = "orange"
+                colour = "big_orange"
             elif cone.cone.color == 4:
                 colour = "yellow"
 
