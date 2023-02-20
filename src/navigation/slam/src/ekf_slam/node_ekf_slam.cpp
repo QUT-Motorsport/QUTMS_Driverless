@@ -49,7 +49,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "zed2i/zed_node/pose_with_covariance", 10, std::bind(&EKFSLAMNode::pose_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "vision/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "sim/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
@@ -76,28 +76,6 @@ class EKFSLAMNode : public rclcpp::Node {
         publish_visualisations(detection_msg->header.stamp);
     }
 
-    void pose_update(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
-        Eigen::Matrix<double, CAR_STATE_SIZE, 1> pred_mu;
-        tf2::Quaternion q_orientation;
-        tf2::convert(pose_msg->pose.pose.orientation, q_orientation);
-        double roll, pitch, yaw;
-        tf2::Matrix3x3(q_orientation).getRPY(roll, pitch, yaw);
-        pred_mu << pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, wrap_pi(yaw);
-
-        // Covariance from odom
-        // xx, xy, xz, xi, xj, xk
-        // yx, yy, yz, yi, yj, yk
-        // zx, zy, zz, zi, zj, zk
-        // ix, iy, iz, ii, ij, ik
-        // jx, jy, jz, ji, jj, jk
-        // kx, ky, kz, ki, kj, kk
-        Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE> pred_car_cov;
-        pred_car_cov << pose_msg->pose.covariance[0], 0, 0, 0, pose_msg->pose.covariance[8], 0, 0, 0,
-            pose_msg->pose.covariance[35];
-
-        this->ekf_slam.position_predict(pred_mu, pred_car_cov);
-    }
-
     void pose_delta_update(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
         tf2::Quaternion q_orientation;
         tf2::convert(pose_msg->pose.pose.orientation, q_orientation);
@@ -115,12 +93,12 @@ class EKFSLAMNode : public rclcpp::Node {
         double delta_robot_x = sqrt(pow(dx, 2) + pow(dy, 2));
         double delta_robot_theta = pose.theta - prev_pose.value().theta;
 
-        this->ekf_slam.position_delta_predict(delta_robot_x, delta_robot_theta);
+        this->ekf_slam.predict(delta_robot_x, delta_robot_theta);
         prev_pose = pose;
     }
 
     void cone_update(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
-        this->ekf_slam.correct(detection_msg->cones);
+        this->ekf_slam.update(detection_msg->cones);
     }
 
     void print_state() {

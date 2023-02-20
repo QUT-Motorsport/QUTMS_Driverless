@@ -37,28 +37,26 @@ class EKFslam {
     Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
     // clang-format off
-    const Eigen::Matrix3d R = (
-        Eigen::Matrix3d() << 0.05,   0,     0,
-                             0,      0.05,  0,
-                             0,      0,     0.05
+    // R = ( σ_forwards^2 0 )
+    //     ( 0            σ_theta^2 )
+    const Eigen::Matrix2d R = (
+        Eigen::Matrix2d() << pow(0.1, 2), 0,
+                             0,           pow(0.001, 2)
     ).finished();
 
     // Q = ( σ_r^2  0         )
     //     ( 0      σ_theta^2 )
     const Eigen::Matrix2d Q = (
-        Eigen::Matrix2d() << 4,  0,
-                             0,  1
+        Eigen::Matrix2d() << pow(0.5, 2), 0,
+                             0,           pow(0.5, 2)
     ).finished();
     // clang-format on
 
    public:
     EKFslam();
 
-    // pred_car_mu is column vector [x, y, theta]^T
-    void position_predict(const Eigen::Matrix<double, CAR_STATE_SIZE, 1>& pred_car_mu,
-                          const Eigen::Matrix<double, CAR_STATE_SIZE, CAR_STATE_SIZE>& pred_car_cov);
-    void position_delta_predict(const double delta_robot_x, const double delta_robot_theta);
-    void correct(const std::vector<driverless_msgs::msg::Cone>& detected_cones);
+    void predict(double d_forwards, double d_theta);
+    void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones);
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
     const Eigen::MatrixXd& get_pred_cov() { return pred_cov; };
