@@ -127,10 +127,6 @@ class PurePursuit(Node):
 
             self.img_initialised = True
 
-            print("Path dimensions: ", path_x_min, path_x_max, path_y_min, path_y_max)
-            print("Scale: ", self.scale)
-            print("Offsets: ", self.x_offset, self.y_offset)
-
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved
         if self.path.size == 0:
