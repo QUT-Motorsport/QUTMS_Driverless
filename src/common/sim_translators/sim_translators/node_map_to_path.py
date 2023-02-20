@@ -134,7 +134,8 @@ def sort_cones(cones, start_index=None, end_index=None):
 
 
 class MapPathPlanner(Node):
-    spline_len: int = 3999
+    spline_const: int = 40  # number of points per cone
+    segment = int(spline_const * 0.1)  # percentage of PPC
 
     def __init__(self):
         super().__init__("map_path_translator_node")
@@ -185,30 +186,32 @@ class MapPathPlanner(Node):
         ordered_blues = sort_cones(blues)
         ordered_yellows = sort_cones(yellows)
 
+        # make number of pts based on length of path
+        spline_len = self.spline_const * len(ordered_blues)
+
         # retrieves spline lists (x,y)
         yx, yy = approximate_b_spline_path(
-            [cone[0] for cone in ordered_yellows], [cone[1] for cone in ordered_yellows], self.spline_len
+            [cone[0] for cone in ordered_yellows], [cone[1] for cone in ordered_yellows], spline_len
         )
         bx, by = approximate_b_spline_path(
-            [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], self.spline_len
+            [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], spline_len
         )
 
         tx: List[float] = []  # target spline x coords
         ty: List[float] = []  # target spline y coords
         th: List[float] = []  # target spline angles
         # find midpoint between splines at each point to make target path
-        for i in range(self.spline_len):
+        for i in range(spline_len):
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)
             # angle of tangent at midpoint
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))
 
-        VEL_ZONE = 15
         path: list[PathPoint] = []
-        for i in range(0, self.spline_len - VEL_ZONE, VEL_ZONE):
+        for i in range(0, spline_len - self.segment, self.segment):
             # check angle between current and 10th spline point ahead
-            th_change = th[i + VEL_ZONE] - th[i]
+            th_change = th[i + self.segment] - th[i]
             # keep between 360
             if th_change > pi:
                 th_change = th_change - 2 * pi
@@ -217,7 +220,7 @@ class MapPathPlanner(Node):
 
             # angle relative to max angle on track
             change_pc = abs(th_change) / MAX_ANGLE * 100
-            for j in range(VEL_ZONE):
+            for j in range(self.segment):
                 path_point = PathPoint()
                 path_point.location.x = tx[i + j]
                 path_point.location.y = ty[i + j]
