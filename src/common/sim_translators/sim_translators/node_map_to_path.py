@@ -105,9 +105,10 @@ def sort_cones(cones, start_index=None, end_index=None):
             # Prevent unnecessary square root calculations. We don't need to
             # calculate distance if the distance is going to be greater than 5m (sqrt(25)).
             # So don't square root, or store the distance in the mat.
+            # Note: Doubled the accepted distance to account for human error and camera noise.
             diff = [a[0] - b[0], a[1] - b[1]]
             dist = diff[0] * diff[0] + diff[1] * diff[1]
-            if dist <= 25:
+            if dist <= 50:
                 mat[i][j] = sqrt(dist)
 
     order = [start_index]
