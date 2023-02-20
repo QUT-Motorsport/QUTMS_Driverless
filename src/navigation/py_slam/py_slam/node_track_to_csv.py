@@ -15,12 +15,12 @@ class NodeTopicToCSV(Node):
         super().__init__("track_to_csv_node")
 
         # subscribe to topic
-        self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/track", self.callback, 10)
+        self.subscription = self.create_subscription(TrackDetectionStamped, "/sim/global_map", self.callback, 10)
 
         self.get_logger().info("---Track Writer Initalised---")
 
     def callback(self, msg: TrackDetectionStamped):
-        df = pd.DataFrame(columns=["colour", "x", "y"])
+        df = pd.DataFrame(columns=["tag", "x", "y", "direction", "x_variance", "y_variance", "xy_covariance"])
         # iterate through detections, extract colour and position
         # add each detection
         for cone in msg.cones:
@@ -37,9 +37,13 @@ class NodeTopicToCSV(Node):
                 colour = "yellow"
 
             row = {
-                "colour": colour,
+                "tag": colour,
                 "x": cone.cone.location.x,
                 "y": cone.cone.location.y,
+                "direction": 0.0,
+                "x_variance": 0.1,
+                "y_variance": 0.1,
+                "xy_covariance": 0,
             }
 
             # append the new row to the csv file
