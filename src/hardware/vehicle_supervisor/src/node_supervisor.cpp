@@ -19,7 +19,7 @@
 #include "driverless_msgs/msg/system_status.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/int32.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 using std::placeholders::_1;
 
@@ -97,11 +97,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // RES Reciever Status Packet
                 Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
 
+                driverless_msgs::msg::RES res_msg;
+                res_msg.sw_k2 = this->RES_status.sw_k2;
+                res_msg.bt_k3 = this->RES_status.bt_k3;
+                res_msg.estop = this->RES_status.estop;
+                res_msg.radio_quality = this->RES_status.radio_quality;
+                res_msg.loss_of_signal_shutdown_notice = this->RES_status.loss_of_signal_shutdown_notice;
+                this->res_pub->publish(res_msg);
+
                 this->res_alive = 1;
                 // Log RES state
-                // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-                //             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
-                //             this->RES_status.radio_quality);
+                RCLCPP_DEBUG(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
+                             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
+                             this->RES_status.radio_quality);
                 this->run_fsm();
                 break;
             }
@@ -202,7 +210,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     reading.adc_1 = adc_1;
                     this->steering_reading_pub->publish(reading);
 
-                    std_msgs::msg::Int32 angle_msg;
+                    std_msgs::msg::Float32 angle_msg;
                     angle_msg.data = steering_0;
                     this->steering_angle_pub->publish(angle_msg);
                 } else {

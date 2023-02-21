@@ -6,9 +6,10 @@
 #include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
 #include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
+#include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/state.hpp"
-#include "driverless_msgs/msg/steering_reading.hpp"
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
+#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/int32.hpp"
 
 using std::placeholders::_1;
@@ -124,13 +125,13 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::TimerBase::SharedPtr c5e_config_request_timer;
     rclcpp::TimerBase::SharedPtr steering_update_timer;
 
-    // Creates publisher for Can
-    // Creates subscribers for AckermannDriveStamped, State, SteeringReading, and Can
+    // Creates publishers and subscribers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
-    rclcpp::Subscription<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_sub;
+    rclcpp::Subscription<driverless_msgs::msg::RES>::SharedPtr res_sub;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
 
     driverless_msgs::msg::State state;       // State message
@@ -217,36 +218,36 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
         // Message ID from the VCU reading the steering angle sensor
-        if (msg.id == VCU_TransmitSteering_ID) {
-            auto current_reading = std::chrono::high_resolution_clock::now();  // Update clock
-            double elapsed_time_seconds =
-                std::chrono::duration<double, std::milli>(current_reading - last_reading).count() /
-                1000;                              // Calculate time elapsed
-            this->last_reading = current_reading;  // Set previous time to current time
+        // if (msg.id == VCU_TransmitSteering_ID) {
+        //     auto current_reading = std::chrono::high_resolution_clock::now();  // Update clock
+        //     double elapsed_time_seconds =
+        //         std::chrono::duration<double, std::milli>(current_reading - last_reading).count() /
+        //         1000;                              // Calculate time elapsed
+        //     this->last_reading = current_reading;  // Set previous time to current time
 
-            // data vector to uint8_t array
-            uint8_t data[8];
-            copy_data(msg.data, data, 8);
+        //     // data vector to uint8_t array
+        //     uint8_t data[8];
+        //     copy_data(msg.data, data, 8);
 
-            int16_t steering_0_raw;
-            int16_t steering_1_raw;
-            uint16_t adc_0;
-            uint16_t adc_1;
+        //     int16_t steering_0_raw;
+        //     int16_t steering_1_raw;
+        //     uint16_t adc_0;
+        //     uint16_t adc_1;
 
-            Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
-            // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-            // steering_0_raw,
-            //              steering_1_raw, adc_0, adc_1);
-            double steering_0 = steering_0_raw / 10.0;
-            double steering_1 = steering_1_raw / 10.0;
-            if (abs(steering_0 - steering_1) < 10) {
-                this->current_steering_angle = steering_0;
-                RCLCPP_DEBUG(this->get_logger(), "Steering rate: %.2f", (1.0 / elapsed_time_seconds));
-                if (!this->steering_ang_received) this->steering_ang_received = true;
-            }
-        }
+        //     Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
+        //     // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+        //     // steering_0_raw,
+        //     //              steering_1_raw, adc_0, adc_1);
+        //     double steering_0 = steering_0_raw / 10.0;
+        //     double steering_1 = steering_1_raw / 10.0;
+        //     if (abs(steering_0 - steering_1) < 10) {
+        //         this->current_steering_angle = steering_0;
+        //         RCLCPP_DEBUG(this->get_logger(), "Steering rate: %.2f", (1.0 / elapsed_time_seconds));
+        //         if (!this->steering_ang_received) this->steering_ang_received = true;
+        //     }
+        // }
         // Message ID from the steering actuator
-        else if (msg.id == 0x5F0) {
+        if (msg.id == 0x5F0) {
             uint32_t id;     // Packet id out
             uint8_t out[8];  // Data out
 
@@ -426,17 +427,36 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
             msg.state == driverless_msgs::msg::State::EMERGENCY) {
             // Enable motor
-            this->motor_enabled = true;
+            // this->motor_enabled = true;
         } else {
             this->motor_enabled = false;
         }
     }
 
-    // Check steering angle and desired steering angle to update steering
-    void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
+    // Get the RES status
+    void res_callback(const driverless_msgs::msg::RES msg) {
+        if (!msg.estop) {
+            this->motor_enabled = true;
+        } else {
+            this->motor_enabled = false;
+        }
+    }
+    // Get steering angle reading
+    void steering_angle_callback(const std_msgs::msg::Float32 msg) {
+        this->current_steering_angle = msg.data;
+        auto current_reading = std::chrono::high_resolution_clock::now();  // Update clock
+        double elapsed_time_seconds =
+            std::chrono::duration<double, std::milli>(current_reading - last_reading).count() /
+            1000;                              // Calculate time elapsed
+        this->last_reading = current_reading;  // Set previous time to current time
+        if (!this->steering_ang_received) this->steering_ang_received = true;
+        RCLCPP_DEBUG(this->get_logger(), "Current angle: %d", msg.data);
+    }
+
+    // Get desired steering angle to update steering
+    void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
         this->requested_steering_angle = msg->drive.steering_angle;
         RCLCPP_INFO(this->get_logger(), "Requested angle: %f", msg->drive.steering_angle);
-        // this->update_steering();
     }
 
     // Update Steering
@@ -566,9 +586,17 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // Create publisher to topic "encoder_reading"
         this->encoder_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", 10);
 
-        // Create subscriber to topic "as_status"
+        // Create subscriber to topic AS status
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "/system/as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
+
+        // Create subscriber to topic RES data
+        this->res_sub = this->create_subscription<driverless_msgs::msg::RES>(
+            "/vehicle/res_status", 10, std::bind(&SteeringActuator::res_callback, this, _1));
+
+        // Create subscriber to topic "steering_angle"
+        this->steer_ang_sub = this->create_subscription<std_msgs::msg::Float32>(
+            "/vehicle/steering_angle", 10, std::bind(&SteeringActuator::steering_angle_callback, this, _1));
 
         // Create subscriber to topic "driving_command"
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
