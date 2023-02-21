@@ -94,7 +94,7 @@ class PurePursuit(Node):
         self.debug_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
 
         # parameters
-        self.Kp_ang = self.declare_parameter("Kp_ang", -1.5).value
+        self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
         self.lookahead = self.declare_parameter("lookahead", 3.0).value
         self.vel_max = self.declare_parameter("vel_max", 7.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
