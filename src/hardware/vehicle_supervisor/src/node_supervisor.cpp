@@ -48,7 +48,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
     rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
-    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr steering_angle_pub;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
     rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
@@ -561,7 +561,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->steering_reading_pub =
             this->create_publisher<driverless_msgs::msg::SteeringReading>("/vehicle/steering_reading", 10);
 
-        this->steering_angle_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/steering_angle", 10);
+        this->steering_angle_pub = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(

@@ -450,13 +450,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             1000;                              // Calculate time elapsed
         this->last_reading = current_reading;  // Set previous time to current time
         if (!this->steering_ang_received) this->steering_ang_received = true;
-        RCLCPP_DEBUG(this->get_logger(), "Current angle: %d", msg.data);
+        RCLCPP_DEBUG(this->get_logger(), "Current angle: %f", msg.data);
+        RCLCPP_DEBUG(this->get_logger(), "Time: %f", elapsed_time_seconds);
     }
 
     // Get desired steering angle to update steering
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
-        this->requested_steering_angle = msg->drive.steering_angle;
-        RCLCPP_INFO(this->get_logger(), "Requested angle: %f", msg->drive.steering_angle);
+        this->requested_steering_angle = msg.drive.steering_angle;
+        RCLCPP_INFO(this->get_logger(), "Requested angle: %f", msg.drive.steering_angle);
     }
 
     // Update Steering
