@@ -1,3 +1,0 @@
-bool emergency_shutdown
-bool finished_engage_ebs
-bool finished

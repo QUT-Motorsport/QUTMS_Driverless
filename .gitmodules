@@ -30,3 +30,6 @@
 [submodule "src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver"]
 	path = src/hardware/sbg_ros2_driver/QUTMS_SBG_Driver
 	url = https://github.com/QUT-Motorsport/QUTMS_SBG_Driver.git
+[submodule "src/common/qutms_msgs"]
+	path = src/common/qutms_msgs
+	url = https://github.com/QUT-Motorsport/qutms_msgs.git
