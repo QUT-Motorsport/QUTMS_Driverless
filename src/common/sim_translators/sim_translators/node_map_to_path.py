@@ -146,7 +146,7 @@ class MapPathPlanner(Node):
 
         # publishers
         self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
-        self.path_publisher: Publisher = self.create_publisher(PathStamped, "/sim/path", 1)
+        self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 

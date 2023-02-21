@@ -1,4 +1,5 @@
 from math import atan2, pi
+import time
 
 from colour import Color
 import cv2
@@ -38,7 +39,7 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 left_mid_col = (245, 215, 66)
 right_mid_col = (66, 194, 245)
 
-LOOKAHEAD = 6  # m
+LOOKAHEAD = 4  # m
 
 
 def approximate_b_spline_path(
@@ -128,6 +129,7 @@ class VectorReactiveController(Node):
     in_dist: float  # m
     pub_accel: bool
     ebs_test: bool
+    last_time: float = 0
 
     def __init__(self):
         super().__init__("reactive_vector_controller_node")
@@ -292,8 +294,6 @@ class VectorReactiveController(Node):
 
         self.get_logger().debug(f"Midpoints: {midpoints}")
 
-        target: Optional[Point] = None
-
         midpoints.append(ORIGIN)
         sorted_midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
         midpoints = []
@@ -360,8 +360,8 @@ class VectorReactiveController(Node):
                 thickness=2,
             )
 
-            debug_img = draw_steering(debug_img, steering_angle, 0)  # draw steering angle and vel data on image
             speed = self.target_vel
+            debug_img = draw_steering(debug_img, steering_angle, speed)  # draw steering angle and vel data on image
 
         # publish message
         control_msg = AckermannDriveStamped()
@@ -375,6 +375,9 @@ class VectorReactiveController(Node):
             self.accel_publisher.publish(control_msg)
 
         self.vector_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+        self.get_logger().debug(f"Time: {time.time() - self.last_time}")
+        self.last_time = time.time()
 
 
 def main(args=None):
