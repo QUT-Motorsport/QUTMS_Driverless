@@ -12,7 +12,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, PathPoint, PathStamped
+from driverless_msgs.msg import Cone, ConeWithCovariance, PathPoint, PathStamped, TrackDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from std_msgs.msg import ColorRGBA
@@ -150,7 +150,7 @@ class TrackPlanner(Node):
         super().__init__("global_planner_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.callback, 10)
+        self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
 
         # publishers
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
@@ -159,15 +159,15 @@ class TrackPlanner(Node):
 
         self.get_logger().info("---Delaunay Planner Node Initalised---")
 
-    def callback(self, track_msg: ConeDetectionStamped):
+    def callback(self, track_msg: TrackDetectionStamped):
         self.get_logger().debug("Received track")
         start = time.perf_counter()
 
-        cones: List[Cone] = track_msg.cones
+        cones_with_cov: List[ConeWithCovariance] = track_msg.cones
 
         # get left and right cones
-        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
-        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
+        left_cones = [c.cone for c in cones_with_cov if c.cone.color == LEFT_CONE_COLOUR]
+        right_cones = [c.cone for c in cones_with_cov if c.cone.color == RIGHT_CONE_COLOUR]
 
         if len(left_cones) < 2 or len(right_cones) < 2:  # no cones
             return
