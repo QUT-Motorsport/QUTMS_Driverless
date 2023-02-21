@@ -191,9 +191,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 uint16_t adc_1;
 
                 Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
-                // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                // steering_0_raw,
-                //              steering_1_raw, adc_0, adc_1);
+                RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                             steering_0_raw, steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
                 if (abs(steering_0 - steering_1) < 10) {
