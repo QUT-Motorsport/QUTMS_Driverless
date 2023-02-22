@@ -46,13 +46,13 @@ def generate_launch_description():
             #     package="mission_controller",
             #     executable="mission_control",
             # ),
-            # IncludeLaunchDescription(
-            #     launch_description_source=PythonLaunchDescriptionSource(
-            #         launch_file_path=str(
-            #             get_package_share_path("roscube_machine") / "launch" / "sensor_drivers.launch.py"
-            #         )
-            #     ),
-            # ),
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    launch_file_path=str(
+                        get_package_share_path("roscube_machine") / "launch" / "sensor_drivers.launch.py"
+                    )
+                ),
+            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
