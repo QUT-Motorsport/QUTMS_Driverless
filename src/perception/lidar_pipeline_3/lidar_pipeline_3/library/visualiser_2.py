@@ -35,28 +35,47 @@ def plot_point_cloud_2D(config, point_cloud, subtitle, name):
 
 
 def plot_segments_2D(config, point_cloud, point_norms, segments, name):
-    # Initialise figure
-    fig, ax = plt.subplots(facecolor=RGBA.MS_BLUE.value)
+    unique_segments = np.unique(segments)
+    fig, ax = plt_u.init_plot_2D("Point Cloud Discretised into Segments", "X", "Y")
 
-    # Strings
-    ax.set_title(title, color=RGBA.MS_ORANGE.value, fontweight="bold", fontsize=14)
-    ax.set_xlabel(x_label, fontweight="bold")
-    ax.set_ylabel(y_label, fontweight="bold")
+    for unique_segment in unique_segments:
+        max_norm_in_seg = np.max(point_norms[segments == unique_segment])
 
         center_adjust = 0.5
         if unique_segment < 0:
             center_adjust = -0.5
 
-    # Equal axis
-    ax.set_aspect("equal")
+        end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        
+        ax.plot(
+            [0, end_x],
+            [0, end_y],
+            c=Colour.MS_BLUE.value,
+            linewidth=(72.0 / fig.dpi) ** 2,
+            zorder=1,
+        )
 
-    return fig, ax
-
+    colour_set = [Colour.MS_ORANGE.value, Colour.WHITE.value]
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=(segments % len(colour_set)),
+        cmap=mpl_colors.ListedColormap(colour_set),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=2,
+    )
 
     ax.plot(
         0,
         0,
         c=Colour.DARK_GREY.value,
+        marker="o",
+        markersize=3,
+        zorder=3,
+    )
 
     plt_u.calibrate_axis(ax)
 
@@ -64,6 +83,7 @@ def plot_segments_2D(config, point_cloud, point_norms, segments, name):
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
 def plot_bins_2D(config, point_cloud, segments, bins, name):
