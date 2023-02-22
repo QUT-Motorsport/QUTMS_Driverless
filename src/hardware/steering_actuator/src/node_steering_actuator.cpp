@@ -207,9 +207,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         sdo_read(C5_E_ID, MODE_OF_OPERATION, 0x00, &id, (uint8_t *)&out);
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        // RCLCPP_INFO(this->get_logger(), "Requested angle: %.2f, \t Pre-offset %i", this->requested_steering_angle,
-        //             this->pre_offset_target);
     }
 
     // Receive message from CAN
