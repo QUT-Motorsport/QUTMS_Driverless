@@ -1,7 +1,6 @@
 #include <chrono>  // Timer library
 #include <map>     // Container library
 
-#include "CAN_VCU.h"
 #include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
 #include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
