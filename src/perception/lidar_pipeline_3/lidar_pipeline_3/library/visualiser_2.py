@@ -297,26 +297,24 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
             y + center[1],
             -const.LIDAR_HEIGHT_ABOVE_GROUND,
             c=RGBA.WHITE.value,
+            linewidth=(72.0 / fig.dpi) ** 2 * 8,
+            zorder=2,
         )
     
-    # Plot car model
-    if True:
-        ax.add_collection(create_car_model(config))
-    
-    dist = const.CAR_PLOT_3D_RANGE
-    calibrate_axis(ax, [-dist, dist], [-dist, dist], [-dist, dist])
+    # Plot rings around cones
+    for center in reconstructed_centers:
+        ax.scatter(
+            x + center[0],
+            y + center[1],
+            -const.LIDAR_HEIGHT_ABOVE_GROUND,
+            c=RGBA.MS_ORANGE.value,
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2 * 4,
+            linewidths=0,
+            zorder=4,
+        )
 
-    # Save Figure
-    add_logo(fig, dpi=225, small=False)
-    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
-
-def plot_cones_3D(config, point_cloud, point_labels, cones, name):
-    # Create Figure
-    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
-
-    ax.scatter(cones[:, 0], cones[:, 1], cones[:, 2], c=RGBA.WHITE.value, marker="o", zorder=3)
-    
     ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
@@ -325,22 +323,57 @@ def plot_cones_3D(config, point_cloud, point_labels, cones, name):
         cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
         marker="s",
         s=(72.0 / fig.dpi) ** 2,
-        zorder=1,
+        linewidths=0,
+        zorder=5,
     )
-
-    calibrate_axis(ax, point_cloud["x"], point_cloud["y"], point_cloud["z"])
+    
+    
+    # Plot car model
+    if config.plot_car:
+        ax.add_collection(create_car_model(config))
+    
+    dist = const.LIDAR_RANGE / 5
+    min_height = np.min(point_cloud["z"])
+    plt_u.calibrate_axis(ax, [-dist, dist], [-dist, dist], [-const.LIDAR_HEIGHT_ABOVE_GROUND, dist])
+    ax.axes.set_zlim(min_height, dist * 2 + min_height)
 
     # Save Figure
-    add_logo(fig, dpi=225, small=False)
+    plt_u.add_logo(fig, dpi=225, small=False)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
-    # Create Animation
-    if config.animate_figures:
-        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, name):
-    fig, ax = init_plot_2D("Cone Locations Identified", "X", "Y")
+    fig, ax = plt_u.init_plot_2D("Cone Locations Identified", "X", "Y")
     ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
@@ -363,15 +396,15 @@ def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, 
             fontsize=4,
         )
 
-    calibrate_axis(ax)
+    plt_u.calibrate_axis(ax)
 
     # Save Figure
-    add_logo(fig, dpi=225, small=True)
+    plt_u.add_logo(fig, dpi=225, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
 def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, name):
-    fig, ax = init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
+    fig, ax = plt_u.init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
 
     # Plot Ground Plane
     ground_line_count = 0
@@ -444,16 +477,16 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
     ax.text(1.01, .63, f'LIDAR_VERT_RES = {round(const.LIDAR_VERTICAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
     ax.text(1.01, .60, f'LIDAR_HORIZ_RES = {round(const.LIDAR_HORIZONTAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
 
-    calibrate_axis(ax)
+    plt_u.calibrate_axis(ax)
 
     # Save Figure
-    add_logo(fig, dpi=225*2, small=True)
+    plt_u.add_logo(fig, dpi=225*2, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225*2)
 
 
 import os
 def create_car_model(config):
-    model_path = const.MODEL_DIR
+    model_path = const.MODELS_DIR
 
     material_file = None
     object_file = None
