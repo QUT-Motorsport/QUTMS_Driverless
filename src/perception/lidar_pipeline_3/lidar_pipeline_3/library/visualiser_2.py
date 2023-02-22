@@ -239,21 +239,53 @@ def plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_s
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def plot_cones_3D_2(config, point_cloud, point_labels, cone_centers, name):
+def point_cloud_3D(config, point_cloud, subtitle, name):
     # Create Figure
-    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+    fig, ax = plt_u.init_plot_3D(subtitle, "X", "Y", "Z")
 
+    # Plot Point Cloud
     ax.scatter(
-        point_cloud["x"],
-        point_cloud["y"],
-        point_cloud["z"],
-        c=point_labels,
-        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
-        marker="s",
+        point_cloud[:, 0],
+        point_cloud[:, 1],
+        point_cloud[:, 2],
+        c=Colour.MS_BLUE.value,
+        marker=".",
         s=(72.0 / fig.dpi) ** 2,
         linewidths=0,
         zorder=1,
     )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, reconstructed_centers, cone_centers, name):
+    # Create Figure
+    fig, ax = plt_u.init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+
+    # Plot Ground Plane
+    ground_line_count = 0
+    non_empty_segs = np.unique(segments)
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                ground_line_count += 1
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * non_empty_segs[idx])
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * non_empty_segs[idx])
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(
+                    x,
+                    y,
+                    z,
+                    color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1
+                )
 
     # Plot rings around cones
     theta = np.linspace(0, 2 * np.pi, 201)
