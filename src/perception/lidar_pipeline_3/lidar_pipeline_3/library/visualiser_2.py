@@ -87,20 +87,44 @@ def plot_segments_2D(config, point_cloud, point_norms, segments, name):
 
 
 def plot_bins_2D(config, point_cloud, segments, bins, name):
+    fig, ax = plt_u.init_plot_2D("Segments Discretised into Bins", "X", "Y")
 
+    theta = np.linspace((np.min(segments) - 1) * const.DELTA_ALPHA, np.max(segments) * const.DELTA_ALPHA, 201)
+    line_colour = RGBA.MS_BLUE.value
+    for curr_bin in range(bins.min(), bins.max() + 1):
+        x = curr_bin * const.BIN_SIZE * np.cos(theta)
+        y = curr_bin * const.BIN_SIZE * np.sin(theta)
 
         if curr_bin == bins.max():
             line_colour = RGBA.MS_ORANGE.value
 
+        ax.plot(
+            x,
+            y,
+            c=line_colour,
+            linewidth=(72.0 / fig.dpi) ** 2,
+            zorder=1
+        )
 
     colour_set = [Colour.GREEN.value, Colour.LIGHT_BLUE.value, Colour.RED.value]
     ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
         c=(bins % len(colour_set)),
+        cmap=mpl_colors.ListedColormap(colour_set),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=2,
+    )
+
+    plt_u.calibrate_axis(ax)
 
     ax.text(.01, .99, f'Max Bin Count: {bins.max()}', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=8, transform=ax.transAxes)
     ax.text(.01, .95, f'Bin Size: {const.BIN_SIZE}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
