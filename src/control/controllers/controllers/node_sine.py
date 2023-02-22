@@ -33,7 +33,7 @@ class SineController(Node):
         control_msg.drive.acceleration = 0.1
         self.accel_publisher.publish(control_msg)
         self.driving_publisher.publish(control_msg)
-        print(control_msg.drive.steering_angle)
+        self.get_logger().info(f"Published angle {control_msg.drive.steering_angle}")
 
 
 def main(args=None):
