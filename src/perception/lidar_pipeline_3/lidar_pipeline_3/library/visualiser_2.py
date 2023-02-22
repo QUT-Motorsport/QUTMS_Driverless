@@ -132,11 +132,79 @@ def plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, prot
     unique_segments = np.unique(segments)
     fig, ax = plt_u.init_plot_2D("Prototype Points", "X", "Y")
 
+    for unique_segment in unique_segments:
+        max_norm_in_seg = np.max(point_norms[segments == unique_segment])
 
         center_adjust = 0.5
         if unique_segment < 0:
             center_adjust = -0.5
 
+        end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        
+        ax.plot(
+            [0, end_x],
+            [0, end_y],
+            c=Colour.MS_BLUE.value,
+            linewidth=(72.0 / fig.dpi) ** 2,
+            zorder=1,
+        )
+
+    colour_set = [Colour.MS_ORANGE.value, Colour.WHITE.value]
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+
+        center_adjust = 0.5
+        if segment_num < 0:
+            center_adjust = -0.5
+
+        x = segment[:, 0] * math.cos((segment_num + center_adjust) * const.DELTA_ALPHA)
+        y = segment[:, 0] * math.sin((segment_num + center_adjust) * const.DELTA_ALPHA)
+
+        ax.scatter(
+            x,
+            y,
+            c=colour_set[proto_segs[idx] % len(colour_set)],
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2,
+            linewidths=0,
+            zorder=2,
+        )
+    
+    ax.plot(
+        0,
+        0,
+        c=Colour.DARK_GREY.value,
+        marker="o",
+        markersize=3,
+        zorder=3,
+    )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(.01, .99, f'Prototype Points: {sum(len(proto_points) for proto_points in proto_segs_arr)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_segs, name):
+    fig, ax = plt_u.init_plot_2D("Ground Plane Mapped", "X", "Y")
+
+    # Plot Ground Plane
+    ground_line_count = 0
+    colour_set = [Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value]
+    for segment in np.unique(segments):
+        ground_set = ground_plane[segment]
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                ground_line_count += 1
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * segment)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * segment)
 
 def plot_point_cloud_2D(config, point_cloud, subtitle, name):
     # Create Figure
