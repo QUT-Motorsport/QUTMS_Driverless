@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(include)
@@ -28,8 +29,8 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
 add_executable(pulse src/node_steering_CAN_pulse.cpp ${SOURCES})
-ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs)
-ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs)
+ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs std_msgs)
+ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs std_msgs)
 
 target_include_directories(steering PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

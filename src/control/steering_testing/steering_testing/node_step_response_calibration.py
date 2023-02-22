@@ -1,10 +1,7 @@
-import math
 from pathlib import Path
-import random
 import time
 
 import cv2
-import matplotlib as mlb
 import matplotlib.pyplot as plt
 import numpy as np
 

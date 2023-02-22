@@ -4,12 +4,13 @@
     <name>steering_actuator</name>
     <version>0.0.0</version>
     <description>Nanotec Stepper Management</description>
-    <maintainer email="qutmotorsport.team@gmail.com">Thomas Fraser, Alistair English</maintainer>
+    <maintainer email="team@qutmotorsport.com">Alastair Bradford, Thomas Fraser, Alistair English</maintainer>
     <license>MIT</license>
 
     <!-- Messages -->
     <depend>driverless_msgs</depend>
-
+    <depend>ackermann_msgs</depend>
+    <depend>std_msgs</depend>
     <buildtool_depend>ament_cmake</buildtool_depend>
 
     <test_depend>ament_lint_auto</test_depend>
