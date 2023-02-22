@@ -11,12 +11,27 @@ from . import plot_utils as plt_u
 
 def plot_point_cloud_2D(config, point_cloud, subtitle, name):
     # Create Figure
+    fig, ax = plt_u.init_plot_2D(f"Point Cloud {subtitle}", "X", "Y")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_cloud["intensity"] / 255,
+        cmap=plt.cm.gist_rainbow,
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        vmin=0.0,
+        vmax=1.0,
+    )
 
     plt_u.calibrate_axis(ax)
+    plt_u.add_colourbar(fig, plot, "Point Intensity", RGBA.MS_ORANGE.value, RGBA.WHITE.value)
 
+    ax.text(.01, .99, f'Points: {point_cloud.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
 
-def animate_figure():
-    raise NotImplementedError
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
 def plot_segments_2D(config, point_cloud, point_norms, segments, name):
