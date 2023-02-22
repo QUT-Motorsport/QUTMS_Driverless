@@ -206,28 +206,36 @@ def plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_s
                 x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * segment)
                 y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * segment)
 
-def plot_point_cloud_2D(config, point_cloud, subtitle, name):
-    # Create Figure
-    fig, ax = init_plot_2D(f"Point Cloud {subtitle}", "X", "Y")
-    plot = ax.scatter(
-        point_cloud["x"],
-        point_cloud["y"],
-        c=point_cloud["intensity"] / 255,
-        cmap=plt.cm.gist_rainbow,
-        marker="s",
-        s=(72.0 / fig.dpi) ** 2,
-        linewidths=0,
-        vmin=0.0,
-        vmax=1.0,
-    )
+                ax.plot(
+                    x,
+                    y,
+                    color=colour_set[jdx % len(colour_set)],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1,
+                )
 
-    calibrate_axis(ax)
-    add_colourbar(fig, plot, "Point Intensity", RGBA.MS_ORANGE.value, RGBA.WHITE.value)
+    # Plot Prototype Points
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
 
-    ax.text(.01, .99, f'Points: {point_cloud.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+        ax.scatter(
+            x,
+            y,
+            c=Colour.WHITE.value,
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2,
+            linewidths=0,
+            zorder=2,
+        )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(.01, .99, f'Ground Lines: {ground_line_count}', ha='left', va='top', c=Colour.LIGHT_BLUE.value, fontsize=8, transform=ax.transAxes)
 
     # Save Figure
-    add_logo(fig, dpi=225, small=True)
+    plt_u.add_logo(fig, dpi=225, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
