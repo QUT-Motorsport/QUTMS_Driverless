@@ -58,7 +58,7 @@ class NodeTopicToCSV(Node):
         topic_readable = topic.replace("/", "_")
         if topic_readable not in self.csv_writers:
 
-            csv_folder = Path("./src/csv_data")
+            csv_folder = Path("./csv_data")
             csv_folder.mkdir(exist_ok=True)
             f = open(csv_folder / f"{topic_readable}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
             self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys(), extrasaction="ignore")
