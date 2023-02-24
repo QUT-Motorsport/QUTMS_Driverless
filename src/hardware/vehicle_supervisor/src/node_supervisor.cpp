@@ -15,10 +15,10 @@
 #include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
-#include "driverless_msgs/msg/steering_reading.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 using std::placeholders::_1;
 
@@ -46,7 +46,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_pub;
-    rclcpp::Publisher<driverless_msgs::msg::SteeringReading>::SharedPtr steering_reading_pub;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub;
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
     rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
@@ -95,11 +95,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // RES Reciever Status Packet
                 Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
 
+                driverless_msgs::msg::RES res_msg;
+                res_msg.sw_k2 = this->RES_status.sw_k2;
+                res_msg.bt_k3 = this->RES_status.bt_k3;
+                res_msg.estop = this->RES_status.estop;
+                res_msg.radio_quality = this->RES_status.radio_quality;
+                res_msg.loss_of_signal_shutdown_notice = this->RES_status.loss_of_signal_shutdown_notice;
+                this->res_pub->publish(res_msg);
+
                 this->res_alive = 1;
                 // Log RES state
-                // RCLCPP_INFO(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-                //             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
-                //             this->RES_status.radio_quality);
+                RCLCPP_DEBUG(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
+                             this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
+                             this->RES_status.radio_quality);
                 this->run_fsm();
                 break;
             }
@@ -154,7 +162,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
                 uint8_t VCU_ID = msg.id & 0xF;
-                RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
+                RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
                 // data vector to uint8_t array
                 uint8_t data[8];
@@ -189,17 +197,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 uint16_t adc_1;
 
                 Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
-                // RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                // steering_0_raw,
-                //              steering_1_raw, adc_0, adc_1);
+                RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                             steering_0_raw, steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
                 if (abs(steering_0 - steering_1) < 10) {
-                    driverless_msgs::msg::SteeringReading reading;
-                    reading.steering_angle = steering_0;
-                    reading.adc_0 = adc_0;
-                    reading.adc_1 = adc_1;
-                    this->steering_reading_pub->publish(reading);
+                    std_msgs::msg::Float32 angle_msg;
+                    angle_msg.data = steering_0;
+                    this->steering_angle_pub->publish(angle_msg);
                 } else {
                     // go to emergency
                     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
@@ -545,8 +550,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->wss_vel_pub = this->create_publisher<driverless_msgs::msg::WSSVelocity>("/vehicle/wheel_speed", 10);
 
         // Steering
-        this->steering_reading_pub =
-            this->create_publisher<driverless_msgs::msg::SteeringReading>("/vehicle/steering_reading", 10);
+        this->steering_angle_pub = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(

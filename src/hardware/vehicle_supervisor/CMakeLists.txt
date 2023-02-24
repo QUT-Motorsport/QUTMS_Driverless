@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(include)
@@ -36,7 +37,7 @@ set (SOURCES
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(vehicle_supervisor src/node_supervisor.cpp ${SOURCES})
-ament_target_dependencies(vehicle_supervisor rclcpp driverless_msgs ackermann_msgs)
+ament_target_dependencies(vehicle_supervisor rclcpp driverless_msgs ackermann_msgs std_msgs)
 
 target_include_directories(vehicle_supervisor PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

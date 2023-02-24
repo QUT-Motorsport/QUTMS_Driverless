@@ -20,7 +20,6 @@ setup(
     entry_points={
         "console_scripts": [
             "sine = controllers.node_sine:main",
-            "random = controllers.node_random:main",
             "constant = controllers.node_constant:main",
             "reactive_control = controllers.node_reactive_control:main",
             "reactive_trajectory = controllers.node_reactive_trajectory:main",

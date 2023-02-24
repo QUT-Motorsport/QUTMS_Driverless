@@ -19,33 +19,33 @@ def generate_launch_description():
                 package="rosboard",
                 executable="rosboard_node",
             ),
-            Node(
-                package="steering_actuator",
-                executable="steering",
-                parameters=[
-                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
-                ],
-            ),
+            # Node(
+            #     package="steering_actuator",
+            #     executable="steering",
+            #     parameters=[
+            #         get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+            #     ],
+            # ),
             Node(
                 package="vehicle_supervisor",
                 executable="vehicle_supervisor",
             ),
-            Node(
-                package="car_status",
-                executable="car_status_node",
-            ),
+            # Node(
+            #     package="car_status",
+            #     executable="car_status_node",
+            # ),
             Node(
                 package="driverless_common",
                 executable="display",
             ),
-            Node(
-                package="lidar_pipeline_3",
-                executable="lidar_perception",
-            ),
-            Node(
-                package="mission_controller",
-                executable="mission_control",
-            ),
+            # Node(
+            #     package="lidar_pipeline_3",
+            #     executable="lidar_perception",
+            # ),
+            # Node(
+            #     package="mission_controller",
+            #     executable="mission_control",
+            # ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(

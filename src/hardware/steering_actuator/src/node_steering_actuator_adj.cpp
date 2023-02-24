@@ -109,12 +109,6 @@ const std::string PARAM_KP = "Kp";
 const std::string PARAM_KI = "Ki";
 const std::string PARAM_KD = "Kd";
 
-void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        dest[i] = vec[i];
-    }
-}
-
 // Steering Actuation Class
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
@@ -422,64 +416,27 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // all state transitions passed
         if (this->motor_enabled && this->steering_ang_received) {
             // motor has not centred itself with steering ang sensor
-            if (!this->centred) {
-                auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
-                double elapsed_time_seconds =
-                    std::chrono::duration<double, std::milli>(current_update - last_update).count() /
-                    1000;                            // Calculate time elapsed
-                this->last_update = current_update;  // Set previous time to current time
+            auto current_update = std::chrono::high_resolution_clock::now();  // Update clock
+            double elapsed_time_seconds =
+                std::chrono::duration<double, std::milli>(current_update - last_update).count() /
+                1000;                            // Calculate time elapsed
+            this->last_update = current_update;  // Set previous time to current time
 
-                // Grab error between steering angle and "zero"
-                double error = -(this->current_steering_angle - this->center_steering);
+            // Grab error between steering angle and "zero"
+            double error = -(this->current_steering_angle - this->center_steering);
 
-                RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
+            RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
-                if (abs(error) < 0.5) {
-                    // motor has settled enough
-                    this->settled_count += 1;
+            this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
+            double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
 
-                    if (this->settled_count > 200) {
-                        this->offset = this->initial_enc - this->current_enc_revolutions;
-                        this->centred = true;
-                        RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
-                        return;
-                    }
-                } else {
-                    // reset settled count to debounce initial overshoots
-                    this->settled_count = 0;
-                }
+            // left hand down is +, rhd is -
+            double target =
+                -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
 
-                this->integral_error += error * elapsed_time_seconds;                         // Grab integral error
-                double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
+            this->prev_error = error;
 
-                // left hand down is +, rhd is -
-                double target =
-                    -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
-                // RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
-                //             integral_error, Kd, derivative_error, target);  // Prirnt PID commands
-
-                this->prev_error = error;
-
-                this->target_position(target);
-            }
-            // we have set a home offset
-            else if (this->centred) {
-                // turning left eqn: -83.95x - 398.92
-                // turning right eqn: -96.19x - 83.79
-                int32_t target;
-                if (this->requested_steering_angle > this->center_steering) {
-                    target = int32_t(-86.45 * this->requested_steering_angle - 398.92) - this->offset;
-                    // this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
-                } else {
-                    target = int32_t(-94.58 * this->requested_steering_angle - 83.79) - this->offset;
-                    // this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
-                }
-
-                // int32_t target = this->requested_steering_angle;
-
-                target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
-                this->target_position(target);
-            }
+            this->target_position(target);
         }
     }
 
@@ -493,22 +450,14 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         uint8_t out[8];  // Data out
         uint16_t control_word;
 
-        if (this->centred) {
-            control_word = 0b0101111;
-        } else {
-            control_word = 0b1101111;
-        }
+        control_word = 0b1101111;
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
         sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
 
-        if (this->centred) {
-            control_word = 0b0111111;
-        } else {
-            control_word = 0b1111111;
-        }
+        control_word = 0b1111111;
         sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
