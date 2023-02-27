@@ -24,7 +24,7 @@ mission: int = 0
 
 class KeyboardControllerNode(Node):
     def __init__(self):
-        super().__init__("keyboard_controller_node")
+        super().__init__("terminal_controller_node")
 
         self.state_sub: Publisher = self.create_subscription(State, "/system/state", self.callback, 1)
         self.drive_command_publisher: Publisher = self.create_publisher(
@@ -91,14 +91,19 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
             steering_angle = 0.0
         if c == ord("0"):
             mission = 0
+            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("1"):
             mission = 1
+            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("2"):
             mission = 2
+            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("3"):
             mission = 3
+            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("4"):
             mission = 4
+            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("\n"):
             speed = 0.0
             steering_angle = 0.0
@@ -114,7 +119,6 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
 
         print_state(stdscr)
         keyboard_controller_node.publish_drive_command(speed, steering_angle)
-        keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
 
 
 def main():
