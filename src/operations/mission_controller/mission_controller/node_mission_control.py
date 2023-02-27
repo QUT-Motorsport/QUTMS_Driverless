@@ -6,7 +6,7 @@ from rclpy.node import Node
 
 from driverless_msgs.msg import State
 
-from .mission_constants import INT_MISSION_TYPE
+from driverless_common.status_constants import INT_MISSION_TYPE
 
 mission_pkg = get_package_share_directory("mission_controller")  # path to the mission package
 

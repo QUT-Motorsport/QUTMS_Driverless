@@ -8,25 +8,29 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Reset, State
 from std_msgs.msg import UInt8
 
+from driverless_common.status_constants import INT_MISSION_TYPE, INT_STATE_TYPE
+
 SPEED_MIN = 0.0
 SPEED_MAX = 4.0
 SPEED_INCREMENT = 0.1
 
-STEER_MIN = -90.0
-STEER_MAX = 90.0
+STEER_MIN = -85.0
+STEER_MAX = 85.0
 STEER_INCREMENT = -5
 
 speed: float = 0.0
 steering_angle: float = 0.0
-state: str = "idle"
+state: int = 0
 mission: int = 0
+actual_mission: int = 0
 
 
 class KeyboardControllerNode(Node):
     def __init__(self):
         super().__init__("terminal_controller_node")
 
-        self.state_sub: Publisher = self.create_subscription(State, "/system/state", self.callback, 1)
+        self.state_sub: Publisher = self.create_subscription(State, "/system/as_status", self.state_callback, 1)
+
         self.drive_command_publisher: Publisher = self.create_publisher(
             AckermannDriveStamped, "/control/driving_command", 1
         )
@@ -40,20 +44,20 @@ class KeyboardControllerNode(Node):
         msg.drive.steering_angle = steering_angle
         self.drive_command_publisher.publish(msg)
 
-    def reset(self):
-        self.reset_pub.publish(Reset(reset=True))
-
-    def callback(self, msg: State):
+    def state_callback(self, msg: State):
         global state, mission
 
         state = msg.state
-        self.get_logger().info(f"State: {msg.state}")
 
 
 def print_state(stdscr):
     global speed, steering_angle, state, mission
 
-    stdscr.addstr(0, 0, f"State: {state}. Mission: {mission}")
+    mission_str: str = INT_MISSION_TYPE[mission].value
+    actual_mission_str: str = INT_MISSION_TYPE[actual_mission].value
+    state_str: str = INT_STATE_TYPE[state].value
+
+    stdscr.addstr(0, 0, f"State: {state_str}. Selected Mission: {mission_str}. Actual Mission: {actual_mission_str}")
     stdscr.addstr(2, 0, "Use the WASD keys to control the car:")
     stdscr.addstr(3, 0, f"Torque: {speed}")
     stdscr.addstr(4, 0, f"Steering Angle: {steering_angle}")
@@ -107,15 +111,11 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
         if c == ord("\n"):
             speed = 0.0
             steering_angle = 0.0
-            keyboard_controller_node.reset()
+            mission = State.MISSION_NONE
+            keyboard_controller_node.reset_pub.publish(Reset(reset=True))
 
         speed = round(max(min(speed, SPEED_MAX), SPEED_MIN), 2)
         steering_angle = round(max(min(steering_angle, STEER_MAX), STEER_MIN), 2)
-
-        if speed > 0.0:
-            state = "driving"
-        elif speed == 0.0:
-            state = "idle"
 
         print_state(stdscr)
         keyboard_controller_node.publish_drive_command(speed, steering_angle)
