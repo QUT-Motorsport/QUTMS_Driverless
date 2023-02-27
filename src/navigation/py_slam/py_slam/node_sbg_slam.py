@@ -1,6 +1,7 @@
 from math import atan2, cos, hypot, pi, sin, sqrt
 import time
 
+from geodesy.utm import UTMPoint, fromLatLong
 import numpy as np
 from sklearn.neighbors import KDTree
 from tf2_ros import TransformBroadcaster
@@ -77,24 +78,20 @@ class PySlam(Node):
 
     def nav_callback(self, ekf_nav_msg: SbgEkfNav, ekf_euler_msg: SbgEkfEuler):
         if not self.initial_pos and not self.initial_ang:
-            self.initial_pos = (ekf_nav_msg.latitude, ekf_nav_msg.longitude)
+            coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
+            self.initial_pos = (coords.easting, coords.northing)
             self.initial_ang = ekf_euler_msg.angle.z
             return
 
-        relative_lat = ekf_nav_msg.latitude - self.initial_pos[0]
-        relative_lng = ekf_nav_msg.longitude - self.initial_pos[1]
-        relative_ang = wrap_to_pi(ekf_euler_msg.angle.z - self.initial_ang)
+        # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
+        coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
+        # get relative to initial position and last state prediction
+        d_x = coords.easting - self.initial_pos[0] - self.state[0]
+        d_y = coords.northing - self.initial_pos[1] - self.state[1]
 
-        # https://stackoverflow.com/a/39540339
-        x_m = relative_lat * 111320
-        # y_m = 40075 * cos(relative_lng) / 360
-        y_m = relative_lng * 111139
-
-        # get distance travelled in x and y since last state prediction
-        d_x = x_m - self.state[0]
-        d_y = y_m - self.state[1]
         # get angle since last state prediction
-        d_th = wrap_to_pi(relative_ang - self.state[2])
+        # BIT CONCERNED ABOUT THE INITIAL ANG PART, CAN WE JUST TAKE THE ABSOLUTE ANGLE?
+        d_th = wrap_to_pi(ekf_euler_msg.angle.z - self.initial_ang - self.state[2])
 
         self.predict(d_x, d_y, d_th)
         # self.callback(detection_msg)
@@ -102,25 +99,12 @@ class PySlam(Node):
 
     def imu_callback(self, gps_msg: NavSatFix, imu_msg: Imu):
         if not self.initial_pos and not self.initial_ang:
-            self.initial_pos = (gps_msg.latitude, gps_msg.longitude)
+            coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
+            self.initial_pos = (coords.easting, coords.northing)
             self.initial_ang = quat2euler(
                 [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
             )[2]
             return
-
-        radius = 6378.137
-        dLat = gps_msg.latitude * pi / 180 - self.initial_pos[0] * pi / 180
-        dLon = gps_msg.longitude * pi / 180 - self.initial_pos[1] * pi / 180
-        a = sin(dLat / 2) * sin(dLat / 2) + cos(self.initial_pos[0] * pi / 180) * cos(
-            gps_msg.latitude * pi / 180
-        ) * sin(dLon / 2) * sin(dLon / 2)
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        d_dist = radius * c * 100
-
-        imu_ang = quat2euler(
-            [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
-        )[2]
-        relative_ang = wrap_to_pi(imu_ang - self.initial_ang)
 
         # https://stackoverflow.com/a/39540339
         # x_m = relative_lng * 111320
@@ -130,9 +114,32 @@ class PySlam(Node):
         # d_x = x_m - self.state[0]
         # d_y = y_m - self.state[1]
         # get angle since last state prediction
-        d_th = wrap_to_pi(relative_ang - self.state[2])
-        d_x = d_dist * cos(self.state[2])
-        d_y = d_dist * sin(self.state[2])
+
+        # https://stackoverflow.com/questions/639695/how-to-convert-latitude-or-longitude-to-meters
+        # radius = 6378.137
+        # dLat = gps_msg.latitude * pi / 180 - self.initial_pos[0] * pi / 180
+        # dLon = gps_msg.longitude * pi / 180 - self.initial_pos[1] * pi / 180
+        # a = sin(dLat / 2) * sin(dLat / 2) + cos(self.initial_pos[0] * pi / 180) * cos(
+        #     gps_msg.latitude * pi / 180
+        # ) * sin(dLon / 2) * sin(dLon / 2)
+        # c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        # d_dist = radius * c * 100
+        # d_x = d_dist * cos(self.state[2])
+        # d_y = d_dist * sin(self.state[2])
+
+        # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
+        coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
+        # get relative to initial position and last state prediction
+        d_x = coords.easting - self.initial_pos[0] - self.state[0]
+        d_y = coords.northing - self.initial_pos[1] - self.state[1]
+
+        # angle from imu
+        imu_ang = quat2euler(
+            [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
+        )[2]
+        # get relative to initial angle and last state prediction
+        d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
+
         print(f"deltas: {d_x}, {d_y}, {d_th}")
 
         self.predict(d_x, d_y, d_th)
