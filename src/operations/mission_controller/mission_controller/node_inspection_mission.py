@@ -7,7 +7,7 @@ from driverless_msgs.msg import Reset, Shutdown
 from driverless_common.shutdown_node import ShutdownNode
 
 
-class InspectionMission(ShutdownNode):
+class InspectionMission(Node):
     started: bool = False
 
     def __init__(self):
