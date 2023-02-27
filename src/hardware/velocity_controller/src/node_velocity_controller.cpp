@@ -2,6 +2,8 @@
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
+#include "driverless_msgs/msg/state.hpp"
+#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -17,53 +19,39 @@ class Velocity_Controller : public rclcpp::Node {
 
     float integral_error = 0;
 
+    // wheel params
+    const int MOTOR_COUNT = 4;
+    const float WHEEL_RADIUS = 0.4064;
+
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_sub;
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
+    rclcpp::Subscription<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_sub;
 
     ackermann_msgs::msg::AckermannDriveStamped target_ackermann;
 
     std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler;
     std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle;
 
-    // velocity of each wheel in m/s
-    float motor_velocities[4];
-
-    const int MOTOR_COUNT = 4;
-    const float WHEEL_RADIUS = 0.4064;
+    // Enable motors logic
+    driverless_msgs::msg::State state;
+    bool motors_enabled = false;
+    float avg_velocity = 0;
 
     rclcpp::TimerBase::SharedPtr controller_timer;
 
-    rclcpp::Time _internal_status_time;
-
     void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) { this->target_ackermann = msg; }
 
-    void rpm_callback(const driverless_msgs::msg::MotorRPM msg) {
-        if (msg.index < MOTOR_COUNT) {
-            // valid wheel, so convert from rpm to m/s
-
-            // convert from eRPM
-            float motorRPM = msg.rpm / (21.0 * 4.50);
-
-            // convert to m/s
-            motor_velocities[msg.index] = motorRPM * M_PI * this->WHEEL_RADIUS / 60;
-        }
-    }
+    void velocity_callback(const driverless_msgs::msg::WSSVelocity msg) { this->avg_velocity = msg.velocity; }
 
     void controller_callback() {
-        // PID controller for velocity here
-
-        // average all 4 motor velocities to use as 'current'
-        float av_velocity = 0;
-
-        for (int i = 0; i < MOTOR_COUNT; i++) {
-            av_velocity += this->motor_velocities[i];
+        if (!this->motors_enabled) {
+            return;
         }
 
-        av_velocity = av_velocity / MOTOR_COUNT;
-
         // calculate error
-        float error = this->target_ackermann.drive.speed - av_velocity;
+        float error = this->target_ackermann.drive.speed - this->avg_velocity;
         this->integral_error += error;
 
         // clip the integral error based on max_integral_torque
@@ -73,7 +61,7 @@ class Velocity_Controller : public rclcpp::Node {
             this->integral_error = this->max_integral_torque / this->Ki_vel;
         }
 
-        if (av_velocity < this->histerisis_reset_ms) {
+        if (this->avg_velocity < this->histerisis_reset_ms) {
             this->integral_error = 0;
         }
 
@@ -82,7 +70,7 @@ class Velocity_Controller : public rclcpp::Node {
         float i_term = this->Ki_vel * integral_error;
 
         float accel = p_term;
-        if (av_velocity > this->histerisis_kickin_ms) {
+        if (this->avg_velocity > this->histerisis_kickin_ms) {
             accel += i_term;
         }
 
@@ -112,9 +100,20 @@ class Velocity_Controller : public rclcpp::Node {
         this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
         this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
 
-        RCLCPP_INFO(this->get_logger(),
-                    "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
-                    Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
+        RCLCPP_DEBUG(this->get_logger(),
+                     "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
+                     Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
+    }
+
+    // Check State to enable or disable motor
+    void as_state_callback(const driverless_msgs::msg::State msg) {
+        this->state = msg;
+        if (msg.state == driverless_msgs::msg::State::DRIVING) {
+            // Enable motor
+            this->motors_enabled = true;
+        } else {
+            this->motors_enabled = false;
+        }
     }
 
    public:
@@ -131,13 +130,17 @@ class Velocity_Controller : public rclcpp::Node {
         // Configure logger level
         this->get_logger().set_level(rclcpp::Logger::Level::Debug);
 
+        // State updates
+        this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
+            "/system/as_status", 10, std::bind(&Velocity_Controller::as_state_callback, this, _1));
+
         // Ackermann
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
             "/control/driving_command", 10, std::bind(&Velocity_Controller::ackermann_callback, this, _1));
 
         // Velocity updates
-        this->motorRPM_sub = this->create_subscription<driverless_msgs::msg::MotorRPM>(
-            "/vehicle/motor_rpm", 10, std::bind(&Velocity_Controller::rpm_callback, this, _1));
+        this->wss_sub = this->create_subscription<driverless_msgs::msg::WSSVelocity>(
+            "/vehicle/wheel_speed", 10, std::bind(&Velocity_Controller::velocity_callback, this, _1));
 
         // Control loop -> 10ms so runs at double speed heartbeats are sent at
         this->controller_timer = this->create_wall_timer(std::chrono::milliseconds(10),
@@ -148,7 +151,6 @@ class Velocity_Controller : public rclcpp::Node {
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
 
         // Param callback
-
         this->param_event_handler = std::make_shared<rclcpp::ParameterEventHandler>(this);
         this->param_cb_handle = this->param_event_handler->add_parameter_event_callback(
             std::bind(&Velocity_Controller::update_parameters, this, std::placeholders::_1));
