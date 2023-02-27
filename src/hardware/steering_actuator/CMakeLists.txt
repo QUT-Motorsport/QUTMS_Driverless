@@ -22,18 +22,18 @@ set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
 )
 
-add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
-add_executable(steering_adj src/node_steering_actuator_adj.cpp ${SOURCES})
+add_executable(actuator src/node_steering_actuator.cpp ${SOURCES})
+add_executable(actuator_old src/node_steering_actuator_adj.cpp ${SOURCES})
 add_executable(pulse src/node_steering_CAN_pulse.cpp ${SOURCES})
-ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs std_msgs)
-ament_target_dependencies(steering_adj rclcpp ackermann_msgs driverless_msgs std_msgs)
+ament_target_dependencies(actuator rclcpp ackermann_msgs driverless_msgs std_msgs)
+ament_target_dependencies(actuator_old rclcpp ackermann_msgs driverless_msgs std_msgs)
 ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs std_msgs)
 
 target_include_directories(actuator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-target_include_directories(steering_adj PUBLIC
+target_include_directories(actuator_old PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
@@ -41,7 +41,7 @@ target_include_directories(pulse PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS steering steering_adj pulse
+install(TARGETS actuator actuator_old pulse
   DESTINATION lib/${PROJECT_NAME})
 
 # config folder
