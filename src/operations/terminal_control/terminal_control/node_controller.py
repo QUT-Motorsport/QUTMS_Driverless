@@ -66,7 +66,10 @@ def print_state(stdscr):
         0,
         f"Mission 0: None\t Mission 1: Manual Driving\t Mission 2: Inspection\t Mission 3: EBS Test\t Mission 4: Trackdrive",
     )
+    stdscr.addstr(12, 0, f"Press [m] to confirm mission selection")
     stdscr.addstr(13, 0, f"")
+    # THIS WILL ERROR IF TERMINAL BY DEFAULT IS TOO SMALL (NOT ENOUGH LINES)
+    # INCREASE TERMINAL SIZE TO FIX
 
 
 def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
@@ -90,19 +93,16 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
         if c == ord("g"):
             steering_angle = 0.0
         if c == ord("0"):
-            mission = 0
-            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
+            mission = State.MISSION_NONE
         if c == ord("1"):
-            mission = 1
-            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
+            mission = State.MANUAL_DRIVING
         if c == ord("2"):
-            mission = 2
-            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
+            mission = State.INSPECTION
         if c == ord("3"):
-            mission = 3
-            keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
+            mission = State.EBS_TEST
         if c == ord("4"):
-            mission = 4
+            mission = State.TRACKDRIVE
+        if c == ord("m"):
             keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("\n"):
             speed = 0.0
