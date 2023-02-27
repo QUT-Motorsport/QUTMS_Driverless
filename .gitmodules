@@ -16,7 +16,7 @@
 [submodule "src/hardware/QUTMS_Embedded_Common"]
 	path = src/hardware/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
-	branch = comp22
+	branch = comp-22
 [submodule "src/common/joint_state_publisher"]
 	path = src/common/joint_state_publisher
 	url = https://github.com/ros/joint_state_publisher.git
