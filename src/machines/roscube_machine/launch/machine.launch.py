@@ -19,13 +19,13 @@ def generate_launch_description():
                 package="rosboard",
                 executable="rosboard_node",
             ),
-            # Node(
-            #     package="steering_actuator",
-            #     executable="steering",
-            #     parameters=[
-            #         get_package_share_path("steering_actuator") / "config" / "steering.yaml",
-            #     ],
-            # ),
+            Node(
+                package="steering_actuator",
+                executable="actuator",
+                parameters=[
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
+            ),
             Node(
                 package="velocity_controller",
                 executable="controller",
@@ -45,14 +45,14 @@ def generate_launch_description():
                 package="driverless_common",
                 executable="display",
             ),
-            # Node(
-            #     package="lidar_pipeline_3",
-            #     executable="lidar_perception",
-            # ),
-            # Node(
-            #     package="mission_controller",
-            #     executable="mission_control",
-            # ),
+            Node(
+                package="lidar_pipeline_3",
+                executable="lidar_perception",
+            ),
+            Node(
+                package="mission_controller",
+                executable="mission_control",
+            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
