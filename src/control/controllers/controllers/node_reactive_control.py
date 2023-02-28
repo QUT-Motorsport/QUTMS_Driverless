@@ -50,7 +50,8 @@ class ReactiveController(Node):
             self.target_accel = 0.0
             self.target_cone_count = 3
             self.pub_accel = False
-            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)

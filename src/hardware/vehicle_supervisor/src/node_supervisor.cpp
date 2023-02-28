@@ -221,7 +221,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 copy_data(msg.data, data, 4);
 
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
-                RCLCPP_INFO(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
+                RCLCPP_DEBUG(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
                             this->SW_heartbeat.missionID);
 
                 this->run_fsm();

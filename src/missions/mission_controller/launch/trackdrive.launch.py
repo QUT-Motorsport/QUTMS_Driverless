@@ -11,11 +11,12 @@ def generate_launch_description():
                 executable="reactive_control",
             ),
             Node(
-                package="velocity_controller",
-                executable="velocity_controller",
+                package="steering_actuator",
+                executable="steering",
                 parameters=[
-                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
                 ],
-            ),
+            )
+
         ]
     )

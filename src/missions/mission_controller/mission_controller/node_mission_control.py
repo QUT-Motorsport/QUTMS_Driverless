@@ -35,13 +35,18 @@ class MissionControl(Node):
             return response
 
     def callback(self, status: State):
+        if not self.mission_launched:
+            self.get_logger().info("State: " + str(status.state) + " Mission: " + str(status.mission) + " Launched: " + str(self.mission_launched))
+
         if status.state == State.SELECT_MISSION:
             self.mission_launched = False
 
         if status.mission != State.MISSION_NONE and not self.mission_launched:
+            self.get_logger().info("launching")
             target_mission = INT_MISSION_TYPE[status.mission].value
             self.get_logger().info("Mission started: " + target_mission)
             self.mission_launched = True
+            self.get_logger().info("State: " + str(status.state) + " Mission: " + str(status.mission) + " Launched: " + str(self.mission_launched))
             launch_a_launch_file(
                 launch_file_path=(mission_pkg + "/" + target_mission + ".launch.py"), launch_file_arguments={}
             )
