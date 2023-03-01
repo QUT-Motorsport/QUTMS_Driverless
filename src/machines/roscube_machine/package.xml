@@ -16,7 +16,7 @@
     <depend>canbus</depend>
     <depend>vehicle_urdf</depend>
     <depend>vehicle_supervisor</depend>
-    <depend>keyboard_control</depend>
+    <depend>terminal_control</depend>
     <!-- <depend>car_status</depend> -->
     <depend>py_slam</depend>
     <depend>sbg_driver</depend>
