@@ -2,6 +2,7 @@
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -17,6 +18,7 @@ class Velocity_Controller : public rclcpp::Node {
 
     float integral_error = 0;
 
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_sub;
@@ -32,9 +34,10 @@ class Velocity_Controller : public rclcpp::Node {
     const int MOTOR_COUNT = 4;
     const float WHEEL_RADIUS = 0.4064;
 
-    rclcpp::TimerBase::SharedPtr controller_timer;
+    driverless_msgs::msg::State state;
+    bool motors_enabled = false;
 
-    rclcpp::Time _internal_status_time;
+    rclcpp::TimerBase::SharedPtr controller_timer;
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) { this->target_ackermann = msg; }
 
