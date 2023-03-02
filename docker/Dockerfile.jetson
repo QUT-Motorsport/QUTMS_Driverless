@@ -76,5 +76,5 @@ RUN rm -rf ./src
 # USER ${USERNAME}
 
 # tell ROS to use Cyclone DDS
-# ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-# ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
