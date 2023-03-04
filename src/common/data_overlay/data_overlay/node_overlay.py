@@ -59,13 +59,13 @@ class DataOverlay(Node):
         self.velocity = msg.velocity * 3.6
 
     def imu_callback(self, msg: Imu):
-        self.x_accel = msg.linear_acceleration.x
-        self.y_accel = msg.linear_acceleration.y
+        self.x_gs = msg.linear_acceleration.x / 9.81
+        self.y_gs = msg.linear_acceleration.y / 9.81
 
     def timer_callback(self):
         # randomise the data
-        self.x_accel = np.random.uniform(-1, 1)
-        self.y_accel = np.random.uniform(-1, 1)
+        self.x_accel = np.random.uniform(-2, 2)
+        self.y_accel = np.random.uniform(-2, 2)
         self.velocity = np.random.uniform(0, 50)
 
         if not self.x_accel or not self.y_accel or not self.velocity:
@@ -138,7 +138,7 @@ class DataOverlay(Node):
         # draw the x and y acceleration as a dot
         cv2.circle(
             img,
-            (int(circle_center[0] + self.x_accel * 100), int(circle_center[1] + self.y_accel * 100)),
+            (int(circle_center[0] + self.x_accel * 50), int(circle_center[1] + self.y_accel * 50)),
             5,
             (0, 0, 255),
             -1,
@@ -147,7 +147,7 @@ class DataOverlay(Node):
         cv2.line(
             img,
             (circle_center[0], circle_center[1]),
-            (int(circle_center[0] + self.x_accel * 100), int(circle_center[1] + self.y_accel * 100)),
+            (int(circle_center[0] + self.x_accel * 50), int(circle_center[1] + self.y_accel * 50)),
             (0, 0, 255),
             2,
         )
@@ -159,7 +159,7 @@ class DataOverlay(Node):
         # draw a text to show velocity
         cv2.putText(
             img,
-            str(int(self.velocity)) + " km/h",
+            str(round(self.velocity, 2)) + " km/h",
             (int(vel_bar[0] + 40), int(top_area - 50)),
             cv2.FONT_HERSHEY_SIMPLEX,
             3,
