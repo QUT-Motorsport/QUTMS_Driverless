@@ -33,8 +33,8 @@ if vid.isOpened() == False:
 
 
 class DataOverlay(Node):
-    x_accel: Optional[float] = None
-    y_accel: Optional[float] = None
+    x_gs: Optional[float] = None
+    y_gs: Optional[float] = None
     velocity: Optional[float] = None
 
     ebs_timer: float = 0.0
@@ -64,11 +64,11 @@ class DataOverlay(Node):
 
     def timer_callback(self):
         # randomise the data
-        self.x_accel = np.random.uniform(-2, 2)
-        self.y_accel = np.random.uniform(-2, 2)
+        self.x_gs = np.random.uniform(-2, 2)
+        self.y_gs = np.random.uniform(-2, 2)
         self.velocity = np.random.uniform(0, 50)
 
-        if not self.x_accel or not self.y_accel or not self.velocity:
+        if not self.x_gs or not self.y_gs or not self.velocity:
             return
 
         if not vid.isOpened():
@@ -115,7 +115,7 @@ class DataOverlay(Node):
         # draw a text to show the x acceleration above circle
         cv2.putText(
             img,
-            "X: " + str(round(self.x_accel, 2)),
+            "X: " + str(round(self.x_gs, 2)),
             (int(circle_center[0] - circle_radius / 2 - 30), circle_center[1] - circle_radius),
             cv2.FONT_HERSHEY_SIMPLEX,
             2,
@@ -126,7 +126,7 @@ class DataOverlay(Node):
         # draw a text to show the y acceleration beside circle
         cv2.putText(
             img,
-            "Y: " + str(round(self.y_accel, 2)),
+            "Y: " + str(round(self.y_gs, 2)),
             (circle_center[0] + circle_radius, int(circle_center[1] + circle_radius / 2 - 40)),
             cv2.FONT_HERSHEY_SIMPLEX,
             2,
@@ -138,7 +138,7 @@ class DataOverlay(Node):
         # draw the x and y acceleration as a dot
         cv2.circle(
             img,
-            (int(circle_center[0] + self.x_accel * 50), int(circle_center[1] + self.y_accel * 50)),
+            (int(circle_center[0] + self.x_gs * 50), int(circle_center[1] + self.y_gs * 50)),
             5,
             (0, 0, 255),
             -1,
@@ -147,7 +147,7 @@ class DataOverlay(Node):
         cv2.line(
             img,
             (circle_center[0], circle_center[1]),
-            (int(circle_center[0] + self.x_accel * 50), int(circle_center[1] + self.y_accel * 50)),
+            (int(circle_center[0] + self.x_gs * 50), int(circle_center[1] + self.y_gs * 50)),
             (0, 0, 255),
             2,
         )
