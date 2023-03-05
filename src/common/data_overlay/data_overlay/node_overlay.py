@@ -43,7 +43,7 @@ class DataOverlay(Node):
         super().__init__("data_overlay_node")
 
         # subscribe to velocity
-        self.create_subscription(WSSVelocity, "/wss_velocity", self.velocity_callback, 10)
+        self.create_subscription(WSSVelocity, "/vehicle/wss_velocity", self.velocity_callback, 10)
         # subscribe to imu
         self.create_subscription(Imu, "/imu/data", self.imu_callback, 10)
 
