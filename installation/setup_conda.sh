@@ -38,7 +38,7 @@ echo "---Creating driverless env---"
 echo ""
 sleep 3
 cd ~/QUTMS_Driverless/installation
-mamba env create --name driverless_env --file humble_py39_dev_env.yml
+mamba env create --name driverless_env --file humble_py310_dev_env.yml
 conda config --env --add channels conda-forge
 conda config --env --add channels robostack-humble
 

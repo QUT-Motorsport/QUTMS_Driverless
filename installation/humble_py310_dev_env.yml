@@ -1,5 +1,5 @@
 channels:
-  - robostack-humble
+  - robostack-staging
   - conda-forge
 dependencies:
   # ---------------------------------------------------------------------------
@@ -7,7 +7,7 @@ dependencies:
   # ---------------------------------------------------------------------------
   # tag below used for PYTHON_VERSION_OVERRIDE in Dockerfile.base
   ###PYTHON_VERSION###
-  - python=3.9
+  - python=3.10
   - ros-humble-desktop
   - ca-certificates
   - openssl
@@ -33,15 +33,16 @@ dependencies:
   - PyYAML
   - requests
   - ros-humble-ackermann-msgs
-  - ros-humble-ament-cmake-nose
+  # - ros-humble-ament-cmake-nose
   - ros-humble-pcl-ros
   - ros-humble-robot-state-publisher
+  - ros-humble-joint-state-publisher
   - ros-humble-xacro
   - scikit-learn
   - scipy
   - seaborn
   - tornado
-  - tf_transformations
+  # - tf_transformations
   - tqdm
   - transforms3d
   - pip
