@@ -1,5 +1,6 @@
-from math import cos, sin, sqrt
+from math import atan2, cos, sin, sqrt
 
+import numpy as np
 from transforms3d.euler import quat2euler
 
 import rclpy
@@ -14,6 +15,10 @@ from nav_msgs.msg import Odometry
 from typing import List
 
 MAX_CONE_RANGE = 17  # meters
+
+
+def wrap_pi(v: float) -> float:
+    return (v + np.pi) % (2 * np.pi) - np.pi
 
 
 class ConeDetectionTranslator(Node):
@@ -56,6 +61,13 @@ class ConeDetectionTranslator(Node):
             range_ = sqrt(x_dist**2 + y_dist**2)
 
             if range_ < MAX_CONE_RANGE:
+                # # add noise
+                bearing = wrap_pi(atan2(y_dist, x_dist) + np.random.normal(0, 0.001))
+                range_ += np.random.normal(0, 0.01)
+
+                x_dist = range_ * cos(bearing)
+                y_dist = range_ * sin(bearing)
+
                 detected_cone = Cone()
                 detected_cone.location.x = x_dist * cos(ak) + y_dist * sin(ak)
                 detected_cone.location.y = -x_dist * sin(ak) + y_dist * cos(ak)

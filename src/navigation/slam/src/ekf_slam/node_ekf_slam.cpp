@@ -31,10 +31,9 @@ class EKFSLAMNode : public rclcpp::Node {
    private:
     EKFslam ekf_slam;
 
-    double x_robot_vel;
-    double theta_robot_vel;
-
-    std::optional<rclcpp::Time> last_detection;
+    double forward_vel;
+    double rotational_vel;
+    std::optional<rclcpp::Time> last_update;
 
     rclcpp::Subscription<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_sub;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub;
@@ -55,59 +54,56 @@ class EKFSLAMNode : public rclcpp::Node {
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
 
-    void wss_callback(const driverless_msgs::msg::WSSVelocity::SharedPtr msg) { x_robot_vel = msg->velocity; }
+    void wss_callback(const driverless_msgs::msg::WSSVelocity::SharedPtr msg) {
+        forward_vel = msg->velocity;
+        predict(msg->header.stamp);
+    }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
-        theta_robot_vel = msg->twist.angular.z;
+        rotational_vel = msg->twist.angular.z;
+        predict(msg->header.stamp);
+    }
+
+    void predict(rclcpp::Time stamp) {
+        if (!last_update.has_value()) {
+            last_update = stamp;
+            return;
+        }
+
+        double dt = compute_dt(last_update.value(), stamp);
+        std::cout << dt << std::endl;
+
+        if (!(dt > 0)) {
+            return;
+        }
+
+        ekf_slam.predict(forward_vel, rotational_vel, dt);
+
+        last_update = stamp;
+
+        publish_visualisations(stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
-        if (!last_detection.has_value()) {
-            last_detection = detection_msg->header.stamp;
-            return;
-        }
+        // rclcpp::Time stamp = detection_msg->header.stamp;
 
-        double dt = compute_dt(last_detection.value(), detection_msg->header.stamp);
-        last_detection = detection_msg->header.stamp;
+        // if (!last_update.has_value()) {
+        //     last_update = stamp;
+        //     return;
+        // }
 
-        if (dt < 0) {
-            return;
-        }
+        // double dt = compute_dt(last_update.value(), stamp);
 
-        double delta_robot_x = x_robot_vel * dt;
-        double delta_robot_theta = theta_robot_vel * dt;
+        // if (!(dt > 0)) {
+        //     return;
+        // }
 
-        this->ekf_slam.predict(delta_robot_x, delta_robot_theta);
-        this->cone_update(detection_msg);
+        // ekf_slam.predict(forward_vel, rotational_vel, dt);
+        // ekf_slam.update(detection_msg->cones);
 
-        std::cout << "Cones" << std::endl;
-        publish_visualisations(detection_msg->header.stamp);
-    }
+        // last_update = stamp;
 
-    void cone_update(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
-        this->ekf_slam.update(detection_msg->cones);
-    }
-
-    void print_state() {
-        double pred_x, pred_y, pred_theta;
-        this->ekf_slam.get_pred_state(pred_x, pred_y, pred_theta);
-
-        std::cout << "PRED" << std::endl;
-        std::cout << "pos: " << pred_x << " " << pred_y << std::endl;
-        std::cout << "theta: " << pred_theta << std::endl;
-        std::cout << "x car cov: " << this->ekf_slam.get_pred_cov()(0, 0) << std::endl;
-        std::cout << "y car cov: " << this->ekf_slam.get_pred_cov()(1, 1) << std::endl;
-        std::cout << std::endl;
-
-        double x, y, theta;
-        this->ekf_slam.get_state(x, y, theta);
-
-        std::cout << "UPDATED" << std::endl;
-        std::cout << "pos: " << x << " " << y << std::endl;
-        std::cout << "theta: " << theta << std::endl;
-        std::cout << "x car cov: " << this->ekf_slam.get_pred_cov()(0, 0) << std::endl;
-        std::cout << "y car cov: " << this->ekf_slam.get_pred_cov()(1, 1) << std::endl;
-        std::cout << std::endl;
+        // publish_visualisations(detection_msg->header.stamp);
     }
 
     void publish_visualisations(builtin_interfaces::msg::Time stamp) {

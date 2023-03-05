@@ -46,7 +46,7 @@ class SimToOdom(Node):
         vel_msg.header = odom_msg.header
         vel_msg.header.frame_id = "imu_link_ned"
         vel_msg.twist = odom_msg.twist.twist
-        vel_msg.twist.angular.z += np.random.normal(0, 0.01)
+        vel_msg.twist.angular.z += np.random.normal(0, 0.05)
         self.vel_publisher.publish(vel_msg)
 
     def wheel_callback(self, wheel_msg: WheelStates):
@@ -77,7 +77,7 @@ class SimToOdom(Node):
         if wss_vel.velocity < 0.01:
             wss_vel.velocity = 0.0
 
-        wss_vel.velocity += np.random.normal(0, 0.1)
+        wss_vel.velocity += np.random.normal(0, 0.5)
         self.wss_vel_publisher.publish(wss_vel)
 
 

@@ -37,25 +37,27 @@ class EKFslam {
     Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
     // clang-format off
-    // R = ( σ_forwards^2 0 )
-    //     ( 0            σ_theta^2 )
+    // Odometry uncertanty
+    // R = ( σ_forward_vel^2 0                )
+    //     ( 0               rotational_vel^2 )
     const Eigen::Matrix2d R = (
-        Eigen::Matrix2d() << pow(0.1, 2), 0,
-                             0,           pow(0.001, 2)
+        Eigen::Matrix2d() << pow(0.5, 2), 0,
+                             0,           pow(0.05, 2)
     ).finished();
 
-    // Q = ( σ_r^2  0         )
-    //     ( 0      σ_theta^2 )
+    // Observation model uncertanty
+    // Q = ( σ_range^2  0         )
+    //     ( 0      σ_bearing^2 )
     const Eigen::Matrix2d Q = (
-        Eigen::Matrix2d() << pow(0.5, 2), 0,
-                             0,           pow(0.5, 2)
+        Eigen::Matrix2d() << pow(0.01, 2), 0,
+                             0,            pow(0.001, 2)
     ).finished();
     // clang-format on
 
    public:
     EKFslam();
 
-    void predict(double d_forwards, double d_theta);
+    void predict(double forward_vel, double rotational_vel, double dt);
     void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones);
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
