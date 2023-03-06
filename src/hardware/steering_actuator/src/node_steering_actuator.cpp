@@ -579,6 +579,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->c5e_config_request_timer = this->create_wall_timer(
             std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
+            
     }
 
     // Shutdown system

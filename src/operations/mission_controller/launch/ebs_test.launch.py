@@ -7,22 +7,18 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="controllers",
-                executable="reactive_control",
-                parameters=[{"ebs_control": True}],
+                package="steering_actuator",
+                executable="steering",
+                parameters=[
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
             ),
-            # Node(
-            #     package="controllers",
-            #     executable="vector_reactive_control",
-            #     parameters=[{"ebs_control": True}],
-            # ),
-            # Node(
-            #     package="controllers",
-            #     executable="simple_straight_control",
-            # ),
-            # Node(
-            #     package="controllers",
-            #     executable="constant",
-            # ),
+            Node(
+                package="velocity_controller",
+                executable="velocity_controller",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
+            ),
         ]
     )
