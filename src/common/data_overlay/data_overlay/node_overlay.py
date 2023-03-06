@@ -29,7 +29,7 @@ out = cv2.VideoWriter(
     (frame_width, frame_height),
 )
 
-vid = cv2.VideoCapture("/home/ubuntu/QUTMS_Driverless/src/common/data_overlay/videos/ebs_test7.mp4")
+vid = cv2.VideoCapture("/home/ubuntu/QUTMS_Driverless/src/common/data_overlay/videos/ebs_test.mp4")
 if vid.isOpened() == False:
     print("Error opening video stream or file")
 
