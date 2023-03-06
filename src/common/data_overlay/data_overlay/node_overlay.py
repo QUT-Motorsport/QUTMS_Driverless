@@ -1,3 +1,4 @@
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 
@@ -8,6 +9,7 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import WSSVelocity
 from sensor_msgs.msg import Image, Imu
+from std_msgs.msg import Float32
 
 from typing import Optional
 
@@ -27,15 +29,18 @@ out = cv2.VideoWriter(
     (frame_width, frame_height),
 )
 
-vid = cv2.VideoCapture("/home/ubuntu/QUTMS_Driverless/src/common/data_overlay/videos/ebs_test1.mp4")
+vid = cv2.VideoCapture("/home/ubuntu/QUTMS_Driverless/src/common/data_overlay/videos/ebs_test7.mp4")
 if vid.isOpened() == False:
     print("Error opening video stream or file")
 
 
 class DataOverlay(Node):
-    x_gs: Optional[float] = None
-    y_gs: Optional[float] = None
-    velocity: Optional[float] = None
+    x_gs: float = 0.0
+    y_gs: float = 0.0
+    velocity: float = 0.0
+
+    vel_received: bool = False
+    imu_received: bool = False
 
     ebs_timer: float = 0.0
 
@@ -43,7 +48,7 @@ class DataOverlay(Node):
         super().__init__("data_overlay_node")
 
         # subscribe to velocity
-        self.create_subscription(WSSVelocity, "/vehicle/wss_velocity", self.velocity_callback, 10)
+        self.create_subscription(WSSVelocity, "/vehicle/wheel_speed", self.velocity_callback, 10)
         # subscribe to imu
         self.create_subscription(Imu, "/imu/data", self.imu_callback, 10)
 
@@ -52,23 +57,31 @@ class DataOverlay(Node):
 
         # publish the image
         self.image_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/data_overlay", 1)
+        self.vel_publisher: Publisher = self.create_publisher(Float32, "/vehicle/velocity", 1)
+        self.accel_publisher: Publisher = self.create_publisher(Float32, "/vehicle/acceleration", 1)
 
         self.get_logger().info("---Data overlay node initialised---")
 
     def velocity_callback(self, msg: WSSVelocity):
+        self.vel_publisher.publish(Float32(data=self.velocity))
         self.velocity = msg.velocity * 3.6
+        self.vel_received = True
 
     def imu_callback(self, msg: Imu):
-        self.x_gs = msg.linear_acceleration.x / 9.81
-        self.y_gs = msg.linear_acceleration.y / 9.81
+        self.accel_publisher.publish(Float32(data=self.x_gs))
+        self.x_gs = -msg.linear_acceleration.x + 0.6
+        self.y_gs = -msg.linear_acceleration.y
+        self.imu_received = True
 
     def timer_callback(self):
         # randomise the data
-        self.x_gs = np.random.uniform(-2, 2)
-        self.y_gs = np.random.uniform(-2, 2)
-        self.velocity = np.random.uniform(0, 50)
+        # self.x_gs = np.random.uniform(-2, 2)
+        # self.y_gs = np.random.uniform(-2, 2)
+        # self.velocity = np.random.uniform(0, 50)
+        # self.vel_received = True
+        # self.imu_received = True
 
-        if not self.x_gs or not self.y_gs or not self.velocity:
+        if not self.vel_received or not self.imu_received:
             return
 
         if not vid.isOpened():
@@ -117,7 +130,7 @@ class DataOverlay(Node):
             img,
             "X: " + str(round(self.x_gs, 2)),
             (int(circle_center[0] - circle_radius / 2 - 30), circle_center[1] - circle_radius),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            cv2.FONT_HERSHEY_DUPLEX,
             2,
             (255, 255, 255),
             3,
@@ -128,7 +141,7 @@ class DataOverlay(Node):
             img,
             "Y: " + str(round(self.y_gs, 2)),
             (circle_center[0] + circle_radius, int(circle_center[1] + circle_radius / 2 - 40)),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            cv2.FONT_HERSHEY_DUPLEX,
             2,
             (255, 255, 255),
             3,
@@ -136,50 +149,56 @@ class DataOverlay(Node):
         )
 
         # draw the x and y acceleration as a dot
+        scale_factor = circle_radius / 6
+        disp_x = max(min(self.x_gs * scale_factor, circle_radius), -circle_radius)
+        disp_y = max(min(self.y_gs * scale_factor, circle_radius), -circle_radius)
         cv2.circle(
             img,
-            (int(circle_center[0] + self.x_gs * 50), int(circle_center[1] + self.y_gs * 50)),
+            (int(circle_center[0] + disp_y), int(circle_center[1] + disp_x)),
+            8,
+            (3, 82, 252),
             5,
-            (0, 0, 255),
-            -1,
         )
         # draw a line to the dot
         cv2.line(
             img,
             (circle_center[0], circle_center[1]),
-            (int(circle_center[0] + self.x_gs * 50), int(circle_center[1] + self.y_gs * 50)),
-            (0, 0, 255),
-            2,
+            (int(circle_center[0] + disp_y), int(circle_center[1] + disp_x)),
+            (3, 119, 252),
+            5,
         )
 
-        vel_bar = (int(frame_width / 7 * 5), int(top_area - 50))
+        vel_bar = (1700, int(top_area - 50))
+        vel_txt = (1000, vel_bar[1])
 
         # make a vertical bar to show velocity
-        cv2.rectangle(img, vel_bar, (vel_bar[0] + 30, int(top_area - 50 - self.velocity * 4)), (0, 0, 255), -1)
+        cv2.rectangle(img, vel_bar, (vel_bar[0] + 60, int(top_area - 50 - self.velocity * 6)), (0, 255, 0), -1)
         # draw a text to show velocity
+        vel_col = (255, 255, 255)
+        if self.velocity > 40:
+            vel_col = (0, 255, 0)
         cv2.putText(
             img,
             str(round(self.velocity, 2)) + " km/h",
-            (int(vel_bar[0] + 40), int(top_area - 50)),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            vel_txt,
+            cv2.FONT_HERSHEY_TRIPLEX,
             3,
-            (255, 255, 255),
+            vel_col,
             3,
             cv2.LINE_AA,
         )
 
-        # draw the ebs timer
-        if self.ebs_timer > 11.7:
+        # draw the ebs timer with roboto PIL font
+        if self.ebs_timer > 10.7:
             if self.ebs_timer % 0.5 < 0.25:
-                # draw a text on a background
                 cv2.putText(
                     img,
                     "EBS ACTIVATED",
                     (int(frame_width / 2) - 350, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX,
+                    cv2.FONT_HERSHEY_TRIPLEX,
                     3,
-                    (0, 0, 255),
-                    4,
+                    (23, 34, 235),
+                    6,
                     cv2.LINE_AA,
                 )
 
