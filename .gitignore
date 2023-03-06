@@ -7,6 +7,8 @@ maps.store
 # topic to csv
 csv_data
 
+videos/
+
 # Colcon build
 build/
 install/
