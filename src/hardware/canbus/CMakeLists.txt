@@ -21,15 +21,15 @@ set (SOURCES
   src/TritiumCAN.cpp
 )
 
-add_executable(canbus src/node_canbus.cpp ${SOURCES})
-ament_target_dependencies(canbus rclcpp driverless_msgs)
+add_executable(canbus_translator_node src/node_canbus.cpp ${SOURCES})
+ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs)
 
-target_include_directories(canbus PUBLIC
+target_include_directories(canbus_translator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 install(TARGETS
-  canbus
+  canbus_translator_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
