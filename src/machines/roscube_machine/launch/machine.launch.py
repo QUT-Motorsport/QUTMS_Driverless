@@ -38,14 +38,14 @@ def generate_launch_description():
                 package="driverless_common",
                 executable="display",
             ),
-            # Node(
-            #     package="lidar_pipeline_3",
-            #     executable="lidar_perception",
-            # ),
-            # Node(
-            #     package="mission_controller",
-            #     executable="mission_control",
-            # ),
+            Node(
+                package="lidar_pipeline_3",
+                executable="lidar_perception",
+            ),
+            Node(
+                package="mission_controller",
+                executable="mission_control",
+            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(

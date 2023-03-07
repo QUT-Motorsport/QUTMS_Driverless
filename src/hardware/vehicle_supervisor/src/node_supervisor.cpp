@@ -19,6 +19,7 @@
 #include "driverless_msgs/msg/wss_velocity.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/u_int8.hpp"
 
 using std::placeholders::_1;
 
@@ -42,6 +43,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub;
+    rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr mission_select_sub;
 
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub;
@@ -221,8 +223,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 copy_data(msg.data, data, 4);
 
                 Parse_SW_Heartbeat(data, &this->SW_heartbeat);
-                RCLCPP_INFO(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
-                            this->SW_heartbeat.missionID);
+                RCLCPP_DEBUG(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
+                             this->SW_heartbeat.missionID);
 
                 this->run_fsm();
 
@@ -256,6 +258,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->DVL_drivingDynamics1._fields.motor_moment_target = (int8_t)torqueValue;
         this->DVL_drivingDynamics1._fields.motor_moment_actual = (int8_t)torqueValue;
 
+        this->run_fsm();
+    }
+
+    void mission_select_callback(const std_msgs::msg::UInt8 msg) {
+        this->ros_state.mission = msg.data;
         this->run_fsm();
     }
 
@@ -539,6 +546,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // State
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
 
+        // Mission select
+        this->mission_select_sub = this->create_subscription<std_msgs::msg::UInt8>(
+            "/system/mission_select", 10, std::bind(&ASSupervisor::mission_select_callback, this, _1));
+
         // Reset
         this->reset_pub = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
@@ -567,7 +578,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Data Logger
         this->dataLogger_timer = this->create_wall_timer(std::chrono::milliseconds(100),
                                                          std::bind(&ASSupervisor::dataLogger_callback, this));
-
         this->logging_drivingDynamics1_pub =
             this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
         this->logging_systemStatus_pub =

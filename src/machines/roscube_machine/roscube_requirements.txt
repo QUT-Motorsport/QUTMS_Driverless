@@ -10,6 +10,7 @@ ros-galactic-robot-state-publisher
 ros-galactic-tf-transformations
 ros-galactic-velodyne
 ros-galactic-xacro
+ros-galactic-geodesy
 scipy
 scikit-learn
 tornado

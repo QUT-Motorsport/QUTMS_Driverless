@@ -10,6 +10,7 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>geometry_msgs</depend>
+    <depend>geodesy</depend>
 
     <export>
         <build_type>ament_python</build_type>

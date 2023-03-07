@@ -105,6 +105,7 @@ std::map<uint16_t, c5e_state> states = {
 // Parameter string definitions
 const std::string PARAM_ACCELERATION = "acceleration";
 const std::string PARAM_VELOCITY = "velocity";
+const std::string PARAM_VELOCITY_CENTERING = "velocity_centering";
 const std::string PARAM_KP = "Kp";
 const std::string PARAM_KI = "Ki";
 const std::string PARAM_KD = "Kd";
@@ -229,7 +230,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 data |= (msg.data[4 + i] & 0xFF) << i * 8;
             }
 
-            uint32_t param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
+            uint32_t param_velocity;
+            if (this->centred) {
+                param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
+            } else {
+                param_velocity = this->get_parameter(PARAM_VELOCITY_CENTERING).as_int();
+            }
             uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
 
             // To set the controller to a usable state, we must set the:
@@ -381,6 +387,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                     sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
                     this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
                 }
+
+                RCLCPP_INFO(this->get_logger(), "error: %f", -(this->current_steering_angle - this->center_steering));
             }
         }
     }
@@ -431,8 +439,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 // Grab error between steering angle and "zero"
                 double error = -(this->current_steering_angle - this->center_steering);
-
-                RCLCPP_INFO(this->get_logger(), "error: %f, %f", error, abs(error));
 
                 if (abs(error) < 0.5) {
                     // motor has settled enough
@@ -528,6 +534,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         // Steering parameters
         this->declare_parameter<int>(PARAM_ACCELERATION, 0);
         this->declare_parameter<int>(PARAM_VELOCITY, 0);
+        this->declare_parameter<int>(PARAM_VELOCITY_CENTERING, 0);
 
         // PID controller parameters
         this->declare_parameter<float>(PARAM_KP, 0);

@@ -39,7 +39,7 @@ RIGHT_CONE_COLOUR = Cone.YELLOW
 left_mid_col = (245, 215, 66)
 right_mid_col = (66, 194, 245)
 
-LOOKAHEAD = 4  # m
+LOOKAHEAD = 2  # m
 
 
 def approximate_b_spline_path(
@@ -138,21 +138,22 @@ class VectorReactiveController(Node):
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
         if self.ebs_test:
-            self.Kp_ang = -2.0
-            self.target_vel = 0.0  # m/s
-            self.target_accel = 0.5
-            self.in_dist = 2.0
-            self.pub_accel = True
-
-            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        else:
-            self.Kp_ang = -2.0
-            self.target_vel = 2.0  # m/s
+            self.Kp_ang = -1.0
+            self.target_vel = 12.0  # m/s
             self.target_accel = 0.0
             self.in_dist = 2.0
             self.pub_accel = False
-            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        else:
+            self.Kp_ang = -3.0
+            self.target_vel = 3.0  # m/s
+            self.target_accel = 0.0
+            self.in_dist = 2.0
+            self.pub_accel = False
+            # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
@@ -178,9 +179,9 @@ class VectorReactiveController(Node):
                 else:
                     cones[i].color = RIGHT_CONE_COLOUR
 
-        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
-        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
-        orange_cones = [c for c in cones if c.color == Cone.ORANGE_BIG]
+        left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR and abs(c.location.y) < 8]
+        right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR and abs(c.location.y) < 8]
+        orange_cones = [c for c in cones if c.color == Cone.ORANGE_BIG and abs(c.location.y) < 8]
 
         # add orange cones to left and right arrays
         orange_avg = np.mean([c.location.y for c in orange_cones])
@@ -213,8 +214,9 @@ class VectorReactiveController(Node):
                     thickness=2,
                 )
 
-                diff = p2 - p1
-                mult = 1.0 / dist(ORIGIN, diff)
+                p1.x += 0.001
+                diff = p2 - p1  # temp solution, adding pertubation to divide by zero BAD SOLUTION FIX LATER
+                mult = 1.0 / (dist(ORIGIN, diff))
                 Rtemp = diff * mult
 
                 R = Rtemp * self.in_dist
@@ -260,8 +262,9 @@ class VectorReactiveController(Node):
                     thickness=2,
                 )
 
-                diff = p2 - p1
-                mult = 1.0 / dist(ORIGIN, diff)
+                p1.x += 0.001
+                diff = p2 - p1  # temp solution, adding pertubation to divide by zero BAD SOLUTION FIX LATER
+                mult = 1.0 / (dist(ORIGIN, diff))
                 Rtemp = diff * mult
 
                 R = Rtemp * self.in_dist
@@ -295,6 +298,9 @@ class VectorReactiveController(Node):
         self.get_logger().debug(f"Midpoints: {midpoints}")
 
         midpoints.append(ORIGIN)
+        # adding points behind the car to fix axis
+        midpoints.append(Point(-1, 0))
+        midpoints.append(Point(-2, 0))
         sorted_midpoints = sorted(midpoints, key=lambda c: dist(ORIGIN, c))
         midpoints = []
 
@@ -326,6 +332,8 @@ class VectorReactiveController(Node):
             orderSpline = len(midpoints) - 1
             if orderSpline > 3:
                 orderSpline = 3
+
+            orderSpline = 2  # track hard code linear quick fix
 
             x = [p.x for p in midpoints]
             y = [p.y for p in midpoints]

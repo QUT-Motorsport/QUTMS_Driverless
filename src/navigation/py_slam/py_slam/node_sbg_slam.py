@@ -49,24 +49,25 @@ class PySlam(Node):
         super().__init__("py_slam")
 
         # sync subscribers
-        # ekf_nav_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
-        # ekf_euler_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        # sbg_synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[ekf_nav_sub, ekf_euler_sub], queue_size=20, slop=0.2
-        # )
-        # sbg_synchronizer.registerCallback(self.nav_callback)
+        ekf_nav_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
+        ekf_euler_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
+        sbg_synchronizer = message_filters.ApproximateTimeSynchronizer(
+            fs=[ekf_nav_sub, ekf_euler_sub], queue_size=20, slop=0.2
+        )
+        sbg_synchronizer.registerCallback(self.nav_callback)
 
-        gps_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")
-        imu_sub = message_filters.Subscriber(self, Imu, "/imu/data")
-        imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
-        imu_synchronizer.registerCallback(self.imu_callback)
+        # gps_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")
+        # imu_sub = message_filters.Subscriber(self, Imu, "/imu/data")
+        # imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
+        # imu_synchronizer.registerCallback(self.imu_callback)
 
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
+        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
@@ -80,7 +81,7 @@ class PySlam(Node):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
             self.initial_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z
+            self.initial_ang = ekf_euler_msg.angle.z - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
@@ -91,7 +92,7 @@ class PySlam(Node):
 
         # get angle since last state prediction
         # BIT CONCERNED ABOUT THE INITIAL ANG PART, CAN WE JUST TAKE THE ABSOLUTE ANGLE?
-        d_th = wrap_to_pi(ekf_euler_msg.angle.z - self.initial_ang - self.state[2])
+        d_th = wrap_to_pi(ekf_euler_msg.angle.z - pi - self.state[2])
 
         self.predict(d_x, d_y, d_th)
         # self.callback(detection_msg)
@@ -138,7 +139,7 @@ class PySlam(Node):
             [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
         )[2]
         # get relative to initial angle and last state prediction
-        d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
+        d_th = wrap_to_pi(imu_ang - pi - self.state[2])
 
         print(f"deltas: {d_x}, {d_y}, {d_th}")
 
@@ -149,10 +150,11 @@ class PySlam(Node):
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")
         self.initial_pos = None
-        self.previous_state = np.array([0.0, 0.0, 0.0])
         self.state = np.array([0.0, 0.0, 0.0])
-        self.sigma = np.diag([0.5, 0.5, 0.001])
+        self.sigma = np.diag([0.0, 0.0, 0.0])
         self.properties = np.array([])
+        self.initial_pos = None
+        self.initial_ang = None
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -236,7 +238,7 @@ class PySlam(Node):
         self.local_publisher.publish(local_map_msg)
 
         # publish localisation msg
-        self.publish_localisation(msg)
+        self.publish_localisation(msg.header.stamp)
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
