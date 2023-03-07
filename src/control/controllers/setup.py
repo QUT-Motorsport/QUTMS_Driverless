@@ -27,6 +27,7 @@ setup(
             "bang_control = controllers.node_bang_control:main",
             "simple_straight_control = controllers.node_simple_straight_control:main",
             "straight_control = controllers.node_straight_control:main",
+            "point_fitting = controllers.node_point_fitting:main",
         ],
     },
 )
