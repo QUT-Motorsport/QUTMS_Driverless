@@ -397,7 +397,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void as_state_callback(const driverless_msgs::msg::State msg) {
         this->state = msg;
         if (msg.state == driverless_msgs::msg::State::DRIVING ||
-            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS || msg.state == 105 ||
+            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
             msg.state == driverless_msgs::msg::State::EMERGENCY) {
             // Enable motor
             this->motor_enabled = true;
