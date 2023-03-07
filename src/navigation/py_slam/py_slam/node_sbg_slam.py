@@ -61,15 +61,15 @@ class PySlam(Node):
         # imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
         # imu_synchronizer.registerCallback(self.imu_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(
-            PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
+            PoseWithCovarianceStamped, "/slam/pose_with_covariance2", 1
         )
 
         # Initialize the transform broadcaster
@@ -81,7 +81,7 @@ class PySlam(Node):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
             self.initial_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z - pi
+            self.initial_ang = ekf_euler_msg.angle.z  # - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
@@ -92,7 +92,7 @@ class PySlam(Node):
 
         # get angle since last state prediction
         # BIT CONCERNED ABOUT THE INITIAL ANG PART, CAN WE JUST TAKE THE ABSOLUTE ANGLE?
-        d_th = wrap_to_pi(ekf_euler_msg.angle.z - pi - self.state[2])
+        d_th = wrap_to_pi(ekf_euler_msg.angle.z - self.state[2])
 
         self.predict(d_x, d_y, d_th)
         # self.callback(detection_msg)
