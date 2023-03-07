@@ -91,16 +91,15 @@ class CanBus : public rclcpp::Node {
         }
 
         RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
-
         // this->c = std::make_shared<Can2Ethernet>(_ip, _port);
         this->tritiumCAN = std::make_shared<TritiumCAN>();
         this->tritiumCAN->setup(_ip);
-
         RCLCPP_INFO(this->get_logger(), "done!");
-        RCLCPP_INFO(this->get_logger(), "Creating Timer...");
+
         this->timer_ =
             this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
-        RCLCPP_INFO(this->get_logger(), "done!");
+
+        RCLCPP_INFO(this->get_logger(), "---CANBus Translator Node Initialised---");
     }
 
     bool validate_frame(std::shared_ptr<std::vector<char>> frame) {
