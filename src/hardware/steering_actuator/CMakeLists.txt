@@ -22,26 +22,26 @@ set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
 )
 
-add_executable(steering src/node_steering_actuator.cpp ${SOURCES})
-add_executable(steering_adj src/node_steering_actuator_adj.cpp ${SOURCES})
-add_executable(pulse src/node_steering_CAN_pulse.cpp ${SOURCES})
-ament_target_dependencies(steering rclcpp ackermann_msgs driverless_msgs std_msgs)
-ament_target_dependencies(steering_adj rclcpp ackermann_msgs driverless_msgs std_msgs)
-ament_target_dependencies(pulse rclcpp ackermann_msgs driverless_msgs std_msgs)
+add_executable(steering_actuator_node src/node_steering_actuator.cpp ${SOURCES})
+add_executable(steering_actuator_node_old src/node_steering_actuator_adj.cpp ${SOURCES})
+add_executable(steering_can_pulse_node src/node_steering_CAN_pulse.cpp ${SOURCES})
+ament_target_dependencies(steering_actuator_node rclcpp ackermann_msgs driverless_msgs std_msgs)
+ament_target_dependencies(steering_actuator_node_old rclcpp ackermann_msgs driverless_msgs std_msgs)
+ament_target_dependencies(steering_can_pulse_node rclcpp ackermann_msgs driverless_msgs std_msgs)
 
-target_include_directories(steering PUBLIC
+target_include_directories(steering_actuator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-target_include_directories(steering_adj PUBLIC
+target_include_directories(steering_actuator_node_old PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-target_include_directories(pulse PUBLIC
+target_include_directories(steering_can_pulse_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS steering steering_adj pulse
+install(TARGETS steering_actuator_node steering_actuator_node_old steering_can_pulse_node
   DESTINATION lib/${PROJECT_NAME})
 
 # config folder

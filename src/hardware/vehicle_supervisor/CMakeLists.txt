@@ -36,14 +36,14 @@ set (SOURCES
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
-add_executable(vehicle_supervisor src/node_supervisor.cpp ${SOURCES})
-ament_target_dependencies(vehicle_supervisor rclcpp driverless_msgs ackermann_msgs std_msgs)
+add_executable(vehicle_supervisor_node src/node_supervisor.cpp ${SOURCES})
+ament_target_dependencies(vehicle_supervisor_node rclcpp driverless_msgs ackermann_msgs std_msgs)
 
-target_include_directories(vehicle_supervisor PUBLIC
+target_include_directories(vehicle_supervisor_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS vehicle_supervisor
+install(TARGETS vehicle_supervisor_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
