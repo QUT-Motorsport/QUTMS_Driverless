@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "CAN_BMU.h"
 #include "CAN_DVL.h"
 #include "CAN_RES.h"
 #include "CAN_SW.h"
@@ -9,6 +10,7 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/car_status.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/res.hpp"
@@ -52,6 +54,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
     rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
+    rclcpp::Publisher<driverless_msgs::msg::CarStatus>::SharedPtr bmu_status_pub;
 
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub;
@@ -62,6 +65,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::TimerBase::SharedPtr dataLogger_timer;
 
     driverless_msgs::msg::State ros_state;
+    driverless_msgs::msg::CarStatus car_status;
 
     bool res_alive = 0;
     float last_torque = 0;
@@ -71,6 +75,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     float wheel_speeds[4];
     const int MOTOR_COUNT = 4;
     const float WHEEL_DIAMETER = 0.4064;
+
+    // battery state constants
+    const int NUM_CMUS = 8;
+    const int NUM_VOLTAGES = 14;
+    const int NUM_TEMPERATURES = 16;
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
@@ -112,6 +121,30 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                              this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
                              this->RES_status.radio_quality);
                 this->run_fsm();
+                break;
+            }
+
+            case (BMU_TransmitVoltage_ID): {
+                uint16_t voltages[3];
+                uint8_t cmu_id;
+                uint8_t packet_id;
+                // https://stackoverflow.com/a/2923290
+                Parse_BMU_TransmitVoltage((uint8_t *)&msg.data[0], &cmu_id, &packet_id, voltages);
+                for (int i = 0; i < 3 && (packet_id * 3 + i) < NUM_VOLTAGES; i++) {
+                    car_status.brick_data[cmu_id].voltages[packet_id * 3 + i] = voltages[i];
+                }
+                break;
+            }
+
+            case (BMU_TransmitTemperature_ID): {
+                uint8_t temps[6];
+                uint8_t cmu_id;
+                uint8_t packet_id;
+                // https://stackoverflow.com/a/2923290
+                Parse_BMU_TransmitTemperatures((uint8_t *)&msg.data[0], &cmu_id, &packet_id, temps);
+                for (int i = 0; i < 6 && (packet_id * 6 + i) < NUM_TEMPERATURES; i++) {
+                    car_status.brick_data[cmu_id].temperatures[packet_id * 6 + i] = temps[i];
+                }
                 break;
             }
 
@@ -233,7 +266,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
                 break;
             }
-
             default:
                 break;
         }
@@ -589,6 +621,15 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
             "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+
+        // BMU status
+        this->bmu_status_pub = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
+        this->car_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
+        for (int i = 0; i < NUM_CMUS; i++) {
+            this->car_status.brick_data[i].id = i + 1;
+            this->car_status.brick_data[i].voltages = std::vector<uint16_t>(NUM_VOLTAGES);
+            this->car_status.brick_data[i].temperatures = std::vector<uint8_t>(NUM_TEMPERATURES);
+        }
     }
 };
 
