@@ -181,9 +181,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     Parse_VCU_Heartbeat(data, &this->EBS_VCU_heartbeat);
 
                     if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.CTRL_EBS == 1) {
-                        this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ARMED;
+                        this->DVL_systemStatus._fields.EBS_state = DVL_EBS_State::DVL_EBS_STATE_ARMED;
                     } else {
-                        this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ACTIVATED;
+                        this->DVL_systemStatus._fields.EBS_state = DVL_EBS_State::DVL_EBS_STATE_ACTIVATED;
                     }
 
                     this->run_fsm();
