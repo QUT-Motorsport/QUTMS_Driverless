@@ -9,6 +9,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
+                package="mission_controller",
+                executable="mission_control",
+            ),
+            Node(
                 package="canbus",
                 executable="canbus_translator_node",
                 parameters=[
@@ -16,12 +20,12 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="rosboard",
-                executable="rosboard_node",
-            ),
-            Node(
                 package="vehicle_supervisor",
                 executable="vehicle_supervisor_node",
+            ),
+            Node(
+                package="rosboard",
+                executable="rosboard_node",
             ),
             Node(
                 package="driverless_common",
@@ -30,10 +34,6 @@ def generate_launch_description():
             Node(
                 package="lidar_pipeline_3",
                 executable="lidar_perception",
-            ),
-            Node(
-                package="mission_controller",
-                executable="mission_control",
             ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
