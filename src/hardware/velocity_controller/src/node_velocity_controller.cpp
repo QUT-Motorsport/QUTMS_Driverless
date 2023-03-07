@@ -144,9 +144,6 @@ class Velocity_Controller : public rclcpp::Node {
 
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
-        // Configure logger level
-        this->get_logger().set_level(rclcpp::Logger::Level::Debug);
-
         // State updates
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
             "/system/as_status", 10, std::bind(&Velocity_Controller::as_state_callback, this, _1));
@@ -168,9 +165,9 @@ class Velocity_Controller : public rclcpp::Node {
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
 
         // Param callback
-        this->param_event_handler = std::make_shared<rclcpp::ParameterEventHandler>(this);
-        this->param_cb_handle = this->param_event_handler->add_parameter_event_callback(
-            std::bind(&Velocity_Controller::update_parameters, this, std::placeholders::_1));
+        // this->param_event_handler = std::make_shared<rclcpp::ParameterEventHandler>(this);
+        // this->param_cb_handle = this->param_event_handler->add_parameter_event_callback(
+        //     std::bind(&Velocity_Controller::update_parameters, this, std::placeholders::_1));
     }
 };
 
