@@ -631,7 +631,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->car_status.brick_data[i].temperatures = std::vector<uint8_t>(NUM_TEMPERATURES);
         }
 
-        RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---")
+        RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };
 
