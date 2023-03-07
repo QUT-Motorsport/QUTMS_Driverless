@@ -60,7 +60,7 @@ class PySlam(Node):
         # imu_sub = message_filters.Subscriber(self, Imu, "/imu/data")
         # imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
         # imu_synchronizer.registerCallback(self.imu_callback)
-        
+
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)

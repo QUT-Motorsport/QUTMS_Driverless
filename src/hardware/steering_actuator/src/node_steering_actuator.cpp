@@ -229,7 +229,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             for (size_t i = 0; i < size; i++) {
                 data |= (msg.data[4 + i] & 0xFF) << i * 8;
             }
-            
+
             uint32_t param_velocity;
             if (this->centred) {
                 param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
@@ -389,7 +389,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 }
 
                 RCLCPP_INFO(this->get_logger(), "error: %f", -(this->current_steering_angle - this->center_steering));
-
             }
         }
     }
@@ -398,8 +397,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void as_state_callback(const driverless_msgs::msg::State msg) {
         this->state = msg;
         if (msg.state == driverless_msgs::msg::State::DRIVING ||
-            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS ||
-            msg.state == 105 || 
+            msg.state == driverless_msgs::msg::State::ACTIVATE_EBS || msg.state == 105 ||
             msg.state == driverless_msgs::msg::State::EMERGENCY) {
             // Enable motor
             this->motor_enabled = true;
@@ -579,7 +577,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->c5e_config_request_timer = this->create_wall_timer(
             std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
-            
     }
 
     // Shutdown system

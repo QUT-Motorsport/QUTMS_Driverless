@@ -118,8 +118,8 @@ class Velocity_Controller : public rclcpp::Node {
         this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
 
         RCLCPP_DEBUG(this->get_logger(),
-                    "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
-                    Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
+                     "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
+                     Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
     }
 
     // Check State to enable or disable motor
