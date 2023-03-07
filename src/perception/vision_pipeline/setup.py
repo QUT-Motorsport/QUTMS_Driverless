@@ -15,10 +15,6 @@ def generate_yolov5_data_files() -> List[Tuple[str, str]]:
         install = os.path.join(install_base, root)
         sources = [os.path.join(root, f) for f in files]
         data_files.append((install, sources))
-    for root, dirs, files in os.walk("yolov7"):
-        install = os.path.join(install_base, root)
-        sources = [os.path.join(root, f) for f in files]
-        data_files.append((install, sources))
     return data_files
 
 

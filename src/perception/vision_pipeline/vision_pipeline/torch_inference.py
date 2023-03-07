@@ -22,21 +22,21 @@ def torch_init(model_path: str, repo_path: str, conf_thresh: float, iou_thresh: 
 
 
 # initialising function for the YOLOv7 model with confidence threshold
-def torch_init_v7(model_path: str, repo_path: str, conf_thresh: float, iou_thresh: float) -> torch.nn.Module:
-    """
-    Returns a YOLOv7 PyTorch model
-    """
-    model = torch.hub.load(
-        repo_path,
-        "custom",
-        model_path,
-        source="local",
-        force_reload=True,  # for fixing bad cache
-    )
-    model.conf = conf_thresh
-    model.iou = iou_thresh
-    model.agnostic = True
-    return model
+# def torch_init_v7(model_path: str, repo_path: str, conf_thresh: float, iou_thresh: float) -> torch.nn.Module:
+#     """
+#     Returns a YOLOv7 PyTorch model
+#     """
+#     model = torch.hub.load(
+#         repo_path,
+#         "custom",
+#         model_path,
+#         source="local",
+#         force_reload=True,  # for fixing bad cache
+#     )
+#     model.conf = conf_thresh
+#     model.iou = iou_thresh
+#     model.agnostic = True
+#     return model
 
 
 def infer(colour_frame: np.ndarray, model):
