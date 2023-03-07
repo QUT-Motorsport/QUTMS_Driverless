@@ -74,6 +74,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
+        // RES message recieved
         switch (msg.id) {
             case (0x700 + RES_NODE_ID): {
                 /*
@@ -118,9 +119,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 break;
         }
 
+        // VESC message recieved
         uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
         uint8_t vesc_id = msg.id & 0xFF;
-
         if (vesc_id < NUM_MOTORS) {
             switch (vesc_masked_id) {
                 case VESC_CAN_PACKET_STATUS: {
@@ -145,6 +146,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
                     wheel_speeds[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * this->WHEEL_DIAMETER / 60;
 
+                    // average wheel speeds to get vehicle speed
                     float av_velocity = 0;
 
                     for (int i = 0; i < MOTOR_COUNT; i++) {
@@ -160,6 +162,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             }
         }
 
+        // VCU message recieved
         uint32_t qutms_masked_id = msg.id & ~0xF;
         switch (qutms_masked_id) {
             case (VCU_Heartbeat_ID): {
@@ -279,7 +282,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void res_alive_callback() {
         if (!this->res_alive) {
-            this->DVL_heartbeat.stateID = driverless_msgs::msg::State::EMERGENCY;
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             RCLCPP_DEBUG(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
@@ -353,7 +356,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
 
             // reset mission selections
-            this->ros_state.mission = driverless_msgs::msg::State::MISSION_NONE;
+            this->ros_state.mission = DVL_MISSION::DVL_MISSION_NONE;
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
             // transition to select mission when res switch is backwards
@@ -377,7 +380,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->ros_state.mission = this->SW_heartbeat.missionID;
             }
 
-            if (this->ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
+            if (this->ros_state.mission != DVL_MISSION::DVL_MISSION_NONE) {
                 // set mission for logging
                 switch (this->ros_state.mission) {
                     case DRIVERLESS_MISSIONS::MISSION_INSPECTION:
@@ -398,7 +401,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
 
                 // set the DVL mission IDs according to selection
-                if (this->ros_state.mission == driverless_msgs::msg::State::MANUAL_DRIVING) {
+                if (this->ros_state.mission == DVL_MISSION::DVL_MISSION_MANUAL) {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
                 } else {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
@@ -533,7 +536,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
    public:
     ASSupervisor() : Node("vehicle_supervisor_node") {
         // Setup inital states
-        this->ros_state.state = driverless_msgs::msg::State::START;
+        this->ros_state.state = DVL_STATES::DVL_STATE_START;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
 
         this->reset_dataLogger();
