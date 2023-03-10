@@ -2,11 +2,7 @@ channels:
   - robostack-staging
   - conda-forge
 dependencies:
-  # ---------------------------------------------------------------------------
   # ROS Base Env deps
-  # ---------------------------------------------------------------------------
-  # tag below used for PYTHON_VERSION_OVERRIDE in Dockerfile.base
-  ###PYTHON_VERSION###
   - python=3.10
   - ros-humble-desktop
   - ca-certificates
@@ -25,7 +21,7 @@ dependencies:
   - eigen
   - ipython
   - matplotlib
-  - numpy==1.23
+  - mesa-libgl-devel-cos6-x86_64 # for gazebo sim RVIZ plugins
   - opencv
   - pandas
   - Pillow
@@ -33,10 +29,12 @@ dependencies:
   - PyYAML
   - requests
   - ros-humble-ackermann-msgs
-  # - ros-humble-ament-cmake-nose
+  # - ros-humble-ament-cmake-nose # for ros2_numpy
+  - ros-humble-gazebo—ros-pkgs # for gazebo sim
+  - ros-humble-joint-state-publisher
   - ros-humble-pcl-ros
   - ros-humble-robot-state-publisher
-  - ros-humble-joint-state-publisher
+  - ros-humble-velodyne-gazebo-plugins # for gazebo sim
   - ros-humble-xacro
   - scikit-learn
   - scipy

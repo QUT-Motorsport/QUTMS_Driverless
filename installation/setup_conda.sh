@@ -64,22 +64,42 @@ if [ $torch == "yes" ]; then
     sleep 7
 fi
 
-## Install FSDS
-echo ""
-echo "---Installing FSDS---"
-echo ""
-sleep 3
-cd ~
-git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
-cd ~/Formula-Student-Driverless-Simulator
-AirSim/setup.sh
+# ## Install FSDS
+# echo ""
+# echo "---Installing FSDS---"
+# echo ""
+# sleep 3
+# cd ~
+# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
+# cd ~/Formula-Student-Driverless-Simulator
+# AirSim/setup.sh
 
-## Build FSDS package
+# ## Build FSDS package
+# echo ""
+# echo "---Building FSDS packages---"
+# echo ""
+# sleep 3
+# cd ~/Formula-Student-Driverless-Simulator/ros2
+# colcon build
+
+## Install EUFS
 echo ""
-echo "---Building FSDS packages---"
+echo "---Installing EUFS---"
 echo ""
 sleep 3
-cd ~/Formula-Student-Driverless-Simulator/ros2
+mkdir ~/EUFS
+cd ~/EUFS
+git clone --recurse-submodules https://github.com/QUT-Motorsport/eufs_sim.git
+git clone --recurse-submodules https://gitlab.com/eufs/eufs_msgs.git
+git clone --recurse-submodules https://gitlab.com/eufs/eufs_rviz_plugins.git
+echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
+export EUFS_MASTER=~/EUFS
+
+echo ""
+echo "---Building EUFS packages---"
+echo ""
+sleep 3
+## Build EUFS sim
 colcon build
 
 ## Build initial driverless packages
