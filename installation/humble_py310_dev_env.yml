@@ -30,11 +30,9 @@ dependencies:
   - requests
   - ros-humble-ackermann-msgs
   # - ros-humble-ament-cmake-nose # for ros2_numpy
-  - ros-humble-gazebo—ros-pkgs # for gazebo sim
   - ros-humble-joint-state-publisher
   - ros-humble-pcl-ros
   - ros-humble-robot-state-publisher
-  - ros-humble-velodyne-gazebo-plugins # for gazebo sim
   - ros-humble-xacro
   - scikit-learn
   - scipy
