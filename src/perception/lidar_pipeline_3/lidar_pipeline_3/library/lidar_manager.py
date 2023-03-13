@@ -1,4 +1,5 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -31,7 +32,7 @@ def locate_cones(config, point_cloud, start_time):
     point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
 
     # Remove points that are outside of range or have a norm of 0
-    mask = point_norms <= const.LIDAR_RANGE # & (point_norms != 0)
+    mask = point_norms <= const.LIDAR_RANGE  # & (point_norms != 0)
     point_norms = point_norms[mask]
     point_cloud = point_cloud[mask]
     config.logger.info(f"{point_cloud.shape[0]} points remain after filtering point cloud")
@@ -95,23 +96,23 @@ def locate_cones(config, point_cloud, start_time):
 
     # Create visualisations
     if config.create_figures:
-        #vis2.plot_point_cloud_2D(config, point_cloud, "Filtered", "01_PointCloud_2D")
-        #vis2.plot_segments_2D(config, point_cloud, point_norms, segments, "03_PointCloudSegments_2D")
-        #vis2.plot_bins_2D(config, point_cloud, segments, bins, "05_PointCloudBins_2D")
-        #vis2.plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
-        #vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
-        #vis2.plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
-        #vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
-        #vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
-        #vis.plot_labelled_points_3D(
+        # vis2.plot_point_cloud_2D(config, point_cloud, "Filtered", "01_PointCloud_2D")
+        # vis2.plot_segments_2D(config, point_cloud, point_norms, segments, "03_PointCloudSegments_2D")
+        # vis2.plot_bins_2D(config, point_cloud, segments, bins, "05_PointCloudBins_2D")
+        # vis2.plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, proto_segs, "07_PrototypePoints_2D")
+        # vis.plot_prototype_points_3D(config, proto_segs_arr, proto_segs, "08_PrototypePoints_3D")
+        # vis2.plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_segs, "09_GroundPlane_2D")
+        # vis.plot_ground_plane_3D(config, ground_plane, proto_segs_arr, proto_segs, "10_GroundPlane_3D")
+        # vis.plot_labelled_points_2D(config, point_cloud, point_labels, ground_plane, "11_LabelledPoints_2D")
+        # vis.plot_labelled_points_3D(
         #  config, point_cloud, point_labels, ground_plane, "12_LabelledPoints_3D"
-        #)
-        #vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
-        #vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
-        #vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
-        #vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
-        #vis2.plot_cones_3D(config, point_cloud, segments, ground_plane[np.unique(segments)], point_labels, reconstructed_centers, cone_centers, "16_Cones_3D")
-        #vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
+        # )
+        # vis.plot_object_points_2D(config, object_points, "13_Object_Points_2D")
+        # vis.plot_object_centers_2D(config, object_points, object_centers, objects, object_line_dists, "14_Objects_2D")
+        # vis.plot_reconstructed_objects_2D(config, reconstructed_objects, reconstructed_centers, "14_Reconstructed_Objects")
+        # vis2.plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, "15_Cones")
+        # vis2.plot_cones_3D(config, point_cloud, segments, ground_plane[np.unique(segments)], point_labels, reconstructed_centers, cone_centers, "16_Cones_3D")
+        # vis2.plot_detailed_2D(config, point_cloud, segments, bins, ground_plane[np.unique(segments)], point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, "17_detailed_2D")
 
         if config.show_figures:
             plt.show()

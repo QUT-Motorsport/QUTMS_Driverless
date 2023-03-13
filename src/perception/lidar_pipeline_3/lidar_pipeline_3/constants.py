@@ -92,6 +92,7 @@ def rgb_to_normalised_rgba(rgb: tuple):
 
 class Colour(Enum):
     """Enum for HEX colours."""
+
     MS_ORANGE: str = "#EE7623"
     MS_BLUE: str = "#0F406A"
     DARK_GREY: str = "#1F2630"
@@ -108,6 +109,7 @@ class Colour(Enum):
 
 class RGBA(Enum):
     """Enum for RGBA colours."""
+
     MS_ORANGE: tuple = rgb_to_normalised_rgba(hex_to_rgb(Colour.MS_ORANGE.value))
     MS_BLUE: tuple = rgb_to_normalised_rgba(hex_to_rgb(Colour.MS_BLUE.value))
     DARK_GREY: tuple = rgb_to_normalised_rgba(hex_to_rgb(Colour.DARK_GREY.value))

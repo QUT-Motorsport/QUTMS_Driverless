@@ -1,12 +1,13 @@
 import math
+
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
+from . import plot_utils as plt_u
 from .. import constants as const
 from ..constants import RGBA, Colour
-from . import plot_utils as plt_u
 
 
 def plot_point_cloud_2D(config, point_cloud, subtitle, name):
@@ -27,7 +28,16 @@ def plot_point_cloud_2D(config, point_cloud, subtitle, name):
     plt_u.calibrate_axis(ax)
     plt_u.add_colourbar(fig, plot, "Point Intensity", RGBA.MS_ORANGE.value, RGBA.WHITE.value)
 
-    ax.text(.01, .99, f'Points: {point_cloud.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.99,
+        f"Points: {point_cloud.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
@@ -47,7 +57,7 @@ def plot_segments_2D(config, point_cloud, point_norms, segments, name):
 
         end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
         end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
-        
+
         ax.plot(
             [0, end_x],
             [0, end_y],
@@ -79,7 +89,16 @@ def plot_segments_2D(config, point_cloud, point_norms, segments, name):
 
     plt_u.calibrate_axis(ax)
 
-    ax.text(.01, .99, f'Segments: {unique_segments.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.99,
+        f"Segments: {unique_segments.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
@@ -98,13 +117,7 @@ def plot_bins_2D(config, point_cloud, segments, bins, name):
         if curr_bin == bins.max():
             line_colour = RGBA.MS_ORANGE.value
 
-        ax.plot(
-            x,
-            y,
-            c=line_colour,
-            linewidth=(72.0 / fig.dpi) ** 2,
-            zorder=1
-        )
+        ax.plot(x, y, c=line_colour, linewidth=(72.0 / fig.dpi) ** 2, zorder=1)
 
     colour_set = [Colour.GREEN.value, Colour.LIGHT_BLUE.value, Colour.RED.value]
     ax.scatter(
@@ -120,8 +133,26 @@ def plot_bins_2D(config, point_cloud, segments, bins, name):
 
     plt_u.calibrate_axis(ax)
 
-    ax.text(.01, .99, f'Max Bin Count: {bins.max()}', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .95, f'Bin Size: {const.BIN_SIZE}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.99,
+        f"Max Bin Count: {bins.max()}",
+        ha="left",
+        va="top",
+        c=Colour.MS_ORANGE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.95,
+        f"Bin Size: {const.BIN_SIZE}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
@@ -141,7 +172,7 @@ def plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, prot
 
         end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
         end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
-        
+
         ax.plot(
             [0, end_x],
             [0, end_y],
@@ -170,7 +201,7 @@ def plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, prot
             linewidths=0,
             zorder=2,
         )
-    
+
     ax.plot(
         0,
         0,
@@ -182,7 +213,16 @@ def plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, prot
 
     plt_u.calibrate_axis(ax)
 
-    ax.text(.01, .99, f'Prototype Points: {sum(len(proto_points) for proto_points in proto_segs_arr)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.99,
+        f"Prototype Points: {sum(len(proto_points) for proto_points in proto_segs_arr)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
@@ -232,7 +272,16 @@ def plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_s
 
     plt_u.calibrate_axis(ax)
 
-    ax.text(.01, .99, f'Ground Lines: {ground_line_count}', ha='left', va='top', c=Colour.LIGHT_BLUE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.99,
+        f"Ground Lines: {ground_line_count}",
+        ha="left",
+        va="top",
+        c=Colour.LIGHT_BLUE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=True)
@@ -284,7 +333,7 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
                     z,
                     color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2],
                     linewidth=(72.0 / fig.dpi) ** 2,
-                    zorder=1
+                    zorder=1,
                 )
 
     # Plot rings around cones
@@ -300,7 +349,7 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
             linewidth=(72.0 / fig.dpi) ** 2 * 8,
             zorder=2,
         )
-    
+
     # Plot rings around cones
     for center in reconstructed_centers:
         ax.scatter(
@@ -314,7 +363,6 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
             zorder=4,
         )
 
-
     ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
@@ -326,12 +374,11 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
         linewidths=0,
         zorder=5,
     )
-    
-    
+
     # Plot car model
     if config.plot_car:
         ax.add_collection(create_car_model(config))
-    
+
     dist = const.LIDAR_RANGE / 5
     min_height = np.min(point_cloud["z"])
     plt_u.calibrate_axis(ax, [-dist, dist], [-dist, dist], [-const.LIDAR_HEIGHT_ABOVE_GROUND, dist])
@@ -340,36 +387,6 @@ def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, rec
     # Save Figure
     plt_u.add_logo(fig, dpi=225, small=False)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, name):
@@ -403,7 +420,21 @@ def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, 
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_labels, reconstructed_objects, reconstructed_centers, cone_intensities, cone_centers, cone_points, duration, name):
+def plot_detailed_2D(
+    config,
+    point_cloud,
+    segments,
+    bins,
+    ground_plane,
+    point_labels,
+    reconstructed_objects,
+    reconstructed_centers,
+    cone_intensities,
+    cone_centers,
+    cone_points,
+    duration,
+    name,
+):
     fig, ax = plt_u.init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
 
     # Plot Ground Plane
@@ -419,7 +450,13 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
                 x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * non_empty_segs[idx])
                 y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * non_empty_segs[idx])
 
-                ax.plot(x, y, color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2], linewidth=(72.0 / fig.dpi) ** 2, zorder=1)
+                ax.plot(
+                    x,
+                    y,
+                    color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1,
+                )
 
     # Plot Point Cloud with Labels
     ax.scatter(
@@ -430,7 +467,14 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
         s=(72.0 / fig.dpi) ** 2,
         linewidths=0,
     )
-    ax.scatter(reconstructed_centers[:, 0], reconstructed_centers[:, 1], c=RGBA.MS_ORANGE.value, marker='x', s=12, linewidths=2*(72.0 / fig.dpi) ** 2,)
+    ax.scatter(
+        reconstructed_centers[:, 0],
+        reconstructed_centers[:, 1],
+        c=RGBA.MS_ORANGE.value,
+        marker="x",
+        s=12,
+        linewidths=2 * (72.0 / fig.dpi) ** 2,
+    )
     ax.scatter(
         point_cloud["x"][point_labels],
         point_cloud["y"][point_labels],
@@ -438,53 +482,242 @@ def plot_detailed_2D(config, point_cloud, segments, bins, ground_plane, point_la
         marker="s",
         s=(72.0 / fig.dpi) ** 2,
         linewidths=0,
-        label='test',
+        label="test",
     )
 
-    max_intensity = max([np.max(i['intensity']) for i in cone_points])
+    max_intensity = max([np.max(i["intensity"]) for i in cone_points])
     for i, cone_center in enumerate(cone_centers):
-        #ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity']) / 255, cmap=plt.cm.gist_rainbow, marker=".")
-        ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity'] / max_intensity), cmap=plt.cm.gray_r, marker=".", s=24, linewidths=(72.0 / fig.dpi) ** 2,)
-        #ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
-        #ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_center[0], 1):.1f}, {round(cone_center[1], 1):.1f})', c='white', fontsize=3)
-        ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_intensities[i], 1):.1f}', c='white', fontsize=3)
-    
-    for i, rec_center in enumerate(reconstructed_centers):
-        ax.text(rec_center[0] - 0.7, rec_center[1] + 0.45, f'{len(reconstructed_objects[i]):<5}', c=Colour.MS_ORANGE.value, fontsize=4)
+        # ax.scatter(cone_center[0], cone_center[1], c=np.mean(cone_points[i]['intensity']) / 255, cmap=plt.cm.gist_rainbow, marker=".")
+        ax.scatter(
+            cone_center[0],
+            cone_center[1],
+            c=np.mean(cone_points[i]["intensity"] / max_intensity),
+            cmap=plt.cm.gray_r,
+            marker=".",
+            s=24,
+            linewidths=(72.0 / fig.dpi) ** 2,
+        )
+        # ax.text(cone_center[0] - 0.5, cone_center[1] - 1, round(np.mean(cone_points[i]['intensity']), 2), c='white', fontsize=4)
+        # ax.text(cone_center[0] - 1.15, cone_center[1] - 0.75, f'({round(cone_center[0], 1):.1f}, {round(cone_center[1], 1):.1f})', c='white', fontsize=3)
+        ax.text(
+            cone_center[0] - 1.15, cone_center[1] - 0.75, f"({round(cone_intensities[i], 1):.1f}", c="white", fontsize=3
+        )
 
-    ax.text(.01, .99, f'Non Ground Points: {np.count_nonzero(point_labels)}', ha='left', va='top', c=Colour.RED.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .95, f'Ground Points: {np.count_nonzero(point_labels == 0)}', ha='left', va='top', c=Colour.GREEN.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .91, f'Ground Lines: {ground_line_count}', ha='left', va='top', c=Colour.LIGHT_BLUE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .87, f'Objects: {reconstructed_centers.shape[0]}', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .83, f'Cones: {cone_centers.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    
-    #ax.text(.01, .12, f'Non Empty Segments: {non_empty_segs.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    #ax.text(.01, .08, f'Max Bin Assigned: {np.max(bins)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    ax.text(.01, .04, f'Current Hz: {round(1 / duration, 1)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
-    
-    ax.text(1.01, .99, 'Parameters', ha='left', va='top', c=Colour.MS_ORANGE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .96, f'LIDAR_RANGE = {round(const.LIDAR_RANGE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .93, f'DELTA_ALPHA = {round(const.DELTA_ALPHA, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .90, f'BIN_SIZE = {round(const.BIN_SIZE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .87, f'T_M = {round(const.T_M, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .84, f'T_M_SMALL = {round(const.T_M_SMALL, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .81, f'T_B = {round(const.T_B, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .78, f'T_RMSE = {round(const.T_RMSE, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .75, f'REGRESS_BTWN_BINS = {round(const.REGRESS_BETWEEN_BINS, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .72, f'T_D_GROUND = {round(const.T_D_GROUND, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .69, f'CONE_DIAM = {round(const.CONE_DIAM, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .66, f'CONE_HEIGHT = {round(const.CONE_HEIGHT, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .63, f'LIDAR_VERT_RES = {round(const.LIDAR_VERTICAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
-    ax.text(1.01, .60, f'LIDAR_HORIZ_RES = {round(const.LIDAR_HORIZONTAL_RES, 4)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=6, transform=ax.transAxes)
+    for i, rec_center in enumerate(reconstructed_centers):
+        ax.text(
+            rec_center[0] - 0.7,
+            rec_center[1] + 0.45,
+            f"{len(reconstructed_objects[i]):<5}",
+            c=Colour.MS_ORANGE.value,
+            fontsize=4,
+        )
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Non Ground Points: {np.count_nonzero(point_labels)}",
+        ha="left",
+        va="top",
+        c=Colour.RED.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.95,
+        f"Ground Points: {np.count_nonzero(point_labels == 0)}",
+        ha="left",
+        va="top",
+        c=Colour.GREEN.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.91,
+        f"Ground Lines: {ground_line_count}",
+        ha="left",
+        va="top",
+        c=Colour.LIGHT_BLUE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.87,
+        f"Objects: {reconstructed_centers.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.MS_ORANGE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.83,
+        f"Cones: {cone_centers.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # ax.text(.01, .12, f'Non Empty Segments: {non_empty_segs.shape[0]}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    # ax.text(.01, .08, f'Max Bin Assigned: {np.max(bins)}', ha='left', va='top', c=Colour.WHITE.value, fontsize=8, transform=ax.transAxes)
+    ax.text(
+        0.01,
+        0.04,
+        f"Current Hz: {round(1 / duration, 1)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    ax.text(1.01, 0.99, "Parameters", ha="left", va="top", c=Colour.MS_ORANGE.value, fontsize=6, transform=ax.transAxes)
+    ax.text(
+        1.01,
+        0.96,
+        f"LIDAR_RANGE = {round(const.LIDAR_RANGE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.93,
+        f"DELTA_ALPHA = {round(const.DELTA_ALPHA, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.90,
+        f"BIN_SIZE = {round(const.BIN_SIZE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.87,
+        f"T_M = {round(const.T_M, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.84,
+        f"T_M_SMALL = {round(const.T_M_SMALL, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.81,
+        f"T_B = {round(const.T_B, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.78,
+        f"T_RMSE = {round(const.T_RMSE, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.75,
+        f"REGRESS_BTWN_BINS = {round(const.REGRESS_BETWEEN_BINS, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.72,
+        f"T_D_GROUND = {round(const.T_D_GROUND, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.69,
+        f"CONE_DIAM = {round(const.CONE_DIAM, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.66,
+        f"CONE_HEIGHT = {round(const.CONE_HEIGHT, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.63,
+        f"LIDAR_VERT_RES = {round(const.LIDAR_VERTICAL_RES, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.01,
+        0.60,
+        f"LIDAR_HORIZ_RES = {round(const.LIDAR_HORIZONTAL_RES, 4)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=6,
+        transform=ax.transAxes,
+    )
 
     plt_u.calibrate_axis(ax)
 
     # Save Figure
-    plt_u.add_logo(fig, dpi=225*2, small=True)
-    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225*2)
+    plt_u.add_logo(fig, dpi=225 * 2, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225 * 2)
 
 
 import os
+
+
 def create_car_model(config):
     model_path = const.MODELS_DIR
 

@@ -1,26 +1,27 @@
 import logging
-import numpy as np
+from logging import StreamHandler
 import sys
 import time
+
+import numpy as np
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
-import ros2_numpy as rnp
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2
 
+import ros2_numpy as rnp
+
 from . import constants as const
+from . import utils, video_stitcher
 from .library import lidar_manager
-from . import utils
-from . import video_stitcher
 
 # For typing
 from .utils import Config
-from logging import StreamHandler
 
 
 def cone_msg(x: float, y: float) -> Cone:
@@ -46,6 +47,7 @@ class ConeDetectionNode(Node):
         Node (rclpy.node.Node): The ROS2 node class.
         _config (Config): Configuration object
     """
+
     def __init__(self, _config: Config) -> None:
         super().__init__("lidar_processor_node")
 
@@ -98,7 +100,6 @@ class ConeDetectionNode(Node):
         self.cone_publisher.publish(detection_msg)
 
 
-
 def real_time_stream(args: list, config: Config) -> None:
     """Run the node for real-time data.
 
@@ -133,7 +134,6 @@ def local_data_stream():
     raise NotImplementedError()
 
 
-
 def main(args=sys.argv[1:]):
     """
     The main function of the lidar_perception module.
@@ -161,8 +161,8 @@ def main(args=sys.argv[1:]):
     if config.show_figures:
         print("WARNING: --show_figures flag specified")
         print(
-            "The QUTMS watermark will overlap matplotlib interactive figures." +
-            "\nHowever, it will be formatted correctly on the saved figures in the output directory...\n"
+            "The QUTMS watermark will overlap matplotlib interactive figures."
+            + "\nHowever, it will be formatted correctly on the saved figures in the output directory...\n"
         )
 
     # Log initialization time and arguments

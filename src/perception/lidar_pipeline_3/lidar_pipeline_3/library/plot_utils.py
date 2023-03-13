@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
-from matplotlib import font_manager
-import numpy as np
 from PIL import Image
+from matplotlib import font_manager
+import matplotlib.pyplot as plt
+import numpy as np
 
 from .. import constants as const
 from ..constants import RGBA, Colour
@@ -99,7 +99,7 @@ def add_logo(fig, dpi, small):
     im = Image.open(const.QUTMS_LOGO)
     im_width, im_height = im.size
 
-    fig_width, fig_height = fig.get_size_inches() * dpi # fig.dpi
+    fig_width, fig_height = fig.get_size_inches() * dpi  # fig.dpi
     new_height = int(fig_height * logo_size)
     im = im.resize((int(new_height * (im_width / im_height)), new_height))
     fig.figimage(im, 10, 10, alpha=0.75, origin="upper", zorder=3)
