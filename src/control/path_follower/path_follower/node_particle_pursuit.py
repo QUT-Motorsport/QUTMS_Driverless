@@ -9,7 +9,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from ackermann_msgs.msg import AckermannDrive
+from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeWithCovariance, PathStamped, Reset, TrackDetectionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 
@@ -180,7 +180,7 @@ class ParticlePursuit(Node):
         self.create_subscription(TrackDetectionStamped, "/sim/track", self.track_callback, 10)
 
         # sync subscribers pose + velocity
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/zed2i/zed_node/pose_with_covariance")
+        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/car_pose")
         vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
         synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
         synchronizer.registerCallback(self.callback)
@@ -188,7 +188,7 @@ class ParticlePursuit(Node):
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # publishers
-        self.control_publisher: Publisher = self.create_publisher(AckermannDrive, "/driving_command", 10)
+        self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
@@ -334,10 +334,10 @@ class ParticlePursuit(Node):
         # ----------------
         # publish message
         # ----------------
-        control_msg = AckermannDrive()
-        control_msg.steering_angle = steering_angle
-        control_msg.acceleration = calc_throttle
-        control_msg.jerk = calc_brake  # using jerk for brake for now
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = steering_angle
+        control_msg.drive.acceleration = calc_throttle
+        # control_msg.drive.jerk = calc_brake  # jerk redundant with new sim
 
         self.control_publisher.publish(control_msg)
 
