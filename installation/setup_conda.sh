@@ -9,7 +9,7 @@ echo ""
 sleep 3
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y git python3-pip pre-commit
+sudo apt install -y git python3-pip pre-commit mesa-utils
 
 ## Download and install mambaforge
 echo ""
@@ -18,8 +18,11 @@ echo ""
 sleep 3
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
+source ~/mambaforge/bin/activate
 conda config --set auto_activate_base false
+conda deactivate
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
+source ~/mambaforge/bin/activate
 
 ## Clone Driverless repo
 echo ""
