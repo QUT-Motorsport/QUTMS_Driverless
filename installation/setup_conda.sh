@@ -39,8 +39,10 @@ echo ""
 sleep 3
 cd ~/QUTMS_Driverless/installation
 mamba env create --name driverless_env --file humble_py310_dev_env.yml
+conda activate driverless_env
 conda config --env --add channels conda-forge
 conda config --env --add channels robostack-humble
+mamba install -y --file conda_requirements.txt
 
 source ~/mambaforge/bin/activate
 ## Create an alias for ease
@@ -89,9 +91,10 @@ echo ""
 sleep 3
 mkdir ~/EUFS
 cd ~/EUFS
-git clone --recurse-submodules https://github.com/QUT-Motorsport/eufs_sim.git
-git clone --recurse-submodules https://gitlab.com/eufs/eufs_msgs.git
-git clone --recurse-submodules https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/eufs_sim.git
+git clone https://gitlab.com/eufs/eufs_msgs.git
+git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
 
