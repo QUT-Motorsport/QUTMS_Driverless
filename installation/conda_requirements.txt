@@ -13,7 +13,7 @@ protobuf
 PyYAML
 requests
 ros-humble-ackermann-msgs
-# ros-humble-ament-cmake-nose # for ros2_numpy
+ros-humble-gazebo-ros-pkgs
 ros-humble-joint-state-publisher
 ros-humble-pcl-ros
 ros-humble-robot-state-publisher
@@ -22,6 +22,5 @@ scikit-learn
 scipy
 seaborn
 tornado
-# tf_transformations
 tqdm
 transforms3d

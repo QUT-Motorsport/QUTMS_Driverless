@@ -44,7 +44,7 @@ cd ~/QUTMS_Driverless/installation
 mamba env create --name driverless_env --file humble_py310_dev_env.yml
 conda activate driverless_env
 conda config --env --add channels conda-forge
-conda config --env --add channels robostack-humble
+conda config --env --add channels robostack-staging
 mamba install -y --file conda_requirements.txt
 
 source ~/mambaforge/bin/activate
@@ -101,12 +101,12 @@ git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
 
-echo ""
-echo "---Building EUFS packages---"
-echo ""
-sleep 3
-## Build EUFS sim
-colcon build
+# echo ""
+# echo "---Building EUFS packages---"
+# echo ""
+# sleep 3
+# ## Build EUFS sim
+# colcon build
 
 ## Build initial driverless packages
 echo ""
