@@ -1,0 +1,27 @@
+# package requirements (alphabetical)
+colour
+cython
+dataclasses
+eigen
+ipython
+matplotlib
+mesa-libgl-devel-cos6-x86_64 # for gazebo sim RVIZ plugins
+mesa-libgl-cos6-x86_64 # for gazebo sim RVIZ plugins
+opencv
+pandas
+Pillow
+protobuf
+PyYAML
+requests
+ros-humble-ackermann-msgs
+ros-humble-gazebo-ros-pkgs
+ros-humble-joint-state-publisher
+ros-humble-pcl-ros
+ros-humble-robot-state-publisher
+ros-humble-xacro
+scikit-learn
+scipy
+seaborn
+tornado
+tqdm
+transforms3d

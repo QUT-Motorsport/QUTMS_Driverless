@@ -75,25 +75,25 @@ fi
 ## Source ROS
 source /opt/ros/humble/setup.bash
 
-## Install FSDS
-echo ""
-echo "---Installing FSDS---"
-echo ""
-sleep 3
-cd ~
-git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
-cd ~/Formula-Student-Driverless-Simulator
-AirSim/setup.sh
+# ## Install FSDS
+# echo ""
+# echo "---Installing FSDS---"
+# echo ""
+# sleep 3
+# cd ~
+# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
+# cd ~/Formula-Student-Driverless-Simulator
+# AirSim/setup.sh
 
-echo ""
-echo "---Building FSDS packages---"
-echo ""
-sleep 3
-cd ~/Formula-Student-Driverless-Simulator/ros2
-## Install dependencies from src/
-rosdep install --from-paths src -y --ignore-src
-## Build FSDS package
-colcon build
+# echo ""
+# echo "---Building FSDS packages---"
+# echo ""
+# sleep 3
+# cd ~/Formula-Student-Driverless-Simulator/ros2
+# ## Install dependencies from src/
+# rosdep install --from-paths src -y --ignore-src
+# ## Build FSDS package
+# colcon build
 
 ## Install EUFS
 echo ""
@@ -102,12 +102,12 @@ echo ""
 sleep 3
 mkdir ~/EUFS
 cd ~/EUFS
-git clone --recurse-submodules https://github.com/QUT-Motorsport/eufs_sim.git
-git clone --recurse-submodules https://gitlab.com/eufs/eufs_msgs.git
-git clone --recurse-submodules https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/eufs_sim.git
+git clone https://gitlab.com/eufs/eufs_msgs.git
+git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
-sudo apt install -y gazebo ros-humble-velodyne-gazebo-plugins
 
 echo ""
 echo "---Building EUFS packages---"
@@ -126,7 +126,7 @@ cd ~/QUTMS_Driverless
 ## Install dependencies from src/
 rosdep install --from-paths src -y --ignore-src
 ## Build initial driverless packages
-colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
+# colcon build --symlink-install --packages-up-to mission_controller terminal_control
 
 ## Pre commit for git
 echo ""

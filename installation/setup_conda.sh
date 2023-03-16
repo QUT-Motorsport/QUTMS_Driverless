@@ -9,7 +9,7 @@ echo ""
 sleep 3
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y git python3-pip pre-commit
+sudo apt install -y git python3-pip pre-commit mesa-utils
 
 ## Download and install mambaforge
 echo ""
@@ -18,7 +18,9 @@ echo ""
 sleep 3
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh
 bash Mambaforge-$(uname)-$(uname -m).sh
+source ~/mambaforge/bin/activate
 conda config --set auto_activate_base false
+conda deactivate
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
 
 ## Clone Driverless repo
@@ -38,16 +40,14 @@ echo "---Creating driverless env---"
 echo ""
 sleep 3
 cd ~/QUTMS_Driverless/installation
-mamba env create --name driverless_env --file humble_py39_dev_env.yml
+mamba env create --name driverless_env --file humble_py310_dev_env.yml
+conda activate driverless_env
 conda config --env --add channels conda-forge
-conda config --env --add channels robostack-humble
+conda config --env --add channels robostack-staging
+mamba install -y --file conda_requirements.txt
 
-source ~/mambaforge/bin/activate
 ## Create an alias for ease
 echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
-
-## Install package requirements
-conda activate driverless_env
 
 ## Check if user is going to work with vision
 echo ""
@@ -64,22 +64,43 @@ if [ $torch == "yes" ]; then
     sleep 7
 fi
 
-## Install FSDS
-echo ""
-echo "---Installing FSDS---"
-echo ""
-sleep 3
-cd ~
-git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
-cd ~/Formula-Student-Driverless-Simulator
-AirSim/setup.sh
+# ## Install FSDS
+# echo ""
+# echo "---Installing FSDS---"
+# echo ""
+# sleep 3
+# cd ~
+# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
+# cd ~/Formula-Student-Driverless-Simulator
+# AirSim/setup.sh
 
-## Build FSDS package
+# ## Build FSDS package
+# echo ""
+# echo "---Building FSDS packages---"
+# echo ""
+# sleep 3
+# cd ~/Formula-Student-Driverless-Simulator/ros2
+# colcon build
+
+## Install EUFS
 echo ""
-echo "---Building FSDS packages---"
+echo "---Installing EUFS---"
 echo ""
 sleep 3
-cd ~/Formula-Student-Driverless-Simulator/ros2
+mkdir ~/EUFS
+cd ~/EUFS
+git clone https://github.com/QUT-Motorsport/eufs_sim.git
+git clone https://gitlab.com/eufs/eufs_msgs.git
+git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/qutms_msgs.git
+echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
+export EUFS_MASTER=~/EUFS
+
+echo ""
+echo "---Building EUFS packages---"
+echo ""
+sleep 3
+## Build EUFS sim
 colcon build
 
 ## Build initial driverless packages
@@ -88,7 +109,7 @@ echo "---Building Driverless packages---"
 echo ""
 sleep 3
 cd ~/QUTMS_Driverless
-colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
+# colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Pre commit for git
 echo ""
