@@ -22,7 +22,6 @@ source ~/mambaforge/bin/activate
 conda config --set auto_activate_base false
 conda deactivate
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
-source ~/mambaforge/bin/activate
 
 ## Clone Driverless repo
 echo ""
@@ -47,12 +46,8 @@ conda config --env --add channels conda-forge
 conda config --env --add channels robostack-staging
 mamba install -y --file conda_requirements.txt
 
-source ~/mambaforge/bin/activate
 ## Create an alias for ease
 echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
-
-## Install package requirements
-conda activate driverless_env
 
 ## Check if user is going to work with vision
 echo ""
@@ -101,12 +96,12 @@ git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
 
-# echo ""
-# echo "---Building EUFS packages---"
-# echo ""
-# sleep 3
-# ## Build EUFS sim
-# colcon build
+echo ""
+echo "---Building EUFS packages---"
+echo ""
+sleep 3
+## Build EUFS sim
+colcon build
 
 ## Build initial driverless packages
 echo ""

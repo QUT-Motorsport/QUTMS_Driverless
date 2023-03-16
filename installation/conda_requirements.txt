@@ -6,6 +6,7 @@ eigen
 ipython
 matplotlib
 mesa-libgl-devel-cos6-x86_64 # for gazebo sim RVIZ plugins
+mesa-libgl-cos6-x86_64 # for gazebo sim RVIZ plugins
 opencv
 pandas
 Pillow
