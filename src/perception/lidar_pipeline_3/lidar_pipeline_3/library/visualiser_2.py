@@ -1,119 +1,396 @@
 import math
 
-from PIL import Image
-from matplotlib import font_manager
 import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
+from . import plot_utils as plt_u
 from .. import constants as const
 from ..constants import RGBA, Colour
 
-# import constants as const
-# from constants import RGBA, Colour
 
-font_dirs = [const.WORKING_DIR + "/library/resources/fonts"]
-# font_dirs = ["C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/fonts"]
-font_files = font_manager.findSystemFonts(fontpaths=font_dirs)
+def plot_point_cloud_2D(config, point_cloud, subtitle, name):
+    # Create Figure
+    fig, ax = plt_u.init_plot_2D(f"Point Cloud {subtitle}", "X", "Y")
+    plot = ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=point_cloud["intensity"] / 255,
+        cmap=plt.cm.gist_rainbow,
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        vmin=0.0,
+        vmax=1.0,
+    )
 
-for font_file in font_files:
-    font_manager.fontManager.addfont(font_file)
+    plt_u.calibrate_axis(ax)
+    plt_u.add_colourbar(fig, plot, "Point Intensity", RGBA.MS_ORANGE.value, RGBA.WHITE.value)
 
-plt.rcParams["font.family"] = "Roboto"
+    ax.text(
+        0.01,
+        0.99,
+        f"Points: {point_cloud.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
 
-
-def animate_figure():
-    raise NotImplementedError
-
-
-def init_plot_2D(title, xlabel, ylabel):
-    # Initialise figure
-    fig, ax = plt.subplots(facecolor=RGBA.MS_BLUE.value)
-
-    # Strings
-    ax.set_title(title, color=RGBA.MS_ORANGE.value, fontweight="bold", fontsize=14)
-    ax.set_xlabel(xlabel, fontweight="bold")
-    ax.set_ylabel(ylabel, fontweight="bold")
-
-    # Colours
-    ax.set_facecolor(RGBA.DARK_GREY.value)
-    ax.xaxis.label.set_color(RGBA.MS_ORANGE.value)
-    ax.yaxis.label.set_color(RGBA.MS_ORANGE.value)
-    ax.tick_params(axis="x", colors=RGBA.WHITE.value)
-    ax.tick_params(axis="y", colors=RGBA.WHITE.value)
-
-    # Equal axis
-    ax.set_aspect("equal")
-
-    return fig, ax
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def init_plot_3D(title, xlabel, ylabel, zlabel):
-    # Initialise figure
-    fig = plt.figure(facecolor=RGBA.MS_BLUE.value)
-    ax = fig.add_subplot(projection="3d")
-    ax.grid(color="white")
+def plot_segments_2D(config, point_cloud, point_norms, segments, name):
+    unique_segments = np.unique(segments)
+    fig, ax = plt_u.init_plot_2D("Point Cloud Discretised into Segments", "X", "Y")
 
-    # Strings
-    ax.set_title(title, color=RGBA.MS_ORANGE.value, fontweight="bold", fontsize=14)
-    ax.set_xlabel(xlabel, fontweight="bold")
-    ax.set_ylabel(ylabel, fontweight="bold")
-    ax.set_zlabel(zlabel, fontweight="bold")
+    for unique_segment in unique_segments:
+        max_norm_in_seg = np.max(point_norms[segments == unique_segment])
 
-    # Colours
-    ax.set_facecolor(RGBA.MS_BLUE.value)
-    ax.xaxis.set_pane_color(RGBA.DARK_GREY.value)
-    ax.yaxis.set_pane_color(RGBA.DARK_GREY.value)
-    ax.zaxis.set_pane_color(RGBA.DARK_GREY.value)
-    ax.xaxis.label.set_color(RGBA.MS_ORANGE.value)
-    ax.yaxis.label.set_color(RGBA.MS_ORANGE.value)
-    ax.zaxis.label.set_color(RGBA.MS_ORANGE.value)
-    ax.tick_params(axis="x", colors=RGBA.WHITE.value)
-    ax.tick_params(axis="y", colors=RGBA.WHITE.value)
-    ax.tick_params(axis="z", colors=RGBA.WHITE.value)
-    ax.xaxis._axinfo["grid"].update({"color": Colour.MS_BLUE.value})
-    ax.yaxis._axinfo["grid"].update({"color": Colour.MS_BLUE.value})
-    ax.zaxis._axinfo["grid"].update({"color": Colour.MS_BLUE.value})
+        center_adjust = 0.5
+        if unique_segment < 0:
+            center_adjust = -0.5
 
-    # Equal axis
-    ax.set_aspect("equal")
+        end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
 
-    # Set view anlge
-    ax.view_init(elev=34, azim=202)
+        ax.plot(
+            [0, end_x],
+            [0, end_y],
+            c=Colour.MS_BLUE.value,
+            linewidth=(72.0 / fig.dpi) ** 2,
+            zorder=1,
+        )
 
-    return fig, ax
+    colour_set = [Colour.MS_ORANGE.value, Colour.WHITE.value]
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=(segments % len(colour_set)),
+        cmap=mpl_colors.ListedColormap(colour_set),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=2,
+    )
+
+    ax.plot(
+        0,
+        0,
+        c=Colour.DARK_GREY.value,
+        marker="o",
+        markersize=3,
+        zorder=3,
+    )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Segments: {unique_segments.shape[0]}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def add_logo(fig, dpi, small):
-    return
-    if small:
-        logo_size = 0.1
-    else:
-        logo_size = 0.125
+def plot_bins_2D(config, point_cloud, segments, bins, name):
+    fig, ax = plt_u.init_plot_2D("Segments Discretised into Bins", "X", "Y")
 
-    # Add Logo
-    im = Image.open(const.WORKING_DIR + "/library/resources/qutms_logo_white.png")
-    # im = Image.open("C:/Users/liamf/Documents/Personal/Software Development/Python/QUTMS_Driverless/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/resources/qutms_logo_white.png")
-    im_width, im_height = im.size
+    theta = np.linspace((np.min(segments) - 1) * const.DELTA_ALPHA, np.max(segments) * const.DELTA_ALPHA, 201)
+    line_colour = RGBA.MS_BLUE.value
+    for curr_bin in range(bins.min(), bins.max() + 1):
+        x = curr_bin * const.BIN_SIZE * np.cos(theta)
+        y = curr_bin * const.BIN_SIZE * np.sin(theta)
 
-    fig_width, fig_height = fig.get_size_inches() * dpi  # fig.dpi
-    new_height = int(fig_height * logo_size)
-    im = im.resize((int(new_height * (im_width / im_height)), new_height))
-    fig.figimage(im, 10, 10, alpha=0.75, origin="upper", zorder=3)
+        if curr_bin == bins.max():
+            line_colour = RGBA.MS_ORANGE.value
+
+        ax.plot(x, y, c=line_colour, linewidth=(72.0 / fig.dpi) ** 2, zorder=1)
+
+    colour_set = [Colour.GREEN.value, Colour.LIGHT_BLUE.value, Colour.RED.value]
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        c=(bins % len(colour_set)),
+        cmap=mpl_colors.ListedColormap(colour_set),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=2,
+    )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Max Bin Count: {bins.max()}",
+        ha="left",
+        va="top",
+        c=Colour.MS_ORANGE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        0.01,
+        0.95,
+        f"Bin Size: {const.BIN_SIZE}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
-def calibrate_axis(ax, x=None, y=None, z=None):
-    if x is not None:
-        max_limit = max(np.abs([np.min(x), np.max(x), np.min(y), np.max(y), np.min(z), np.max(z)]))
-        ax.axes.set_zlim(-max_limit, max_limit)
-    else:
-        max_limit = max(np.abs([min(ax.get_xlim()), max(ax.get_xlim()), min(ax.get_ylim()), max(ax.get_ylim())]))
-    ax.axes.set_xlim(-max_limit, max_limit)
-    ax.axes.set_ylim(-max_limit, max_limit)
+def plot_prototype_points_2D(config, point_norms, segments, proto_segs_arr, proto_segs, name):
+    unique_segments = np.unique(segments)
+    fig, ax = plt_u.init_plot_2D("Prototype Points", "X", "Y")
+
+    for unique_segment in unique_segments:
+        max_norm_in_seg = np.max(point_norms[segments == unique_segment])
+
+        center_adjust = 0.5
+        if unique_segment < 0:
+            center_adjust = -0.5
+
+        end_x = max_norm_in_seg * math.cos((unique_segment + center_adjust) * const.DELTA_ALPHA)
+        end_y = max_norm_in_seg * math.sin((unique_segment + center_adjust) * const.DELTA_ALPHA)
+
+        ax.plot(
+            [0, end_x],
+            [0, end_y],
+            c=Colour.MS_BLUE.value,
+            linewidth=(72.0 / fig.dpi) ** 2,
+            zorder=1,
+        )
+
+    colour_set = [Colour.MS_ORANGE.value, Colour.WHITE.value]
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+
+        center_adjust = 0.5
+        if segment_num < 0:
+            center_adjust = -0.5
+
+        x = segment[:, 0] * math.cos((segment_num + center_adjust) * const.DELTA_ALPHA)
+        y = segment[:, 0] * math.sin((segment_num + center_adjust) * const.DELTA_ALPHA)
+
+        ax.scatter(
+            x,
+            y,
+            c=colour_set[proto_segs[idx] % len(colour_set)],
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2,
+            linewidths=0,
+            zorder=2,
+        )
+
+    ax.plot(
+        0,
+        0,
+        c=Colour.DARK_GREY.value,
+        marker="o",
+        markersize=3,
+        zorder=3,
+    )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Prototype Points: {sum(len(proto_points) for proto_points in proto_segs_arr)}",
+        ha="left",
+        va="top",
+        c=Colour.WHITE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_ground_plane_2D(config, segments, ground_plane, proto_segs_arr, proto_segs, name):
+    fig, ax = plt_u.init_plot_2D("Ground Plane Mapped", "X", "Y")
+
+    # Plot Ground Plane
+    ground_line_count = 0
+    colour_set = [Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value]
+    for segment in np.unique(segments):
+        ground_set = ground_plane[segment]
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                ground_line_count += 1
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * segment)
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * segment)
+
+                ax.plot(
+                    x,
+                    y,
+                    color=colour_set[jdx % len(colour_set)],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1,
+                )
+
+    # Plot Prototype Points
+    for idx, segment in enumerate(proto_segs_arr):
+        segment_num = proto_segs[idx]
+        x = segment[:, 0] * math.cos(const.DELTA_ALPHA * segment_num)
+        y = segment[:, 0] * math.sin(const.DELTA_ALPHA * segment_num)
+
+        ax.scatter(
+            x,
+            y,
+            c=Colour.WHITE.value,
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2,
+            linewidths=0,
+            zorder=2,
+        )
+
+    plt_u.calibrate_axis(ax)
+
+    ax.text(
+        0.01,
+        0.99,
+        f"Ground Lines: {ground_line_count}",
+        ha="left",
+        va="top",
+        c=Colour.LIGHT_BLUE.value,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def point_cloud_3D(config, point_cloud, subtitle, name):
+    # Create Figure
+    fig, ax = plt_u.init_plot_3D(subtitle, "X", "Y", "Z")
+
+    # Plot Point Cloud
+    ax.scatter(
+        point_cloud[:, 0],
+        point_cloud[:, 1],
+        point_cloud[:, 2],
+        c=Colour.MS_BLUE.value,
+        marker=".",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=1,
+    )
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=True)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
+
+
+def plot_cones_3D(config, point_cloud, segments, ground_plane, point_labels, reconstructed_centers, cone_centers, name):
+    # Create Figure
+    fig, ax = plt_u.init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
+
+    # Plot Ground Plane
+    ground_line_count = 0
+    non_empty_segs = np.unique(segments)
+    for idx, ground_set in enumerate(ground_plane):
+        if ground_set != 0:
+            for jdx, ground_line in enumerate(ground_set):
+                ground_line_count += 1
+                p1 = ground_line[2]
+                p2 = ground_line[3]
+
+                x = np.array([p1[0], p2[0]]) * math.cos(const.DELTA_ALPHA * non_empty_segs[idx])
+                y = np.array([p1[0], p2[0]]) * math.sin(const.DELTA_ALPHA * non_empty_segs[idx])
+                z = np.array([p1[1], p2[1]])
+
+                ax.plot(
+                    x,
+                    y,
+                    z,
+                    color=[Colour.LIGHT_BLUE.value, Colour.DIM_BLUE.value][jdx % 2],
+                    linewidth=(72.0 / fig.dpi) ** 2,
+                    zorder=1,
+                )
+
+    # Plot rings around cones
+    theta = np.linspace(0, 2 * np.pi, 201)
+    x = const.CONE_DIAM * np.cos(theta)
+    y = const.CONE_DIAM * np.sin(theta)
+    for center in cone_centers:
+        ax.plot(
+            x + center[0],
+            y + center[1],
+            -const.LIDAR_HEIGHT_ABOVE_GROUND,
+            c=RGBA.WHITE.value,
+            linewidth=(72.0 / fig.dpi) ** 2 * 8,
+            zorder=2,
+        )
+
+    # Plot rings around cones
+    for center in reconstructed_centers:
+        ax.scatter(
+            x + center[0],
+            y + center[1],
+            -const.LIDAR_HEIGHT_ABOVE_GROUND,
+            c=RGBA.MS_ORANGE.value,
+            marker="s",
+            s=(72.0 / fig.dpi) ** 2 * 4,
+            linewidths=0,
+            zorder=4,
+        )
+
+    ax.scatter(
+        point_cloud["x"],
+        point_cloud["y"],
+        point_cloud["z"],
+        c=point_labels,
+        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
+        marker="s",
+        s=(72.0 / fig.dpi) ** 2,
+        linewidths=0,
+        zorder=5,
+    )
+
+    # Plot car model
+    if config.plot_car:
+        ax.add_collection(create_car_model(config))
+
+    dist = const.LIDAR_RANGE / 5
+    min_height = np.min(point_cloud["z"])
+    plt_u.calibrate_axis(ax, [-dist, dist], [-dist, dist], [-const.LIDAR_HEIGHT_ABOVE_GROUND, dist])
+    ax.axes.set_zlim(min_height, dist * 2 + min_height)
+
+    # Save Figure
+    plt_u.add_logo(fig, dpi=225, small=False)
+    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
 
 
 def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, name):
-    fig, ax = init_plot_2D("Cone Locations Identified", "X", "Y")
+    fig, ax = plt_u.init_plot_2D("Cone Locations Identified", "X", "Y")
     ax.scatter(
         point_cloud["x"],
         point_cloud["y"],
@@ -136,38 +413,11 @@ def plot_cones_2D(config, point_cloud, point_labels, cone_centers, cone_points, 
             fontsize=4,
         )
 
-    calibrate_axis(ax)
+    plt_u.calibrate_axis(ax)
 
     # Save Figure
-    add_logo(fig, dpi=225, small=True)
+    plt_u.add_logo(fig, dpi=225, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
-
-
-def plot_cones_3D(config, point_cloud, point_labels, cones, name):
-    # Create Figure
-    fig, ax = init_plot_3D("Cone Locations Identified", "X", "Y", "Z")
-
-    ax.scatter(
-        point_cloud["x"],
-        point_cloud["y"],
-        point_cloud["z"],
-        c=point_labels,
-        cmap=mpl_colors.ListedColormap([RGBA.GREEN.value, RGBA.RED.value]),
-        marker="s",
-        s=(72.0 / fig.dpi) ** 2,
-    )
-
-    ax.scatter(cones[:, 0], cones[:, 1], cones[:, 2], c=RGBA.WHITE.value, marker="o")
-
-    calibrate_axis(ax, point_cloud["x"], point_cloud["y"], point_cloud["z"])
-
-    # Save Figure
-    add_logo(fig, dpi=225, small=False)
-    plt.savefig(f"{config.image_dir}/{name}.png", dpi=225)
-
-    # Create Animation
-    if config.animate_figures:
-        animate_figure(f"05_{name}_Animated", ax, config.image_dir)
 
 
 def plot_detailed_2D(
@@ -185,7 +435,7 @@ def plot_detailed_2D(
     duration,
     name,
 ):
-    fig, ax = init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
+    fig, ax = plt_u.init_plot_2D("LiDAR Perception Pipeline", "X", "Y")
 
     # Plot Ground Plane
     ground_line_count = 0
@@ -458,8 +708,82 @@ def plot_detailed_2D(
         transform=ax.transAxes,
     )
 
-    calibrate_axis(ax)
+    plt_u.calibrate_axis(ax)
 
     # Save Figure
-    add_logo(fig, dpi=225 * 2, small=True)
+    plt_u.add_logo(fig, dpi=225 * 2, small=True)
     plt.savefig(f"{config.image_dir}/{name}.png", dpi=225 * 2)
+
+
+import os
+
+
+def create_car_model(config):
+    model_path = const.MODELS_DIR
+
+    material_file = None
+    object_file = None
+    for item in os.listdir(model_path):
+        item_split = item.split(".")
+        if item_split[-1] == "mtl":
+            material_file = item
+        elif item_split[-1] == "obj":
+            object_file = item
+
+    mat_name = None
+    materials = dict()
+    with open(model_path + "/" + material_file) as file:
+        for line in file.readlines():
+            values = line.split()
+            if not values:
+                continue
+            if values[0] == "newmtl":
+                mat_name = values[1]
+            if values[0] == "Kd":
+                materials[mat_name] = tuple([float(values[1]), float(values[2]), float(values[3])])
+
+    colours = []
+    vertices = []
+    triangles = []
+    with open(model_path + "/" + object_file) as file:
+        for line in file.readlines():
+            values = line.split()
+            if not values:
+                continue
+            if values[0] == "usemtl":
+                mat_name = values[1]
+            elif values[0] == "v":
+                vertices.append(values[1:4])
+            elif values[0] == "f":
+                triangles.append(values[1:4])
+                colours.append(materials[mat_name])
+
+    np_vertices = np.array(vertices, dtype=np.float32)
+    np_triangles = np.array(triangles, dtype=np.int32) - 1
+
+    # Convert model from inches to metres
+    INCH_TO_M = 0.0254
+    x = np_vertices[:, 0] * INCH_TO_M
+    y = np_vertices[:, 2] * INCH_TO_M
+    z = np_vertices[:, 1] * INCH_TO_M
+
+    # Align bottom of model's wheels with the lowest point in point cloud
+    min_z = np.amin(z)
+    point_min_z = -const.LIDAR_HEIGHT_ABOVE_GROUND
+    z_diff = min_z - point_min_z
+    z = z - z_diff
+
+    # Align the front of the model (LiDAR camera location) with origin of point cloud (x=0)
+    x_max = np.amax(x)
+    x = x - x_max
+
+    # Model vertices and faces
+    triangle_vertices = np.array(
+        [
+            np.array([[x[T[0]], y[T[0]], z[T[0]]], [x[T[1]], y[T[1]], z[T[1]]], [x[T[2]], y[T[2]], z[T[2]]]])
+            for T in np_triangles
+        ]
+    )
+
+    collection = Poly3DCollection(triangle_vertices, facecolors=colours, edgecolors=None)
+    return collection
