@@ -17,7 +17,8 @@ from sensor_msgs.msg import PointCloud2
 import ros2_numpy as rnp
 
 from . import constants as const
-from . import utils, video_stitcher
+
+# from . import utils, video_stitcher
 from .library import lidar_manager
 
 # For typing
@@ -111,7 +112,7 @@ def real_time_stream(args: list, config: Config) -> None:
         config (Config): The configuration object containing various settings for the node.
     """
     # Initialize the ROS 2 node with the specified arguments
-    rclpy.init(args=args)
+    rclpy.init()
 
     # Create a ConeDetectionNode object with the specified configuration
     cone_detection_node: ConeDetectionNode = ConeDetectionNode(config)
@@ -145,7 +146,7 @@ def main(args=sys.argv[1:]):
         None
     """
     # Initialize config object
-    config: Config = utils.Config()
+    config: Config = Config()
     config.update(args)
 
     # Check if logs should be printed to console
@@ -170,18 +171,18 @@ def main(args=sys.argv[1:]):
     config.logger.info(f"args = {args}")
 
     # Initialize data stream
-    if config.video_from_session:
-        # If video_from_session flag is provided, stitch video from figures generated in that session
-        video_stitcher.stitch_figures(
-            f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
-            f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
-        )
-    elif config.data_path:
-        # If data_path is provided, use it as the input data source
-        local_data_stream()
-    else:
-        # Otherwise, use the real-time point cloud source
-        real_time_stream(args, config)
+    # if config.video_from_session:
+    #     If video_from_session flag is provided, stitch video from figures generated in that session
+    #     video_stitcher.stitch_figures(
+    #         f"{const.OUTPUT_DIR}/{config.video_from_session}{const.FIGURES_DIR}",
+    #         f"{const.OUTPUT_DIR}/{config.video_from_session}_{const.VIDEOS_DIR}/{const.VIDEOS_DIR}",
+    #     )
+    # elif config.data_path:
+    #     # If data_path is provided, use it as the input data source
+    # local_data_stream()
+    # else:
+    #     # Otherwise, use the real-time point cloud source
+    real_time_stream(args, config)
 
 
 if __name__ == "__main__":
