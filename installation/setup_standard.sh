@@ -126,7 +126,7 @@ cd ~/QUTMS_Driverless
 ## Install dependencies from src/
 rosdep install --from-paths src -y --ignore-src
 ## Build initial driverless packages
-colcon build --symlink-install --packages-up-to mission_controller terminal_control
+# colcon build --symlink-install --packages-up-to mission_controller terminal_control
 
 ## Pre commit for git
 echo ""
