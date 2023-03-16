@@ -111,7 +111,7 @@ echo "---Building Driverless packages---"
 echo ""
 sleep 3
 cd ~/QUTMS_Driverless
-colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
+# colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Pre commit for git
 echo ""
