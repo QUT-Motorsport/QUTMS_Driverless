@@ -10,7 +10,14 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeWithCovariance, PathStamped, Reset, TrackDetectionStamped
+from driverless_msgs.msg import (
+    Cone,
+    ConeDetectionStamped,
+    ConeWithCovariance,
+    PathStamped,
+    Reset,
+    TrackDetectionStamped,
+)
 from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
 
 from typing import List
@@ -177,7 +184,7 @@ class ParticlePursuit(Node):
         self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
 
         # sub to track for all cone locations relative to car start point, used for boundary danger calculations
-        self.create_subscription(TrackDetectionStamped, "/sim/track", self.track_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/sim/global_map", self.track_callback, 10)
 
         # sync subscribers pose + velocity
         pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/car_pose")
@@ -191,21 +198,25 @@ class ParticlePursuit(Node):
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
 
         self.get_logger().info("---Path Follower Node Initalised---")
+        print("The node is initialised!")
 
     # AS start button check?
     def reset_callback(self, reset_msg: Reset):
         self.path = np.array([])
         self.r2d = True
+        print("Ready to drive!")
 
     # 'recieve' the path
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
+        print("We are receiving a map!")
 
     # recieve the cone locations
-    def track_callback(self, cone_pos_msg: TrackDetectionStamped):
+    def track_callback(self, cone_pos_msg: ConeDetectionStamped):
         self.cone_pos = cone_pos_msg.cones
+        print("We are receiving cones!")
 
     def callback(
         self,
@@ -317,26 +328,26 @@ class ParticlePursuit(Node):
 
         # target velocity proportional to angle
         target_vel: float = self.vel_max - intensity * self.Kp_vel
-        if target_vel < self.vel_min:
-            target_vel = self.vel_min
+        # if target_vel < self.vel_min:
+        #     target_vel = self.vel_min
 
-        # increase proportionally as it approaches target
-        throttle_scalar: float = 1 - (vel / target_vel)
-        calc_brake = 0.0
-        if throttle_scalar > 0:
-            calc_throttle = self.throttle_max * throttle_scalar
-        # if its over maximum, brake propotionally unless under minimum
-        else:
-            calc_throttle = 0.0
-            if vel > self.vel_min:
-                calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
+        # # increase proportionally as it approaches target
+        # throttle_scalar: float = 1 - (vel / target_vel)
+        # calc_brake = 0.0
+        # if throttle_scalar > 0:
+        #     calc_throttle = self.throttle_max * throttle_scalar
+        # # if its over maximum, brake propotionally unless under minimum
+        # else:
+        #     calc_throttle = 0.0
+        #     if vel > self.vel_min:
+        #         calc_brake = abs(self.brake_max * throttle_scalar) * intensity * self.Kp_brake
 
         # ----------------
         # publish message
         # ----------------
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.acceleration = calc_throttle
+        control_msg.drive.speed = target_vel
         # control_msg.drive.jerk = calc_brake  # jerk redundant with new sim
 
         self.control_publisher.publish(control_msg)
