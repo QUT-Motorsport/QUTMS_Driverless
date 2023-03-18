@@ -104,7 +104,7 @@ mkdir ~/EUFS
 cd ~/EUFS
 git clone https://github.com/QUT-Motorsport/eufs_sim.git
 git clone https://gitlab.com/eufs/eufs_msgs.git
-git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
+git clone https://github.com/QUT-Motorsport/eufs_rviz_plugins.git
 git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
 export EUFS_MASTER=~/EUFS
