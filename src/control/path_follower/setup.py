@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "path_followers"
+package_name = "path_follower"
 
 setup(
     name=package_name,
