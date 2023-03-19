@@ -42,15 +42,15 @@ class EKFslam {
     //     ( 0               rotational_vel^2 )
     const Eigen::Matrix2d R = (
         Eigen::Matrix2d() << pow(0.1, 2), 0,
-                             0,           pow(0.01, 2)
+                             0,           pow(0.001, 2)
     ).finished();
 
     // Observation model uncertanty
     // Q = ( σ_range^2  0         )
     //     ( 0      σ_bearing^2 )
     const Eigen::Matrix2d Q = (
-        Eigen::Matrix2d() << pow(0.01, 2), 0,
-                             0,            pow(0.01, 2)
+        Eigen::Matrix2d() << pow(0.5, 2), 0,
+                             0,            pow(0.5, 2)
     ).finished();
     // clang-format on
 
