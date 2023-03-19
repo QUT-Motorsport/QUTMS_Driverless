@@ -54,7 +54,7 @@ int get_cone_colour(ConeColourCount_t cone_colour_count) {
 std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double search_x, double search_y) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 1 * 1;  // m, threshold^2
+    double min_distance = 1.5 * 1.5;  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -165,8 +165,8 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
     // clang-format off
     Eigen::Matrix3d jFx;  // jacobian wrt state (pose)
     jFx << 1, 0, -dt*forward_vel*sin(theta),
-          0, 1, dt*forward_vel*cos(theta),
-          0, 0, 1;
+           0, 1, dt*forward_vel*cos(theta),
+           0, 0, 1;
 
     Eigen::Matrix<double, 3, 2> jFu;  // jacobian wrt input (odometry)
     jFu << dt*cos(theta), 0,
@@ -179,8 +179,10 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
         jFu * R * jFu.transpose();
 }
 
-void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones) {
-    for (driverless_msgs::msg::Cone cone : detected_cones) {
+void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones) {
+    for (auto const& cov_cone : detected_cones) {
+        auto cone = cov_cone.cone;
+
         double x, y, theta;
         get_state_from_mu(pred_mu, x, y, theta);
 

@@ -42,24 +42,17 @@ class EKFSLAMNode : public rclcpp::Node {
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
-        wss_sub = this->create_subscription<driverless_msgs::msg::WSSVelocity>(
-            "vehicle/wheel_speed", 10, std::bind(&EKFSLAMNode::wss_callback, this, _1));
-
         twist_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
             "imu/velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "sim/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "vision/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
     }
 
-    void wss_callback(const driverless_msgs::msg::WSSVelocity::SharedPtr msg) {
-        forward_vel = msg->velocity;
-        predict(msg->header.stamp);
-    }
-
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+        forward_vel = msg->twist.linear.x;
         rotational_vel = msg->twist.angular.z;
         predict(msg->header.stamp);
     }
@@ -71,7 +64,6 @@ class EKFSLAMNode : public rclcpp::Node {
         }
 
         double dt = compute_dt(last_update.value(), stamp);
-        std::cout << dt << std::endl;
 
         if (!(dt > 0)) {
             return;
@@ -85,25 +77,25 @@ class EKFSLAMNode : public rclcpp::Node {
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
-        // rclcpp::Time stamp = detection_msg->header.stamp;
+        rclcpp::Time stamp = detection_msg->header.stamp;
 
-        // if (!last_update.has_value()) {
-        //     last_update = stamp;
-        //     return;
-        // }
+        if (!last_update.has_value()) {
+            last_update = stamp;
+            return;
+        }
 
-        // double dt = compute_dt(last_update.value(), stamp);
+        double dt = compute_dt(last_update.value(), stamp);
 
-        // if (!(dt > 0)) {
-        //     return;
-        // }
+        if (!(dt > 0)) {
+            return;
+        }
 
-        // ekf_slam.predict(forward_vel, rotational_vel, dt);
-        // ekf_slam.update(detection_msg->cones);
+        ekf_slam.predict(forward_vel, rotational_vel, dt);
+        ekf_slam.update(detection_msg->cones_with_cov);
 
-        // last_update = stamp;
+        last_update = stamp;
 
-        // publish_visualisations(detection_msg->header.stamp);
+        publish_visualisations(detection_msg->header.stamp);
     }
 
     void publish_visualisations(builtin_interfaces::msg::Time stamp) {

@@ -15,7 +15,7 @@ visualization_msgs::msg::Marker car_marker(builtin_interfaces::msg::Time stamp, 
 
     auto marker = visualization_msgs::msg::Marker();
 
-    marker.header.frame_id = "map";
+    marker.header.frame_id = "track";
     marker.header.stamp = stamp;
     marker.ns = ns;
     marker.id = id;
@@ -40,7 +40,7 @@ visualization_msgs::msg::Marker cone_marker(builtin_interfaces::msg::Time stamp,
                                             double y, int colour) {
     auto marker = visualization_msgs::msg::Marker();
 
-    marker.header.frame_id = "map";
+    marker.header.frame_id = "track";
     marker.header.stamp = stamp;
     marker.ns = ns;
     marker.id = id;
@@ -67,7 +67,7 @@ visualization_msgs::msg::Marker cov_marker(builtin_interfaces::msg::Time stamp, 
                                            double y, double cov_x, double cov_y) {
     auto marker = visualization_msgs::msg::Marker();
 
-    marker.header.frame_id = "map";
+    marker.header.frame_id = "track";
     marker.header.stamp = stamp;
     marker.ns = ns;
     marker.id = id;
