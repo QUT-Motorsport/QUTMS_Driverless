@@ -1,4 +1,5 @@
 #include <eigen3/Eigen/Dense>
+#include <map>
 #include <vector>
 
 #include "driverless_msgs/msg/cone.hpp"
@@ -25,10 +26,13 @@ int cone_idx_to_landmark_idx(int cone_idx);
 
 class EKFslam {
    private:
+    std::vector<ConeColourCount_t> cone_colours;
     void initalise_new_cone_colour();
     void update_cone_colour(driverless_msgs::msg::Cone cone, int associated_landmark_idx);
 
-    std::vector<ConeColourCount_t> cone_colours;
+    std::map<int, int> cone_sim_indexes;
+    void initalise_new_cone_sim_idx(int sim_index, int lm_index);
+    std::optional<int> find_associated_cone_idx_from_sim_idx(int sim_index);
 
     Eigen::MatrixXd pred_mu;   // predicted state (mean, μ bar)
     Eigen::MatrixXd pred_cov;  // predicted state (covariance, ∑ bar)

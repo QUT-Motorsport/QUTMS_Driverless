@@ -51,7 +51,7 @@ int get_cone_colour(ConeColourCount_t cone_colour_count) {
     }
 }
 
-std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double search_x, double search_y) {
+std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double global_x, double global_y) {
     // data association, uses lowest euclidian distance, within a threshold
 
     double min_distance = 1.5 * 1.5;  // m, threshold^2
@@ -63,7 +63,7 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
         double i_x = mu(i, 0);
         double i_y = mu(i + 1, 0);
 
-        double distance = (search_x - i_x) * (search_x - i_x) + (search_y - i_y) * (search_y - i_y);
+        double distance = (global_x - i_x) * (global_x - i_x) + (global_y - i_y) * (global_y - i_y);
         if (distance < min_distance) {
             min_distance = distance;
             idx = i;
@@ -194,12 +194,14 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
         double lm_range = sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2));
         double lm_bearing = wrap_pi(atan2(cone.location.y, cone.location.x));
 
-        std::optional<int> associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y);
+        // std::optional<int> associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y);
+        std::optional<int> associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
 
         if (!associated_idx.has_value()) {
             // new landmark
             associated_idx = initalise_new_landmark(pred_mu, pred_cov, lm_map_x, lm_map_y, lm_range, lm_bearing, Q);
             initalise_new_cone_colour();
+            initalise_new_cone_sim_idx(cone.sim_cone_index, associated_idx.value());
         }
 
         update_cone_colour(cone, associated_idx.value());
@@ -249,6 +251,15 @@ void EKFslam::update_cone_colour(driverless_msgs::msg::Cone cone, int associated
         default:
             break;
     }
+}
+
+void EKFslam::initalise_new_cone_sim_idx(int sim_index, int lm_index) { cone_sim_indexes[sim_index] = lm_index; }
+
+std::optional<int> EKFslam::find_associated_cone_idx_from_sim_idx(int sim_index) {
+    if (!cone_sim_indexes.count(sim_index)) {
+        return {};
+    }
+    return cone_sim_indexes.at(sim_index);
 }
 
 std::vector<driverless_msgs::msg::Cone> EKFslam::get_cones() {
