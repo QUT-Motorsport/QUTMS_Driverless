@@ -21,6 +21,8 @@ setup(
         "console_scripts": [
             "delaunay_planner = planners.node_delaunay_planner:main",
             "ordered_mid_spline = planners.node_ordered_mid_spline:main",
+            "local_planner = planners.node_local_planner:main",
+            "midline_planner = planners.node_midline_planner:main",
         ],
     },
 )
