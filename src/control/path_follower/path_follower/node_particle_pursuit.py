@@ -181,16 +181,17 @@ class ParticlePursuit(Node):
         super().__init__("particle_pursuit")
 
         # sub to delaunay target path mapper for the desired vehicle path (as an array), used for lookahead
-        self.create_subscription(PathStamped, "/sim/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
 
         # sub to track for all cone locations relative to car start point, used for boundary danger calculations
-        self.create_subscription(ConeDetectionStamped, "/sim/global_map", self.track_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.track_callback, 10)
+        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
         # sync subscribers pose + velocity
-        pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/car_pose")
-        vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
-        synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
-        synchronizer.registerCallback(self.callback)
+        # pose_sub = message_filters.Subscriber(self, PoseWithCovarianceStamped, "/slam/car_pose")
+        # vel_sub = message_filters.Subscriber(self, TwistWithCovarianceStamped, "/imu/velocity")
+        # synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pose_sub, vel_sub], queue_size=20, slop=0.2)
+        # synchronizer.registerCallback(self.callback)
 
         self.reset_sub = self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
@@ -204,24 +205,23 @@ class ParticlePursuit(Node):
     def reset_callback(self, reset_msg: Reset):
         self.path = np.array([])
         self.r2d = True
-        print("Ready to drive!")
+        # print("Ready to drive!")
 
     # 'recieve' the path
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
         self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
-        print("We are receiving a map!")
 
     # recieve the cone locations
     def track_callback(self, cone_pos_msg: ConeDetectionStamped):
-        self.cone_pos = cone_pos_msg.cones
-        print("We are receiving cones!")
+        self.cone_pos = cone_pos_msg.cones_with_cov
+        self.get_logger().debug("Map received")
 
     def callback(
         self,
         pose_msg: PoseWithCovarianceStamped,
-        vel_msg: TwistWithCovarianceStamped,
+        # vel_msg: TwistWithCovarianceStamped,
     ):
         # ----------------
         # Node initialisation processes:
@@ -324,10 +324,13 @@ class ParticlePursuit(Node):
         # velocity control
         rvwp: List[float] = get_RVWP(pos_car, self.path, self.vel_RVWP_LAD)
         intensity = rvwp[2]
-        vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
+        # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
 
         # target velocity proportional to angle
-        target_vel: float = self.vel_max - intensity * self.Kp_vel
+        target_vel: float = (
+            self.vel_max - intensity * self.Kp_vel
+        )  # if this is weird, just comment out rvwp and intensity (above) and make terget_vel = 3.
+
         # if target_vel < self.vel_min:
         #     target_vel = self.vel_min
 
