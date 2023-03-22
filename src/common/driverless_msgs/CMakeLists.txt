@@ -36,6 +36,7 @@ set(msg_files
   "msg/SystemStatus.msg"
   "msg/DrivingDynamics1.msg"
   "msg/WSSVelocity.msg"
+  "msg/DebugMsg.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

@@ -179,7 +179,9 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
         jFu * R * jFu.transpose();
 }
 
-void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones) {
+void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones,
+                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub,
+                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub) {
     for (auto const& cov_cone : detected_cones) {
         auto cone = cov_cone.cone;
 
@@ -216,6 +218,24 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
         compute_expected_z(pred_mu, associated_idx.value(), expected_z, jH);
 
         Eigen::MatrixXd K = pred_cov * jH.transpose() * ((jH * pred_cov * jH.transpose() + Q).inverse());
+
+        if (debug_1_pub.has_value()) {
+            driverless_msgs::msg::DebugMsg debug_1;
+            auto col_0 = K.col(0);
+            for (size_t i = 0; i < col_0.size(); i++) {
+                debug_1.values.push_back(col_0(i));
+            }
+            debug_1_pub.value()->publish(debug_1);
+        }
+
+        if (debug_2_pub.has_value()) {
+            driverless_msgs::msg::DebugMsg debug_2;
+            auto col_1 = K.col(1);
+            for (size_t i = 0; i < col_1.size(); i++) {
+                debug_2.values.push_back(col_1(i));
+            }
+            debug_2_pub.value()->publish(debug_2);
+        }
 
         Eigen::MatrixXd z_diff = z - expected_z;
         z_diff(1, 0) = wrap_pi(z_diff(1, 0));

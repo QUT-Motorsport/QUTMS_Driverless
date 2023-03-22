@@ -4,6 +4,7 @@
 
 #include "driverless_msgs/msg/cone.hpp"
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
+#include "driverless_msgs/msg/debug_msg.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 // x, y, orientation
@@ -62,7 +63,9 @@ class EKFslam {
     EKFslam();
 
     void predict(double forward_vel, double rotational_vel, double dt);
-    void update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones);
+    void update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones,
+                std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub = {},
+                std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub = {});
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
     const Eigen::MatrixXd& get_pred_cov() { return pred_cov; };
