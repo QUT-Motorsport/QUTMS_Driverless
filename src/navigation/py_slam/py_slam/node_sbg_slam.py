@@ -13,9 +13,9 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
-from geometry_msgs.msg import Point, PointStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
-from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos, SbgGpsVel, SbgMag
-from sensor_msgs.msg import Imu, NavSatFix
+from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
+from nav_msgs.msg import Path
+from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
 from py_slam.cone_props import ConeProps
 
@@ -43,14 +43,14 @@ class PySlam(Node):
     sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
 
-    last_timestamp: Optional[float] = None
+    path_viz = Path()
 
     def __init__(self):
         super().__init__("py_slam")
 
         # sync subscribers
         # pos_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
-        pos_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")  # use gps rather than filtered
+        pos_sub = message_filters.Subscriber(self, SbgGpsPos, "/sbg/gps_pos")  # use gps rather than filtered
         ang_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
         ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
         ins_synchronizer.registerCallback(self.ins_callback)
@@ -65,17 +65,17 @@ class PySlam(Node):
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
+        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/path", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def ins_callback(self, gps_msg: NavSatFix, ekf_euler_msg: SbgEkfEuler):
+    def ins_callback(self, gps_msg: SbgGpsPos, ekf_euler_msg: SbgEkfEuler):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
             self.prev_pos = (coords.easting, coords.northing)
-            # self.prev_pos = (0,0)
             self.initial_ang = -ekf_euler_msg.angle.z  # - pi
             return
 
@@ -205,6 +205,11 @@ class PySlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
+
+        self.path_viz.header.stamp = timestamp
+        self.path_viz.header.frame_id = "track"
+        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
+        self.path_publisher.publish(self.path_viz)
 
         # send transformation
         t = TransformStamped()
