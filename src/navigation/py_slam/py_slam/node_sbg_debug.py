@@ -14,7 +14,7 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PointStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
-from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos, SbgGpsVel, SbgMag
+from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos, SbgGpsVel, SbgImuData, SbgMag
 from sensor_msgs.msg import Imu, NavSatFix
 
 from py_slam.cone_props import ConeProps
@@ -63,7 +63,7 @@ class PySlam(Node):
 
         # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
-        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
+        # self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # ekf_nav data visualisation publishers
         self.ekf_nav_coords_point_publisher: Publisher = self.create_publisher(
@@ -87,6 +87,7 @@ class PySlam(Node):
         self.create_subscription(SbgGpsVel, "/sbg/gps_vel", self.sbg_gps_vel_callback, 1)
         self.create_subscription(SbgMag, "/sbg/mag", self.sbg_mag_callback, 1)
         self.create_subscription(Imu, "/imu/data", self.imu_data_callback, 1)
+        self.create_subscription(SbgImuData, "/sbg/imu_data", self.sbg_imu_data_callback, 1)
 
         # sbg gps pos visualisation publishers
         self.sbg_gps_pos_coords_point_publisher: Publisher = self.create_publisher(
@@ -168,6 +169,44 @@ class PySlam(Node):
             PointStamped, "/debug/imu_accel_z_time_point", 1
         )
 
+        # sbg imu data visualisation publishers
+        self.sbg_imu_accel_x_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_accel_x_time_point", 1
+        )
+        self.sbg_imu_accel_y_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_accel_y_time_point", 1
+        )
+        self.sbg_imu_accel_z_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_accel_z_time_point", 1
+        )
+        self.sbg_imu_gyro_x_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_gyro_x_time_point", 1
+        )
+        self.sbg_imu_gyro_y_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_gyro_y_time_point", 1
+        )
+        self.sbg_imu_gyro_z_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_gyro_z_time_point", 1
+        )
+        self.sbg_imu_delta_vel_x_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_vel_x_time_point", 1
+        )
+        self.sbg_imu_delta_vel_y_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_vel_y_time_point", 1
+        )
+        self.sbg_imu_delta_vel_z_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_vel_z_time_point", 1
+        )
+        self.sbg_imu_delta_angle_x_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_angle_x_time_point", 1
+        )
+        self.sbg_imu_delta_angle_y_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_angle_y_time_point", 1
+        )
+        self.sbg_imu_delta_angle_z_time_point_publisher: Publisher = self.create_publisher(
+            PointStamped, "/debug/sbg_imu_delta_angle_z_time_point", 1
+        )
+
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
@@ -186,7 +225,7 @@ class PySlam(Node):
         # plotting lat vs long
         point_lat_long_msg: PointStamped = PointStamped(
             header=sbg_gps_pos_msg.header,
-            point=Point(x=sbg_gps_pos_msg.latitude * 100000, y=sbg_gps_pos_msg.longitude * 100000, z=0.0),
+            point=Point(x=sbg_gps_pos_msg.longitude * 100000, y=sbg_gps_pos_msg.latitude * 100000, z=0.0),
         )
         self.sbg_gps_pos_lat_long_point_publisher.publish(point_lat_long_msg)
 
@@ -202,7 +241,7 @@ class PySlam(Node):
         )
         self.sbg_gps_pos_long_time_point_publisher.publish(point_long_time_msg)
         point_altitude_time_msg: PointStamped = PointStamped(
-            header=sbg_gps_pos_msg.header, point=Point(x=timestamp, y=sbg_gps_pos_msg.altitude, z=0.0)
+            header=sbg_gps_pos_msg.header, point=Point(x=timestamp, y=sbg_gps_pos_msg.altitude * 50, z=0.0)
         )
         self.sbg_gps_pos_altitude_time_point_publisher.publish(point_altitude_time_msg)
         # ---------------------------------------------------------------------------------------------------
@@ -221,7 +260,7 @@ class PySlam(Node):
         )
         self.sbg_gps_vel_y_time_point_publisher.publish(point_vel_y_time_msg)
         point_vel_z_time_msg: PointStamped = PointStamped(
-            header=sbg_gps_vel_msg.header, point=Point(x=timestamp, y=sbg_gps_vel_msg.velocity.z, z=0.0)
+            header=sbg_gps_vel_msg.header, point=Point(x=timestamp, y=sbg_gps_vel_msg.velocity.z * 50, z=0.0)
         )
         self.sbg_gps_vel_z_time_point_publisher.publish(point_vel_z_time_msg)
         # ---------------------------------------------------------------------------------------------------
@@ -233,29 +272,29 @@ class PySlam(Node):
 
         # mag
         point_mag_x_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.x, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.x * 20, z=0.0)
         )
         self.sbg_mag_x_time_point_publisher.publish(point_mag_x_time_msg)
         point_mag_y_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.y, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.y * 20, z=0.0)
         )
         self.sbg_mag_y_time_point_publisher.publish(point_mag_y_time_msg)
         point_mag_z_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.z, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.mag.z * 50, z=0.0)
         )
         self.sbg_mag_z_time_point_publisher.publish(point_mag_z_time_msg)
 
         # mag accel
         point_mag_accel_x_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.x, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.x * 20, z=0.0)
         )
         self.sbg_mag_accel_x_time_point_publisher.publish(point_mag_accel_x_time_msg)
         point_mag_accel_y_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.y, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.y * 20, z=0.0)
         )
         self.sbg_mag_accel_y_time_point_publisher.publish(point_mag_accel_y_time_msg)
         point_mag_accel_z_time_msg: PointStamped = PointStamped(
-            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.z, z=0.0)
+            header=sbg_mag_msg.header, point=Point(x=timestamp, y=sbg_mag_msg.accel.z * 20, z=0.0)
         )
         self.sbg_mag_accel_z_time_point_publisher.publish(point_mag_accel_z_time_msg)
         # ---------------------------------------------------------------------------------------------------
@@ -275,41 +314,103 @@ class PySlam(Node):
         )
         self.imu_orientation_y_time_point_publisher.publish(point_imu_orientation_y_time_msg)
         point_imu_orientation_z_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.orientation.z, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.orientation.z * 20, z=0.0)
         )
         self.imu_orientation_z_time_point_publisher.publish(point_imu_orientation_z_time_msg)
         point_imu_orientation_w_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.orientation.w, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.orientation.w * 20, z=0.0)
         )
         self.imu_orientation_w_time_point_publisher.publish(point_imu_orientation_w_time_msg)
 
         # angular velocity
         point_imu_ang_vel_x_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.x, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.x * 100, z=0.0)
         )
         self.imu_ang_vel_x_time_point_publisher.publish(point_imu_ang_vel_x_time_msg)
         point_imu_ang_vel_y_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.y, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.y * 100, z=0.0)
         )
         self.imu_ang_vel_y_time_point_publisher.publish(point_imu_ang_vel_y_time_msg)
         point_imu_ang_vel_z_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.z, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.angular_velocity.z * 20, z=0.0)
         )
         self.imu_ang_vel_z_time_point_publisher.publish(point_imu_ang_vel_z_time_msg)
 
         # linear acceleration
         point_imu_accel_x_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.x, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.x * 10, z=0.0)
         )
         self.imu_accel_x_time_point_publisher.publish(point_imu_accel_x_time_msg)
         point_imu_accel_y_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.y, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.y * 10, z=0.0)
         )
         self.imu_accel_y_time_point_publisher.publish(point_imu_accel_y_time_msg)
         point_imu_accel_z_time_msg: PointStamped = PointStamped(
-            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.z, z=0.0)
+            header=imu_data_msg.header, point=Point(x=timestamp, y=imu_data_msg.linear_acceleration.z * 10, z=0.0)
         )
         self.imu_accel_z_time_point_publisher.publish(point_imu_accel_z_time_msg)
+        # ---------------------------------------------------------------------------------------------------
+
+    def sbg_imu_data_callback(self, sbg_imu_data_msg: SbgImuData):
+        # ----------------------------- SBG OUTPUT DEBUGGING (plotting outputs) -----------------------------
+        # Plotting accel x, y, z, and w vs time, gyro x, y, and z vs time, delta_vel x, y, and z vs time, and delta_angle x, y, and z vs time
+        timestamp: float = sbg_imu_data_msg.header.stamp.sec + sbg_imu_data_msg.header.stamp.nanosec * 10**-9
+
+        # accel
+        point_sbg_imu_accel_x_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.accel.x * 300, z=0.0)
+        )
+        self.sbg_imu_accel_x_time_point_publisher.publish(point_sbg_imu_accel_x_time_msg)
+        point_sbg_imu_accel_y_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.accel.y * 300, z=0.0)
+        )
+        self.sbg_imu_accel_y_time_point_publisher.publish(point_sbg_imu_accel_y_time_msg)
+        point_sbg_imu_accel_z_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.accel.z * 300, z=0.0)
+        )
+        self.sbg_imu_accel_z_time_point_publisher.publish(point_sbg_imu_accel_z_time_msg)
+
+        # gyro
+        point_sbg_imu_gyro_x_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.gyro.x * 100, z=0.0)
+        )
+        self.sbg_imu_gyro_x_time_point_publisher.publish(point_sbg_imu_gyro_x_time_msg)
+        point_sbg_imu_gyro_y_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.gyro.y * 100, z=0.0)
+        )
+        self.sbg_imu_gyro_y_time_point_publisher.publish(point_sbg_imu_gyro_y_time_msg)
+        point_sbg_imu_gyro_z_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.gyro.z * 100, z=0.0)
+        )
+        self.sbg_imu_gyro_z_time_point_publisher.publish(point_sbg_imu_gyro_z_time_msg)
+
+        # delta_vel
+        point_sbg_imu_delta_vel_x_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_vel.x * 100, z=0.0)
+        )
+        self.sbg_imu_delta_vel_x_time_point_publisher.publish(point_sbg_imu_delta_vel_x_time_msg)
+        point_sbg_imu_delta_vel_y_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_vel.y * 100, z=0.0)
+        )
+        self.sbg_imu_delta_vel_y_time_point_publisher.publish(point_sbg_imu_delta_vel_y_time_msg)
+        point_sbg_imu_delta_vel_z_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_vel.z * 100, z=0.0)
+        )
+        self.sbg_imu_delta_vel_z_time_point_publisher.publish(point_sbg_imu_delta_vel_z_time_msg)
+
+        # delta_angle
+        point_sbg_imu_delta_angle_x_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_angle.x * 100, z=0.0)
+        )
+        self.sbg_imu_delta_angle_x_time_point_publisher.publish(point_sbg_imu_delta_angle_x_time_msg)
+        point_sbg_imu_delta_angle_y_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_angle.y * 100, z=0.0)
+        )
+        self.sbg_imu_delta_angle_y_time_point_publisher.publish(point_sbg_imu_delta_angle_y_time_msg)
+        point_sbg_imu_delta_angle_z_time_msg: PointStamped = PointStamped(
+            header=sbg_imu_data_msg.header, point=Point(x=timestamp, y=sbg_imu_data_msg.delta_angle.z * 100, z=0.0)
+        )
+        self.sbg_imu_delta_angle_z_time_point_publisher.publish(point_sbg_imu_delta_angle_z_time_msg)
         # ---------------------------------------------------------------------------------------------------
 
     def nav_callback(self, ekf_nav_msg: SbgEkfNav, ekf_euler_msg: SbgEkfEuler):
