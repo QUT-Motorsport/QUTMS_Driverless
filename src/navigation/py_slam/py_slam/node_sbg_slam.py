@@ -37,9 +37,10 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 class PySlam(Node):
     initial_pos: Optional[Tuple[float, float]] = None
+    prev_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma = np.diag([0.5, 0.5, 0.001])
+    sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
 
     last_timestamp: Optional[float] = None
@@ -48,17 +49,11 @@ class PySlam(Node):
         super().__init__("py_slam")
 
         # sync subscribers
-        # ekf_nav_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
-        # ekf_euler_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        # sbg_synchronizer = message_filters.ApproximateTimeSynchronizer(
-        #     fs=[ekf_nav_sub, ekf_euler_sub], queue_size=20, slop=0.2
-        # )
-        # sbg_synchronizer.registerCallback(self.nav_callback)
-
-        gps_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")
-        imu_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
-        imu_synchronizer.registerCallback(self.imu_callback)
+        # pos_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
+        pos_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")  # use gps rather than filtered
+        ang_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
+        ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
+        ins_synchronizer.registerCallback(self.ins_callback)
 
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
@@ -76,20 +71,27 @@ class PySlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def imu_callback(self, gps_msg: NavSatFix, ekf_euler_msg: SbgEkfEuler):
+    def ins_callback(self, gps_msg: NavSatFix, ekf_euler_msg: SbgEkfEuler):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-            self.initial_pos = (coords.easting, coords.northing)
+            self.prev_pos = (coords.easting, coords.northing)
+            # self.prev_pos = (0,0)
             self.initial_ang = -ekf_euler_msg.angle.z  # - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
         coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
         # get relative to initial position and last state prediction
-        d_x = coords.easting - self.initial_pos[0] - self.state[0]
-        d_y = coords.northing - self.initial_pos[1] - self.state[1]
+        d_e = coords.easting - self.prev_pos[0]
+        d_n = coords.northing - self.prev_pos[1]
+        self.prev_pos = (coords.easting, coords.northing)
 
-        # angle
+        # get magnitude by prev angle
+        d_mag = hypot(d_e, d_n)
+        d_x = d_mag * cos(self.state[2])
+        d_y = d_mag * sin(self.state[2])
+
+        # current angle
         imu_ang = -ekf_euler_msg.angle.z
         # get relative to initial angle and last state prediction
         d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
@@ -223,11 +225,11 @@ class PySlam(Node):
         Updates the state and covariance matrix by adding pose delta onto last state.
         """
 
-        self.state[0:3] += np.array([x_delta, y_delta, theta_delta])
-        self.state[2] = wrap_to_pi(self.state[2])
-
         Jx = np.array([[1, 0, -x_delta], [0, 1, y_delta], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
+
+        self.state[0:3] += np.array([x_delta, y_delta, theta_delta])
+        self.state[2] = wrap_to_pi(self.state[2])
 
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ R @ Ju.T
 
