@@ -60,8 +60,8 @@ class PySlam(Node):
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/track", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local", 1)
+        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
