@@ -13,21 +13,20 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
-from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
-from sbg_driver.msg import SbgEkfEuler, SbgEkfNav
-from sensor_msgs.msg import Imu, NavSatFix
+from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
+from nav_msgs.msg import Path
+from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
 from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
 
-R = np.diag([0.1, 0.001]) ** 2  # motion model
-Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
-Q_LIDAR = np.diag([0.2, 0.2]) ** 2
+R = np.diag([0.01, 0.1]) ** 2  # motion model
+Q_LIDAR = np.diag([0.5, 0.5]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 20  # minimum frames before confirming cones
-FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
+FRAME_COUNT = 15  # minimum frames before confirming cones
+FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
 X_RANGE = 15  # max x distance from car
 Y_RANGE = 10  # max y distance from car
 
@@ -38,28 +37,23 @@ def wrap_to_pi(angle: float) -> float:  # in rads
 
 class PySlam(Node):
     initial_pos: Optional[Tuple[float, float]] = None
+    prev_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
     state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma = np.diag([0.5, 0.5, 0.001])
+    sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
 
-    last_timestamp: Optional[float] = None
+    path_viz = Path()
 
     def __init__(self):
         super().__init__("py_slam")
 
         # sync subscribers
-        ekf_nav_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
-        ekf_euler_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        sbg_synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[ekf_nav_sub, ekf_euler_sub], queue_size=20, slop=0.2
-        )
-        sbg_synchronizer.registerCallback(self.nav_callback)
-
-        # gps_sub = message_filters.Subscriber(self, NavSatFix, "/imu/nav_sat_fix")
-        # imu_sub = message_filters.Subscriber(self, Imu, "/imu/data")
-        # imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
-        # imu_synchronizer.registerCallback(self.imu_callback)
+        # pos_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
+        pos_sub = message_filters.Subscriber(self, SbgGpsPos, "/sbg/gps_pos")  # use gps rather than filtered
+        ang_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
+        ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
+        ins_synchronizer.registerCallback(self.ins_callback)
 
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
@@ -71,80 +65,38 @@ class PySlam(Node):
         self.pose_publisher: Publisher = self.create_publisher(
             PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
         )
+        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/path", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def nav_callback(self, ekf_nav_msg: SbgEkfNav, ekf_euler_msg: SbgEkfEuler):
-        if not self.initial_pos and not self.initial_ang:
-            coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
-            self.initial_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z - pi
-            return
-
-        # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
-        coords: UTMPoint = fromLatLong(ekf_nav_msg.latitude, ekf_nav_msg.longitude, ekf_nav_msg.altitude)
-        # get relative to initial position and last state prediction
-        d_x = coords.easting - self.initial_pos[0] - self.state[0]
-        d_y = coords.northing - self.initial_pos[1] - self.state[1]
-
-        # get angle since last state prediction
-        # BIT CONCERNED ABOUT THE INITIAL ANG PART, CAN WE JUST TAKE THE ABSOLUTE ANGLE?
-        d_th = wrap_to_pi(ekf_euler_msg.angle.z - pi - self.state[2])
-
-        self.predict(d_x, d_y, d_th)
-        # self.callback(detection_msg)
-        self.publish_localisation(ekf_nav_msg.header.stamp)
-
-    def imu_callback(self, gps_msg: NavSatFix, imu_msg: Imu):
+    def ins_callback(self, gps_msg: SbgGpsPos, ekf_euler_msg: SbgEkfEuler):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-            self.initial_pos = (coords.easting, coords.northing)
-            self.initial_ang = quat2euler(
-                [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
-            )[2]
+            self.prev_pos = (coords.easting, coords.northing)
+            self.initial_ang = -ekf_euler_msg.angle.z  # - pi
             return
-
-        # https://stackoverflow.com/a/39540339
-        # x_m = relative_lng * 111320
-        # y_m = 40000/360 * cos(relative_lat)
-
-        # get distance travelled in x and y since last state prediction
-        # d_x = x_m - self.state[0]
-        # d_y = y_m - self.state[1]
-        # get angle since last state prediction
-
-        # https://stackoverflow.com/questions/639695/how-to-convert-latitude-or-longitude-to-meters
-        # radius = 6378.137
-        # dLat = gps_msg.latitude * pi / 180 - self.initial_pos[0] * pi / 180
-        # dLon = gps_msg.longitude * pi / 180 - self.initial_pos[1] * pi / 180
-        # a = sin(dLat / 2) * sin(dLat / 2) + cos(self.initial_pos[0] * pi / 180) * cos(
-        #     gps_msg.latitude * pi / 180
-        # ) * sin(dLon / 2) * sin(dLon / 2)
-        # c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        # d_dist = radius * c * 100
-        # d_x = d_dist * cos(self.state[2])
-        # d_y = d_dist * sin(self.state[2])
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
         coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
         # get relative to initial position and last state prediction
-        d_x = coords.easting - self.initial_pos[0] - self.state[0]
-        d_y = coords.northing - self.initial_pos[1] - self.state[1]
+        d_e = coords.easting - self.prev_pos[0]
+        d_n = coords.northing - self.prev_pos[1]
+        self.prev_pos = (coords.easting, coords.northing)
 
-        # angle from imu
-        imu_ang = quat2euler(
-            [imu_msg.orientation.w, imu_msg.orientation.x, imu_msg.orientation.y, imu_msg.orientation.z]
-        )[2]
+        # get magnitude by prev angle
+        d_mag = hypot(d_e, d_n)
+        d_x = d_mag * cos(self.state[2])
+        d_y = d_mag * sin(self.state[2])
+
+        # current angle
+        imu_ang = -ekf_euler_msg.angle.z
         # get relative to initial angle and last state prediction
-        d_th = wrap_to_pi(imu_ang - pi - self.state[2])
-
-        print(f"deltas: {d_x}, {d_y}, {d_th}")
+        d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
 
         self.predict(d_x, d_y, d_th)
-        # print("Predicted state: ", self.state)
         self.publish_localisation(gps_msg.header.stamp)
 
     def reset_callback(self, msg):
@@ -159,11 +111,6 @@ class PySlam(Node):
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         start: float = time.perf_counter()
-
-        if msg.header.frame_id == "velodyne":
-            Q = Q_LIDAR
-        else:
-            Q = Q_CAM
 
         # process detected cones
         track_as_2d = np.array([])
@@ -194,7 +141,7 @@ class PySlam(Node):
                     prev_sigma = self.sigma[0:3, 0:3]
                     updated_detection: ConeProps = self.properties[close[0]]
                     if detection.sensor == "lidar":
-                        self.update(close[0], detection, Q)
+                        self.update(close[0], detection, Q_LIDAR)
                         updated_detection.sensor = "lidar"
 
                     # reset car state if this isn't a confirmed cone
@@ -214,7 +161,7 @@ class PySlam(Node):
                 detection.set_world_coords(map_coords)
                 self.properties = np.append(self.properties, detection)
                 # initialise new landmark
-                self.init_landmark(detection, Q)
+                self.init_landmark(detection, Q_LIDAR)
 
         # remove noise
         self.flush_map(track_as_2d.reshape(-1, 2))
@@ -259,6 +206,11 @@ class PySlam(Node):
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
 
+        self.path_viz.header.stamp = timestamp
+        self.path_viz.header.frame_id = "track"
+        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
+        self.path_publisher.publish(self.path_viz)
+
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
@@ -278,11 +230,11 @@ class PySlam(Node):
         Updates the state and covariance matrix by adding pose delta onto last state.
         """
 
-        self.state[0:3] += np.array([x_delta, y_delta, theta_delta])
-        self.state[2] = wrap_to_pi(self.state[2])
-
         Jx = np.array([[1, 0, -x_delta], [0, 1, y_delta], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
+
+        self.state[0:3] += np.array([x_delta, y_delta, theta_delta])
+        self.state[2] = wrap_to_pi(self.state[2])
 
         self.sigma[0:3, 0:3] = Jx @ self.sigma[0:3, 0:3] @ Jx.T + Ju @ R @ Ju.T
 

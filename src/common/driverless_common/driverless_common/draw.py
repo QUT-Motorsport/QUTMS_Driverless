@@ -11,8 +11,8 @@ from typing import List, Tuple
 
 # image display geometry
 MAP_SCALE = 4
-MAP_HEIGHT = (10 + 170) * MAP_SCALE
-MAP_WIDTH = (50 + 50) * MAP_SCALE
+MAP_HEIGHT = 100 * MAP_SCALE
+MAP_WIDTH = 100 * MAP_SCALE
 
 SCALE = 30
 WIDTH = 20 * SCALE  # 15m either side
@@ -41,7 +41,7 @@ def coord_to_img_pt(x: float, y: float) -> Point:
     """
     return Point(
         int(round(50 * MAP_SCALE + x * MAP_SCALE)),
-        int(round(170 * MAP_SCALE - y * MAP_SCALE)),
+        int(round(50 * MAP_SCALE - y * MAP_SCALE)),
     )
 
 

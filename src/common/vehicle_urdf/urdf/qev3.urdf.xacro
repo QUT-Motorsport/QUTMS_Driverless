@@ -55,7 +55,7 @@
                 <material name="wheel"/>
             </visual>
         </link>
-        <joint name="${name}_wheel_joint" type="continuous">
+        <joint name="${name}_wheel_joint" type="fixed">
             <axis xyz="0 1 0" rpy="0 0 0" />
             <parent link="car"/>
             <child link="${name}_wheel"/>

@@ -50,7 +50,9 @@ class ConeProps:
         self.map_coords = state
         self.cov = cov
 
-        self.frame_count += 1
+        if colour == Cone.UNKNOWN:
+            self.frame_count += 1
+
         if self.frame_count > FRAME_COUNT and not self.confirmed:
             if abs(self.cov[0, 0]) < 0.5 and abs(self.cov[1, 1]) < 0.5:
                 self.confirmed = True  # mark as confirmed
