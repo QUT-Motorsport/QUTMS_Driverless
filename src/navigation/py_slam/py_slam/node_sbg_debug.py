@@ -36,7 +36,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class PySlam(Node):
+class SBGDebug(Node):
     initial_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
     state = np.array([0.0, 0.0, 0.0])  # initial pose
@@ -46,7 +46,7 @@ class PySlam(Node):
     last_timestamp: Optional[float] = None
 
     def __init__(self):
-        super().__init__("py_slam")
+        super().__init__("sbg_debug_node")
 
         # sync subscribers
         ekf_nav_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
@@ -450,7 +450,7 @@ class PySlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PySlam()
+    node = SBGDebug()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

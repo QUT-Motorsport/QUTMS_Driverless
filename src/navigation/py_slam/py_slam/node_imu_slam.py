@@ -38,7 +38,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class PySlam(Node):
+class IMUSlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
@@ -46,7 +46,7 @@ class PySlam(Node):
     last_timestamp: Optional[float] = None
 
     def __init__(self):
-        super().__init__("slam_node")
+        super().__init__("imu_slam_node")
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
@@ -359,7 +359,7 @@ class PySlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PySlam()
+    node = IMUSlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
