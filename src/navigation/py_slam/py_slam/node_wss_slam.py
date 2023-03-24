@@ -54,7 +54,7 @@ class PySlam(Node):
         vel_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[imu_sub, wss_sub], queue_size=10, slop=0.1)
         vel_synchronizer.registerCallback(self.velocity_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
