@@ -135,7 +135,7 @@ def local_data_stream():
     raise NotImplementedError()
 
 
-def main(args=sys.argv[1:]):
+def main(args=None):
     """
     The main function of the lidar_perception module.
 
@@ -183,7 +183,3 @@ def main(args=sys.argv[1:]):
     # else:
     #     # Otherwise, use the real-time point cloud source
     real_time_stream(args, config)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
