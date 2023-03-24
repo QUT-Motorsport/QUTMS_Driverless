@@ -155,7 +155,7 @@ class VisionProcessor(Node):
         synchronizer.registerCallback(self.callback)
 
         # publishers
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection2", 1)
+        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbs_img", 1)
         self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_depth_img", 1)
 
