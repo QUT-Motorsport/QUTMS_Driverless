@@ -23,7 +23,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "slam = py_slam.node_slam:main",
+            "imu_slam = py_slam.node_imu_slam:main",
             "sbg_slam = py_slam.node_sbg_slam:main",
             "sbg_debug = py_slam.node_sbg_debug:main",
             "wss_slam = py_slam.node_wss_slam:main",

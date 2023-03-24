@@ -8,14 +8,14 @@ from rclpy.node import Node
 from driverless_msgs.msg import TrackDetectionStamped
 
 
-class NodeTopicToCSV(Node):
+class TrackToCSV(Node):
     csv_folder = Path("./csv_data")
 
     def __init__(self) -> None:
         super().__init__("track_to_csv_node")
 
         # subscribe to topic
-        self.subscription = self.create_subscription(TrackDetectionStamped, "/sim/global_map", self.callback, 10)
+        self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
 
         self.get_logger().info("---Track Writer Initalised---")
 
@@ -56,7 +56,7 @@ class NodeTopicToCSV(Node):
 def main():
     # begin ros node
     rclpy.init()
-    node = NodeTopicToCSV()
+    node = TrackToCSV()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
