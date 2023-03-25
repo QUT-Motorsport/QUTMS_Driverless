@@ -10,7 +10,6 @@ from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from . import visualiser_2 as vis2
 from .. import constants as const
-from ..utils import Config  # For typing
 
 
 def locate_cones(config, point_cloud, start_time):

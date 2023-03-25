@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .. import constants as const
-from .. import utils
 
 
 def get_segment_count(segments):

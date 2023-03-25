@@ -15,11 +15,8 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2, PointField
 
 from . import constants as const
-from . import utils, video_stitcher
-from .library import lidar_manager
-
-# For typing
-from .utils import Config
+from .library import lidar_manager, video_stitcher
+from .library.utils import Config  # For typing
 
 
 def fields_to_dtype(fields, point_step):
