@@ -39,8 +39,8 @@ def generate_launch_description():
                 executable="display",
             ),
             Node(
-                package="lidar_pipeline_3",
-                executable="lidar_perception",
+                package="lidar_pipeline",
+                executable="lidar_detector_node",
             ),
             Node(
                 package="mission_controller",
