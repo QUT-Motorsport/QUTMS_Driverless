@@ -116,9 +116,7 @@ class ConeDetectionNode(Node):
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         start_time: float = time.perf_counter()
-        dtype_list: list = rnp.point_cloud2.fields_to_dtype(
-            point_cloud_msg.fields, point_cloud_msg.point_step
-        )  # x y z intensity ring
+        dtype_list: list = fields_to_dtype(point_cloud_msg.fields, point_cloud_msg.point_step)  # x y z intensity ring
         point_cloud: np.ndarray = np.frombuffer(point_cloud_msg.data, dtype_list)
 
         # Process point cloud data to detect cones and obtain cone locations
