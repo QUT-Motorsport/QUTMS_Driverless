@@ -1,6 +1,9 @@
+from glob import glob
+import os
+
 from setuptools import setup
 
-package_name = "lidar_pipeline_3"
+package_name = "lidar_pipeline"
 
 setup(
     name=package_name,
@@ -9,6 +12,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join("share", package_name, "config"), glob("config/*")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -19,8 +23,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "lidar_debug_node = lidar_pipeline_3.node_lidar_debug:main",
-            "lidar_detector_node = lidar_pipeline_3.node_detector:main",
+            "lidar_debug_node = lidar_pipeline.node_lidar_debug:main",
+            "lidar_detector_node = lidar_pipeline.node_detector:main",
         ],
     },
 )

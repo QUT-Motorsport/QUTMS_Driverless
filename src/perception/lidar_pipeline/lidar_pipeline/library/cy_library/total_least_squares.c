@@ -6,7 +6,7 @@
         "depends": [],
         "name": "total_least_squares",
         "sources": [
-            "/home/developer/driverless_ws/src/perception/lidar_pipeline_3/lidar_pipeline_3/library/cy_library/total_least_squares.pyx"
+            "/home/developer/driverless_ws/src/perception/lidar_pipeline/lidar_pipeline/library/cy_library/total_least_squares.pyx"
         ]
     },
     "module_name": "total_least_squares"

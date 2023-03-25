@@ -11,10 +11,8 @@
     <depend>driverless_msgs</depend>
     <!-- Custom packages -->
     <depend>controllers</depend>
-    <depend>py_slam</depend>
-    <depend>vision_pipeline</depend>
-    <depend>lidar_pipeline_3</depend>
-    <depend>planners</depend>
+    <depend>velocity_controller</depend>
+    <depend>steering_actuator</depend>
 
     <export>
         <build_type>ament_python</build_type>
