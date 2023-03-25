@@ -4,8 +4,10 @@ uint8 state
 # use enum below
 uint8 START=0
 uint8 SELECT_MISSION=1
+uint8 WAIT_FOR_MISSION=105
 uint8 CHECK_EBS=2
 uint8 READY=3
+uint8 RELEASE_EBS=11
 uint8 DRIVING=4
 uint8 ACTIVATE_EBS=10
 uint8 FINISHED=15

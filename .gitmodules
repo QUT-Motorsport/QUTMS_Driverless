@@ -17,9 +17,6 @@
 	path = src/hardware/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
 	branch = comp22
-[submodule "src/perception/vision_pipeline/yolov7"]
-	path = src/perception/vision_pipeline/yolov7
-	url = https://github.com/WongKinYiu/yolov7.git
 [submodule "src/hardware/zed_ros2_driver/zed-ros2-wrapper"]
 	path = src/hardware/zed_ros2_driver/zed-ros2-wrapper
 	url = https://github.com/stereolabs/zed-ros2-wrapper.git

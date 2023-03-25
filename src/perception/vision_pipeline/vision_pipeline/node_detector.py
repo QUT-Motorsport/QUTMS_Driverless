@@ -263,17 +263,14 @@ def main_cv2(args=None):
 
 ## PyTorch inference
 def main_torch(args=None):
-    from .torch_inference import infer, torch_init, torch_init_v7
+    from .torch_inference import infer, torch_init  # , torch_init_v7
 
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov5_small.pt")
-    MODEL_PATH_V7 = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov7_tiny.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
-    REPO_PATH_V7 = os.path.join(get_package_share_directory("vision_pipeline"), "yolov7")
     CONFIDENCE = 0.35  # higher = tighter filter
     IOU = 0.1
     model = torch_init(MODEL_PATH, REPO_PATH, CONFIDENCE, IOU)
-    # model = torch_init_v7(MODEL_PATH_V7, REPO_PATH_V7, CONFIDENCE, IOU)
 
     def get_torch_bounding_boxes(
         colour_frame: np.ndarray,
