@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import constants as const
+from . import constants as const
 
 
 def get_discretised_positions(x, y, point_norms):

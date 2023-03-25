@@ -3,13 +3,13 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+from . import constants as const
 from . import ground_plane_estimator as gpe
 from . import object_processor as op
 from . import point_classifier as pc
 from . import point_cloud_processor as pcp
 from . import visualiser as vis
 from . import visualiser_2 as vis2
-from .. import constants as const
 
 
 def locate_cones(config, point_cloud, start_time):
