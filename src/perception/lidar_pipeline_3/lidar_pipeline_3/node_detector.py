@@ -12,9 +12,7 @@ from rclpy.subscription import Subscription
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
-from sensor_msgs.msg import PointCloud2
-
-import ros2_numpy as rnp
+from sensor_msgs.msg import PointCloud2, PointField
 
 from . import constants as const
 
@@ -25,8 +23,51 @@ from .library import lidar_manager
 from .utils import Config
 
 
+def fields_to_dtype(fields, point_step):
+    """
+    FROM ROS2_NUMPY
+    Convert a list of PointFields to a numpy record datatype.
+    """
+    DUMMY_FIELD_PREFIX = "__"
+    # mappings between PointField types and numpy types
+    type_mappings = [
+        (PointField.INT8, np.dtype("int8")),
+        (PointField.UINT8, np.dtype("uint8")),
+        (PointField.INT16, np.dtype("int16")),
+        (PointField.UINT16, np.dtype("uint16")),
+        (PointField.INT32, np.dtype("int32")),
+        (PointField.UINT32, np.dtype("uint32")),
+        (PointField.FLOAT32, np.dtype("float32")),
+        (PointField.FLOAT64, np.dtype("float64")),
+    ]
+    pftype_to_nptype = dict(type_mappings)
+
+    offset = 0
+    np_dtype_list = []
+    for f in fields:
+        while offset < f.offset:
+            # might be extra padding between fields
+            np_dtype_list.append(("%s%d" % (DUMMY_FIELD_PREFIX, offset), np.uint8))
+            offset += 1
+
+        dtype = pftype_to_nptype[f.datatype]
+        if f.count != 1:
+            dtype = np.dtype((dtype, f.count))
+
+        np_dtype_list.append((f.name, dtype))
+        offset += pftype_to_nptype[f.datatype].itemsize * f.count
+
+    # might be extra padding between points
+    while offset < point_step:
+        np_dtype_list.append(("%s%d" % (DUMMY_FIELD_PREFIX, offset), np.uint8))
+        offset += 1
+
+    return np_dtype_list
+
+
 def cone_msg(x: float, y: float) -> Cone:
-    """Create a Cone message from x and y coordinates.
+    """
+    Create a Cone message from x and y coordinates.
 
     Args:
         x (float): The x coordinate of the cone (LiDAR sensor is origin).
@@ -41,8 +82,9 @@ def cone_msg(x: float, y: float) -> Cone:
     return Cone(location=location, color=Cone.UNKNOWN)
 
 
-class ConeDetectionNode(Node):
-    """Node for detecting cones and their locations from a point cloud.
+class LiDARDetectorNode(Node):
+    """
+    Node for detecting cones and their locations from a point cloud.
 
     Args:
         Node (rclpy.node.Node): The ROS2 node class.
@@ -67,7 +109,8 @@ class ConeDetectionNode(Node):
         self.config.logger.info("Waiting for point cloud data...")
 
     def pc_callback(self, point_cloud_msg: PointCloud2) -> None:
-        """Callback function for when point cloud data is received.
+        """
+        Callback function for when point cloud data is received.
 
         Args:
             point_cloud_msg (PointCloud2): The point cloud message.
@@ -102,7 +145,8 @@ class ConeDetectionNode(Node):
 
 
 def real_time_stream(args: list, config: Config) -> None:
-    """Run the node for real-time data.
+    """
+    Run the node for real-time data.
 
     This function initializes the ROS 2 node for real-time data, creates a ConeDetectionNode
     object with the specified configuration, and spins the node.
@@ -115,7 +159,7 @@ def real_time_stream(args: list, config: Config) -> None:
     rclpy.init()
 
     # Create a ConeDetectionNode object with the specified configuration
-    cone_detection_node: ConeDetectionNode = ConeDetectionNode(config)
+    cone_detection_node: LiDARDetectorNode = LiDARDetectorNode(config)
 
     # Spin the node to begin processing data
     rclpy.spin(cone_detection_node)
@@ -126,7 +170,8 @@ def real_time_stream(args: list, config: Config) -> None:
 
 
 def local_data_stream():
-    """Run the pipeline using exported point cloud frames instead of a ROS bag.
+    """
+    Run the pipeline using exported point cloud frames instead of a ROS bag.
 
     This function is not currently implemented and raises a NotImplementedError. It would be
     used to run the pipeline using pre-exported point cloud data frames instead of data from a

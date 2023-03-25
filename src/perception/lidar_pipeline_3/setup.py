@@ -18,6 +18,9 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["lidar_perception = lidar_pipeline_3.lidar_perception:main"],
+        "console_scripts": [
+            "lidar_debug_node = lidar_pipeline_3.node_lidar_debug:main",
+            "lidar_detector_node = lidar_pipeline_3.node_detector:main",
+        ],
     },
 )
