@@ -4,7 +4,7 @@ import matplotlib.colors as mpl_colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .. import constants as const
+from . import constants as const
 
 
 def get_segment_count(segments):

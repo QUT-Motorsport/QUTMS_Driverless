@@ -14,7 +14,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2, PointField
 
-from . import constants as const
+from .library import constants as const
 from .library import lidar_manager, video_stitcher
 from .library.utils import Config  # For typing
 

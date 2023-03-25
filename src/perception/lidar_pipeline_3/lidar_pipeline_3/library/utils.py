@@ -5,7 +5,7 @@ from logging import Logger  # For typing
 import os
 import shutil
 
-from .. import constants as const
+from . import constants as const
 
 from typing import Any, Tuple
 

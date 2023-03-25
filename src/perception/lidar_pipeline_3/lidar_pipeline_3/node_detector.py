@@ -11,7 +11,6 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2
 
-from . import constants as const
 from .process import *
 
 
@@ -26,7 +25,7 @@ def cone_msg(x: float, y: float) -> Cone:
     Returns:
         Cone: The cone message.
     """
-    location: Point = Point(x=x, y=y, z=const.LIDAR_HEIGHT_ABOVE_GROUND)
+    location: Point = Point(x=x, y=y, z=LIDAR_HEIGHT_ABOVE_GROUND)
 
     # LiDAR Pipeline does not identify cone colour
     return Cone(location=location, color=Cone.UNKNOWN)
@@ -80,15 +79,13 @@ class LiDARDetectorNode(Node):
         point_cloud = point_cloud[point_cloud["x"] > 0]
 
         # Remove points that are above the height of cones
-        point_cloud = point_cloud[
-            point_cloud["z"] < const.LHAG_ERR * (const.LIDAR_HEIGHT_ABOVE_GROUND + const.CONE_HEIGHT)
-        ]
+        point_cloud = point_cloud[point_cloud["z"] < LHAG_ERR * (LIDAR_HEIGHT_ABOVE_GROUND + CONE_HEIGHT)]
 
         # Compute point normals
         point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
 
         # Remove points that are outside of range or have a norm of 0
-        mask = point_norms <= const.LIDAR_RANGE  # & (point_norms != 0)
+        mask = point_norms <= LIDAR_RANGE  # & (point_norms != 0)
         point_norms = point_norms[mask]
         point_cloud = point_cloud[mask]
 

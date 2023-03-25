@@ -5,8 +5,45 @@ from sklearn.cluster import DBSCAN
 
 from sensor_msgs.msg import PointField
 
-from . import constants as const
 from .library.cy_library import total_least_squares as tls
+
+# Algorithm Parameters | Don't forget algorithm tuning
+LIDAR_RANGE = 25  # Max range of points to process (metres)
+DELTA_ALPHA = (2 * math.pi) / 128  # Delta angle of segments
+BIN_SIZE = 0.14  # Size of bins
+T_M = 2 * math.pi / 148  # (2 * math.pi) / (152*2)           # Max angle that will be considered for ground lines
+T_M_SMALL = 0  # Angle considered to be a small slope
+T_B = 0.05  # Max y-intercept for a ground plane line
+T_RMSE = 0.2  # Threshold of the Root Mean Square Error of the fit (Recommended: 0.2 - 0.5)
+REGRESS_BETWEEN_BINS = True  # Determines if regression for ground lines should occur between two
+# neighbouring bins when they're described by different lines
+T_D_GROUND = 0.125  # 0.15 # Maximum distance between point and line to be considered part of ground plane # tune this
+# changed from 0.1, ^^ also, the higher this value, the more low object points it will mark as ground BUT this makes dbscan faster
+T_D_MAX = 100  # Maximum distance a point can be from the origin to even be considered as
+# a ground point. Otherwise it's labelled as a non-ground point.
+CPU_UTILISATION = 0.90  # Percentage of CPU Cores to use for multiprocessing ground plane mapping (0.0 - 1.0)
+CONE_DIAM = 0.15
+CONE_HEIGHT = 0.30
+
+LIDAR_HEIGHT_ABOVE_GROUND = 0.15
+LIDAR_VERTICAL_RES = 1.25 * (math.pi / 180)  # 1.25 degrees in between each point
+LIDAR_HORIZONTAL_RES = 0.05 * (math.pi / 180)  # NEW
+LHAG_ERR = 0.25
+
+HACH_LOWER_ERR = 0.3  # 0.087 - 0.3 < 0 so min bound should probably just be zero lol
+HACH_UPPER_ERR = CONE_HEIGHT  # - 0.025
+
+# Derived Parameters
+SEGMENT_COUNT = math.ceil(2 * math.pi / DELTA_ALPHA)
+BIN_COUNT = math.ceil(LIDAR_RANGE / BIN_SIZE)
+HALF_AREA_CONE_HEIGHT = CONE_HEIGHT * (2 - math.sqrt(2)) / 2  # 0.08787
+
+# Expected number of points on a cone at a given distance
+NUMER = CONE_HEIGHT * CONE_DIAM
+DENOM = 8 * math.tan(LIDAR_VERTICAL_RES / 2) * math.tan(LIDAR_HORIZONTAL_RES / 2)
+
+EPSILON = 0.6  # Neighbourhood Scan Size 0.1: +0Hz, 0.5: -2Hz, 1 -3Hz:
+MIN_POINTS = 2  # Number of points required to form a neighbourhood
 
 
 def fields_to_dtype(fields, point_step):
@@ -53,11 +90,11 @@ def fields_to_dtype(fields, point_step):
 
 def get_discretised_positions(x, y, point_norms):
     # Calculating the segment index for each point
-    segments_idx = np.arctan2(y, x) / const.DELTA_ALPHA
-    np.nan_to_num(segments_idx, copy=False, nan=((np.pi / 2) / const.DELTA_ALPHA))  # Limit arctan x->inf = pi/2
+    segments_idx = np.arctan2(y, x) / DELTA_ALPHA
+    np.nan_to_num(segments_idx, copy=False, nan=((np.pi / 2) / DELTA_ALPHA))  # Limit arctan x->inf = pi/2
 
     # Calculating the bin index for each point
-    bins_idx = point_norms / const.BIN_SIZE
+    bins_idx = point_norms / BIN_SIZE
 
     # Stacking arrays segments_idx, bins_idx, point_norms, and xyz coords into one array
     return segments_idx.astype(int, copy=False), bins_idx.astype(int, copy=False)
@@ -130,28 +167,28 @@ def get_ground_lines(proto_seg_points):
 
             [m_new, b_new] = tls.fit_line(new_line_points)
 
-            m_b_check = abs(m_new) <= const.T_M and (abs(m_new) > const.T_M_SMALL or abs(b_new) <= const.T_B)
-            if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= const.T_RMSE):
+            m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+            if not (m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE):
                 new_line_points.pop()  # Remove the point we just added
 
                 [m_new, b_new] = tls.fit_line(new_line_points)
 
-                m_b_check = abs(m_new) <= const.T_M and (abs(m_new) > const.T_M_SMALL or abs(b_new) <= const.T_B)
-                if m_b_check and fit_error(m_new, b_new, new_line_points) <= const.T_RMSE:
+                m_b_check = abs(m_new) <= T_M and (abs(m_new) > T_M_SMALL or abs(b_new) <= T_B)
+                if m_b_check and fit_error(m_new, b_new, new_line_points) <= T_RMSE:
                     estimated_lines.append(
                         (
                             m_new,
                             b_new,
                             new_line_points[0],
                             new_line_points[-1],
-                            get_bin(new_line_points[0][0], const.BIN_SIZE),
+                            get_bin(new_line_points[0][0], BIN_SIZE),
                         )
                     )
                     lines_created += 1
 
                 new_line_points = []
 
-                if const.REGRESS_BETWEEN_BINS:
+                if REGRESS_BETWEEN_BINS:
                     idx -= 2
                 else:
                     idx -= 1
@@ -159,8 +196,7 @@ def get_ground_lines(proto_seg_points):
         else:
             if (
                 len(new_line_points) == 0
-                or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0]))
-                <= const.T_M
+                or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0])) <= T_M
             ):
                 new_line_points.append(new_point)
 
@@ -168,7 +204,7 @@ def get_ground_lines(proto_seg_points):
 
     if len(new_line_points) > 1 and m_new != None and b_new != None:
         estimated_lines.append(
-            (m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], const.BIN_SIZE))
+            (m_new, b_new, new_line_points[0], new_line_points[-1], get_bin(new_line_points[0][0], BIN_SIZE))
         )
 
     # If no ground lines were identified in segment, return 0
@@ -180,7 +216,7 @@ def get_ground_lines(proto_seg_points):
 
 def get_ground_plane_single_core(proto_segs_arr, proto_segs):
     # Computing the ground plane
-    ground_plane = np.zeros(const.SEGMENT_COUNT, dtype=object)  # should it be vector of dtype, or matrix of nums?
+    ground_plane = np.zeros(SEGMENT_COUNT, dtype=object)  # should it be vector of dtype, or matrix of nums?
 
     for segment_counter in range(len(proto_segs_arr)):
         proto_seg_points = proto_segs_arr[segment_counter].tolist()
@@ -243,18 +279,18 @@ def label_points(point_heights, segments, bins, seg_bin_z_ind, ground_plane):
             line_ind = (seg_eq_idx & (bins >= curr_bin)).nonzero()[0]
             ground_lines_arr[line_ind, :] = np.array([ground_line[0], ground_line[1]])
 
-    discretised_ground_heights = ((const.BIN_SIZE * bins) * ground_lines_arr[:, 0]) + ground_lines_arr[:, 1]
+    discretised_ground_heights = ((BIN_SIZE * bins) * ground_lines_arr[:, 0]) + ground_lines_arr[:, 1]
     point_line_dists = (
         point_heights - discretised_ground_heights
     )  # should there be an abs() here? no, read comment below
 
-    point_labels = point_line_dists > const.T_D_GROUND  # if close enough, or simply lower than line
+    point_labels = point_line_dists > T_D_GROUND  # if close enough, or simply lower than line
     return point_labels, ground_lines_arr
 
 
 def group_points(object_points):
     # Cluster object points
-    clustering = DBSCAN(eps=const.EPSILON, min_samples=const.MIN_POINTS).fit(
+    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(
         np.column_stack((object_points["x"], object_points["y"]))
     )
     labels = clustering.labels_
@@ -278,9 +314,9 @@ def reconstruct_objects(ground_points, ground_segments, ground_bins, object_cent
     obj_segs, obj_bins = get_discretised_positions(object_centers[:, 0], object_centers[:, 1], obj_norms)
 
     # Upside down floor devision
-    bin_search_half = -((const.CONE_DIAM // const.BIN_SIZE) // -2)
-    seg_widths = -((2 * (const.BIN_SIZE * obj_bins) * np.tan(const.DELTA_ALPHA / 2)) // -2)
-    seg_search_half = np.floor_divide(const.CONE_DIAM, seg_widths)
+    bin_search_half = -((CONE_DIAM // BIN_SIZE) // -2)
+    seg_widths = -((2 * (BIN_SIZE * obj_bins) * np.tan(DELTA_ALPHA / 2)) // -2)
+    seg_search_half = np.floor_divide(CONE_DIAM, seg_widths)
 
     # do i even car about all the points in a recon object? wouldnt i just want the cetner, and num points?
     reconstructed_objs = np.empty(object_centers.shape[0], dtype=object)
@@ -303,7 +339,7 @@ def reconstruct_objects(ground_points, ground_segments, ground_bins, object_cent
             distances = np.linalg.norm(
                 np.column_stack((search_points["x"], search_points["y"])) - object_centers[i, :2], axis=1
             )
-            in_range_points = search_points[distances <= const.CONE_DIAM / 2]
+            in_range_points = search_points[distances <= CONE_DIAM / 2]
             matching_points = np.append(matching_points, in_range_points)
 
         reconstructed_centers[i] = np.mean(
@@ -316,7 +352,7 @@ def reconstruct_objects(ground_points, ground_segments, ground_bins, object_cent
 
 # Number of points expected to be on a cone at a given distance
 def get_expected_point_count(distance):
-    return const.NUMER / (np.square(distance) * const.DENOM)
+    return NUMER / (np.square(distance) * DENOM)
 
 
 def cone_filter(
@@ -338,14 +374,14 @@ def cone_filter(
     # but huge angled walls can cause an object center to not actually be on any of its points
     # so maybe use reconstructed instead? maybe have a try-catch to and ignore any objects that
     # don't have a line computed in their bin. they're probably not cones anyway
-    discretised_ground_heights = (
-        (const.BIN_SIZE * bins[seg_bin_ind]) * ground_lines_arr[seg_bin_ind, 0]
-    ) + ground_lines_arr[seg_bin_ind, 1]
+    discretised_ground_heights = ((BIN_SIZE * bins[seg_bin_ind]) * ground_lines_arr[seg_bin_ind, 0]) + ground_lines_arr[
+        seg_bin_ind, 1
+    ]
     object_line_dists = np.abs(object_centers[:, 2] - discretised_ground_heights)
 
     # Upper bound cone height, lower bound take err margin
-    f1_matching_ind = (const.HALF_AREA_CONE_HEIGHT - const.HACH_LOWER_ERR <= object_line_dists) * (
-        object_line_dists <= const.HALF_AREA_CONE_HEIGHT + const.HACH_UPPER_ERR
+    f1_matching_ind = (HALF_AREA_CONE_HEIGHT - HACH_LOWER_ERR <= object_line_dists) * (
+        object_line_dists <= HALF_AREA_CONE_HEIGHT + HACH_UPPER_ERR
     )
 
     filtered_rec_centers = reconstructed_centers[f1_matching_ind]

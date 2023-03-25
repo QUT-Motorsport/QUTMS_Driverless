@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
+from . import constants as const
 from . import plot_utils as plt_u
-from .. import constants as const
-from ..constants import RGBA, Colour
+from .constants import RGBA, Colour
 
 
 def plot_point_cloud_2D(config, point_cloud, subtitle, name):

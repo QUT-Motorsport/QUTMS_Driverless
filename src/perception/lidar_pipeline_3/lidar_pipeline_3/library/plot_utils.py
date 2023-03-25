@@ -3,8 +3,8 @@ from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .. import constants as const
-from ..constants import RGBA, Colour
+from . import constants as const
+from .constants import RGBA, Colour
 
 # Find custom fonts
 font_files = font_manager.findSystemFonts(fontpaths=const.FONTS_DIR)

@@ -1,8 +1,8 @@
 import numpy as np
 from sklearn.cluster import DBSCAN
 
+from . import constants as const
 from . import point_cloud_processor as pcp
-from .. import constants as const
 
 
 def group_points(object_points):
