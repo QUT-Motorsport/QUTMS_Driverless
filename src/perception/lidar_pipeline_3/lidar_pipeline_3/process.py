@@ -253,12 +253,8 @@ def label_points(point_heights, segments, bins, seg_bin_z_ind, ground_plane):
 
 
 def group_points(object_points):
-    EPSILON = 0.6  # Neighbourhood Scan Size 0.1: +0Hz, 0.5: -2Hz, 1 -3Hz:
-    MIN_POINTS = 2  # Number of points required to form a neighbourhood
-    # move these into constants file
-
     # Cluster object points
-    clustering = DBSCAN(eps=EPSILON, min_samples=MIN_POINTS).fit(
+    clustering = DBSCAN(eps=const.EPSILON, min_samples=const.MIN_POINTS).fit(
         np.column_stack((object_points["x"], object_points["y"]))
     )
     labels = clustering.labels_

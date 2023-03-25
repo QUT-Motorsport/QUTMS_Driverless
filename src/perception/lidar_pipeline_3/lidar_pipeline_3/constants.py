@@ -48,6 +48,9 @@ HALF_AREA_CONE_HEIGHT = CONE_HEIGHT * (2 - math.sqrt(2)) / 2  # 0.08787
 NUMER = CONE_HEIGHT * CONE_DIAM
 DENOM = 8 * math.tan(LIDAR_VERTICAL_RES / 2) * math.tan(LIDAR_HORIZONTAL_RES / 2)
 
+EPSILON = 0.6  # Neighbourhood Scan Size 0.1: +0Hz, 0.5: -2Hz, 1 -3Hz:
+MIN_POINTS = 2  # Number of points required to form a neighbourhood
+
 # Visualiser 1
 # Default Values
 dark_grey = (0.122, 0.149, 0.188, 1.0)  # 1f2630
