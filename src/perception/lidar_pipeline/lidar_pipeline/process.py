@@ -3,8 +3,6 @@ import math
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-from sensor_msgs.msg import PointField
-
 from .library.cy_library import total_least_squares as tls
 
 # Algorithm Parameters | Don't forget algorithm tuning
@@ -42,50 +40,9 @@ HALF_AREA_CONE_HEIGHT = CONE_HEIGHT * (2 - math.sqrt(2)) / 2  # 0.08787
 NUMER = CONE_HEIGHT * CONE_DIAM
 DENOM = 8 * math.tan(LIDAR_VERTICAL_RES / 2) * math.tan(LIDAR_HORIZONTAL_RES / 2)
 
+# DBSCAN Parameters
 EPSILON = 0.6  # Neighbourhood Scan Size 0.1: +0Hz, 0.5: -2Hz, 1 -3Hz:
 MIN_POINTS = 2  # Number of points required to form a neighbourhood
-
-
-def fields_to_dtype(fields, point_step):
-    """
-    FROM ROS2_NUMPY
-    Convert a list of PointFields to a numpy record datatype.
-    """
-    DUMMY_FIELD_PREFIX = "__"
-    # mappings between PointField types and numpy types
-    type_mappings = [
-        (PointField.INT8, np.dtype("int8")),
-        (PointField.UINT8, np.dtype("uint8")),
-        (PointField.INT16, np.dtype("int16")),
-        (PointField.UINT16, np.dtype("uint16")),
-        (PointField.INT32, np.dtype("int32")),
-        (PointField.UINT32, np.dtype("uint32")),
-        (PointField.FLOAT32, np.dtype("float32")),
-        (PointField.FLOAT64, np.dtype("float64")),
-    ]
-    pftype_to_nptype = dict(type_mappings)
-
-    offset = 0
-    np_dtype_list = []
-    for f in fields:
-        while offset < f.offset:
-            # might be extra padding between fields
-            np_dtype_list.append(("%s%d" % (DUMMY_FIELD_PREFIX, offset), np.uint8))
-            offset += 1
-
-        dtype = pftype_to_nptype[f.datatype]
-        if f.count != 1:
-            dtype = np.dtype((dtype, f.count))
-
-        np_dtype_list.append((f.name, dtype))
-        offset += pftype_to_nptype[f.datatype].itemsize * f.count
-
-    # might be extra padding between points
-    while offset < point_step:
-        np_dtype_list.append(("%s%d" % (DUMMY_FIELD_PREFIX, offset), np.uint8))
-        offset += 1
-
-    return np_dtype_list
 
 
 def get_discretised_positions(x, y, point_norms):
