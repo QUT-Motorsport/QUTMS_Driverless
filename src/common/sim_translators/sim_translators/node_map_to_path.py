@@ -188,6 +188,7 @@ class MapPathPlanner(Node):
 
         # make number of pts based on length of path
         spline_len = self.spline_const * len(ordered_blues)
+        spline_len = 10000  # constant for MPC for now
 
         # retrieves spline lists (x,y)
         yx, yy = approximate_b_spline_path(

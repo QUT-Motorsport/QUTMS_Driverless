@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 # messages
 set(msg_files
@@ -36,6 +37,9 @@ set(msg_files
   "msg/SystemStatus.msg"
   "msg/DrivingDynamics1.msg"
   "msg/WSSVelocity.msg"
+  "msg/MPCState.msg"
+  "msg/MPCPathPoint.msg"
+  "msg/MPCCenterline.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
