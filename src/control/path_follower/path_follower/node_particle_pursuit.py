@@ -1,24 +1,16 @@
-from math import atan2, cos, dist, pi, sin, sqrt
+from math import atan2, cos, dist, pi, sin
 
 import numpy as np
 import scipy.spatial
 from transforms3d.euler import quat2euler
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import (
-    Cone,
-    ConeDetectionStamped,
-    ConeWithCovariance,
-    PathStamped,
-    Reset,
-    TrackDetectionStamped,
-)
-from geometry_msgs.msg import PoseWithCovarianceStamped, TwistWithCovarianceStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathStamped, Reset
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 from typing import List
 
@@ -222,7 +214,6 @@ class ParticlePursuit(Node):
     def callback(
         self,
         pose_msg: PoseWithCovarianceStamped,
-        # vel_msg: TwistWithCovarianceStamped,
     ):
         # ----------------
         # Node initialisation processes:
@@ -271,7 +262,6 @@ class ParticlePursuit(Node):
         # Determine steering angle
         # ----------------
         pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)[:2]
-        # pos_lookahead: List[float] = [0,0]
 
         pos_nearestCone: List[float] = get_closest_cone(pos_car, track)
         d_nearestCone: float = get_distance(pos_car, pos_nearestCone)
@@ -312,11 +302,6 @@ class ParticlePursuit(Node):
             pos_attractive_relCar[0] + pos_repulsive_relcar[0],
             pos_attractive_relCar[1] + pos_repulsive_relcar[1],
         ]
-
-        # get angle of resultant vector as desired heading of the car
-        # des_heading_ang: float = angle([0, 0], pos_resultant_relCar)
-        # des_heading_ang: float = 0.0
-        # steering_angle = wrap_to_pi(car_heading - des_heading_ang) * self.Kp_ang
 
         # get angle of resultant vector as desired heading of the car in degrees
         des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
