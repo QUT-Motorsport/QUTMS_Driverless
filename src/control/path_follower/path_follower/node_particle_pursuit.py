@@ -150,8 +150,9 @@ class ParticlePursuit(Node):
     # common constants:
     path = np.array([])
     cone_pos = []
-    Kp_ang: float = 3
+    Kp_ang: float = 1
     Kp_vel: float = 0.08
+    target_vel: float = 3.0
     vel_max: float = 4  # m/s
     vel_min: float = 3  # m/s
     throttle_max: float = 0.2
@@ -162,7 +163,7 @@ class ParticlePursuit(Node):
 
     # ------------------------------
     # attractive force constants:
-    rvwp_lookahead: float = 100  # how far the lookahead is (no. of indeces) [convert to distance preferably]
+    rvwp_lookahead: float = 10  # how far the lookahead is (no. of indeces) [convert to distance preferably]
     k_attractive: float = 3  # attractive force gain
 
     # ------------------------------
@@ -270,6 +271,7 @@ class ParticlePursuit(Node):
         # Determine steering angle
         # ----------------
         pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)[:2]
+        # pos_lookahead: List[float] = [0,0]
 
         pos_nearestCone: List[float] = get_closest_cone(pos_car, track)
         d_nearestCone: float = get_distance(pos_car, pos_nearestCone)
@@ -312,24 +314,35 @@ class ParticlePursuit(Node):
         ]
 
         # get angle of resultant vector as desired heading of the car
-        des_heading_ang: float = angle([0, 0], pos_resultant_relCar)
-        steering_angle = wrap_to_pi(car_heading - des_heading_ang) * self.Kp_ang
+        # des_heading_ang: float = angle([0, 0], pos_resultant_relCar)
+        # des_heading_ang: float = 0.0
+        # steering_angle = wrap_to_pi(car_heading - des_heading_ang) * self.Kp_ang
 
-        print("d_nearestCone: " + str(d_nearestCone))
-        print("danger_level: " + str(danger_level))
+        # get angle of resultant vector as desired heading of the car in degrees
+        des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
+        steering_angle: float = ((car_heading * 180 / pi) - des_heading_ang) * self.Kp_ang * -1
 
         # ----------------
         # Determine velocity
         # ----------------
+
+        target_vel: float = self.target_vel
+
+        """
+        This Section is currently uneccessary (also ideally should be located in a velocity planner package).
+        This code would be used when the velocity of the vehicle would be reaching the limit of friction on the tires,
+        and thus this code would determine what the maximum safe velocities would be.
+        """
+
         # velocity control
-        rvwp: List[float] = get_RVWP(pos_car, self.path, self.vel_RVWP_LAD)
-        intensity = rvwp[2]
+        # rvwp: List[float] = get_RVWP(pos_car, self.path, self.vel_RVWP_LAD)
+        # intensity = rvwp[2]
         # vel = sqrt(vel_msg.twist.twist.linear.x**2 + vel_msg.twist.twist.linear.y**2)
 
         # target velocity proportional to angle
-        target_vel: float = (
-            self.vel_max - intensity * self.Kp_vel
-        )  # if this is weird, just comment out rvwp and intensity (above) and make terget_vel = 3.
+        # target_vel: float = (
+        #     self.vel_max - intensity * self.Kp_vel
+        # )
 
         # if target_vel < self.vel_min:
         #     target_vel = self.vel_min
