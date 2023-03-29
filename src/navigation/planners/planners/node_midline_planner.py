@@ -149,6 +149,8 @@ class MapPathPlanner(Node):
         # publishers
         # self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
+        self.blueCone_publisher: Publisher = self.create_publisher(Cone, "/sim/global_map", 1)
+        self.yellowCone_publisher: Publisher = self.create_publisher(Cone, "/sim/global_map", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
@@ -190,6 +192,13 @@ class MapPathPlanner(Node):
         # Sort the blue and yellow cones starting from the far orange cone, and ending at the close orange cone.
         ordered_blues = sort_cones(blues)
         ordered_yellows = sort_cones(yellows)
+
+        # publish ordered list of coloured cones
+        orderedBlueCone_msg = Cone(location=ordered_blues)
+        orderedYellowCone_msg = Cone(location=ordered_yellows)
+
+        self.blueCone_publisher.publish(orderedBlueCone_msg)
+        self.yellowCone_publisher.publish(orderedYellowCone_msg)
 
         # make number of pts based on length of path
         spline_len = self.spline_const * len(ordered_blues)
