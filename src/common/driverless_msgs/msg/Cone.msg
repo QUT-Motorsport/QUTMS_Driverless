@@ -17,4 +17,4 @@ uint8 YELLOW=4
 # track_side
 uint8 LEFT=0
 uint8 RIGHT=1
-uint8 UNKNOWN=2
+uint8 NONE=2
