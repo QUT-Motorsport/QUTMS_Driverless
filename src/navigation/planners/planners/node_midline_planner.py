@@ -15,6 +15,7 @@ from driverless_msgs.msg import (
     PathStamped,
     TrackDetectionStamped,
 )
+from geometry_msgs.msg import Point
 
 from typing import List, Tuple
 
@@ -149,8 +150,7 @@ class MapPathPlanner(Node):
         # publishers
         # self.track_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/sim/global_map", 1)
         self.path_publisher: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
-        self.blueCone_publisher: Publisher = self.create_publisher(Cone, "/sim/global_map", 1)
-        self.yellowCone_publisher: Publisher = self.create_publisher(Cone, "/sim/global_map", 1)
+        self.orderedCone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/planner/ordered_map", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
 
@@ -166,9 +166,9 @@ class MapPathPlanner(Node):
 
         for cone_w_cov in cones_w_cov:
             if cone_w_cov.cone.color == Cone.YELLOW:
-                yellows.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y])
+                yellows.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y, 0.0])
             elif cone_w_cov.cone.color == Cone.BLUE:
-                blues.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y])
+                blues.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y, 0.0])
             elif cone_w_cov.cone.color == Cone.ORANGE_BIG:
                 oranges.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y])
 
@@ -181,24 +181,64 @@ class MapPathPlanner(Node):
         parsed_orange_cones = self.parse_orange_cones(oranges)
         if len(parsed_orange_cones) == 0:
             return
-        blues.insert(0, parsed_orange_cones[1])
-        blues.append(parsed_orange_cones[0])
-        yellows.insert(0, parsed_orange_cones[3])
-        yellows.append(parsed_orange_cones[2])
+
+        blues_first = parsed_orange_cones[1]
+        blues_last = parsed_orange_cones[0]
+        yellows_first = parsed_orange_cones[3]
+        yellows_last = parsed_orange_cones[2]
+
+        blues_first.append(0.0)
+        blues_last.append(0.0)
+        yellows_first.append(0.0)
+        yellows_last.append(0.0)
+
+        blues.insert(0, blues_first)
+        blues.append(blues_last)
+        yellows.insert(0, yellows_first)
+        yellows.append(yellows_last)
 
         # print("blue", len(blues))
         # print("yellow", len(yellows))
+        # print("yellows_first: " + str(yellows_first))
+        # for i in range(len(yellows)):
+        #     print(str(yellows[i]))
 
         # Sort the blue and yellow cones starting from the far orange cone, and ending at the close orange cone.
         ordered_blues = sort_cones(blues)
         ordered_yellows = sort_cones(yellows)
+        # print(str((ordered_blues[0])))
 
-        # publish ordered list of coloured cones
-        orderedBlueCone_msg = Cone(location=ordered_blues)
-        orderedYellowCone_msg = Cone(location=ordered_yellows)
+        # ordered_cones: [point (x,y,z), color (b=0,y=4), order, track_side (b=0,y=1)]
+        ordered_cones: List[Cone] = []
+        for cone in range(len(ordered_blues) - 1):
+            ordered_cones.append(
+                Cone(
+                    location=Point(  # point (x,y,z)
+                        x=ordered_blues[cone][0], y=ordered_blues[cone][1], z=ordered_blues[cone][2]
+                    ),
+                    color=0,  # color (b=0,y=4)
+                    order=cone,  # order
+                    track_side=0,  # track_side (b=0,y=1)
+                )
+            )
+        for cone in range(len(ordered_yellows) - 1):
+            ordered_cones.append(
+                Cone(
+                    location=Point(  # point (x,y,z)
+                        x=ordered_yellows[cone][0], y=ordered_yellows[cone][1], z=ordered_yellows[cone][2]
+                    ),
+                    color=4,  # color (b=0,y=4)
+                    order=cone,  # order
+                    track_side=1,  # track_side (b=0,y=1)
+                )
+            )
 
-        self.blueCone_publisher.publish(orderedBlueCone_msg)
-        self.yellowCone_publisher.publish(orderedYellowCone_msg)
+        # print(str(ordered_cones[0]))
+        # for i in range(len(ordered_cones)):
+        #     print(str(ordered_cones[i]))
+
+        orderedCone_msg = ConeDetectionStamped(cones=ordered_cones)
+        self.orderedCone_publisher.publish(orderedCone_msg)
 
         # make number of pts based on length of path
         spline_len = self.spline_const * len(ordered_blues)
