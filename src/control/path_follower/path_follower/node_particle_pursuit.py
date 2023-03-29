@@ -173,7 +173,7 @@ class ParticlePursuit(Node):
     def __init__(self):
         super().__init__("particle_pursuit")
 
-        # sub to delaunay target path mapper for the desired vehicle path (as an array), used for lookahead
+        # sub to track midline path mapper for the desired vehicle path (as an array), used for lookahead
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
 
         # sub to track for all cone locations relative to car start point, used for boundary danger calculations
