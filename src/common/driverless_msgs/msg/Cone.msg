@@ -7,7 +7,7 @@ uint8 track_side
 int8 sim_cone_index  # default value of 0 means unused or unknown
 
 # Constants
-# colour
+# color
 uint8 BLUE=0
 uint8 UNKNOWN=1
 uint8 ORANGE_BIG=2
