@@ -15,7 +15,7 @@ class NodeTopicToCSV(Node):
         super().__init__("track_to_csv_node")
 
         # subscribe to topic
-        self.subscription = self.create_subscription(TrackDetectionStamped, "/sim/global_map", self.callback, 10)
+        self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
 
         self.get_logger().info("---Track Writer Initalised---")
 
