@@ -1,4 +1,4 @@
-from math import atan, atan2, degrees, floor, pi, sqrt
+from math import cos, pi, sin, sqrt
 import time
 
 import cv2
@@ -37,15 +37,15 @@ if SPLINES % 2 == 0:
     SPLINES += 1
 
 
-class PoinntFitController(Node):
-    prev_steering_angle: float = 0
-    Kp_angle: float = 20
-    targ_vel: float = 4  # m/s
+class PointFitController(Node):
+    targ_vel: float = 3  # m/s
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
-    steeringPaths: List[List[Point]] = []
-    steering_vals: np.ndarray = np.linspace(-90, 90, SPLINES)  # steering values to take
-    line_len: float = 15.0  # len of spline line
+    steering_paths: List[List[Point]] = []
+    steering_vals: np.ndarray = np.linspace(-110, 110, SPLINES)  # steering values to take
+    line_len: float = 7.0  # len of spline line
+    last_steering_index: int = int(SPLINES / 2)  # index of last steering path takens
+    last_counter: int = 0  # counter for last steering path taken
 
     def __init__(self):
         super().__init__("point_fit_controller_node")
@@ -68,17 +68,17 @@ class PoinntFitController(Node):
         # cicle will pass through 0,0 and and additional point:
         # for each end point, determine the circle defining it with 10 points
         end_points = []
-        end_points.append(Point(self.line_len / 2, -5 * self.line_len / 10))  # origin
-        end_points.append(Point(self.line_len / 2 + self.line_len / 10, -4 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, -3 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, -2 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, -1 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 1 * self.line_len / 10, -5 * self.line_len / 10))  # origin
+        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, -4 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, -3 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, -2 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 5 * self.line_len / 10, -1 * self.line_len / 10))
         end_points.append(Point(self.line_len, 0.0))
-        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, 1 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, 2 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, 3 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + self.line_len / 10, 4 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2, 5 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 5 * self.line_len / 10, 1 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, 2 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, 3 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, 4 * self.line_len / 10))
+        end_points.append(Point(self.line_len / 2 + 1 * self.line_len / 10, 5 * self.line_len / 10))
 
         self.steering_paths = [[] for i in range(SPLINES)]  # create empty list of lists
         for index in range(SPLINES):
@@ -86,7 +86,7 @@ class PoinntFitController(Node):
 
             # straight up
             if index == int(SPLINES / 2):
-                x = 0
+                x = -2
                 y = 0
                 self.steering_paths[int(SPLINES / 2)] = []
                 for i in range(POINTS_PER_LINE):
@@ -105,7 +105,7 @@ class PoinntFitController(Node):
                 angle = -angle
                 r = -r
 
-            center = Point(0, h)  # center of circle
+            center = Point(1.0, h)  # center of circle
             vector = Point(0, r)  # vector to point
             for i in range(POINTS_PER_LINE):
                 self.steering_paths[index].append(Point(-(vector.x + center.x), vector.y + center.y))  # store
@@ -125,7 +125,7 @@ class PoinntFitController(Node):
         steering_angle = 0.0
 
         cones: List[Cone] = [
-            c for c in cone_msg.cones if abs(c.location.y) < 5.0 and c.location.x < 10
+            c for c in cone_msg.cones if abs(c.location.y) < 7.5 and (c.location.x + 1.65) < 10
         ]  # only cones in front of car
 
         best_spline = 0
@@ -137,7 +137,7 @@ class PoinntFitController(Node):
                 n_spline_points = len(steering_path)
                 for cone in cones:
                     # distance from origin
-                    distance = sqrt(cone.location.x**2 + cone.location.y**2)
+                    distance = sqrt((cone.location.x + 1.65) ** 2 + cone.location.y**2)
 
                     # bin
                     bin = min(n_spline_points - 1, int(round(distance / self.line_len * n_spline_points, 0)) - 1)
@@ -145,7 +145,18 @@ class PoinntFitController(Node):
                         bin = 0
 
                     s_error[n_spline] += sqrt(
-                        (cone.location.x - steering_path[bin].x) ** 2 + (cone.location.y - steering_path[bin].y) ** 2
+                        ((cone.location.x + 1.65) - steering_path[bin].x) ** 2
+                        + (cone.location.y - steering_path[bin].y) ** 2
+                    )
+
+                    # draw cones that are being used
+                    cv2.drawMarker(
+                        self.debug_img,
+                        loc_to_img_pt((cone.location.x + 1.65), cone.location.y).to_tuple(),
+                        (0, 255, 255),
+                        markerType=cv2.MARKER_SQUARE,
+                        markerSize=5,
+                        thickness=5,
                     )
 
                 if s_error[n_spline] < max_error:
@@ -163,7 +174,17 @@ class PoinntFitController(Node):
                         thickness=2,
                     )
 
-            best_path = self.steering_paths[best_spline]
+            if self.last_counter % 1 == 0:
+                # ensure that the best spline is next to the last best spline
+                if best_spline - self.last_steering_index > 1:
+                    best_spline = self.last_steering_index + 1
+                elif best_spline - self.last_steering_index < -1:
+                    best_spline = self.last_steering_index - 1
+                self.last_steering_index = best_spline
+                self.last_counter = 0
+            self.last_counter += 1
+
+            best_path = self.steering_paths[self.last_steering_index]
             for point in best_path:
                 # draw each element in target spline
                 cv2.drawMarker(
@@ -177,7 +198,7 @@ class PoinntFitController(Node):
             self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
 
             speed = self.targ_vel
-            steering_angle = self.steering_vals[best_spline]
+            steering_angle = self.steering_vals[self.last_steering_index]
 
         # publish message
         control_msg = AckermannDriveStamped()
@@ -191,7 +212,7 @@ class PoinntFitController(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PoinntFitController()
+    node = PointFitController()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
