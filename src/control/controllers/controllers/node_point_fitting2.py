@@ -44,6 +44,7 @@ class PoinntFitController(Node):
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     steeringPaths: List[List[Point]] = []
+    steering_vals: np.ndarray = np.linspace(-90, 90, SPLINES)  # steering values to take
     line_len: float = 15.0  # len of spline line
 
     def __init__(self):
@@ -124,7 +125,7 @@ class PoinntFitController(Node):
         steering_angle = 0.0
 
         cones: List[Cone] = [
-            c for c in cone_msg.cones if abs(c.location.y) < 7.0 and c.location.x < 12
+            c for c in cone_msg.cones if abs(c.location.y) < 5.0 and c.location.x < 10
         ]  # only cones in front of car
 
         best_spline = 0
@@ -176,11 +177,12 @@ class PoinntFitController(Node):
             self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
 
             speed = self.targ_vel
+            steering_angle = self.steering_vals[best_spline]
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.header.stamp = cone_msg.header.stamp
-        control_msg.drive.steering_angle = degrees(steering_angle)
+        control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = float(speed)
         self.control_publisher.publish(control_msg)
 
