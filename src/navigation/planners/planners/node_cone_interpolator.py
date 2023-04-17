@@ -33,11 +33,11 @@ def new_coordinates(x, y, angle_rads, distance):
     * param y: float, y-coordinate of the initial point
     * param angle_rads: float, angle in radians to move from initial point
     * param distance: float, distance to move from the initial point
-    * return: tuple (x_new, y_new), new coordinates after moving
+    * return: tuple (x_new, y_new, 0), new coordinates after moving
     """
     x_new = x + distance * cos(angle_rads)
     y_new = y + distance * sin(angle_rads)
-    return (x_new, y_new)
+    return (x_new, y_new, 0)
 
 
 class ConeInterpolator(Node):
@@ -90,7 +90,7 @@ class ConeInterpolator(Node):
             # print(str(secondCone_XY))
             conePair_dist = dist(firstCone_XY, secondCone_XY)
 
-            # get distance between cones for distance between interpolated cones and real cones
+            # get sub-distance between cones for distance between interpolated cones and real cones
             interpolation_subDist = conePair_dist / numPoints_divisions
 
             # get angle between original cone pair so interpolated cones follow same angle
@@ -103,17 +103,24 @@ class ConeInterpolator(Node):
                 iCone_locations[iCone] = new_coordinates(
                     cone_of_origin[0], cone_of_origin[1], conePair_radians, interpolation_subDist
                 )
+
                 cone_of_origin = iCone_locations[iCone]
 
-            # create interpolated cones with interpolated locations
+            # create list of interpolated cones with interpolated locations
+            interpolated_cones = []
+            for iCone in range(iCone_locations):
+                # create new cone
+                interpolatedCone = Cone()
+                interpolatedCone.location = iCone_locations[iCone]
+                interpolatedCone.color = ordered_cones[cone].color
+                interpolatedCone.track_side = ordered_cones[cone].track_side
 
-            # how do i conserve order
-            # requires indexing without overwriting
-            # use cone as reference + whatever iCone iteration, then shift everything to the right of that index to the right
+                # add cone to list of interpolated cones
+                interpolated_cones[iCone] = interpolatedCone
 
-        # divide distance by number of interpolating points wanted (n points = n + 1)
-        # append formatted cones with relevant information to end of list.
-        # include: [location (x,y,z), color (b=0,y=4), order, track_side (b=0,y=1)]
+            # add list of interpolated cones to list of all ordered cones
+            insert_index = cone + 1
+            ordered_cones[insert_index:insert_index] = interpolated_cones
 
 
 def main(args=None):
