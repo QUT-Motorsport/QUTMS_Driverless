@@ -23,6 +23,7 @@ setup(
             "ordered_mid_spline = planners.node_ordered_mid_spline:main",
             "local_planner = planners.node_local_planner:main",
             "midline_planner = planners.node_midline_planner:main",
+            "cone_interpolator = planners.node_cone_interpolator:main",
         ],
     },
 )
