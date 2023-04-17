@@ -208,7 +208,7 @@ class MapPathPlanner(Node):
         ordered_yellows = sort_cones(yellows)
         # print(str((ordered_blues[0])))
 
-        # ordered_cones: [point (x,y,z), color (b=0,y=4), order, track_side (b=0,y=1)]
+        # ordered_cones: [location (x,y,z), color (b=0,y=4), order, track_side (b=0,y=1)]
         ordered_cones: List[Cone] = []
         for cone in range(len(ordered_blues) - 1):
             ordered_cones.append(
