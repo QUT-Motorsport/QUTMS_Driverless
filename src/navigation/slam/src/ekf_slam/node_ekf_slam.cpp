@@ -14,6 +14,7 @@
 #include "driverless_msgs/msg/cone.hpp"
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
 #include "driverless_msgs/msg/debug_msg.hpp"
+#include "driverless_msgs/msg/double_matrix.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
 #include "ekf_slam.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -42,6 +43,7 @@ class EKFSLAMNode : public rclcpp::Node {
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
     rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr debug_1_pub;
     rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr debug_2_pub;
+    rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr matrix_pub;
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
@@ -54,6 +56,7 @@ class EKFSLAMNode : public rclcpp::Node {
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
         debug_1_pub = this->create_publisher<driverless_msgs::msg::DebugMsg>("debug_1", 10);
         debug_2_pub = this->create_publisher<driverless_msgs::msg::DebugMsg>("debug_2", 10);
+        matrix_pub = this->create_publisher<driverless_msgs::msg::DoubleMatrix>("matrix", 10);
     }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
@@ -96,7 +99,12 @@ class EKFSLAMNode : public rclcpp::Node {
         }
 
         ekf_slam.predict(forward_vel, rotational_vel, dt);
-        ekf_slam.update(detection_msg->cones_with_cov, debug_1_pub, debug_2_pub);
+        // ekf_slam.update(
+        //     detection_msg->cones_with_cov,
+        //     debug_1_pub,
+        //     debug_2_pub,
+        //     matrix_pub
+        // );
 
         last_update = stamp;
 
