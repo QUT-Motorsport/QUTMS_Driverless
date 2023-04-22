@@ -11,12 +11,6 @@ sudo apt update
 sudo apt upgrade -y
 sudo apt install -y git python3-pip pre-commit cmake
 
-## Set ROS2 repositories
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_source.sh
-
-## Install ROS2 Humble
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_humble.sh
-
 ## Make workspace
 mkdir ~/QUTMS
 cd ~/QUTMS
@@ -30,6 +24,12 @@ echo ""
 sleep 3
 git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 cd QUTMS_Driverless
+
+## Set ROS2 repositories
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_source.sh
+
+## Install ROS2 Humble
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_humble.sh
 
 ## Package requirements
 echo ""

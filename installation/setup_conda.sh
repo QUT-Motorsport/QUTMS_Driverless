@@ -11,9 +11,6 @@ sudo apt update
 sudo apt upgrade -y
 sudo apt install -y git python3-pip pre-commit mesa-utils
 
-## Download and install mambaforge
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_mambaforge.sh
-
 ## Make workspace
 mkdir ~/QUTMS
 cd ~/QUTMS
@@ -26,6 +23,9 @@ echo "---Cloning Driverless repo---"
 echo ""
 sleep 3
 git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
+
+## Download and install mambaforge
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_mambaforge.sh
 
 ## Create driverless development environment
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_conda_env.sh
