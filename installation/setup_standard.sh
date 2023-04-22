@@ -35,16 +35,19 @@ sudo rosdep init
 rosdep update
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 
+mkdir ~/QUTMS
+cd ~/QUTMS
+
+## Make directory for people to drop their rosbags in
+mkdir bags/
+
 ## Clone Driverless repo
 echo ""
 echo "---Cloning Driverless repo---"
 echo ""
 sleep 3
 git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
-cd ~/QUTMS_Driverless
-
-## Make directory for people to drop their rosbags in
-mkdir bags/
+cd QUTMS_Driverless
 
 ## Package requirements
 echo ""
@@ -75,58 +78,28 @@ fi
 ## Source ROS
 source /opt/ros/humble/setup.bash
 
-# ## Install FSDS
-# echo ""
-# echo "---Installing FSDS---"
-# echo ""
-# sleep 3
-# cd ~
-# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
-# cd ~/Formula-Student-Driverless-Simulator
-# AirSim/setup.sh
-
-# echo ""
-# echo "---Building FSDS packages---"
-# echo ""
-# sleep 3
-# cd ~/Formula-Student-Driverless-Simulator/ros2
-# ## Install dependencies from src/
-# rosdep install --from-paths src -y --ignore-src
-# ## Build FSDS package
-# colcon build
-
 ## Install EUFS
 echo ""
 echo "---Installing EUFS---"
 echo ""
 sleep 3
-mkdir ~/EUFS
-cd ~/EUFS
+cd ~/QUTMS
 git clone https://github.com/QUT-Motorsport/eufs_sim.git
 git clone https://gitlab.com/eufs/eufs_msgs.git
 git clone https://github.com/QUT-Motorsport/eufs_rviz_plugins.git
 git clone https://github.com/QUT-Motorsport/qutms_msgs.git
-echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
-export EUFS_MASTER=~/EUFS
+echo "export EUFS_MASTER=~/QUTMS" >> ~/.bashrc
+export EUFS_MASTER=~/QUTMS
+export QUTMS_WS=~/QUTMS
+
+## Install dependencies from src/
+rosdep install --from-paths ~/QUTMS --ignore-src -r -y
 
 echo ""
-echo "---Building EUFS packages---"
+echo "---Building packages---"
 echo ""
 sleep 3
-## Install dependencies from src/
-rosdep install --from-paths $EUFS_MASTER --ignore-src -r -y
-## Build EUFS sim
-colcon build
-
-echo ""
-echo "---Building Driverless packages---"
-echo ""
-sleep 3
-cd ~/QUTMS_Driverless
-## Install dependencies from src/
-rosdep install --from-paths src -y --ignore-src
-## Build initial driverless packages
-# colcon build --symlink-install --packages-up-to mission_controller terminal_control
+colcon build --symlink-install --packages-ignore 
 
 ## Pre commit for git
 echo ""

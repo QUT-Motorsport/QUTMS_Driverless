@@ -23,28 +23,30 @@ conda config --set auto_activate_base false
 conda deactivate
 rm -rf Mambaforge-$(uname)-$(uname -m).sh
 
+mkdir ~/QUTMS
+cd ~/QUTMS
+
+## Make directory for people to drop their rosbags in
+mkdir bags/
+
 ## Clone Driverless repo
 echo ""
 echo "---Cloning Driverless repo---"
 echo ""
 sleep 3
 git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
-cd ~/QUTMS_Driverless
-
-## Make directory for people to drop their rosbags in
-mkdir bags/
+cd QUTMS_Driverless
 
 ## Create driverless development environment
 echo ""
 echo "---Creating driverless env---"
 echo ""
 sleep 3
-cd ~/QUTMS_Driverless/installation
-mamba env create --name driverless_env --file humble_py310_dev_env.yml
+mamba env create --name driverless_env --file installation/humble_py310_dev_env.yml
 conda activate driverless_env
 conda config --env --add channels conda-forge
 conda config --env --add channels robostack-staging
-mamba install -y --file conda_requirements.txt
+mamba install -y --file installation/conda_requirements.txt
 
 ## Create an alias for ease
 echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
@@ -64,51 +66,25 @@ if [ $torch == "yes" ]; then
     sleep 7
 fi
 
-# ## Install FSDS
-# echo ""
-# echo "---Installing FSDS---"
-# echo ""
-# sleep 3
-# cd ~
-# git clone --recurse-submodules https://github.com/QUT-Motorsport/Formula-Student-Driverless-Simulator.git
-# cd ~/Formula-Student-Driverless-Simulator
-# AirSim/setup.sh
-
-# ## Build FSDS package
-# echo ""
-# echo "---Building FSDS packages---"
-# echo ""
-# sleep 3
-# cd ~/Formula-Student-Driverless-Simulator/ros2
-# colcon build
-
 ## Install EUFS
 echo ""
 echo "---Installing EUFS---"
 echo ""
 sleep 3
-mkdir ~/EUFS
-cd ~/EUFS
+cd ~/QUTMS
 git clone https://github.com/QUT-Motorsport/eufs_sim.git
 git clone https://gitlab.com/eufs/eufs_msgs.git
 git clone https://github.com/QUT-Motorsport/eufs_rviz_plugins.git
 git clone https://github.com/QUT-Motorsport/qutms_msgs.git
-echo "export EUFS_MASTER=~/EUFS" >> ~/.bashrc
-export EUFS_MASTER=~/EUFS
-
-echo ""
-echo "---Building EUFS packages---"
-echo ""
-sleep 3
-## Build EUFS sim
-colcon build
+echo "export EUFS_MASTER=~/QUTMS" >> ~/.bashrc
+export EUFS_MASTER=~/QUTMS
+export QUTMS_WS=~/QUTMS
 
 ## Build initial driverless packages
 echo ""
 echo "---Building Driverless packages---"
 echo ""
 sleep 3
-cd ~/QUTMS_Driverless
 # colcon build --symlink-install --packages-up-to sim_translators mission_controller remote_control keyboard_control
 
 ## Pre commit for git
