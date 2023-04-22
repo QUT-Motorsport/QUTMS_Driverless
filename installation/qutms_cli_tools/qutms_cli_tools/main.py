@@ -7,31 +7,6 @@ import colorama
 import yaml
 
 
-def test_pwd(pwd):
-    """
-    Test if password is correct
-    """
-    test = subprocess.Popen(
-        ["sudo", "-vkS"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    test.communicate(input=bytes(pwd, "utf-8"))
-    test.wait()
-    return test.returncode == 0
-
-
-def get_pwd():
-    """
-    Password handling for sudo ops
-    """
-    pwd = getpass("Enter password: ")
-    while not test_pwd(pwd):
-        pwd = getpass("\nEnter password: ")
-    return pwd
-
-
 def build_workspace():
     """
     Colcon build packages in workspace
