@@ -49,7 +49,7 @@ source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_eufs_sim.sh
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_pre-commit.sh
 
 ## Check if user wants to install WSL version of GitKraken
-source ~/QUTMS/QUTMS_Driverless/installation/install_gitkraken.sh
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_gitkraken.sh
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
