@@ -36,13 +36,13 @@ echo ""
 echo "---Installing driverless package requirements---"
 echo ""
 sleep 3
-pip install -r installation/requirements.txt
+pip install -r ~/QUTMS/QUTMS_Driverless/installation/requirements.txt
 
 ## Create an alias for ease
 echo "alias a='source install/setup.bash'" >> ~/.bashrc
 
 ## Check if user is going to work with vision
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_cuda.sh
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_pip.sh
 
 ## Source ROS
 source /opt/ros/humble/setup.bash
@@ -53,17 +53,19 @@ source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_eufs_sim.sh
 ## Install dependencies from src/
 rosdep install --from-paths ~/QUTMS --ignore-src -r -y
 
-# echo ""
-# echo "---Building packages---"
-# echo ""
-# sleep 3
-# colcon build --symlink-install
-
 ## Pre commit for git
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_pre-commit.sh
 
 ## Check if user wants to install WSL version of GitKraken
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_gitkraken.sh
+
+echo ""
+echo "---Building packages---"
+echo ""
+sleep 3
+colcon build --symlink-install --packages-up-to qutms_cli_tools
+# once the cli tools are built, we can use them to build the rest of the workspace
+build_workspace
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"

@@ -34,22 +34,24 @@ source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_conda_env.sh
 echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
 
 ## Check if user is going to work with vision
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_cuda.sh
+source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_conda.sh
 
 ## Install EUFS
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_eufs_sim.sh
-
-# echo ""
-# echo "---Building packages---"
-# echo ""
-# sleep 3
-# colcon build --symlink-install
 
 ## Pre commit for git
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_pre-commit.sh
 
 ## Check if user wants to install WSL version of GitKraken
 source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_gitkraken.sh
+
+echo ""
+echo "---Building packages---"
+echo ""
+sleep 3
+colcon build --symlink-install --packages-up-to qutms_cli_tools
+# once the cli tools are built, we can use them to build the rest of the workspace
+build_workspace
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
