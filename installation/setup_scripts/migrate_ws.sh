@@ -17,7 +17,7 @@ cp -r ~/EUFS/eufs_rviz_plugins ~/QUTMS/eufs_rviz_plugins
 
 rcFile="~/.bashrc"
 # export variable to delete
-prop="EUFS_MASTER"   
+prop="EUFS_MASTER"
 if grep -q "^export $prop=" "$rcFile"; then
   sed -i "/^export $prop=.*$/d" "$rcFile" &&
   echo "[deleted] export $prop"
