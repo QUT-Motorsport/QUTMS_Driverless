@@ -19,24 +19,23 @@
 - [ ] Bug Fix
 - [ ] Optimisation
 
-## Description
+## [required] Description
 
 _Brief overview of added/changed software._
 
-## Documentation
+## [required] Documentation
 
 _If your PR adds new or changes functionality, please update the relevant docs or
 add a new page in the relevant section in our doc library._
 
-### Usability concerns or breaking changes?
+### [optional] Usability concerns or breaking changes?
 
 _If your PR includes significant changes to software that other packages or other
-developers may be using._
+developers may be using, explain how developers will have to change their workspace._
 
-## Instructions, Screenshots, Recordings
+## Screenshots
 
-_Please replace this line with instructions on how to your changes are used,
-a note on the platforms this has been tested on, as well as any screenshots
-if this would be informative._
+_Include any screenshots of file structure or code output if this would be
+informative._
 
 ## [optional] Are there any post deployment tasks we need to perform?
