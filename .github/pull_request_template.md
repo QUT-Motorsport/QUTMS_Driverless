@@ -33,9 +33,7 @@ add a new page in the relevant section in our doc library._
 _If your PR includes significant changes to software that other packages or other
 developers may be using, explain how developers will have to change their workspace._
 
-## Screenshots
+### [optional] Screenshots
 
 _Include any screenshots of file structure or code output if this would be
 informative._
-
-## [optional] Are there any post deployment tasks we need to perform?
