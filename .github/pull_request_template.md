@@ -19,38 +19,21 @@
 - [ ] Bug Fix
 - [ ] Optimisation
 
-## Description
+## [required] Description
 
-## Related Tickets & Documents
+_Brief overview of added/changed software._
 
-<!--
-For pull requests that relate or close an issue, please include them
-below.  We like to follow [Github's guidance on linking issues to pull requests](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).
+## [required] Documentation
 
-For example having the text: "closes #1234" would connect the current pull
-request to issue 1234.  And when we merge the pull request, Github will
-automatically close the issue.
--->
+_If your PR adds new or changes functionality, please update the relevant docs or
+add a new page in the relevant section in our doc library._
 
-- Related Issue #
-- Closes #
-
-### Usability concerns or breaking changes?
+### [optional] Usability concerns or breaking changes?
 
 _If your PR includes significant changes to software that other packages or other
-developers may be using._
+developers may be using, explain how developers will have to change their workspace._
 
-## QA Instructions, Screenshots, Recordings
+### [optional] Screenshots
 
-_Please replace this line with instructions on how to your changes are used,
-a note on the platforms this has been tested on, as well as any screenshots
-if this would be informative._
-
-## Added/updated tests?
-
-- [ ] Yes
-- [ ] No, and this is why: _please replace this line with details on why tests
-      have not been included_
-- [ ] I need help with writing tests
-
-## [optional] Are there any post deployment tasks we need to perform?
+_Include any screenshots of file structure or code output if this would be
+informative._
