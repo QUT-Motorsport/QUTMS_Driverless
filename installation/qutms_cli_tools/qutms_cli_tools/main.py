@@ -25,9 +25,7 @@ def build_workspace():
 
     ws_path = os.environ["QUTMS_WS"]
 
-    colcon_ignore_path = os.path.join(
-        ws_path, "QUTMS_Driverless", "installation", "colcon_ignore.yaml"
-    )
+    colcon_ignore_path = os.path.join(ws_path, "QUTMS_Driverless", "installation", "colcon_ignore.yaml")
 
     # Read yaml file with eufs repository paths
     with open(colcon_ignore_path, "r") as f:
