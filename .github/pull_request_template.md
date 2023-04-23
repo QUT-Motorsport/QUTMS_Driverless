@@ -21,6 +21,8 @@
 
 ## Description
 
+_Brief overview of added/changed software._
+
 ## Related Tickets & Documents
 
 <!--
@@ -40,17 +42,10 @@ automatically close the issue.
 _If your PR includes significant changes to software that other packages or other
 developers may be using._
 
-## QA Instructions, Screenshots, Recordings
+## Instructions, Screenshots, Recordings
 
 _Please replace this line with instructions on how to your changes are used,
 a note on the platforms this has been tested on, as well as any screenshots
 if this would be informative._
-
-## Added/updated tests?
-
-- [ ] Yes
-- [ ] No, and this is why: _please replace this line with details on why tests
-      have not been included_
-- [ ] I need help with writing tests
 
 ## [optional] Are there any post deployment tasks we need to perform?
