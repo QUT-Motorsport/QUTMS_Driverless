@@ -1,6 +1,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+#include <algorithm>
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <iterator>
@@ -98,13 +99,12 @@ class EKFSLAMNode : public rclcpp::Node {
             return;
         }
 
+        std::transform(detection_msg->cones_with_cov.cbegin(), detection_msg->cones_with_cov.cend(),
+                       std::back_inserter(detection_msg->cones),
+                       [](const driverless_msgs::msg::ConeWithCovariance& c) { return c.cone; });
+
         ekf_slam.predict(forward_vel, rotational_vel, dt);
-        // ekf_slam.update(
-        //     detection_msg->cones_with_cov,
-        //     debug_1_pub,
-        //     debug_2_pub,
-        //     matrix_pub
-        // );
+        ekf_slam.update(detection_msg->cones, debug_1_pub, debug_2_pub, matrix_pub, this->get_logger());
 
         last_update = stamp;
 

@@ -47,7 +47,7 @@ class EKFslam {
     // R = ( σ_forward_vel^2 0                )
     //     ( 0               rotational_vel^2 )
     const Eigen::Matrix2d R = (
-        Eigen::Matrix2d() << pow(1, 2), 0,
+        Eigen::Matrix2d() << pow(0.1, 2), 0,
                              0,           pow(0.01, 2)
     ).finished();
 
@@ -65,10 +65,11 @@ class EKFslam {
 
     void predict(double forward_vel, double rotational_vel, double dt,
                  std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub = {});
-    void update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones,
+    void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
                 std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub = {},
                 std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub = {},
-                std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub = {});
+                std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub = {},
+                std::optional<const rclcpp::Logger> logger = {});
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
     const Eigen::MatrixXd& get_pred_cov() { return pred_cov; };

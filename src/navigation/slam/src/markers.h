@@ -31,7 +31,7 @@ visualization_msgs::msg::Marker car_marker(builtin_interfaces::msg::Time stamp, 
     marker.color.r = 1.0f;
     marker.color.g = 0.0f;
     marker.color.b = 0.0f;
-    marker.color.a = 1.0;
+    marker.color.a = 0.5;
 
     return marker;
 }
@@ -76,8 +76,8 @@ visualization_msgs::msg::Marker cov_marker(builtin_interfaces::msg::Time stamp, 
     marker.pose.position.x = x;
     marker.pose.position.y = y;
     marker.pose.position.z = 0;
-    marker.scale.x = 3 * sqrt(abs(cov_x));
-    marker.scale.y = 3 * sqrt(abs(cov_y));
+    marker.scale.x = sqrt(cov_x);
+    marker.scale.y = sqrt(cov_y);
     marker.scale.z = 0.05;
     marker.color.r = 0.1;
     marker.color.g = 0.1;

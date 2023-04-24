@@ -103,9 +103,11 @@ int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_
     Eigen::Matrix<double, 2, 3> covLmState = jGx * cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE);
     Eigen::Matrix<double, 2, 2> covLmLm = covLmState * jGx.transpose() + jGz * Q * jGz.transpose();
 
-    cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
-    cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
-    cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmLm;
+    // cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
+    // cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
+    // cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmLm;
+    cov(new_lm_idx, new_lm_idx) = 0.1;
+    cov(new_lm_idx + 1, new_lm_idx + 1) = 0.1;
 
     return new_lm_idx;
 }
@@ -143,6 +145,48 @@ void compute_expected_z(const Eigen::MatrixXd& mu, int landmark_idx, Eigen::Matr
     jH_out = (1 / q) * jH_out;
 }
 
+void test_and_clamp_variances(Eigen::MatrixXd& cov, std::optional<const rclcpp::Logger> logger = {}) {
+    if (logger) {
+        Eigen::MatrixXd diff = cov - cov.transpose();
+        if (diff.maxCoeff() > 0.01) {
+            RCLCPP_WARN(*logger, "Covariance not symmetric.");
+            std::cout << cov - cov.transpose() << std::endl;
+        }
+    }
+
+    for (int i = 0; i < cov.rows(); i++) {
+        if (cov(i, i) < 0) {
+            // cov(i, i) = 0;
+            if (logger) {
+                RCLCPP_WARN(*logger, "Variance pos %d less than 0.", i);
+            }
+        }
+    }
+}
+
+void test_k_gain(const Eigen::MatrixXd& K, const Eigen::Matrix<double, 2, -1>& jH,
+                 std::optional<const rclcpp::Logger> logger = {}) {
+    if (logger) {
+        for (int r = 0; r < K.rows(); r++) {
+            for (int c = 0; c < K.cols(); c++) {
+                if (K(r, c) < 0) {
+                    RCLCPP_WARN(*logger, "Negative K gain (%lf) r: %d, c: %d", K(r, c), r, c);
+                }
+            }
+        }
+    }
+}
+
+bool is_positive_semi_definitite(const Eigen::MatrixXd& a) {
+    Eigen::VectorXcd eivals = a.eigenvalues();
+    for (const auto& v : eivals) {
+        if (v.real() < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 EKFslam::EKFslam() {
     // initalise state and convariance with just the car state
     // (landmarks will be added when they are detected)
@@ -150,15 +194,16 @@ EKFslam::EKFslam() {
     pred_cov = Eigen::MatrixXd::Zero(CAR_STATE_SIZE, CAR_STATE_SIZE);
     // pred_cov = 0.5*Eigen::MatrixXd::Identity(CAR_STATE_SIZE, CAR_STATE_SIZE);
     // pred_mu(2, 0) = -M_PI_2;
-    pred_cov(0, 0) = 0.5;
-    pred_cov(1, 1) = 0.5;
-    pred_cov(2, 2) = 0.01;
+    // pred_cov(0, 0) = 0.5;
+    // pred_cov(1, 1) = 0.5;
+    // pred_cov(2, 2) = 0.01;
     mu = pred_mu;
     cov = pred_cov;
 }
 
 void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
                       std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub) {
+    bool pre = is_positive_semi_definitite(pred_cov);
     double x, y, theta;
     get_state_from_mu(this->pred_mu, x, y, theta);
 
@@ -180,14 +225,21 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
            0,             dt;
     // clang-format on
 
-    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
-        jFx * this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() +
-        jFu * R * jFu.transpose();
+    // if(!is_positive_semi_definitite(jFu * R * jFu.transpose())) {
+    //     std::cout << "jFu DED " << theta << std::endl;
+    // }
 
-    std::cout << pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) << "\n" << std::endl;
+    Eigen::Matrix<double, 3, 3> test;
+    test << 0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.0001;
 
     // this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
-    //     jFx * this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose();
+    //     jFx * this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() +
+    //     jFu * R * jFu.transpose();
+
+    // std::cout << pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) << "\n" << std::endl;
+
+    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
+        jFx * this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + test;
 
     mu = pred_mu;
     cov = pred_cov;
@@ -201,15 +253,19 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
     //         }
     //         matrix_pub.value()->publish(matrix);
     //     }
+    bool post = is_positive_semi_definitite(pred_cov);
+    if (!pre || !post) {
+        std::cout << "Pre: " << pre << std::endl;
+        std::cout << "Post: " << post << std::endl;
+    }
 }
 
-void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>& detected_cones,
+void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
                      std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub,
                      std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub,
-                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub) {
-    for (auto const& cov_cone : detected_cones) {
-        auto cone = cov_cone.cone;
-
+                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub,
+                     std::optional<const rclcpp::Logger> logger) {
+    for (auto const& cone : detected_cones) {
         double x, y, theta;
         get_state_from_mu(pred_mu, x, y, theta);
 
@@ -244,10 +300,23 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
 
         Eigen::MatrixXd K = pred_cov * jH.transpose() * ((jH * pred_cov * jH.transpose() + Q).inverse());
 
+        // test_k_gain(K, jH, logger);
+        if (logger) {
+            // RCLCPP_INFO(*logger, "---");
+            // RCLCPP_INFO(*logger, "X variance: %e", cov(0, 0));
+            // RCLCPP_INFO(*logger, "Y variance: %e", cov(1, 1));
+            // RCLCPP_INFO(*logger, "---");
+            // RCLCPP_INFO(*logger, "Heading variance: %e", cov(2, 2));
+            // Eigen::MatrixXd temp = -1 * K * jH * pred_cov;
+            // RCLCPP_INFO(*logger, "X adj: %e", temp(0, 0));
+            // RCLCPP_INFO(*logger, "Y adj: %e", temp(1, 1));
+            // RCLCPP_INFO(*logger, "Heading adj: %e", temp(2, 2));
+        }
+
         if (debug_1_pub.has_value()) {
             driverless_msgs::msg::DebugMsg debug_1;
             auto col_0 = K.col(0);
-            for (size_t i = 0; i < col_0.size(); i++) {
+            for (int i = 0; i < col_0.size(); i++) {
                 debug_1.values.push_back(col_0(i));
             }
             debug_1_pub.value()->publish(debug_1);
@@ -256,7 +325,7 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
         if (debug_2_pub.has_value()) {
             driverless_msgs::msg::DebugMsg debug_2;
             auto col_1 = K.col(1);
-            for (size_t i = 0; i < col_1.size(); i++) {
+            for (int i = 0; i < col_1.size(); i++) {
                 debug_2.values.push_back(col_1(i));
             }
             debug_2_pub.value()->publish(debug_2);
@@ -264,16 +333,16 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
 
         if (matrix_pub.has_value()) {
             driverless_msgs::msg::DoubleMatrix matrix;
-            matrix.rows = CAR_STATE_SIZE;
-            matrix.columns = CAR_STATE_SIZE;
-            for (auto x : pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE).reshaped<Eigen::RowMajor>()) {
-                matrix.values.push_back(x);
-            }
-            // matrix.rows = pred_cov.rows();
-            // matrix.columns = pred_cov.cols();
-            // for (auto x : pred_cov.reshaped<Eigen::RowMajor>()) {
+            // matrix.rows = CAR_STATE_SIZE;
+            // matrix.columns = CAR_STATE_SIZE;
+            // for (auto x : pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE).reshaped<Eigen::RowMajor>()) {
             //     matrix.values.push_back(x);
             // }
+            matrix.rows = pred_cov.rows();
+            matrix.columns = pred_cov.cols();
+            for (auto x : pred_cov.reshaped<Eigen::RowMajor>()) {
+                matrix.values.push_back(x);
+            }
             matrix_pub.value()->publish(matrix);
         }
 
@@ -283,8 +352,11 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::ConeWithCovariance>
         pred_mu = pred_mu + K * z_diff;
         pred_mu(2, 0) = wrap_pi(pred_mu(2, 0));
 
-        pred_cov = (Eigen::MatrixXd::Identity(K.rows(), jH.cols()) - K * jH) * pred_cov;
-        std::cout << pred_cov(1, 1) << " (update)" << std::endl;
+        // pred_cov = (Eigen::MatrixXd::Identity(K.rows(), jH.cols()) - K * jH) * pred_cov;
+        Eigen::MatrixXd I = Eigen::MatrixXd::Identity(K.rows(), jH.cols());
+        pred_cov = (I - K * jH) * pred_cov * (I - K * jH).transpose() + K * Q * K.transpose();
+        // std::cout << pred_cov(1, 1) << " (update)" << std::endl;
+        // test_and_clamp_variances(pred_cov, logger);
     }
 
     mu = pred_mu;
