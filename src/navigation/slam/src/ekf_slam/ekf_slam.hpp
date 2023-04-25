@@ -47,8 +47,8 @@ class EKFslam {
     // R = ( σ_forward_vel^2 0                )
     //     ( 0               rotational_vel^2 )
     const Eigen::Matrix2d R = (
-        Eigen::Matrix2d() << pow(0.1, 2), 0,
-                             0,           pow(0.01, 2)
+        Eigen::Matrix2d() << pow(2, 2), 0,
+                             0,           pow(0.1, 2)
     ).finished();
 
     // Observation model uncertanty
