@@ -76,12 +76,8 @@ def build():
         command = command_prefix + ["--packages-up-to", "eufs_launcher"]
 
     elif args.all:
-        print(
-            Y, "Ignoring packages: ", colcon_ignores["colcon_ignore"], RESET, flush=True
-        )
-        command = (
-            command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
-        )
+        print(Y, "Ignoring packages: ", colcon_ignores["colcon_ignore"], RESET, flush=True)
+        command = command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
 
     else:
         print(
