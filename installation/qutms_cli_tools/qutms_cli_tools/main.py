@@ -47,14 +47,17 @@ def build():
     )
     parser.add_argument("--sim", action="store_true", help="Build the sim only")
     parser.add_argument(
-        "--all", help="Build all packages outside of ignore", action="store_true"
+        "--all", help="Build all packages not in ignore", action="store_true"
     )
 
     args = parser.parse_args()
 
     ws_path = os.path.expanduser(os.environ["QUTMS_WS"])
     colcon_ignore_path = os.path.join(
-        ws_path, "QUTMS_Driverless", "installation", "colcon_ignore.yaml"
+        ws_path,
+        "QUTMS_Driverless",
+        "installation",
+        "colcon_ignore.yaml",
     )
 
     # Read yaml file with eufs repository paths
