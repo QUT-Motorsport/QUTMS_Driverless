@@ -119,7 +119,14 @@ def launch():
 
     print(G, "Launching...", RESET, flush=True)
     process = subprocess.Popen(command, text=True)
-    process.wait()
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        try:
+            process.terminate()
+        except OSError:
+            pass
+        process.wait()
 
 
 def pull():
