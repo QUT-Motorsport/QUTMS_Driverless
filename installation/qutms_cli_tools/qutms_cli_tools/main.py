@@ -47,7 +47,9 @@ def build():
     )
     parser.add_argument("--sim", action="store_true", help="Build the sim only")
     parser.add_argument(
-        "--all", help="Build all packages not in ignore", action="store_true"
+        "--all",
+        help="Build all packages not in ignore",
+        action="store_true",
     )
 
     args = parser.parse_args()
