@@ -75,10 +75,10 @@ class ConeInterpolator(Node):
         numPoints_divisions = self.numPoints_interpolated + 1
 
         # Get length of ordered_cones list for pair wise traversal (-1)
-        ordered_cones_length = range(ordered_cones) - 1
+        ordered_cones_length = len(ordered_cones) - 1
 
         # Interpolate cones between pairs of cones along a straight line
-        for cone in ordered_cones_length:
+        for cone in range(ordered_cones_length):
             # print(ordered_cones[cone].location.x)
             # print(ordered_cones[cone + 1].location.x)
 
@@ -87,8 +87,8 @@ class ConeInterpolator(Node):
                 continue
 
             # get distance between two ordered cones
-            firstCone_XY = ordered_cones[cone][0][0:1]
-            secondCone_XY = ordered_cones[cone + 1][0][0:1]
+            firstCone_XY = ordered_cones[cone].location.x, ordered_cones[cone].location.y
+            secondCone_XY = ordered_cones[cone + 1].location.x, ordered_cones[cone + 1].location.y
             # print(str(firstCone_XY))
             # print(str(secondCone_XY))
             conePair_dist = dist(firstCone_XY, secondCone_XY)
@@ -103,15 +103,16 @@ class ConeInterpolator(Node):
             iCone_locations = []
             cone_of_origin = firstCone_XY
             for iCone in range(self.numPoints_interpolated):
-                iCone_locations[iCone] = new_coordinates(
+                iCone_coords = new_coordinates(
                     cone_of_origin[0], cone_of_origin[1], conePair_radians, interpolation_subDist
                 )
+                iCone_locations.append(iCone_coords)
 
                 cone_of_origin = iCone_locations[iCone]
 
             # create list of interpolated cones with interpolated locations
             interpolated_cones = []
-            for iCone in range(iCone_locations):
+            for iCone in range(len(iCone_locations)):
                 # create new cone
                 interpolatedCone = Cone()
                 interpolatedCone.location = iCone_locations[iCone]
