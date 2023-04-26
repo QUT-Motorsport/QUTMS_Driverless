@@ -58,7 +58,7 @@ class ConeInterpolator(Node):
         self.create_subscription(ConeDetectionStamped, "/planner/ordered_map", self.map_callback, 10)
 
         # Publishers:
-        # publish list of original and interpolated cones
+        # publish list of ordered original and interpolated cones
         self.interpolatedCones_publisher: Publisher = self.create_publisher(
             ConeDetectionStamped, "/planner/interpolated_map", 10
         )
