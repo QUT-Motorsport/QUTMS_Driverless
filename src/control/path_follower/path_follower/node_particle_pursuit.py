@@ -177,7 +177,7 @@ class ParticlePursuit(Node):
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
 
         # sub to track for all cone locations relative to car start point, used for boundary danger calculations
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.track_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/planner/interpolated_map", self.track_callback, 10)
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
 
         # sync subscribers pose + velocity
