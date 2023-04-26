@@ -74,8 +74,11 @@ class ConeInterpolator(Node):
         # increment numPoints_interpolated for divisions (n points = n + 1 divisions)
         numPoints_divisions = self.numPoints_interpolated + 1
 
+        # Get length of ordered_cones list for pair wise traversal (-1)
+        ordered_cones_length = range(ordered_cones) - 1
+
         # Interpolate cones between pairs of cones along a straight line
-        for cone in range(ordered_cones):
+        for cone in ordered_cones_length:
             # print(ordered_cones[cone].location.x)
             # print(ordered_cones[cone + 1].location.x)
 
@@ -121,6 +124,10 @@ class ConeInterpolator(Node):
             # add list of interpolated cones to list of all ordered cones
             insert_index = cone + 1
             ordered_cones[insert_index:insert_index] = interpolated_cones
+
+        # Publish list of ordered and interpolated cones
+        interpolatedCones_msg = ConeDetectionStamped(cones=ordered_cones)
+        self.interpolatedCones_publisher.publish(interpolatedCones_msg)
 
 
 def main(args=None):
