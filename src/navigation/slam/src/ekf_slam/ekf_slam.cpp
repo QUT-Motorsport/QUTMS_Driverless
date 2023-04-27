@@ -10,6 +10,15 @@ bool is_positive_semi_definitite(const Eigen::MatrixXd& A) {
     return true;
 }
 
+bool is_symmetric(const Eigen::MatrixXd& A) {
+    double diff = (A - A.transpose()).maxCoeff();
+    if (abs(diff) > 1e-15) {
+        // std::cout << diff << std::endl;
+        return false;
+    }
+    return true;
+}
+
 void get_state_from_mu(const Eigen::MatrixXd& mu, double& x, double& y, double& theta) {
     x = mu(0, 0);
     y = mu(1, 0);
@@ -95,8 +104,16 @@ Eigen::MatrixXd nearest_psd(Eigen::MatrixXd A) {
     return Z;
 }
 
+// Eigen::MatrixXd nearest_cov_psd(Eigen::MatrixXd A) {
+//     // https://github.com/statsmodels/statsmodels/blob/main/statsmodels/stats/correlation_tools.py#L155
+//     // https://github.com/statsmodels/statsmodels/blob/main/statsmodels/stats/correlation_tools.py#L28
+//     // Nearest psd preserving diagonal variance
+// }
+
 int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_map_x, double lm_map_y, double lm_range,
                            double lm_bearing, const Eigen::Matrix2d& Q) {
+    bool pre_sym = is_symmetric(cov);
+    bool pre_psd = is_positive_semi_definitite(cov);
     mu.conservativeResize(mu.rows() + LANDMARK_STATE_SIZE, Eigen::NoChange);
     cov.conservativeResize(cov.rows() + LANDMARK_STATE_SIZE, cov.cols() + LANDMARK_STATE_SIZE);
 
@@ -128,7 +145,21 @@ int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_
     cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
     cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
     cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmLm;
-    cov = nearest_psd(cov);
+
+    bool post_sym = is_symmetric(cov);
+    bool post_psd = is_positive_semi_definitite(cov);
+
+    if (!post_sym || !post_sym) {
+        std::cout << "LM Pre Sym: " << post_sym << std::endl;
+        std::cout << "LM Post Sym: " << post_sym << std::endl;
+        std::cout << "LM Not symmetric" << std::endl;
+    }
+
+    if (!pre_psd || !post_psd) {
+        std::cout << "LM Pre PSD: " << pre_psd << std::endl;
+        std::cout << "LM Post PSD: " << post_psd << std::endl;
+        std::cout << "LM Not PSD" << std::endl;
+    }
 
     return new_lm_idx;
 }
@@ -166,38 +197,6 @@ void compute_expected_z(const Eigen::MatrixXd& mu, int landmark_idx, Eigen::Matr
     jH_out = (1 / q) * jH_out;
 }
 
-void test_and_clamp_variances(Eigen::MatrixXd& cov, std::optional<const rclcpp::Logger> logger = {}) {
-    if (logger) {
-        Eigen::MatrixXd diff = cov - cov.transpose();
-        if (diff.maxCoeff() > 0.01) {
-            RCLCPP_WARN(*logger, "Covariance not symmetric.");
-            std::cout << cov - cov.transpose() << std::endl;
-        }
-    }
-
-    for (int i = 0; i < cov.rows(); i++) {
-        if (cov(i, i) < 0) {
-            // cov(i, i) = 0;
-            if (logger) {
-                RCLCPP_WARN(*logger, "Variance pos %d less than 0.", i);
-            }
-        }
-    }
-}
-
-void test_k_gain(const Eigen::MatrixXd& K, const Eigen::Matrix<double, 2, -1>& jH,
-                 std::optional<const rclcpp::Logger> logger = {}) {
-    if (logger) {
-        for (int r = 0; r < K.rows(); r++) {
-            for (int c = 0; c < K.cols(); c++) {
-                if (K(r, c) < 0) {
-                    RCLCPP_WARN(*logger, "Negative K gain (%lf) r: %d, c: %d", K(r, c), r, c);
-                }
-            }
-        }
-    }
-}
-
 EKFslam::EKFslam() {
     // initalise state and convariance with just the car state
     // (landmarks will be added when they are detected)
@@ -209,7 +208,8 @@ EKFslam::EKFslam() {
 
 void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
                       std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub) {
-    bool pre = is_positive_semi_definitite(pred_cov);
+    bool pre_sym = is_symmetric(pred_cov);
+    bool pre_psd = is_positive_semi_definitite(pred_cov);
     double x, y, theta;
     get_state_from_mu(this->pred_mu, x, y, theta);
 
@@ -235,17 +235,26 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
     // uncertanty = jFu * R * jFu.transpose();
     uncertanty << 0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.001;
 
-    uncertanty = nearest_psd(uncertanty);
-
-    this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
-        jFx * this->pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
-
-    if (!is_positive_semi_definitite(pred_cov)) {
-        std::cout << "Cov non-PSD" << std::endl;
-    }
+    pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
+        jFx * pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
 
     mu = pred_mu;
     cov = pred_cov;
+
+    bool post_sym = is_symmetric(pred_cov);
+    bool post_psd = is_positive_semi_definitite(pred_cov);
+
+    // if (!post_sym || !post_sym) {
+    //     std::cout << "Pre Sym: " << post_sym << std::endl;
+    //     std::cout << "Post Sym: " << post_sym << std::endl;
+    //     std::cout << "Not symmetric" << std::endl;
+    // }
+
+    // if (!pre_psd || !post_psd) {
+    //     std::cout << "Pre PSD: " << pre_psd << std::endl;
+    //     std::cout << "Post PSD: " << post_psd << std::endl;
+    //     std::cout << "Not PSD" << std::endl;
+    // }
 }
 
 void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
@@ -295,8 +304,13 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         pred_mu(2, 0) = wrap_pi(pred_mu(2, 0));
 
         // Joseph stabilized version of covariance update
+        // if (!is_positive_semi_definitite(pred_cov)) {
+        //     std::cout << "Cov non-PSD" << std::endl;
+        //     pred_cov = nearest_psd(pred_cov);
+        // }
         Eigen::MatrixXd I = Eigen::MatrixXd::Identity(K.rows(), jH.cols());
         pred_cov = (I - K * jH) * pred_cov * (I - K * jH).transpose() + K * Q * K.transpose();
+        pred_cov = 0.5 * (pred_cov + pred_cov.transpose());
     }
 
     mu = pred_mu;
