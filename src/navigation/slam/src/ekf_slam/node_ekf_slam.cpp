@@ -81,8 +81,6 @@ class EKFSLAMNode : public rclcpp::Node {
         ekf_slam.predict(forward_vel, rotational_vel, dt);
 
         last_update = stamp;
-
-        publish_visualisations(stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
