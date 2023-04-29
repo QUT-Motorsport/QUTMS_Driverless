@@ -42,13 +42,11 @@ class EKFslam {
     Eigen::MatrixXd mu;   // final state (mean, μ)
     Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
-    Eigen::Matrix3d motion_uncertanty(double dt, double rotational_vel) {
-        Eigen::Matrix3d uncertanty;
-        // clang-format off
-        uncertanty << 0.1*dt + 1*abs(rotational_vel)*dt, 0,                                 0,
-                      0,                                 0.1*dt + 1*abs(rotational_vel)*dt, 0,
-                      0,                                 0,                                 1*dt;
-        // clang-format on
+    Eigen::Matrix3d motion_uncertanty(double dt, double theta, double rotational_vel, double forward_vel) {
+        Eigen::Matrix3d uncertanty = Eigen::Matrix3d::Zero();
+        uncertanty(0, 0) = 0.005 * dt + 0.005 * abs(rotational_vel) * dt + 0.005 * abs(cos(theta) * forward_vel);
+        uncertanty(1, 1) = 0.005 * dt + 0.005 * abs(rotational_vel) * dt + 0.005 * abs(sin(theta) * forward_vel);
+        uncertanty(2, 2) = 0.005 * dt;
         return uncertanty;
     }
 
@@ -57,8 +55,8 @@ class EKFslam {
     // Q = ( σ_range^2  0         )
     //     ( 0      σ_bearing^2 )
     const Eigen::Matrix2d Q = (
-        Eigen::Matrix2d() << pow(0.9, 2), 0,
-                             0,            pow(0.1, 2)
+        Eigen::Matrix2d() << pow(1.5, 2), 0,
+                             0,            pow(0.5, 2)
     ).finished();
     // clang-format on
 

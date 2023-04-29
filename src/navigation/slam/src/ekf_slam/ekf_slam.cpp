@@ -208,7 +208,7 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
            0, 0, 1;
     // clang-format on
 
-    Eigen::Matrix3d uncertanty = motion_uncertanty(dt, rotational_vel);
+    Eigen::Matrix3d uncertanty = motion_uncertanty(dt, theta, rotational_vel, forward_vel);
     pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
         jFx * pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
 
