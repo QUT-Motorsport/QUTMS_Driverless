@@ -10,10 +10,10 @@ struct Colour {
 
 std::vector<Colour> cone_colours = {
     {0, 0, 1},        // blue
-    {1, 1, 0},        // yellow
+    {0.9, 0.9, 0.9},  // unknown
     {1, 0.64, 0},     // big orange
     {1, 0.64, 0},     // small orange
-    {0.9, 0.9, 0.9},  // unknown
+    {1, 1, 0},        // yellow
 };
 
 std::vector<Colour> colours = {
