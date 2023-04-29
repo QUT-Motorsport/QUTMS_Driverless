@@ -228,12 +228,19 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
         std::cout << "Post PSD: " << post_psd << std::endl;
         std::cout << "Not PSD" << std::endl;
     }
+
+    mu = pred_mu;
+    cov = pred_cov;
 }
 
 void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
                      std::optional<const rclcpp::Logger> logger) {
     for (auto const& cone : detected_cones) {
         if (cone.color == driverless_msgs::msg::Cone::ORANGE_BIG) {
+            continue;
+        }
+
+        if (sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2)) > 10) {
             continue;
         }
 

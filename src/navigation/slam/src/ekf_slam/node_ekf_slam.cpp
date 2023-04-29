@@ -54,7 +54,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "imu/velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "vision/cone_detection2", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "lidar/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("slam/markers", 10);
         pose_pub = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
@@ -66,9 +66,9 @@ class EKFSLAMNode : public rclcpp::Node {
     void predict(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
         rclcpp::Time stamp = msg->header.stamp;
 
-        // forward_vel = abs(msg->twist.linear.x) + abs(msg->twist.linear.y);
-        forward_vel = msg->twist.linear.x;
-        rotational_vel = msg->twist.angular.z;
+        forward_vel = abs(msg->twist.linear.x) + abs(msg->twist.linear.y) + abs(msg->twist.linear.z);
+        // forward_vel = msg->twist.linear.x;
+        rotational_vel = -msg->twist.angular.z;
 
         if (!last_update.has_value()) {
             last_update = stamp;
@@ -84,6 +84,7 @@ class EKFSLAMNode : public rclcpp::Node {
         ekf_slam.predict(forward_vel, rotational_vel, dt);
 
         last_update = stamp;
+        // publish_state(msg->header.stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
@@ -134,7 +135,6 @@ class EKFSLAMNode : public rclcpp::Node {
         pose_msg.pose.covariance[0 + 0 * 6] = ekf_slam.get_cov()(0, 0);
         pose_msg.pose.covariance[1 + 1 * 6] = ekf_slam.get_cov()(1, 1);
         pose_msg.pose.covariance[5 + 5 * 6] = ekf_slam.get_cov()(2, 2);
-        std::cout << ekf_slam.get_cov()(2, 2) << std::endl;
         pose_pub->publish(pose_msg);
 
         driverless_msgs::msg::ConeDetectionStamped cones_msg;
