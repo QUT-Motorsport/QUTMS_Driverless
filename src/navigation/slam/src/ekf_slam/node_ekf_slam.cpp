@@ -7,6 +7,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <vector>
 
 #include "../markers.h"
@@ -38,6 +39,8 @@ class EKFSLAMNode : public rclcpp::Node {
     double rotational_vel;
     std::optional<rclcpp::Time> last_update;
 
+    std::queue<geometry_msgs::msg::TwistStamped::SharedPtr> twist_queue;
+
     rclcpp::Subscription<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_sub;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
@@ -60,13 +63,15 @@ class EKFSLAMNode : public rclcpp::Node {
         matrix_pub = this->create_publisher<driverless_msgs::msg::DoubleMatrix>("matrix", 10);
     }
 
-    void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) { twist_queue.push(msg); }
+
+    void predict(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+        rclcpp::Time stamp = msg->header.stamp;
+
+        // forward_vel = abs(msg->twist.linear.x) + abs(msg->twist.linear.y);
         forward_vel = msg->twist.linear.x;
         rotational_vel = msg->twist.angular.z;
-        predict(msg->header.stamp);
-    }
 
-    void predict(rclcpp::Time stamp) {
         if (!last_update.has_value()) {
             last_update = stamp;
             return;
@@ -89,6 +94,11 @@ class EKFSLAMNode : public rclcpp::Node {
         if (!last_update.has_value()) {
             last_update = stamp;
             return;
+        }
+
+        while (!twist_queue.empty() && compute_dt(twist_queue.front()->header.stamp, stamp) >= 0) {
+            predict(twist_queue.front());
+            twist_queue.pop();
         }
 
         double dt = compute_dt(last_update.value(), stamp);
