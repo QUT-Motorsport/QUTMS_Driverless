@@ -63,12 +63,8 @@ class EKFslam {
    public:
     EKFslam();
 
-    void predict(double forward_vel, double rotational_vel, double dt,
-                 std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub = {});
+    void predict(double forward_vel, double rotational_vel, double dt);
     void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
-                std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub = {},
-                std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub = {},
-                std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub = {},
                 std::optional<const rclcpp::Logger> logger = {});
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };
@@ -79,5 +75,5 @@ class EKFslam {
     void get_state(double& x, double& y, double& theta) { get_state_from_mu(this->mu, x, y, theta); };
     void get_pred_state(double& x, double& y, double& theta) { get_state_from_mu(this->pred_mu, x, y, theta); };
 
-    std::vector<driverless_msgs::msg::Cone> get_cones();
+    std::vector<driverless_msgs::msg::ConeWithCovariance> get_cones();
 };

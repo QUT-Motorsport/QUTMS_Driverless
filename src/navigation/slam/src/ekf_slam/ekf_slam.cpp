@@ -188,8 +188,7 @@ EKFslam::EKFslam() {
     cov = pred_cov;
 }
 
-void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
-                      std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub) {
+void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
     bool pre_sym = is_symmetric(pred_cov);
     bool pre_psd = is_positive_semi_definitite(pred_cov);
     double x, y, theta;
@@ -232,9 +231,6 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
 }
 
 void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
-                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_1_pub,
-                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr> debug_2_pub,
-                     std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub,
                      std::optional<const rclcpp::Logger> logger) {
     for (auto const& cone : detected_cones) {
         if (cone.color == driverless_msgs::msg::Cone::ORANGE_BIG) {
@@ -323,15 +319,16 @@ std::optional<int> EKFslam::find_associated_cone_idx_from_sim_idx(int sim_index)
     return cone_sim_indexes.at(sim_index);
 }
 
-std::vector<driverless_msgs::msg::Cone> EKFslam::get_cones() {
-    std::vector<driverless_msgs::msg::Cone> cones;
+std::vector<driverless_msgs::msg::ConeWithCovariance> EKFslam::get_cones() {
+    std::vector<driverless_msgs::msg::ConeWithCovariance> cones;
     for (uint i = 0; i < this->cone_colours.size(); i++) {
         int lm_idx = cone_idx_to_landmark_idx(i);
-        driverless_msgs::msg::Cone cone;
-        cone.location.x = this->mu(lm_idx, 0);
-        cone.location.y = this->mu(lm_idx + 1, 0);
-        cone.location.z = 0;
-        cone.color = get_cone_colour(this->cone_colours[i]);
+        driverless_msgs::msg::ConeWithCovariance cone;
+        cone.cone.location.x = mu(lm_idx, 0);
+        cone.cone.location.y = mu(lm_idx + 1, 0);
+        cone.cone.location.z = 0;
+        cone.cone.color = get_cone_colour(this->cone_colours[i]);
+        cone.covariance = {cov(lm_idx, lm_idx), 0, 0, cov(lm_idx + 1, lm_idx + 1)};
         cones.push_back(cone);
     }
     return cones;

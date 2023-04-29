@@ -41,13 +41,12 @@ class EKFSLAMNode : public rclcpp::Node {
 
     std::queue<geometry_msgs::msg::TwistStamped::SharedPtr> twist_queue;
 
-    rclcpp::Subscription<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_sub;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
+
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
-    rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr debug_1_pub;
-    rclcpp::Publisher<driverless_msgs::msg::DebugMsg>::SharedPtr debug_2_pub;
-    rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr matrix_pub;
+    rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub;
+    rclcpp::Publisher<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr track_pub;
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
@@ -57,10 +56,9 @@ class EKFSLAMNode : public rclcpp::Node {
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
             "vision/cone_detection2", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
-        viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
-        debug_1_pub = this->create_publisher<driverless_msgs::msg::DebugMsg>("debug_1", 10);
-        debug_2_pub = this->create_publisher<driverless_msgs::msg::DebugMsg>("debug_2", 10);
-        matrix_pub = this->create_publisher<driverless_msgs::msg::DoubleMatrix>("matrix", 10);
+        viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("slam/markers", 10);
+        pose_pub = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
+        track_pub = this->create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);
     }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) { twist_queue.push(msg); }
@@ -112,11 +110,38 @@ class EKFSLAMNode : public rclcpp::Node {
                        [](const driverless_msgs::msg::ConeWithCovariance& c) { return c.cone; });
 
         ekf_slam.predict(forward_vel, rotational_vel, dt);
-        ekf_slam.update(detection_msg->cones, debug_1_pub, debug_2_pub, matrix_pub, this->get_logger());
+        ekf_slam.update(detection_msg->cones, this->get_logger());
 
         last_update = stamp;
+        publish_state(detection_msg->header.stamp);
+    }
 
-        publish_visualisations(detection_msg->header.stamp);
+    void publish_state(builtin_interfaces::msg::Time stamp) {
+        double x, y, theta;
+        ekf_slam.get_state(x, y, theta);
+        geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+        pose_msg.header.frame_id = "track";
+        pose_msg.header.stamp = stamp;
+        pose_msg.pose.pose.position.x = x;
+        pose_msg.pose.pose.position.y = y;
+        pose_msg.pose.pose.position.z = 0;
+        Eigen::Quaterniond q(Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ()));
+        auto coeffs = q.coeffs();
+        pose_msg.pose.pose.orientation.x = coeffs(0);
+        pose_msg.pose.pose.orientation.y = coeffs(1);
+        pose_msg.pose.pose.orientation.z = coeffs(2);
+        pose_msg.pose.pose.orientation.w = coeffs(3);
+        pose_msg.pose.covariance[0 + 0 * 6] = ekf_slam.get_cov()(0, 0);
+        pose_msg.pose.covariance[1 + 1 * 6] = ekf_slam.get_cov()(1, 1);
+        pose_msg.pose.covariance[5 + 5 * 6] = ekf_slam.get_cov()(2, 2);
+        std::cout << ekf_slam.get_cov()(2, 2) << std::endl;
+        pose_pub->publish(pose_msg);
+
+        driverless_msgs::msg::ConeDetectionStamped cones_msg;
+        cones_msg.header.frame_id = "track";
+        cones_msg.header.stamp = stamp;
+        cones_msg.cones_with_cov = ekf_slam.get_cones();
+        track_pub->publish(cones_msg);
     }
 
     void publish_visualisations(builtin_interfaces::msg::Time stamp) {
@@ -137,9 +162,9 @@ class EKFSLAMNode : public rclcpp::Node {
             double cov_x = ekf_slam.get_cov()(lm_idx, lm_idx);
             double cov_y = ekf_slam.get_cov()(lm_idx + 1, lm_idx + 1);
             marker_array.markers.push_back(
-                cone_marker(stamp, "cone_pos", i, cone.location.x, cone.location.y, cone.color));
+                cone_marker(stamp, "cone_pos", i, cone.cone.location.x, cone.cone.location.y, cone.cone.color));
             marker_array.markers.push_back(
-                cov_marker(stamp, "cone_cov", i, cone.location.x, cone.location.y, cov_x, cov_y));
+                cov_marker(stamp, "cone_cov", i, cone.cone.location.x, cone.cone.location.y, cov_x, cov_y));
         }
 
         this->viz_pub->publish(marker_array);
