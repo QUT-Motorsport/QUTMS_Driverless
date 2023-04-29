@@ -52,7 +52,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "imu/velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "vision/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "vision/cone_detection2", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("ekf_visualisation", 10);
         debug_1_pub = this->create_publisher<driverless_msgs::msg::DebugMsg>("debug_1", 10);
