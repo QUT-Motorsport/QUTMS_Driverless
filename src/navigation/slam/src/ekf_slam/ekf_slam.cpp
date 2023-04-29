@@ -237,6 +237,10 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
                      std::optional<rclcpp::Publisher<driverless_msgs::msg::DoubleMatrix>::SharedPtr> matrix_pub,
                      std::optional<const rclcpp::Logger> logger) {
     for (auto const& cone : detected_cones) {
+        if (cone.color == driverless_msgs::msg::Cone::ORANGE_BIG) {
+            continue;
+        }
+
         double x, y, theta;
         get_state_from_mu(pred_mu, x, y, theta);
 
@@ -248,8 +252,8 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         double lm_range = sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2));
         double lm_bearing = wrap_pi(atan2(cone.location.y, cone.location.x));
 
-        // std::optional<int> associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y);
-        std::optional<int> associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
+        std::optional<int> associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y);
+        // std::optional<int> associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
 
         if (!associated_idx.has_value()) {
             // new landmark
