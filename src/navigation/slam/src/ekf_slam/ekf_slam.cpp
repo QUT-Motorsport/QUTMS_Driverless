@@ -92,24 +92,6 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
     return idx;
 }
 
-Eigen::MatrixXd nearest_psd(Eigen::MatrixXd A) {
-    // https://scicomp.stackexchange.com/questions/30631/how-to-find-the-nearest-a-near-positive-definite-from-a-given-matrix
-    // https://stackoverflow.com/questions/61639182/find-the-nearest-postive-definte-matrix-with-eigen
-    const Eigen::MatrixXd Y = 0.5 * (A + A.transpose());
-    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(Y);
-    const Eigen::VectorXd D = solver.eigenvalues();
-    const Eigen::MatrixXd Q = solver.eigenvectors();
-    const Eigen::VectorXd Dplus = D.cwiseMax(0);
-    const Eigen::MatrixXd Z = Q * Dplus.asDiagonal() * Q.transpose();
-    return Z;
-}
-
-// Eigen::MatrixXd nearest_cov_psd(Eigen::MatrixXd A) {
-//     // https://github.com/statsmodels/statsmodels/blob/main/statsmodels/stats/correlation_tools.py#L155
-//     // https://github.com/statsmodels/statsmodels/blob/main/statsmodels/stats/correlation_tools.py#L28
-//     // Nearest psd preserving diagonal variance
-// }
-
 int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_map_x, double lm_map_y, double lm_range,
                            double lm_bearing, const Eigen::Matrix2d& Q) {
     bool pre_sym = is_symmetric(cov);
@@ -142,8 +124,8 @@ int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_
     Eigen::Matrix<double, 2, 3> covLmState = jGx * cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE);
     Eigen::Matrix<double, 2, 2> covLmLm = covLmState * jGx.transpose() + jGz * Q * jGz.transpose();
 
-    cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
-    cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
+    // cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
+    // cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
     cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmLm;
 
     bool post_sym = is_symmetric(cov);
@@ -224,17 +206,9 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
     jFx << 1, 0, -dt*forward_vel*sin(theta),
            0, 1, dt*forward_vel*cos(theta),
            0, 0, 1;
-
-    Eigen::Matrix<double, 3, 2> jFu;  // jacobian wrt input (odometry)
-    jFu << dt*cos(theta), 0,
-           dt*sin(theta), 0,
-           0,             dt;
     // clang-format on
 
-    Eigen::Matrix3d uncertanty;
-    // uncertanty = jFu * R * jFu.transpose();
-    uncertanty << 0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.001;
-
+    Eigen::Matrix3d uncertanty = motion_uncertanty(dt, rotational_vel);
     pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
         jFx * pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
 
@@ -244,17 +218,17 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt,
     bool post_sym = is_symmetric(pred_cov);
     bool post_psd = is_positive_semi_definitite(pred_cov);
 
-    // if (!post_sym || !post_sym) {
-    //     std::cout << "Pre Sym: " << post_sym << std::endl;
-    //     std::cout << "Post Sym: " << post_sym << std::endl;
-    //     std::cout << "Not symmetric" << std::endl;
-    // }
+    if (!post_sym || !post_sym) {
+        std::cout << "Pre Sym: " << post_sym << std::endl;
+        std::cout << "Post Sym: " << post_sym << std::endl;
+        std::cout << "Not symmetric" << std::endl;
+    }
 
-    // if (!pre_psd || !post_psd) {
-    //     std::cout << "Pre PSD: " << pre_psd << std::endl;
-    //     std::cout << "Post PSD: " << post_psd << std::endl;
-    //     std::cout << "Not PSD" << std::endl;
-    // }
+    if (!pre_psd || !post_psd) {
+        std::cout << "Pre PSD: " << pre_psd << std::endl;
+        std::cout << "Post PSD: " << post_psd << std::endl;
+        std::cout << "Not PSD" << std::endl;
+    }
 }
 
 void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
@@ -304,10 +278,6 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         pred_mu(2, 0) = wrap_pi(pred_mu(2, 0));
 
         // Joseph stabilized version of covariance update
-        // if (!is_positive_semi_definitite(pred_cov)) {
-        //     std::cout << "Cov non-PSD" << std::endl;
-        //     pred_cov = nearest_psd(pred_cov);
-        // }
         Eigen::MatrixXd I = Eigen::MatrixXd::Identity(K.rows(), jH.cols());
         pred_cov = (I - K * jH) * pred_cov * (I - K * jH).transpose() + K * Q * K.transpose();
         pred_cov = 0.5 * (pred_cov + pred_cov.transpose());
