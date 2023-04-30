@@ -345,7 +345,7 @@ def cone_filter(
         filtered_rec_centers = reconstructed_centers[f1_matching_ind]
     except IndexError:
         return np.empty((0, 3)), np.empty(0, dtype=object), np.empty(0)
-    
+
     try:
         filtered_rec_objects = reconstructed_objects[f1_matching_ind]
     except IndexError:
@@ -355,7 +355,7 @@ def cone_filter(
         filtered_avg_intensity = avg_object_intensity[f1_matching_ind]
     except IndexError:
         return np.empty((0, 3)), np.empty(0, dtype=object), np.empty(0)
-    
+
     # Filter 2: How many points do we expect to be on a cone at a given distance?
     rec_norms = np.linalg.norm(filtered_rec_centers[:, :2], axis=1)
     rec_point_counts = np.array([len(rec) for rec in filtered_rec_objects])
