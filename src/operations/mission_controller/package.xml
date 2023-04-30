@@ -10,9 +10,9 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <!-- Custom packages -->
-    <depend>controllers</depend>
-    <depend>velocity_controller</depend>
-    <depend>steering_actuator</depend>
+    <depend>py_slam</depend>
+    <depend>vision_pipeline</depend>
+    <depend>planners</depend>
 
     <export>
         <build_type>ament_python</build_type>
