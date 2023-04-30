@@ -10,6 +10,7 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <!-- Custom packages -->
+    <depend>controllers</depend>
     <depend>py_slam</depend>
     <depend>vision_pipeline</depend>
     <depend>planners</depend>
