@@ -5,7 +5,5 @@ colcon_ignore:
 - zed_interfaces
 - zed_driver
 - cpp_lidar
-- lidar_pipeline_3
-- ros2_numpy
 - hsv_thresholder
 - qutms_cli_tools
