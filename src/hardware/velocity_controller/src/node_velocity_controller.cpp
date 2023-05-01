@@ -10,8 +10,8 @@ using std::placeholders::_1;
 
 class Velocity_Controller : public rclcpp::Node {
    private:
-    float Kp_vel = 0;
-    float Ki_vel = 0;
+    float Kp = 0;
+    float Ki = 0;
     float max_integral_torque = 0;
     float histerisis_kickin_ms = 0;
     float histerisis_reset_ms = 0;
@@ -74,8 +74,8 @@ class Velocity_Controller : public rclcpp::Node {
         // clip the integral error based on max_integral_torque
         if (this->integral_error < 0) {
             this->integral_error = 0;
-        } else if (this->integral_error > (this->max_integral_torque / this->Ki_vel)) {
-            this->integral_error = this->max_integral_torque / this->Ki_vel;
+        } else if (this->integral_error > (this->max_integral_torque / this->Ki)) {
+            this->integral_error = this->max_integral_torque / this->Ki;
         }
 
         if (av_velocity < this->histerisis_reset_ms) {
@@ -83,8 +83,8 @@ class Velocity_Controller : public rclcpp::Node {
         }
 
         // calculate control variable
-        float p_term = this->Kp_vel * error;
-        float i_term = this->Ki_vel * integral_error;
+        float p_term = this->Kp * error;
+        float i_term = this->Ki * this->integral_error;
 
         float accel = p_term;
         if (av_velocity > this->histerisis_kickin_ms) {
@@ -111,15 +111,15 @@ class Velocity_Controller : public rclcpp::Node {
     void update_parameters(const rcl_interfaces::msg::ParameterEvent& event) {
         (void)event;
 
-        this->get_parameter("Kp_vel", this->Kp_vel);
-        this->get_parameter("Ki_vel", this->Ki_vel);
+        this->get_parameter("Kp", this->Kp);
+        this->get_parameter("Ki", this->Ki);
         this->get_parameter("max_integral_torque", this->max_integral_torque);
         this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
         this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
 
         RCLCPP_DEBUG(this->get_logger(),
-                     "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_vel,
-                     Ki_vel, max_integral_torque, histerisis_kickin_ms, histerisis_reset_ms);
+                     "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", this->Kp,
+                     this->Ki, this->max_integral_torque, this->histerisis_kickin_ms, this->histerisis_reset_ms);
     }
 
     // Check State to enable or disable motor
@@ -136,13 +136,19 @@ class Velocity_Controller : public rclcpp::Node {
    public:
     Velocity_Controller() : Node("velocity_controller_node") {
         // PID controller parameters
-        this->declare_parameter<float>("Kp_vel", 0);
-        this->declare_parameter<float>("Ki_vel", 0);
+        this->declare_parameter<float>("Kp", 0);
+        this->declare_parameter<float>("Ki", 0);
         this->declare_parameter<float>("max_integral_torque", 0);
         this->declare_parameter<float>("histerisis_kick_ms", 0);
         this->declare_parameter<float>("histerisis_reset_ms", 0);
 
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
+
+        if (this->Kp == 0) {
+            RCLCPP_ERROR(this->get_logger(), "Please provide a rosparam yaml file!");
+            rclcpp::shutdown();
+            exit(EXIT_FAILURE);
+        }
 
         // State updates
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
