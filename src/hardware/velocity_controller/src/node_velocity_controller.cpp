@@ -168,6 +168,8 @@ class Velocity_Controller : public rclcpp::Node {
         // this->param_event_handler = std::make_shared<rclcpp::ParameterEventHandler>(this);
         // this->param_cb_handle = this->param_event_handler->add_parameter_event_callback(
         //     std::bind(&Velocity_Controller::update_parameters, this, std::placeholders::_1));
+
+        RCLCPP_INFO(this->get_logger(), "---Velocity Controller Node Initialised---");
     }
 };
 

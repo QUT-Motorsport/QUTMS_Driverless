@@ -586,6 +586,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
             "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+        RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };
 
