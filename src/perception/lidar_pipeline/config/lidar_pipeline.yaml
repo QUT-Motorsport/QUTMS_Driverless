@@ -1,0 +1,3 @@
+lidar_detector_node:
+  ros__parameters:
+    log_level: DEBUG
