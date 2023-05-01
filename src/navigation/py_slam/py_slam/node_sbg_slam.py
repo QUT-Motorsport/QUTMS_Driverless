@@ -35,7 +35,7 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class PySlam(Node):
+class SBGSlam(Node):
     initial_pos: Optional[Tuple[float, float]] = None
     prev_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
@@ -46,7 +46,7 @@ class PySlam(Node):
     path_viz = Path()
 
     def __init__(self):
-        super().__init__("py_slam")
+        super().__init__("sbg_slam_node")
 
         # sync subscribers
         # pos_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
@@ -64,8 +64,6 @@ class PySlam(Node):
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
         self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
-        )
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/path", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -364,7 +362,7 @@ class PySlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PySlam()
+    node = SBGSlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
