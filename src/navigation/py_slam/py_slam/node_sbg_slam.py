@@ -56,7 +56,7 @@ class PySlam(Node):
         ins_synchronizer.registerCallback(self.ins_callback)
 
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
