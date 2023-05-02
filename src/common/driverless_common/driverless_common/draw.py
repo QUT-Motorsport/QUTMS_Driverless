@@ -3,7 +3,7 @@ from math import cos, pi, radians, sin
 import cv2
 import numpy as np
 
-from driverless_msgs.msg import Cone, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from driverless_common.point import Point
 
@@ -65,10 +65,10 @@ def cone_to_point(cone: Cone) -> Point:
     )
 
 
-def draw_map(track: TrackDetectionStamped) -> np.ndarray:
+def draw_map(track: ConeDetectionStamped) -> np.ndarray:
     map_image = np.zeros((MAP_HEIGHT, MAP_WIDTH, 3), dtype=np.uint8)
 
-    for cone in track.cones:
+    for cone in track.cones_with_cov:
         if cone.cone.color == Cone.YELLOW:
             colour = YELLOW_DISP_COLOUR
         elif cone.cone.color == Cone.BLUE:
@@ -110,6 +110,15 @@ def draw_markers(cones: List[Cone]) -> np.ndarray:
             markerType=cv2.MARKER_SQUARE,
             markerSize=5,
             thickness=5,
+        )
+        cv2.putText(
+            debug_img,
+            str(round(cone.location.x, 2)) + " " + str(round(cone.location.y, 2)),
+            loc_to_img_pt(cone.location.x, cone.location.y).to_tuple(),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            2,
         )
 
     return debug_img
