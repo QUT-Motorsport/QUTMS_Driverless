@@ -530,7 +530,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    SteeringActuator() : Node("steering_controller_node") {
+    SteeringActuator() : Node("steering_actuator_node") {
         // Steering parameters
         this->declare_parameter<int>(PARAM_ACCELERATION, 0);
         this->declare_parameter<int>(PARAM_VELOCITY, 0);

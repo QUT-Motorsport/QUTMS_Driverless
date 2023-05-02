@@ -5,7 +5,7 @@
 #     d_limits: 6000
 #     d_current: 5000
 
-steering_controller_node:
+steering_actuator_node:
   ros__parameters:
     velocity: 1500
     velocity_centering: 50
