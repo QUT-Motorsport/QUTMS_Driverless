@@ -66,7 +66,7 @@ class BangController(Node):
 
     def __init__(self):
         super().__init__("bang_controller_node")
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.detection_callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.detection_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.detection_callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
         self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)

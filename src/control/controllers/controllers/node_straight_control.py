@@ -46,7 +46,7 @@ class StraightControl(Node):
         if self.ebs_test:
             self.Kp_ang = 10.0
             self.vel_max = 30.0 / 3.6
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
             self.target_cone_count = 2
         else:
             self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
