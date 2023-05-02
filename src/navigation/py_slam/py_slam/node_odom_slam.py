@@ -18,21 +18,18 @@ from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Qua
 from nav_msgs.msg import Path
 
 from py_slam.cone_props import ConeProps
+from driverless_common.common import wrap_to_pi
 
 from typing import Optional, Tuple
 
-R = np.diag([0.01, 0.1]) ** 2  # motion model
-Q_LIDAR = np.diag([0.5, 0.5]) ** 2
+R = np.diag([0.01, 0.001]) ** 2  # motion model
+Q_LIDAR = np.diag([1, 1]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 15  # minimum frames before confirming cones
 FRAME_REM_COUNT = 30  # minimum frames that cones have to be seen in to not be removed
 X_RANGE = 15  # max x distance from car
 Y_RANGE = 10  # max y distance from car
-
-
-def wrap_to_pi(angle: float) -> float:  # in rads
-    return (angle + pi) % (2 * pi) - pi
 
 
 class SBGSlam(Node):
