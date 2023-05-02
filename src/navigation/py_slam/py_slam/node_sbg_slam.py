@@ -61,7 +61,7 @@ class SBGSlam(Node):
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
+        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
         self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
@@ -75,7 +75,7 @@ class SBGSlam(Node):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
             self.prev_pos = (coords.easting, coords.northing)
-            self.initial_ang = -ekf_euler_msg.angle.z  # - pi
+            self.initial_ang = ekf_euler_msg.angle.z  # - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
@@ -91,7 +91,7 @@ class SBGSlam(Node):
         d_y = d_mag * sin(self.state[2])
 
         # current angle
-        imu_ang = -ekf_euler_msg.angle.z
+        imu_ang = ekf_euler_msg.angle.z
         # get relative to initial angle and last state prediction
         d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
 
@@ -166,21 +166,23 @@ class SBGSlam(Node):
         self.flush_map(track_as_2d.reshape(-1, 2))
 
         # publish track msg
-        track_msg = TrackDetectionStamped()
+        track_msg = ConeDetectionStamped()
         track_msg.header.stamp = msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
-                track_msg.cones.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
+                track_msg.cones.append(detection.cone_as_msg)
+                track_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
         local_map_msg = ConeDetectionStamped()
         local_map_msg.header.stamp = msg.header.stamp
-        local_map_msg.header.frame_id = "car"
+        local_map_msg.header.frame_id = "base_footprint"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
                 local_map_msg.cones.append(detection.local_cone_as_msg)
+                local_map_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg))
         self.local_publisher.publish(local_map_msg)
 
         # publish localisation msg
@@ -215,11 +217,11 @@ class SBGSlam(Node):
         # read message content and assign it to corresponding tf variables
         t.header.stamp = timestamp
         t.header.frame_id = "track"
-        t.child_frame_id = "car"
+        t.child_frame_id = "base_footprint"
 
         t.transform.translation.x = self.state[0]
         t.transform.translation.y = self.state[1]
-        t.transform.translation.z = 0.2
+        t.transform.translation.z = 0.0
         t.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
         self.broadcaster.sendTransform(t)
 
