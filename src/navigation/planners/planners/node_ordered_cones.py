@@ -1,23 +1,13 @@
-from math import atan2, pi, sqrt
-
-import numpy as np
-import scipy.interpolate as scipy_interpolate
+from math import sqrt
 
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import (
-    Cone,
-    ConeDetectionStamped,
-    ConeWithCovariance,
-    PathPoint,
-    PathStamped,
-    TrackDetectionStamped,
-)
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance
 from geometry_msgs.msg import Point
 
-from typing import List, Tuple
+from typing import List
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
