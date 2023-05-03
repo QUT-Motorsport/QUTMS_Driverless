@@ -136,7 +136,7 @@ class OrderedCones(Node):
                 oranges.append([cone_w_cov.cone.location.x, cone_w_cov.cone.location.y])
 
         # Use the orange cones as start and end of each track side
-        parsed_orange_cones = parse_orange_cones(oranges)
+        parsed_orange_cones = parse_orange_cones(self, oranges)
         if len(parsed_orange_cones) == 0:
             return
 
