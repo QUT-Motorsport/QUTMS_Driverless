@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 
 from typing import List
 
@@ -115,7 +115,8 @@ class ConeInterpolator(Node):
             for iCone in range(len(iCone_locations)):
                 # create new cone
                 interpolatedCone = Cone()
-                interpolatedCone.location = iCone_locations[iCone]
+                interpolatedCone.location.x = iCone_locations[iCone][0]
+                interpolatedCone.location.y = iCone_locations[iCone][1]
                 interpolatedCone.color = ordered_cones[cone].color
                 interpolatedCone.track_side = ordered_cones[cone].track_side
 
