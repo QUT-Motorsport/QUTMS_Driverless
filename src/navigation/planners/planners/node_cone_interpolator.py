@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance
 
 from typing import List
 
@@ -60,7 +60,7 @@ class ConeInterpolator(Node):
         # Publishers:
         # publish list of ordered original and interpolated cones
         self.interpolatedCones_publisher: Publisher = self.create_publisher(
-            ConeDetectionStamped, "/planner/interpolated_map", 10
+            ConeDetectionStamped, "/planner/interpolated_map", 1
         )
 
         self.get_logger().info("---Cone Interpolator Node Initalised---")
@@ -69,7 +69,7 @@ class ConeInterpolator(Node):
     def map_callback(self, orderedCone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        ordered_cones: List[Cone] = orderedCone_msg.cones
+        ordered_cones: List[ConeWithCovariance] = orderedCone_msg.cones_with_cov
 
         # increment numPoints_interpolated for divisions (n points = n + 1 divisions)
         numPoints_divisions = self.numPoints_interpolated + 1
@@ -79,22 +79,22 @@ class ConeInterpolator(Node):
 
         # Interpolate cones between pairs of cones along a straight line
         for cone in range(ordered_cones_length):
-            # print(ordered_cones[cone].location.x)
-            # print(ordered_cones[cone + 1].location.x)
-
             # make sure cones on same side of track, skip otherwise
             if ordered_cones[cone].track_side != ordered_cones[cone + 1].track_side:
                 continue
 
             # get distance between two ordered cones
-            firstCone_XY = ordered_cones[cone].location.x, ordered_cones[cone].location.y
-            secondCone_XY = ordered_cones[cone + 1].location.x, ordered_cones[cone + 1].location.y
-            # print(str(firstCone_XY))
-            # print(str(secondCone_XY))
+            firstCone_XY = ordered_cones[cone].cone.location.x, ordered_cones[cone].cone.location.y
+            secondCone_XY = ordered_cones[cone + 1].cone.location.x, ordered_cones[cone + 1].cone.location.y
             conePair_dist = dist(firstCone_XY, secondCone_XY)
 
             # get sub-distance between cones for distance between interpolated cones and real cones
             interpolation_subDist = conePair_dist / numPoints_divisions
+
+            # get averaged covariance of the two ordered cones
+            firstCone_cov = ordered_cones[cone].covariance
+            secondCone_cov = ordered_cones[cone + 1].covariance
+            average_cov = firstCone_cov + secondCone_cov / 2
 
             # get angle between original cone pair so interpolated cones follow same angle
             conePair_radians = angle(firstCone_XY, secondCone_XY)
@@ -114,11 +114,12 @@ class ConeInterpolator(Node):
             interpolated_cones = []
             for iCone in range(len(iCone_locations)):
                 # create new cone
-                interpolatedCone = Cone()
-                interpolatedCone.location.x = iCone_locations[iCone][0]
-                interpolatedCone.location.y = iCone_locations[iCone][1]
-                interpolatedCone.color = ordered_cones[cone].color
-                interpolatedCone.track_side = ordered_cones[cone].track_side
+                interpolatedCone = ConeWithCovariance()
+                interpolatedCone.covariance = average_cov
+                interpolatedCone.cone.location.x = iCone_locations[iCone][0]
+                interpolatedCone.cone.location.y = iCone_locations[iCone][1]
+                interpolatedCone.cone.color = ordered_cones[cone].color
+                interpolatedCone.cone.track_side = ordered_cones[cone].track_side
 
                 # add cone to list of interpolated cones
                 interpolated_cones.append(interpolatedCone)
@@ -127,9 +128,12 @@ class ConeInterpolator(Node):
             insert_index = cone + 1
             ordered_cones[insert_index:insert_index] = interpolated_cones
 
-        # Publish list of ordered and interpolated cones
+        # Publish combined list of ordered and interpolated cones
         interpolatedCones_msg = ConeDetectionStamped(cones=ordered_cones)
         self.interpolatedCones_publisher.publish(interpolatedCones_msg)
+
+        # Debugging:
+        # print("No. of Cones Interpolating: ", self.numPoints_interpolated)
 
 
 def main(args=None):
