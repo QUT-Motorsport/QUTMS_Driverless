@@ -25,6 +25,7 @@ setup(
             "midline_planner = planners.node_midline_planner:main",
             "cone_interpolator = planners.node_cone_interpolator:main",
             "ordered_cones = planners.node_ordered_cones:main",
+            "equidistant_midline = planners.node_equidistant_midline:main",
         ],
     },
 )
