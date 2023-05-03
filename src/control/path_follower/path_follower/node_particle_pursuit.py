@@ -208,7 +208,7 @@ class ParticlePursuit(Node):
 
     # recieve the cone locations
     def track_callback(self, cone_pos_msg: ConeDetectionStamped):
-        self.cone_pos = cone_pos_msg.cones_with_cov
+        self.cone_pos = cone_pos_msg.cones
         self.get_logger().debug("Map received")
 
     def callback(
@@ -244,8 +244,8 @@ class ParticlePursuit(Node):
         pos_car: List[float] = get_wheel_position(position_cog, car_heading)  # [x,y] of centre of steering axle
 
         # get left and right cones
-        left_cones = [c.cone for c in self.cone_pos if c.cone.color == LEFT_CONE_COLOUR]
-        right_cones = [c.cone for c in self.cone_pos if c.cone.color == RIGHT_CONE_COLOUR]
+        left_cones = [c for c in self.cone_pos if c.color == LEFT_CONE_COLOUR]
+        right_cones = [c for c in self.cone_pos if c.color == RIGHT_CONE_COLOUR]
 
         if len(left_cones) == 0 or len(right_cones) == 0:  # no cones
             return
