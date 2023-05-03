@@ -121,7 +121,7 @@ class ConeInterpolator(Node):
                 interpolatedCone.track_side = ordered_cones[cone].track_side
 
                 # add cone to list of interpolated cones
-                interpolated_cones[iCone] = interpolatedCone
+                interpolated_cones.append(interpolatedCone)
 
             # add list of interpolated cones to list of all ordered cones
             insert_index = cone + 1
