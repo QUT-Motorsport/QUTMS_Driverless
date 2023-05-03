@@ -9,9 +9,6 @@ from geometry_msgs.msg import Point
 
 from typing import List
 
-# for colour gradient based on intensity
-MAX_ANGLE = 0.15
-
 
 def sort_cones(cones, start_index=None, end_index=None):
     """
