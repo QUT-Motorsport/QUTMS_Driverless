@@ -87,25 +87,14 @@ class ConeInterpolator(Node):
             elif (ordered_cones[cone].color == Cone.YELLOW) & (ordered_cones[cone].order > largestYellow):
                 largestYellow = ordered_cones[cone].order
 
-        print("largest blue: ", largestBlue)
-        print("largest yellow: ", largestYellow)
         # Interpolate cones between pairs of cones along a straight line
         for cone in range(ordered_cones_length - 1):
             nextCone = cone + 1
             # Interpolate between last and first cones when at end of cones on one side of the track
             if (ordered_cones[cone].color == Cone.BLUE) & (cone == largestBlue):
-                print("blue loop")
                 nextCone = 0
             elif (ordered_cones[cone].color == Cone.YELLOW) & (cone == largestYellow + largestBlue):
                 nextCone = largestBlue + 1
-                print("yellow loop")
-            print("-----------------")
-            print("cone: ", cone, "   colour: ", ordered_cones[cone].color)
-            print("nCone: ", nextCone, "   colour: ", ordered_cones[cone].color)
-
-            # make sure cones on same side of track, skip otherwise
-            if ordered_cones[cone].track_side != ordered_cones[nextCone].track_side:
-                continue
 
             # get distance between two ordered cones
             firstCone_XY = ordered_cones[cone].location.x, ordered_cones[cone].location.y
@@ -155,22 +144,22 @@ class ConeInterpolator(Node):
         # ======================================================
 
         # Graphing:
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
 
-        # Separate the x and y coordinates
-        x = [cone.location.x for cone in ordered_cones]
-        y = [cone.location.y for cone in ordered_cones]
+        # # Separate the x and y coordinates
+        # x = [cone.location.x for cone in ordered_cones]
+        # y = [cone.location.y for cone in ordered_cones]
 
-        # Plot the points
-        plt.scatter(x, y)
+        # # Plot the points
+        # plt.scatter(x, y)
 
-        # Add labels and a title
-        plt.xlabel("x - axis")
-        plt.ylabel("y - axis")
-        plt.title("2D Plane Plot of Ordered Cones")
+        # # Add labels and a title
+        # plt.xlabel("x - axis")
+        # plt.ylabel("y - axis")
+        # plt.title("2D Plane Plot of Ordered Cones")
 
-        # Display the plot
-        plt.show()
+        # # Display the plot
+        # plt.show()
 
 
 def main(args=None):
