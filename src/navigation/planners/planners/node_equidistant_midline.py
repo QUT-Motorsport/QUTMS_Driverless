@@ -104,7 +104,7 @@ def interpolate(subDistance, pointAngle, firstPoint_pos, numPoints):
     """
     iCone_locations = []
     cone_of_origin = firstPoint_pos
-    for iCone in range(numPoints):
+    for iCone in range(int(numPoints)):
         iCone_coords = new_coordinates(cone_of_origin[0], cone_of_origin[1], pointAngle, subDistance)
         iCone_locations.append(iCone_coords)
 
@@ -242,7 +242,9 @@ class EquidistantMidline(Node):
             midPoint_radians = angle(first_midPoint, second_midPoint)
 
             # Get number of points to be interpolated between the two midPoints
-            numPoints = dist(first_midPoint, second_midPoint) / subDistance
+            first_midPoint_XY = (first_midPoint[0], first_midPoint[1])
+            second_midPoint_XY = (second_midPoint[0], second_midPoint[1])
+            numPoints = dist(first_midPoint_XY, second_midPoint_XY) / subDistance
 
             # Get interpolated midPoint coordinates
             interpolated_midPoints = interpolate(subDistance, midPoint_radians, first_midPoint, numPoints)
