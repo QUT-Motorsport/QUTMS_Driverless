@@ -82,24 +82,30 @@ class ConeInterpolator(Node):
         largestBlue = 0
         largestYellow = 0
         for cone in range(ordered_cones_length):
-            thisCone = ordered_cones[cone]
-            if thisCone.color == Cone.BLUE & thisCone.order > largestBlue:
-                largestBlue = thisCone.order
-            elif thisCone.color == Cone.YELLOW & thisCone.order > largestYellow:
-                largestYellow = thisCone.order
+            if (ordered_cones[cone].color == Cone.BLUE) & (ordered_cones[cone].order > largestBlue):
+                largestBlue = ordered_cones[cone].order
+            elif (ordered_cones[cone].color == Cone.YELLOW) & (ordered_cones[cone].order > largestYellow):
+                largestYellow = ordered_cones[cone].order
 
+        print("largest blue: ", largestBlue)
+        print("largest yellow: ", largestYellow)
         # Interpolate cones between pairs of cones along a straight line
         for cone in range(ordered_cones_length - 1):
-            # make sure cones on same side of track, skip otherwise
-            if ordered_cones[cone].track_side != ordered_cones[cone + 1].track_side:
-                continue
-
             nextCone = cone + 1
             # Interpolate between last and first cones when at end of cones on one side of the track
-            if ordered_cones[cone].color == Cone.BLUE & cone == largestBlue:
+            if (ordered_cones[cone].color == Cone.BLUE) & (cone == largestBlue):
+                print("blue loop")
                 nextCone = 0
-            elif ordered_cones[cone].color == Cone.YELLOW & cone == largestYellow:
+            elif (ordered_cones[cone].color == Cone.YELLOW) & (cone == largestYellow + largestBlue):
                 nextCone = largestBlue + 1
+                print("yellow loop")
+            print("-----------------")
+            print("cone: ", cone, "   colour: ", ordered_cones[cone].color)
+            print("nCone: ", nextCone, "   colour: ", ordered_cones[cone].color)
+
+            # make sure cones on same side of track, skip otherwise
+            if ordered_cones[cone].track_side != ordered_cones[nextCone].track_side:
+                continue
 
             # get distance between two ordered cones
             firstCone_XY = ordered_cones[cone].location.x, ordered_cones[cone].location.y
@@ -143,6 +149,28 @@ class ConeInterpolator(Node):
         # Publish list of ordered and interpolated cones
         interpolatedCones_msg = ConeDetectionStamped(cones=ordered_cones)
         self.interpolatedCones_publisher.publish(interpolatedCones_msg)
+
+        # ======================================================
+        #                   Debugging Code
+        # ======================================================
+
+        # Graphing:
+        import matplotlib.pyplot as plt
+
+        # Separate the x and y coordinates
+        x = [cone.location.x for cone in ordered_cones]
+        y = [cone.location.y for cone in ordered_cones]
+
+        # Plot the points
+        plt.scatter(x, y)
+
+        # Add labels and a title
+        plt.xlabel("x - axis")
+        plt.ylabel("y - axis")
+        plt.title("2D Plane Plot of Ordered Cones")
+
+        # Display the plot
+        plt.show()
 
 
 def main(args=None):
