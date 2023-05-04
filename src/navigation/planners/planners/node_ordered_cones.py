@@ -191,6 +191,28 @@ class OrderedCones(Node):
         orderedCone_msg = ConeDetectionStamped(cones=ordered_cones)
         self.orderedCone_publisher.publish(orderedCone_msg)
 
+        # ======================================================
+        #                   Debugging Code
+        # ======================================================
+
+        # Graphing:
+        # import matplotlib.pyplot as plt
+
+        # # Separate the x and y coordinates
+        # x = [cone.location.x for cone in ordered_cones]
+        # y = [cone.location.y for cone in ordered_cones]
+
+        # # Plot the points
+        # plt.scatter(x, y)
+
+        # # Add labels and a title
+        # plt.xlabel('x - axis')
+        # plt.ylabel('y - axis')
+        # plt.title('2D Plane Plot of Ordered Cones')
+
+        # # Display the plot
+        # plt.show()
+
 
 def main(args=None):
     # begin ros node
