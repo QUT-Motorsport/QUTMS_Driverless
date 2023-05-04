@@ -89,7 +89,7 @@ class ConeInterpolator(Node):
                 largestYellow = thisCone.order
 
         # Interpolate cones between pairs of cones along a straight line
-        for cone in range(ordered_cones_length) - 1:
+        for cone in range(ordered_cones_length - 1):
             # make sure cones on same side of track, skip otherwise
             if ordered_cones[cone].track_side != ordered_cones[cone + 1].track_side:
                 continue
