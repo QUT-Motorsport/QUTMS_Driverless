@@ -7,6 +7,7 @@ dependencies:
   # ---------------------------------------------------------------------------
   - python=3.10
   - ros-humble-desktop
+  - ros-humble-diagnostic-updater
   - ca-certificates
   - openssl
   - compilers
