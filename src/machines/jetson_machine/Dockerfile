@@ -15,36 +15,31 @@ WORKDIR /tmp
 
 # environment variable is needed to use the streaming features on Jetson inside a container
 ENV LOGNAME root
-# redundant:
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update -y && apt-get install --no-install-recommends lsb-release wget less udev sudo apt-transport-https zstd -y
-RUN echo "# R32 (release), REVISION: 7.0" > /etc/nv_tegra_release
 
 # link copied from ZED SDK legacy archive downloads
-RUN wget -q --no-check-certificate -O ZED_SDK_Linux_JP.run https://download.stereolabs.com/zedsdk/3.8/l4t32.7/jetsons
-RUN chmod +x ZED_SDK_Linux_JP.run ; ./ZED_SDK_Linux_JP.run silent
-
-RUN rm -rf /usr/local/zed/resources/* && \
+RUN apt-get update -y && apt-get install --no-install-recommends lsb-release wget less udev sudo apt-transport-https zstd cmake -y && \
+    echo "# R32 (release), REVISION: 7.0" > /etc/nv_tegra_release && \
+    wget -q --no-check-certificate -O ZED_SDK_Linux_JP.run https://download.stereolabs.com/zedsdk/3.8/l4t32.7/jetsons && \
+    chmod +x ZED_SDK_Linux_JP.run ; ./ZED_SDK_Linux_JP.run silent && \
+    rm -rf /usr/local/zed/resources/* && \
     rm -rf ZED_SDK_Linux_JP.run && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/
 
 # symbolic link is needed to use the streaming features on Jetson inside a container
 RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so
 
 # allows the ZED SDK to be sourced by cmake in colcon
-RUN chown ${USERNAME}: /usr/local/zed/
+RUN chown developer:users /usr/local/zed/
 
 WORKDIR /usr/local/zed
 ENV CUDA_HOME=/usr/local/cuda
 
 # ==============================================================================
-#                      Install ZED ROS nodes
-#     Following instructions from https://www.stereolabs.com/docs/ros2/
+#                      Build ROS nodes
+#     Following instructions for ZED from https://www.stereolabs.com/docs/ros2/
 # ==============================================================================
 
 WORKDIR /home/$USERNAME/driverless_ws
-USER ${USERNAME}
 
 # symlink libusb for the build (APPARENTLY THIS FILE ALREADY EXISTS?)
 # RUN ln -s /lib/aarch64-linux-gnu/libusb-1.0.so.0 /usr/lib/aarch64-linux-gnu/libusb-1.0.so
@@ -64,28 +59,22 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     pip install tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl
 
+# SHOULD BE REPLACED IN ENV YAML NOW
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y ros-humble-diagnostic-updater
+
 # cleanup
 RUN rm -f ./requirements ./tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl
 
-USER root
-
-# allows the ZED SDK to be sourced by cmake in colcon
-RUN chown ${USERNAME}:${HOST_GROUP} /usr/local/zed/
-
-USER ${USERNAME}
-
 # run a build
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-# RUN source /home/${USERNAME}/mambaforge/bin/activate; \
-#     conda activate driverless_env && \
-#     colcon build --symlink-install --packages-up-to vision_pipeline
-
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
-    colcon build --symlink-install --packages-up-to zed_ros2 --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
+    colcon build --symlink-install --packages-up-to jetson_machine --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
 # delete source
-# RUN rm -rf ./src
+RUN rm -rf ./src
 
 # tell ROS to use Cyclone DDS
 # ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
