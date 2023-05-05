@@ -1,0 +1,28 @@
+channels:
+  - robostack-staging
+  - conda-forge
+dependencies:
+  # ---------------------------------------------------------------------------
+  # ROS Base Env deps
+  # ---------------------------------------------------------------------------
+  - python=3.10
+  - ros-humble-desktop
+  - ca-certificates
+  - openssl
+  - compilers
+  - cmake=3.21
+  - pkg-config
+  - make
+  - ninja
+  - numpy==1.23
+  - typing-extensions # for some reason, not installed in base python?
+  - pip
+  - pip:
+    - colcon-common-extensions
+    # colcon shell support
+    - colcon-argcomplete
+    - colcon-bash
+    - colcon-zsh
+variables:
+  # fix for WSL RVIZ2
+  LIBGL_ALWAYS_INDIRECT:

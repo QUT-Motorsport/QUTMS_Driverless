@@ -11,6 +11,7 @@
 
     <!-- Packages -->
     <depend>vision_pipeline</depend>
+    <depend>zed_ros2</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

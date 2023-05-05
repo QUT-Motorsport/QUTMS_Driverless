@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build run
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson build run
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -50,6 +50,13 @@ build_docker_base_l4t:
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime \
+	..
+
+build_docker_base_jetson:
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.2.1 \
+	--build-arg USERNAME=$(USERNAME) \
+	--build-arg HOST_UID=$(HOST_UID) \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime \
 	..
 
 # use make build target=<value>

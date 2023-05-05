@@ -52,14 +52,13 @@ RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download
     chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
     ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
 
-# CHANGE THIS WHEN UPGRADING TO HUMBLE
-COPY installation/galactic_environment.yml /tmp/environment.yml
+COPY installation/humble_environment.yml /tmp/environment.yml
 
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba env create --name driverless_env --file environment.yml && \
     conda activate driverless_env && \
     conda config --env --add channels conda-forge && \
-    conda config --env --add channels robostack-experimental && \
+    conda config --env --add channels robostack-staging && \
     conda config --env --set channel_priority strict && \
     mamba clean --all --yes
 
