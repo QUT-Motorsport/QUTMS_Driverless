@@ -70,10 +70,11 @@ int get_cone_colour(ConeColourCount_t cone_colour_count) {
     }
 }
 
-std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double global_x, double global_y) {
+std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, double global_x, double global_y,
+                                                double dist_threshold) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = 1.5 * 1.5;  // m, threshold^2
+    double min_distance = pow(dist_threshold, 2);  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -233,8 +234,14 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
     cov = pred_cov;
 }
 
-void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
+void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
+                     double bearing_variance, double association_dist_threshold,
                      std::optional<const rclcpp::Logger> logger) {
+    // Q = ( σ_range^2  0           )
+    //     ( 0          σ_bearing^2 )
+    Eigen::Matrix2d Q;
+    Q << pow(range_variance, 2), 0, 0, pow(bearing_variance, 2);
+
     for (auto const& cone : detected_cones) {
         if (cone.color == driverless_msgs::msg::Cone::ORANGE_BIG) {
             continue;
@@ -255,7 +262,8 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         double lm_range = sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2));
         double lm_bearing = wrap_pi(atan2(cone.location.y, cone.location.x));
 
-        std::optional<int> associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y);
+        std::optional<int> associated_idx =
+            find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y, association_dist_threshold);
         // std::optional<int> associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
 
         if (!associated_idx.has_value()) {

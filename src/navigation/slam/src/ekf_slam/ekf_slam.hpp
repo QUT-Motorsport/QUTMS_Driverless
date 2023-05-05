@@ -50,21 +50,12 @@ class EKFslam {
         return uncertanty;
     }
 
-    // clang-format off
-    // Observation model uncertanty
-    // Q = ( σ_range^2  0         )
-    //     ( 0      σ_bearing^2 )
-    const Eigen::Matrix2d Q = (
-        Eigen::Matrix2d() << pow(1.5, 2), 0,
-                             0,            pow(0.5, 2)
-    ).finished();
-    // clang-format on
-
    public:
     EKFslam();
 
     void predict(double forward_vel, double rotational_vel, double dt);
-    void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones,
+    void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
+                double bearing_variance, double association_dist_threshold,
                 std::optional<const rclcpp::Logger> logger = {});
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };

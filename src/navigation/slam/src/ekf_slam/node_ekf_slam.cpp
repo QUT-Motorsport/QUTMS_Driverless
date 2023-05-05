@@ -29,6 +29,11 @@
 
 using std::placeholders::_1;
 
+const std::string PARAM_RANGE_VARIANCE = "range_variance";
+const std::string PARAM_BEARING_VARIANCE = "bearing_variance";
+const std::string PARAM_ASSOCIATION_DIST_THRESHOLD = "association_dist_threshold";
+const std::string PARAM_USE_TOTAL_ABS_VEL = "use_total_abs_vel";
+
 double compute_dt(rclcpp::Time start_, rclcpp::Time end_) { return (end_ - start_).nanoseconds() * 1e-9; }
 
 class EKFSLAMNode : public rclcpp::Node {
@@ -39,26 +44,39 @@ class EKFSLAMNode : public rclcpp::Node {
     double rotational_vel;
     std::optional<rclcpp::Time> last_update;
 
+    double range_variance;
+    double bearing_variance;
+    bool association_dist_threshold;
+    bool use_total_abs_vel;
+
     std::queue<geometry_msgs::msg::TwistStamped::SharedPtr> twist_queue;
 
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub;
     rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr detection_sub;
 
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viz_pub;
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub;
     rclcpp::Publisher<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr track_pub;
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
         twist_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-            "imu/velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
+            "velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "lidar/cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
-        viz_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("slam/markers", 10);
         pose_pub = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
         track_pub = this->create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);
+
+        this->declare_parameter<double>(PARAM_RANGE_VARIANCE, 0.1);
+        this->declare_parameter<double>(PARAM_BEARING_VARIANCE, 0.1);
+        this->declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);
+        this->declare_parameter<bool>(PARAM_USE_TOTAL_ABS_VEL, false);
+
+        range_variance = get_parameter(PARAM_RANGE_VARIANCE).as_double();
+        bearing_variance = get_parameter(PARAM_BEARING_VARIANCE).as_double();
+        association_dist_threshold = get_parameter(PARAM_ASSOCIATION_DIST_THRESHOLD).as_double();
+        use_total_abs_vel = get_parameter(PARAM_USE_TOTAL_ABS_VEL).as_bool();
     }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) { twist_queue.push(msg); }
@@ -66,8 +84,12 @@ class EKFSLAMNode : public rclcpp::Node {
     void predict(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
         rclcpp::Time stamp = msg->header.stamp;
 
-        forward_vel = abs(msg->twist.linear.x) + abs(msg->twist.linear.y) + abs(msg->twist.linear.z);
-        // forward_vel = msg->twist.linear.x;
+        if (use_total_abs_vel) {
+            forward_vel = abs(msg->twist.linear.x) + abs(msg->twist.linear.y) + abs(msg->twist.linear.z);
+        } else {
+            forward_vel = msg->twist.linear.x;
+        }
+
         rotational_vel = -msg->twist.angular.z;
 
         if (!last_update.has_value()) {
@@ -84,7 +106,6 @@ class EKFSLAMNode : public rclcpp::Node {
         ekf_slam.predict(forward_vel, rotational_vel, dt);
 
         last_update = stamp;
-        // publish_state(msg->header.stamp);
     }
 
     void cone_detection_callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr detection_msg) {
@@ -111,7 +132,8 @@ class EKFSLAMNode : public rclcpp::Node {
                        [](const driverless_msgs::msg::ConeWithCovariance& c) { return c.cone; });
 
         ekf_slam.predict(forward_vel, rotational_vel, dt);
-        ekf_slam.update(detection_msg->cones, this->get_logger());
+        ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
+                        this->get_logger());
 
         last_update = stamp;
         publish_state(detection_msg->header.stamp);
@@ -142,32 +164,6 @@ class EKFSLAMNode : public rclcpp::Node {
         cones_msg.header.stamp = stamp;
         cones_msg.cones_with_cov = ekf_slam.get_cones();
         track_pub->publish(cones_msg);
-    }
-
-    void publish_visualisations(builtin_interfaces::msg::Time stamp) {
-        double x, y, theta;
-        this->ekf_slam.get_state(x, y, theta);
-
-        auto marker_array = visualization_msgs::msg::MarkerArray();
-
-        marker_array.markers.push_back(car_marker(stamp, "car", 1, x, y, theta));
-        marker_array.markers.push_back(
-            cov_marker(stamp, "car", 2, x, y, ekf_slam.get_cov()(0, 0), ekf_slam.get_cov()(1, 1)));
-
-        auto cones = ekf_slam.get_cones();
-
-        for (uint i = 0; i < cones.size(); i++) {
-            auto cone = cones[i];
-            int lm_idx = cone_idx_to_landmark_idx(i);
-            double cov_x = ekf_slam.get_cov()(lm_idx, lm_idx);
-            double cov_y = ekf_slam.get_cov()(lm_idx + 1, lm_idx + 1);
-            marker_array.markers.push_back(
-                cone_marker(stamp, "cone_pos", i, cone.cone.location.x, cone.cone.location.y, cone.cone.color));
-            marker_array.markers.push_back(
-                cov_marker(stamp, "cone_cov", i, cone.cone.location.x, cone.cone.location.y, cov_x, cov_y));
-        }
-
-        this->viz_pub->publish(marker_array);
     }
 };
 
