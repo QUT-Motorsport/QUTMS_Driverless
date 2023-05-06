@@ -22,7 +22,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "test = minimal_debug.node_overlay:main",
+            "test = minimal_debug.test:main",
         ],
     },
 )
