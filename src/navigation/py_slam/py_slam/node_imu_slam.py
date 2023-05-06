@@ -37,6 +37,7 @@ def stamp_to_seconds(stamp) -> float:
 def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
+
 # SLAM with IMU velocity and angular velocity
 class IMUSlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
