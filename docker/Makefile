@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson build run
+.PHONY: all help build_docker_base_1804 build_docker_base_l4t build_docker_base_jetson build_docker_base_roscube build run
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -43,6 +43,13 @@ build_docker_base_1804:
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
 	--build-arg BASE_IMAGE=ubuntu:18.04 \
+	..
+
+build_docker_base_roscube:
+	docker build -f Dockerfile.base -t qutms_driverless_base:ubuntu-22.04 \
+	--build-arg USERNAME=$(USERNAME) \
+	--build-arg HOST_UID=$(HOST_UID) \
+	--build-arg BASE_IMAGE=ubuntu:22.04 \
 	..
 
 build_docker_base_l4t:

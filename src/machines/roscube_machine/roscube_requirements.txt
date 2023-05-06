@@ -3,14 +3,14 @@ dataclasses
 eigen
 matplotlib
 opencv
-ros-galactic-ament-cmake-nose
-ros-galactic-ackermann-msgs
-ros-galactic-robot-state-publisher
-ros-galactic-joint-state-publisher
-ros-galactic-tf-transformations
-ros-galactic-velodyne
-ros-galactic-xacro
-ros-galactic-geodesy
+ros-humble-ament-cmake-nose
+ros-humble-ackermann-msgs
+ros-humble-robot-state-publisher
+ros-humble-joint-state-publisher
+ros-humble-tf-transformations
+ros-humble-velodyne
+ros-humble-xacro
+# ros-humble-geodesy # will need to be added to robostack-staging
 scipy
 scikit-learn
 transforms3d
