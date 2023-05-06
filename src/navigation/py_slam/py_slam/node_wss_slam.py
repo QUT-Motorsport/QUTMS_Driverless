@@ -37,7 +37,8 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class PySlam(Node):
+# SLAM with wheel speed sensors and angular velocity
+class WSSSlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
@@ -47,14 +48,14 @@ class PySlam(Node):
     motor_vels: List[float] = [0.0, 0.0, 0.0, 0.0]
 
     def __init__(self):
-        super().__init__("slam_node")
+        super().__init__("wss_slam_node")
 
         imu_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
         wss_sub = message_filters.Subscriber(self, WSSVelocity, "/vehicle/wheel_speed")
         vel_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[imu_sub, wss_sub], queue_size=10, slop=0.1)
         vel_synchronizer.registerCallback(self.velocity_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.vision_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
@@ -352,7 +353,7 @@ class PySlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PySlam()
+    node = WSSSlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

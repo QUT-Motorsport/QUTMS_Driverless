@@ -8,7 +8,7 @@ from rclpy.node import Node
 from driverless_msgs.msg import TrackDetectionStamped
 
 
-class NodeTopicToCSV(Node):
+class TrackToCSV(Node):
     csv_folder = Path("./csv_data")
 
     def __init__(self) -> None:
@@ -56,7 +56,7 @@ class NodeTopicToCSV(Node):
 def main():
     # begin ros node
     rclpy.init()
-    node = NodeTopicToCSV()
+    node = TrackToCSV()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

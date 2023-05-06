@@ -42,7 +42,7 @@ class ReactiveController(Node):
             self.target_cone_count = 2
             self.pub_accel = True
 
-            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
             self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
@@ -51,7 +51,7 @@ class ReactiveController(Node):
             self.target_cone_count = 3
             self.pub_accel = False
             # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)

@@ -29,7 +29,7 @@ class SimpleStraightController(Node):
 
     def __init__(self):
         super().__init__("simple_straight_controller_node")
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
 

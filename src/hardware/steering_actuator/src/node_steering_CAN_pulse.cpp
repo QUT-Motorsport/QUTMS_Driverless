@@ -266,7 +266,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    SteeringActuator() : Node("steering_controller_node") {
+    SteeringActuator() : Node("steering_test_node") {
         // Create publisher to topic "canbus_carbound"
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 

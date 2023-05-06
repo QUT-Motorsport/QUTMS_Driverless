@@ -38,7 +38,8 @@ def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
 
-class PySlam(Node):
+# SLAM with IMU velocity and angular velocity
+class IMUSlam(Node):
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
@@ -46,7 +47,7 @@ class PySlam(Node):
     last_timestamp: Optional[float] = None
 
     def __init__(self):
-        super().__init__("slam_node")
+        super().__init__("imu_slam_node")
 
         # sync subscribers
         vel_sub = message_filters.Subscriber(self, TwistStamped, "/imu/velocity")
@@ -56,15 +57,13 @@ class PySlam(Node):
         )
         lidar_synchronizer.registerCallback(self.sync_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection2", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         self.create_subscription(Reset, "/reset", self.reset_callback, 10)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
-        self.pose_publisher: Publisher = self.create_publisher(
-            PoseWithCovarianceStamped, "/slam/pose_with_covariance", 1
-        )
+        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -361,7 +360,7 @@ class PySlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PySlam()
+    node = IMUSlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

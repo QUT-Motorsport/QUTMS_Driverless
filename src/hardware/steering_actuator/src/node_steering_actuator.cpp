@@ -459,8 +459,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 double derivative_error = (error - this->prev_error) / elapsed_time_seconds;  // Grab derivative error
 
                 // left hand down is +, rhd is -
-                double target =
-                    -(Kp * error + Ki * this->integral_error + Kd * derivative_error);  // PID commands to send to plant
+                double target = -(this->Kp * error + this->Ki * this->integral_error +
+                                  this->Kd * derivative_error);  // PID commands to send to plant
                 // RCLCPP_INFO(this->get_logger(), "Kp: %f err: %f Ki: %f i: %f Kd: %f d: %f target: %f", Kp, error, Ki,
                 //             integral_error, Kd, derivative_error, target);  // Prirnt PID commands
 
@@ -530,7 +530,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     }
 
    public:
-    SteeringActuator() : Node("steering_controller_node") {
+    SteeringActuator() : Node("steering_actuator_node") {
         // Steering parameters
         this->declare_parameter<int>(PARAM_ACCELERATION, 0);
         this->declare_parameter<int>(PARAM_VELOCITY, 0);
@@ -544,6 +544,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->get_parameter(PARAM_KP, this->Kp);
         this->get_parameter(PARAM_KI, this->Ki);
         this->get_parameter(PARAM_KD, this->Kd);
+
+        if (this->Kp == 0) {
+            RCLCPP_ERROR(this->get_logger(), "Please provide a rosparam yaml file!");
+            rclcpp::shutdown();
+            exit(EXIT_FAILURE);
+        }
 
         // Create publisher to topic "canbus_carbound"
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
@@ -577,6 +583,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->c5e_config_request_timer = this->create_wall_timer(
             std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
+
+        RCLCPP_INFO(this->get_logger(), "---Steering Actuator Node Initialised---");
     }
 
     // Shutdown system
