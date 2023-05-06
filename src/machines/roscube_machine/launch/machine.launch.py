@@ -38,7 +38,14 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(
-                        get_package_share_path("roscube_machine") / "launch" / "sensor_drivers.launch.py"
+                        get_package_share_path("sensors") / "launch" / "vlp32.launch.py"
+                    )
+                ),
+            ),
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    launch_file_path=str(
+                        get_package_share_path("sensors") / "launch" / "sbg_device.launch.py"
                     )
                 ),
             ),

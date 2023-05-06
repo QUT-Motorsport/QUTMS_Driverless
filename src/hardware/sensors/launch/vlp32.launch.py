@@ -2,7 +2,6 @@ import os
 
 from ament_index_python.packages import get_package_share_path
 import launch
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 import yaml
 
@@ -48,11 +47,6 @@ def generate_launch_description():
                     target_action=velodyne_driver_node,
                     on_exit=[launch.actions.EmitEvent(event=launch.events.Shutdown())],
                 )
-            ),
-            launch.actions.IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("sbg_driver") / "launch" / "sbg_device_launch.py")
-                ),
             ),
         ]
     )

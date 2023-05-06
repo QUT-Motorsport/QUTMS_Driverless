@@ -29,6 +29,10 @@ USER ${USERNAME}
 # copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
+RUN rm -rf ./src/hardware/sbg_ros2_driver
+
+RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
+
 # run a ros build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
