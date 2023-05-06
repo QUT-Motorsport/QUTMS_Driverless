@@ -19,6 +19,7 @@ ros-humble-joint-state-publisher
 ros-humble-pcl-ros
 ros-humble-robot-state-publisher
 ros-humble-xacro
+ros-humble-geodesy
 scikit-learn
 scipy
 seaborn
