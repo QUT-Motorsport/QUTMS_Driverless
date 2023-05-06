@@ -34,7 +34,7 @@ Y_RANGE = 10  # max y distance from car
 def wrap_to_pi(angle: float) -> float:  # in rads
     return (angle + pi) % (2 * pi) - pi
 
-
+# SLAM with the SBG GPS and internal orientation
 class SBGSlam(Node):
     initial_pos: Optional[Tuple[float, float]] = None
     prev_pos: Optional[Tuple[float, float]] = None
