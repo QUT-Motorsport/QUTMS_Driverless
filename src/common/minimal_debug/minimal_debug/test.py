@@ -4,9 +4,6 @@ from rclpy.node import Node
 from driverless_msgs.msg import ConeDetectionStamped
 
 class DisplayDetections(Node):
-    steering_angle: float = 0.0
-    velocity: float = 0.0
-
     def __init__(self):
         super().__init__("display_node")
 
