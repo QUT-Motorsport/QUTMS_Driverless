@@ -74,10 +74,14 @@ with open(slam_track_path) as f:
 
         for gt_c, slam_c in sorted(
             product(gt_cones, slam_cones),
-            key=lambda e: cone_dist(e[0], e[1]) + (float("inf") if e[1].colour != 1 and e[0] != e[1] else 0),
+            key=lambda e: cone_dist(e[0], e[1])
+            + (float("inf") if e[1].colour != 1 and e[0].colour != e[1].colour else 0),
         ):
             if len(unprocessed_gt) == 0 or len(unprocessed_slam) == 0:
                 break
+
+            if slam_c.colour != 1 and gt_c.colour != slam_c.colour:
+                continue
 
             if gt_c.id_ in unprocessed_gt and slam_c.id_ in unprocessed_slam:
                 unprocessed_gt.remove(gt_c.id_)
