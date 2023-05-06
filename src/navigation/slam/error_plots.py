@@ -2,12 +2,13 @@ from collections import OrderedDict
 import csv
 from dataclasses import dataclass
 from itertools import product
-from math import sqrt
+from math import degrees, sqrt
 from pathlib import Path
 from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
+from transforms3d.euler import quat2euler
 
 SLAM_TRACK = "_slam_track_"
 SLAM_POSE = "_slam_pose_"
@@ -115,11 +116,22 @@ with open(slam_pose_path) as f:
     reader = csv.DictReader(f)
     for row in reader:
         stamp = float(row["header.stamp.sec"]) + (float(row["header.stamp.nanosec"]) * 1e-9)
+
+        # i, j, k angles in rad
+        ai, aj, ak = quat2euler(
+            [
+                float(row["pose.pose.orientation.w"]),
+                float(row["pose.pose.orientation.x"]),
+                float(row["pose.pose.orientation.y"]),
+                float(row["pose.pose.orientation.z"]),
+            ]
+        )
+
         slam_poses.append(
             Pose(
                 x=float(row["pose.pose.position.x"]),
                 y=float(row["pose.pose.position.y"]),
-                theta=0,
+                theta=degrees(ak),
             ),
         )
         slam_pose_stamps.append(stamp)
@@ -137,10 +149,19 @@ with open(gt_odom_path) as f:
     reader = csv.DictReader(f)
     for row in reader:
         stamp = float(row["header.stamp.sec"]) + (float(row["header.stamp.nanosec"]) * 1e-9)
+        # i, j, k angles in rad
+        ai, aj, ak = quat2euler(
+            [
+                float(row["pose.pose.orientation.w"]),
+                float(row["pose.pose.orientation.x"]),
+                float(row["pose.pose.orientation.y"]),
+                float(row["pose.pose.orientation.z"]),
+            ]
+        )
         pose = Pose(
             x=float(row["pose.pose.position.x"]),
             y=float(row["pose.pose.position.y"]),
-            theta=0,
+            theta=degrees(ak),
         )
         slam_id = np.argmin([abs(s - stamp) for s in slam_pose_stamps])
         stamp_diff = slam_pose_stamps[slam_id] - stamp
@@ -154,9 +175,11 @@ with open(gt_odom_path) as f:
         x_err.append(slam_pose.x - pose.x)
         y_err.append(slam_pose.y - pose.y)
         euc_err.append(pose_euc_dist(pose, slam_pose))
+        theta_err.append(slam_pose.theta - pose.theta)
         x_err_stamp.append(stamp)
         y_err_stamp.append(stamp)
         euc_err_stamp.append(stamp)
+        theta_err_stamp.append(stamp)
 
 # plot
 fig, axs = plt.subplots(2, 1, sharex="col")
@@ -167,5 +190,6 @@ axs[0].plot(unmatched_cones_stamp, unmatched_cones, linewidth=2.0)
 axs[1].plot(x_err_stamp, x_err, linewidth=2.0)
 axs[1].plot(y_err_stamp, y_err, linewidth=2.0)
 axs[1].plot(euc_err_stamp, euc_err, linewidth=2.0)
+axs[1].plot(theta_err_stamp, theta_err, linewidth=2.0)
 
 plt.show()
