@@ -17,6 +17,8 @@ dependencies:
   - ninja
   - numpy==1.23
   - typing-extensions # for some reason, not installed in base python?
+  - tornado
+  - colour
   - pip
   - pip:
     - colcon-common-extensions
