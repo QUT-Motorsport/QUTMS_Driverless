@@ -7,6 +7,7 @@ from pathlib import Path
 from pprint import pprint
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 SLAM_TRACK = "_slam_track_"
 SLAM_POSE = "_slam_pose_"
@@ -30,6 +31,13 @@ class Cone:
     id_: int
 
 
+@dataclass
+class Pose:
+    x: float
+    y: float
+    theta: float
+
+
 gt_cones: list[Cone] = []
 
 
@@ -44,6 +52,10 @@ def dict_to_cone(d: dict, id_: int) -> Cone:
 
 def cone_dist(c1: Cone, c2: Cone) -> float:
     return sqrt((c1.x - c2.x) ** 2 + (c1.y - c2.y) ** 2)
+
+
+def pose_euc_dist(p1: Pose, p2: Pose) -> float:
+    return sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 
 
 with open(gt_track_path) as f:
@@ -90,17 +102,70 @@ with open(slam_track_path) as f:
                 total_err += cone_dist(gt_c, slam_c)
 
         adj_total_err = total_err / (len(slam_cones) - len(unprocessed_slam))
-        print(f"{stamp} ({adj_total_err})")
+        print(f"Cones: {stamp} ({adj_total_err})")
         cone_err.append(adj_total_err)
         cone_err_stamp.append(stamp)
         unmatched_cones.append(len(unprocessed_slam))
         unmatched_cones_stamp.append(stamp)
 
+slam_poses = []
+slam_pose_stamps = []
+
+with open(slam_pose_path) as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        stamp = float(row["header.stamp.sec"]) + (float(row["header.stamp.nanosec"]) * 1e-9)
+        slam_poses.append(
+            Pose(
+                x=float(row["pose.pose.position.x"]),
+                y=float(row["pose.pose.position.y"]),
+                theta=0,
+            ),
+        )
+        slam_pose_stamps.append(stamp)
+
+x_err = []
+x_err_stamp = []
+y_err = []
+y_err_stamp = []
+euc_err = []
+euc_err_stamp = []
+theta_err = []
+theta_err_stamp = []
+
+with open(gt_odom_path) as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        stamp = float(row["header.stamp.sec"]) + (float(row["header.stamp.nanosec"]) * 1e-9)
+        pose = Pose(
+            x=float(row["pose.pose.position.x"]),
+            y=float(row["pose.pose.position.y"]),
+            theta=0,
+        )
+        slam_id = np.argmin([abs(s - stamp) for s in slam_pose_stamps])
+        stamp_diff = slam_pose_stamps[slam_id] - stamp
+
+        if abs(stamp_diff) > 0.1:
+            break
+
+        print(f"Pose: {stamp} ({stamp_diff})")
+
+        slam_pose = slam_poses[slam_id]
+        x_err.append(slam_pose.x - pose.x)
+        y_err.append(slam_pose.y - pose.y)
+        euc_err.append(pose_euc_dist(pose, slam_pose))
+        x_err_stamp.append(stamp)
+        y_err_stamp.append(stamp)
+        euc_err_stamp.append(stamp)
 
 # plot
-fig, ax = plt.subplots()
+fig, axs = plt.subplots(2, 1, sharex="col")
 
-ax.plot(cone_err_stamp, cone_err, linewidth=2.0)
-ax.plot(unmatched_cones_stamp, unmatched_cones, linewidth=2.0)
+axs[0].plot(cone_err_stamp, cone_err, linewidth=2.0)
+axs[0].plot(unmatched_cones_stamp, unmatched_cones, linewidth=2.0)
+
+axs[1].plot(x_err_stamp, x_err, linewidth=2.0)
+axs[1].plot(y_err_stamp, y_err, linewidth=2.0)
+axs[1].plot(euc_err_stamp, euc_err, linewidth=2.0)
 
 plt.show()
