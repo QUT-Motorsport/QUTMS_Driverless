@@ -82,8 +82,8 @@ class EKFSLAMNode : public rclcpp::Node {
         declare_parameter<double>(PARAM_BEARING_VARIANCE, 0.1);
 
         declare_parameter<double>(PARAM_UNCERTANTY_TIME_WEIGHT, 0.005);
-        declare_parameter<double>(PARAM_UNCERTANTY_ROTATION_WEIGHT, 0.005);
-        declare_parameter<double>(PARAM_UNCERTANTY_FORWARD_WEIGHT, 0.005);
+        declare_parameter<double>(PARAM_UNCERTANTY_ROTATION_WEIGHT, 0.0);
+        declare_parameter<double>(PARAM_UNCERTANTY_FORWARD_WEIGHT, 0.0);
         declare_parameter<double>(PARAM_UNCERTANTY_HEADING_TIME_WEIGHT, 0.005);
 
         declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);

@@ -46,10 +46,14 @@ class EKFslam {
                                       double time_weight, double rotation_weight, double forward_weight,
                                       double heading_time_weight) {
         Eigen::Matrix3d uncertanty = Eigen::Matrix3d::Zero();
-        uncertanty(0, 0) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
-                           forward_weight * abs(cos(theta) * forward_vel);
-        uncertanty(1, 1) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
-                           forward_weight * abs(sin(theta) * forward_vel);
+        // uncertanty(0, 0) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
+        //                    forward_weight * abs(cos(theta) * forward_vel);
+        // uncertanty(1, 1) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
+        //                    forward_weight * abs(sin(theta) * forward_vel);
+        // uncertanty(2, 2) = heading_time_weight * dt;
+
+        uncertanty(0, 0) = time_weight * dt * abs(cos(theta));
+        uncertanty(1, 1) = time_weight * dt * abs(sin(theta));
         uncertanty(2, 2) = heading_time_weight * dt;
         return uncertanty;
     }

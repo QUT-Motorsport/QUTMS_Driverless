@@ -17,8 +17,6 @@ def generate_launch_description():
                     {"range_variance": 0.5},
                     {"bearing_variance": 0.1},
                     {"uncertanty_time_weight": 0.005},
-                    {"uncertanty_rotation_weight": 0.005},
-                    {"uncertanty_forward_weight": 0.005},
                     {"uncertanty_heading_time_weight": 0.005},
                     {"association_dist_threshold": 1.5},
                     {"use_total_abs_vel": False},
