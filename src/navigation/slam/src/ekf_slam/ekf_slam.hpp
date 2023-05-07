@@ -42,18 +42,24 @@ class EKFslam {
     Eigen::MatrixXd mu;   // final state (mean, μ)
     Eigen::MatrixXd cov;  // final state (covariance, ∑)
 
-    Eigen::Matrix3d motion_uncertanty(double dt, double theta, double rotational_vel, double forward_vel) {
+    Eigen::Matrix3d motion_uncertanty(double dt, double theta, double rotational_vel, double forward_vel,
+                                      double time_weight, double rotation_weight, double forward_weight,
+                                      double heading_time_weight) {
         Eigen::Matrix3d uncertanty = Eigen::Matrix3d::Zero();
-        uncertanty(0, 0) = 0.005 * dt + 0.005 * abs(rotational_vel) * dt + 0.005 * abs(cos(theta) * forward_vel);
-        uncertanty(1, 1) = 0.005 * dt + 0.005 * abs(rotational_vel) * dt + 0.005 * abs(sin(theta) * forward_vel);
-        uncertanty(2, 2) = 0.005 * dt;
+        uncertanty(0, 0) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
+                           forward_weight * abs(cos(theta) * forward_vel);
+        uncertanty(1, 1) = time_weight * dt + rotation_weight * abs(rotational_vel) * dt +
+                           forward_weight * abs(sin(theta) * forward_vel);
+        uncertanty(2, 2) = heading_time_weight * dt;
         return uncertanty;
     }
 
    public:
     EKFslam();
 
-    void predict(double forward_vel, double rotational_vel, double dt);
+    void predict(double forward_vel, double rotational_vel, double dt, double uncertanty_time_weight,
+                 double uncertanty_rotation_weight, double uncertanty_forward_weight,
+                 double uncertanty_heading_time_weight);
     void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
                 double bearing_variance, double association_dist_threshold,
                 std::optional<const rclcpp::Logger> logger = {});

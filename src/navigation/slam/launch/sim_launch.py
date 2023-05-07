@@ -11,11 +11,15 @@ def generate_launch_description():
                 name="ekf_slam",
                 remappings=[
                     ("velocity", "imu/velocity"),
-                    ("cone_detection", "lidar/cone_detection"),
+                    ("cone_detection", "vision/cone_detection"),
                 ],
                 parameters=[
-                    {"range_variance": 1.5},
-                    {"bearing_variance": 0.5},
+                    {"range_variance": 0.5},
+                    {"bearing_variance": 0.1},
+                    {"uncertanty_time_weight": 0.005},
+                    {"uncertanty_rotation_weight": 0.005},
+                    {"uncertanty_forward_weight": 0.005},
+                    {"uncertanty_heading_time_weight": 0.005},
                     {"association_dist_threshold": 1.5},
                     {"use_total_abs_vel": False},
                 ],

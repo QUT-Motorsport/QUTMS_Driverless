@@ -31,6 +31,10 @@ using std::placeholders::_1;
 
 const std::string PARAM_RANGE_VARIANCE = "range_variance";
 const std::string PARAM_BEARING_VARIANCE = "bearing_variance";
+const std::string PARAM_UNCERTANTY_TIME_WEIGHT = "uncertanty_time_weight";
+const std::string PARAM_UNCERTANTY_ROTATION_WEIGHT = "uncertanty_rotation_weight";
+const std::string PARAM_UNCERTANTY_FORWARD_WEIGHT = "uncertanty_forward_weight";
+const std::string PARAM_UNCERTANTY_HEADING_TIME_WEIGHT = "uncertanty_heading_time_weight";
 const std::string PARAM_ASSOCIATION_DIST_THRESHOLD = "association_dist_threshold";
 const std::string PARAM_USE_TOTAL_ABS_VEL = "use_total_abs_vel";
 
@@ -46,6 +50,12 @@ class EKFSLAMNode : public rclcpp::Node {
 
     double range_variance;
     double bearing_variance;
+
+    double uncertanty_time_weight;
+    double uncertanty_rotation_weight;
+    double uncertanty_forward_weight;
+    double uncertanty_heading_time_weight;
+
     bool association_dist_threshold;
     bool use_total_abs_vel;
 
@@ -59,22 +69,34 @@ class EKFSLAMNode : public rclcpp::Node {
 
    public:
     EKFSLAMNode() : Node("ekf_node") {
-        twist_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+        twist_sub = create_subscription<geometry_msgs::msg::TwistStamped>(
             "velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
-        detection_sub = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
+        detection_sub = create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
             "cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
-        pose_pub = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
-        track_pub = this->create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);
+        pose_pub = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
+        track_pub = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);
 
-        this->declare_parameter<double>(PARAM_RANGE_VARIANCE, 0.1);
-        this->declare_parameter<double>(PARAM_BEARING_VARIANCE, 0.1);
-        this->declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);
-        this->declare_parameter<bool>(PARAM_USE_TOTAL_ABS_VEL, false);
+        declare_parameter<double>(PARAM_RANGE_VARIANCE, 0.1);
+        declare_parameter<double>(PARAM_BEARING_VARIANCE, 0.1);
+
+        declare_parameter<double>(PARAM_UNCERTANTY_TIME_WEIGHT, 0.005);
+        declare_parameter<double>(PARAM_UNCERTANTY_ROTATION_WEIGHT, 0.005);
+        declare_parameter<double>(PARAM_UNCERTANTY_FORWARD_WEIGHT, 0.005);
+        declare_parameter<double>(PARAM_UNCERTANTY_HEADING_TIME_WEIGHT, 0.005);
+
+        declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);
+        declare_parameter<bool>(PARAM_USE_TOTAL_ABS_VEL, false);
 
         range_variance = get_parameter(PARAM_RANGE_VARIANCE).as_double();
         bearing_variance = get_parameter(PARAM_BEARING_VARIANCE).as_double();
+
+        uncertanty_time_weight = get_parameter(PARAM_UNCERTANTY_TIME_WEIGHT).as_double();
+        uncertanty_rotation_weight = get_parameter(PARAM_UNCERTANTY_ROTATION_WEIGHT).as_double();
+        uncertanty_forward_weight = get_parameter(PARAM_UNCERTANTY_FORWARD_WEIGHT).as_double();
+        uncertanty_heading_time_weight = get_parameter(PARAM_UNCERTANTY_HEADING_TIME_WEIGHT).as_double();
+
         association_dist_threshold = get_parameter(PARAM_ASSOCIATION_DIST_THRESHOLD).as_double();
         use_total_abs_vel = get_parameter(PARAM_USE_TOTAL_ABS_VEL).as_bool();
     }
@@ -103,7 +125,8 @@ class EKFSLAMNode : public rclcpp::Node {
             return;
         }
 
-        ekf_slam.predict(forward_vel, rotational_vel, dt);
+        ekf_slam.predict(forward_vel, rotational_vel, dt, uncertanty_time_weight, uncertanty_rotation_weight,
+                         uncertanty_forward_weight, uncertanty_heading_time_weight);
 
         last_update = stamp;
     }
@@ -131,7 +154,8 @@ class EKFSLAMNode : public rclcpp::Node {
                        std::back_inserter(detection_msg->cones),
                        [](const driverless_msgs::msg::ConeWithCovariance& c) { return c.cone; });
 
-        ekf_slam.predict(forward_vel, rotational_vel, dt);
+        ekf_slam.predict(forward_vel, rotational_vel, dt, uncertanty_time_weight, uncertanty_rotation_weight,
+                         uncertanty_forward_weight, uncertanty_heading_time_weight);
         ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
                         this->get_logger());
 

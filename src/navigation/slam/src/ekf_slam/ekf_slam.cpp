@@ -189,7 +189,9 @@ EKFslam::EKFslam() {
     cov = pred_cov;
 }
 
-void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
+void EKFslam::predict(double forward_vel, double rotational_vel, double dt, double uncertanty_time_weight,
+                      double uncertanty_rotation_weight, double uncertanty_forward_weight,
+                      double uncertanty_heading_time_weight) {
     bool pre_sym = is_symmetric(pred_cov);
     bool pre_psd = is_positive_semi_definitite(pred_cov);
     double x, y, theta;
@@ -208,7 +210,9 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt) {
            0, 0, 1;
     // clang-format on
 
-    Eigen::Matrix3d uncertanty = motion_uncertanty(dt, theta, rotational_vel, forward_vel);
+    Eigen::Matrix3d uncertanty =
+        motion_uncertanty(dt, theta, rotational_vel, forward_vel, uncertanty_time_weight, uncertanty_rotation_weight,
+                          uncertanty_forward_weight, uncertanty_heading_time_weight);
     pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
         jFx * pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
 
