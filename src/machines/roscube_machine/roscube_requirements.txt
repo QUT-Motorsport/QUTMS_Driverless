@@ -3,14 +3,11 @@ dataclasses
 eigen
 matplotlib
 opencv
-ros-humble-ament-cmake-nose
 ros-humble-ackermann-msgs
-ros-humble-robot-state-publisher
 ros-humble-joint-state-publisher
 ros-humble-tf-transformations
 ros-humble-velodyne
-ros-humble-xacro
-# ros-humble-geodesy # will need to be added to robostack-staging
+ros-humble-geodesy
 scipy
 scikit-learn
 transforms3d

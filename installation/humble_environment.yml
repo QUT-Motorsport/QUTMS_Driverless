@@ -3,11 +3,13 @@ channels:
   - conda-forge
 dependencies:
   # ---------------------------------------------------------------------------
-  # ROS Base Env deps
+  # ROS Base Env deps (common across Tetson and ROScube)
   # ---------------------------------------------------------------------------
   - python=3.10
   - ros-humble-desktop
   - ros-humble-diagnostic-updater
+  - ros-humble-xacro
+  - ros-humble-robot-state-publisher
   - ca-certificates
   - openssl
   - compilers
