@@ -52,11 +52,11 @@ config_camera_path = os.path.join(
 
 
 def launch_setup(context, *args, **kwargs):
-    common_params = yaml.load(open(config_common_path))
+    common_params = yaml.safe_load(open(config_common_path))
 
     # Get parameters from yaml
     base_frame = common_params['/**']['ros__parameters']['pos_tracking']['base_frame']
-    cam_pose = common_params['/**']['ros__parameters']['pos_tracking']['initial_base_pose']    
+    cam_pose = common_params['/**']['ros__parameters']['pos_tracking']['initial_base_pose']
 
     # Robot State Publisher node
     rsp_node = Node(
@@ -73,12 +73,12 @@ def launch_setup(context, *args, **kwargs):
                     'camera_name:=zed2i ',
                     'camera_model:=zed2i ',
                     'base_frame:=', base_frame, ' ',
-                    'cam_pos_x:=', cam_pose[0], ' ',
-                    'cam_pos_y:=', cam_pose[1], ' ',
-                    'cam_pos_z:=', cam_pose[2], ' ',
-                    'cam_roll:=', cam_pose[3], ' ',
-                    'cam_pitch:=', cam_pose[4], ' ',
-                    'cam_yaw:=', cam_pose[5]
+                    'cam_pos_x:=', str(cam_pose[0]), ' ',
+                    'cam_pos_y:=', str(cam_pose[1]), ' ',
+                    'cam_pos_z:=', str(cam_pose[2]), ' ',
+                    'cam_roll:=', str(cam_pose[3]), ' ',
+                    'cam_pitch:=', str(cam_pose[4]), ' ',
+                    'cam_yaw:=', str(cam_pose[5])
                 ])
         }]
     )
