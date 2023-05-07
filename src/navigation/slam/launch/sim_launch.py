@@ -15,11 +15,12 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {"range_variance": 0.5},
-                    {"bearing_variance": 0.1},
+                    {"bearing_variance": 0.02},
                     {"uncertanty_time_weight": 0.005},
                     {"uncertanty_heading_time_weight": 0.005},
-                    {"association_dist_threshold": 1.5},
+                    {"association_dist_threshold": 2.0},
                     {"use_total_abs_vel": False},
+                    {"use_known_assocation": False},
                 ],
             ),
         ]

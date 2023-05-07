@@ -20,6 +20,12 @@ typedef struct ConeColourCount {
     int orange_small = 0;
 } ConeColourCount_t;
 
+// typedef struct ConeDetectionCount {
+//     uint detected = 0;
+//     int undetected = 0;
+//     bool inserted =
+// } ConeColourCount_t;
+
 void get_state_from_mu(const Eigen::MatrixXd& mu, double& x, double& y, double& theta);
 double wrap_pi(double x);
 int get_cone_colour(ConeColourCount_t cone_colour_count);
@@ -65,7 +71,7 @@ class EKFslam {
                  double uncertanty_rotation_weight, double uncertanty_forward_weight,
                  double uncertanty_heading_time_weight);
     void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
-                double bearing_variance, double association_dist_threshold,
+                double bearing_variance, double association_dist_threshold, bool use_known_association,
                 std::optional<const rclcpp::Logger> logger = {});
 
     const Eigen::MatrixXd& get_pred_mu() { return pred_mu; };

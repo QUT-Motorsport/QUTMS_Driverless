@@ -37,6 +37,7 @@ const std::string PARAM_UNCERTANTY_FORWARD_WEIGHT = "uncertanty_forward_weight";
 const std::string PARAM_UNCERTANTY_HEADING_TIME_WEIGHT = "uncertanty_heading_time_weight";
 const std::string PARAM_ASSOCIATION_DIST_THRESHOLD = "association_dist_threshold";
 const std::string PARAM_USE_TOTAL_ABS_VEL = "use_total_abs_vel";
+const std::string PARAM_USE_KNOWN_ASSOCIATION = "use_known_association";
 
 double compute_dt(rclcpp::Time start_, rclcpp::Time end_) { return (end_ - start_).nanoseconds() * 1e-9; }
 
@@ -58,6 +59,7 @@ class EKFSLAMNode : public rclcpp::Node {
 
     bool association_dist_threshold;
     bool use_total_abs_vel;
+    bool use_known_association;
 
     std::queue<geometry_msgs::msg::TwistStamped::SharedPtr> twist_queue;
 
@@ -73,7 +75,7 @@ class EKFSLAMNode : public rclcpp::Node {
             "velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "cone_detection", 10, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "cone_detection", 1, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         pose_pub = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
         track_pub = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);
@@ -88,6 +90,7 @@ class EKFSLAMNode : public rclcpp::Node {
 
         declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);
         declare_parameter<bool>(PARAM_USE_TOTAL_ABS_VEL, false);
+        declare_parameter<bool>(PARAM_USE_KNOWN_ASSOCIATION, false);
 
         range_variance = get_parameter(PARAM_RANGE_VARIANCE).as_double();
         bearing_variance = get_parameter(PARAM_BEARING_VARIANCE).as_double();
@@ -98,7 +101,7 @@ class EKFSLAMNode : public rclcpp::Node {
         uncertanty_heading_time_weight = get_parameter(PARAM_UNCERTANTY_HEADING_TIME_WEIGHT).as_double();
 
         association_dist_threshold = get_parameter(PARAM_ASSOCIATION_DIST_THRESHOLD).as_double();
-        use_total_abs_vel = get_parameter(PARAM_USE_TOTAL_ABS_VEL).as_bool();
+        use_known_association = get_parameter(PARAM_USE_KNOWN_ASSOCIATION).as_bool();
     }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) { twist_queue.push(msg); }
@@ -157,7 +160,7 @@ class EKFSLAMNode : public rclcpp::Node {
         ekf_slam.predict(forward_vel, rotational_vel, dt, uncertanty_time_weight, uncertanty_rotation_weight,
                          uncertanty_forward_weight, uncertanty_heading_time_weight);
         ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
-                        this->get_logger());
+                        use_known_association, this->get_logger());
 
         last_update = stamp;
         publish_state(detection_msg->header.stamp);

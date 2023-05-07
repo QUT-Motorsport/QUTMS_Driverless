@@ -239,7 +239,7 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt, doub
 }
 
 void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
-                     double bearing_variance, double association_dist_threshold,
+                     double bearing_variance, double association_dist_threshold, bool use_known_association,
                      std::optional<const rclcpp::Logger> logger) {
     // Q = ( σ_range^2  0           )
     //     ( 0          σ_bearing^2 )
@@ -266,9 +266,12 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         double lm_range = sqrt(pow(cone.location.x, 2) + pow(cone.location.y, 2));
         double lm_bearing = wrap_pi(atan2(cone.location.y, cone.location.x));
 
-        std::optional<int> associated_idx =
-            find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y, association_dist_threshold);
-        // std::optional<int> associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
+        std::optional<int> associated_idx;
+        if (use_known_association) {
+            associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
+        } else {
+            associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y, association_dist_threshold);
+        }
 
         if (!associated_idx.has_value()) {
             // new landmark
