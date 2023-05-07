@@ -58,7 +58,7 @@ COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
 RUN rm -rf ./src/hardware/zed_ros2_driver
 
-RUN git clone --recurse-submodules https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-v3.8.2
+RUN git clone --recurse-submodules https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-humble-v3.8.2
 
 # run a build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
