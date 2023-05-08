@@ -51,7 +51,7 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
     pip install -r ./requirements.pip
 
-COPY ./src/machines/roscube_machine/jetson_requirements.conda ./requirements.conda
+COPY ./src/machines/jetson_machine/jetson_requirements.conda ./requirements.conda
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     mamba install -y --file ./requirements.conda
