@@ -6,10 +6,17 @@ from launch_ros.actions import Node
 # # range 0.01
 # RANGE_VAR = 0.05
 # BEARING_VAR = 0.01
+# ASSOCIATION = 1.0
+
+# # range 0.3
+# RANGE_VAR = 0.5
+# BEARING_VAR = 0.01
+# ASSOCIATION = 1.0
 
 # range 0.3
 RANGE_VAR = 0.5
 BEARING_VAR = 0.01
+ASSOCIATION = 1.0
 
 
 def generate_launch_description():
@@ -30,7 +37,7 @@ def generate_launch_description():
                     # {"uncertanty_heading_time_weight": 0.8},
                     {"uncertanty_time_weight": 0.005},
                     {"uncertanty_heading_time_weight": 0.00005},
-                    {"association_dist_threshold": 2.0},
+                    {"association_dist_threshold": ASSOCIATION},
                     {"use_total_abs_vel": False},
                     {"use_known_assocation": False},
                     {"use_odom_only": False},

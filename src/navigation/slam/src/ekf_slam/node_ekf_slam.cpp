@@ -59,7 +59,7 @@ class EKFSLAMNode : public rclcpp::Node {
     double uncertanty_forward_weight;
     double uncertanty_heading_time_weight;
 
-    bool association_dist_threshold;
+    double association_dist_threshold;
     bool use_total_abs_vel;
     bool use_known_association;
     bool use_odom_only;
@@ -173,6 +173,7 @@ class EKFSLAMNode : public rclcpp::Node {
                          uncertanty_forward_weight, uncertanty_heading_time_weight);
 
         if (!use_odom_only) {
+            RCLCPP_INFO(get_logger(), "Thresh: %f", association_dist_threshold);
             ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
                             use_known_association, this->get_logger());
         }

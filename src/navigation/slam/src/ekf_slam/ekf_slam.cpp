@@ -74,7 +74,7 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
                                                 double dist_threshold) {
     // data association, uses lowest euclidian distance, within a threshold
 
-    double min_distance = pow(dist_threshold, 2);  // m, threshold^2
+    double min_distance = dist_threshold;  // m, threshold^2
     std::optional<int> idx = {};
 
     for (int i = CAR_STATE_SIZE; i < mu.rows(); i += LANDMARK_STATE_SIZE) {
@@ -83,7 +83,7 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
         double i_x = mu(i, 0);
         double i_y = mu(i + 1, 0);
 
-        double distance = (global_x - i_x) * (global_x - i_x) + (global_y - i_y) * (global_y - i_y);
+        double distance = sqrt(pow(global_x - i_x, 2) + pow(global_y - i_y, 2));
         if (distance < min_distance) {
             min_distance = distance;
             idx = i;
@@ -271,6 +271,7 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         if (use_known_association) {
             associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
         } else {
+            RCLCPP_INFO(logger.value(), "Thresh: %f", association_dist_threshold);
             associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y, association_dist_threshold);
         }
 
