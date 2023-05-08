@@ -51,7 +51,7 @@ RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download
     chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
     ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
 
-COPY installation/humble_environment.yml /tmp/environment.yml
+COPY docker/base_environment.yml /tmp/environment.yml
 
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba env create --name driverless_env --file environment.yml && \

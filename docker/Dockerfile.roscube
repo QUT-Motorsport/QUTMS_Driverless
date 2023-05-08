@@ -15,13 +15,13 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-COPY ./src/machines/roscube_machine/roscube_requirements.txt ./requirements
+COPY ./src/machines/roscube_machine/roscube_requirements.conda ./requirements.conda
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
-    mamba install -y --file ./requirements
+    mamba install -y --file ./requirements.conda
 
 # cleanup
-RUN rm -f ./requirements
+RUN rm -f ./requirements.conda
 
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}

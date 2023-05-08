@@ -44,15 +44,20 @@ COPY ./src/machines/jetson_machine/SN33580719.conf /usr/local/zed/settings/SN335
 WORKDIR /home/$USERNAME/driverless_ws
 
 # requirements
-COPY ./src/machines/jetson_machine/jetson_requirements.txt ./requirements
+COPY ./src/machines/jetson_machine/jetson_requirements.pip ./requirements.pip
 # tensorRT python api wheel
 COPY ./src/machines/jetson_machine/tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl ./tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
-    pip install -r ./requirements 
+    pip install -r ./requirements.pip
+
+COPY ./src/machines/roscube_machine/jetson_requirements.conda ./requirements.conda
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file ./requirements.conda
 
 # cleanup
-RUN rm -f ./requirements ./tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl
+RUN rm -f ./requirements.conda ./requirements.pip ./tensorrt-8.2.1.8-cp310-none-linux_aarch64.whl
 
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
