@@ -69,7 +69,7 @@ class EKFslam {
 
     void predict(double forward_vel, double rotational_vel, double dt, double uncertanty_time_weight,
                  double uncertanty_rotation_weight, double uncertanty_forward_weight,
-                 double uncertanty_heading_time_weight);
+                 double uncertanty_heading_time_weight, std::optional<const rclcpp::Logger> logger = {});
     void update(const std::vector<driverless_msgs::msg::Cone>& detected_cones, double range_variance,
                 double bearing_variance, double association_dist_threshold, bool use_known_association,
                 std::optional<const rclcpp::Logger> logger = {});

@@ -94,7 +94,7 @@ std::optional<int> find_associated_landmark_idx(const Eigen::MatrixXd& mu, doubl
 }
 
 int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_map_x, double lm_map_y, double lm_range,
-                           double lm_bearing, const Eigen::Matrix2d& Q) {
+                           double lm_bearing, const Eigen::Matrix2d& Q, std::optional<const rclcpp::Logger> logger) {
     bool pre_sym = is_symmetric(cov);
     bool pre_psd = is_positive_semi_definitite(cov);
     mu.conservativeResize(mu.rows() + LANDMARK_STATE_SIZE, Eigen::NoChange);
@@ -127,21 +127,25 @@ int initalise_new_landmark(Eigen::MatrixXd& mu, Eigen::MatrixXd& cov, double lm_
 
     // cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = covLmState;
     // cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmState.transpose();
+    // Eigen::Matrix<double, 2, 3> manualCovLmState;
+    // manualCovLmState << 0.0001, 0, 0.0001, 0, 0, 0;
+    // cov.bottomLeftCorner(LANDMARK_STATE_SIZE, CAR_STATE_SIZE) = manualCovLmState;
+    // cov.topRightCorner(CAR_STATE_SIZE, LANDMARK_STATE_SIZE) = manualCovLmState.transpose();
     cov.bottomRightCorner(LANDMARK_STATE_SIZE, LANDMARK_STATE_SIZE) = covLmLm;
 
     bool post_sym = is_symmetric(cov);
     bool post_psd = is_positive_semi_definitite(cov);
 
-    if (!post_sym || !post_sym) {
-        std::cout << "LM Pre Sym: " << post_sym << std::endl;
-        std::cout << "LM Post Sym: " << post_sym << std::endl;
-        std::cout << "LM Not symmetric" << std::endl;
+    if (logger && (!post_sym || !post_sym)) {
+        RCLCPP_WARN(logger.value(), "New Landmark Pre Sym: %d", pre_sym);
+        RCLCPP_WARN(logger.value(), "New Landmark Post Sym: %d", post_sym);
+        RCLCPP_WARN(logger.value(), "New Landmark Not symmetric");
     }
 
-    if (!pre_psd || !post_psd) {
-        std::cout << "LM Pre PSD: " << pre_psd << std::endl;
-        std::cout << "LM Post PSD: " << post_psd << std::endl;
-        std::cout << "LM Not PSD" << std::endl;
+    if (logger && (!pre_psd || !post_psd)) {
+        RCLCPP_WARN(logger.value(), "New Landmark Pre PSD: %d", pre_psd);
+        RCLCPP_WARN(logger.value(), "New Landmark Post PSD: %d", post_psd);
+        RCLCPP_WARN(logger.value(), "New Landmark Not PSD");
     }
 
     return new_lm_idx;
@@ -191,7 +195,7 @@ EKFslam::EKFslam() {
 
 void EKFslam::predict(double forward_vel, double rotational_vel, double dt, double uncertanty_time_weight,
                       double uncertanty_rotation_weight, double uncertanty_forward_weight,
-                      double uncertanty_heading_time_weight) {
+                      double uncertanty_heading_time_weight, std::optional<const rclcpp::Logger> logger) {
     bool pre_sym = is_symmetric(pred_cov);
     bool pre_psd = is_positive_semi_definitite(pred_cov);
     double x, y, theta;
@@ -219,16 +223,16 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt, doub
     bool post_sym = is_symmetric(pred_cov);
     bool post_psd = is_positive_semi_definitite(pred_cov);
 
-    if (!post_sym || !post_sym) {
-        std::cout << "Pre Sym: " << post_sym << std::endl;
-        std::cout << "Post Sym: " << post_sym << std::endl;
-        std::cout << "Not symmetric" << std::endl;
+    if (logger && (!post_sym || !post_sym)) {
+        RCLCPP_WARN(logger.value(), "Predict Pre Sym: %d", pre_sym);
+        RCLCPP_WARN(logger.value(), "Predict Post Sym: %d", post_sym);
+        RCLCPP_WARN(logger.value(), "Predict Not symmetric");
     }
 
-    if (!pre_psd || !post_psd) {
-        std::cout << "Pre PSD: " << pre_psd << std::endl;
-        std::cout << "Post PSD: " << post_psd << std::endl;
-        std::cout << "Not PSD" << std::endl;
+    if (logger && (!pre_psd || !post_psd)) {
+        RCLCPP_WARN(logger.value(), "Predict Pre PSD: %d", pre_psd);
+        RCLCPP_WARN(logger.value(), "Predict Post PSD: %d", post_psd);
+        RCLCPP_WARN(logger.value(), "Predict Not PSD");
     }
 
     mu = pred_mu;
@@ -272,7 +276,8 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
 
         if (!associated_idx.has_value()) {
             // new landmark
-            associated_idx = initalise_new_landmark(pred_mu, pred_cov, lm_map_x, lm_map_y, lm_range, lm_bearing, Q);
+            associated_idx =
+                initalise_new_landmark(pred_mu, pred_cov, lm_map_x, lm_map_y, lm_range, lm_bearing, Q, logger);
             initalise_new_cone_colour();
             initalise_new_cone_sim_idx(cone.sim_cone_index, associated_idx.value());
         }
