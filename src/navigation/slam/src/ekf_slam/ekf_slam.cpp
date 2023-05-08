@@ -216,9 +216,6 @@ void EKFslam::predict(double forward_vel, double rotational_vel, double dt, doub
     pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) =
         jFx * pred_cov.topLeftCorner(CAR_STATE_SIZE, CAR_STATE_SIZE) * jFx.transpose() + uncertanty;
 
-    mu = pred_mu;
-    cov = pred_cov;
-
     bool post_sym = is_symmetric(pred_cov);
     bool post_psd = is_positive_semi_definitite(pred_cov);
 

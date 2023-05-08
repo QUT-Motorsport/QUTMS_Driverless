@@ -38,6 +38,8 @@ const std::string PARAM_UNCERTANTY_HEADING_TIME_WEIGHT = "uncertanty_heading_tim
 const std::string PARAM_ASSOCIATION_DIST_THRESHOLD = "association_dist_threshold";
 const std::string PARAM_USE_TOTAL_ABS_VEL = "use_total_abs_vel";
 const std::string PARAM_USE_KNOWN_ASSOCIATION = "use_known_association";
+const std::string PARAM_USE_ODOM_ONLY = "use_odom_only";
+const std::string PARAM_REVERSE_ROTATION = "reverse_rotation";
 
 double compute_dt(rclcpp::Time start_, rclcpp::Time end_) { return (end_ - start_).nanoseconds() * 1e-9; }
 
@@ -60,6 +62,8 @@ class EKFSLAMNode : public rclcpp::Node {
     bool association_dist_threshold;
     bool use_total_abs_vel;
     bool use_known_association;
+    bool use_odom_only;
+    bool reverse_rotation;
 
     std::queue<geometry_msgs::msg::TwistStamped::SharedPtr> twist_queue;
 
@@ -91,6 +95,8 @@ class EKFSLAMNode : public rclcpp::Node {
         declare_parameter<double>(PARAM_ASSOCIATION_DIST_THRESHOLD, 1.5);
         declare_parameter<bool>(PARAM_USE_TOTAL_ABS_VEL, false);
         declare_parameter<bool>(PARAM_USE_KNOWN_ASSOCIATION, false);
+        declare_parameter<bool>(PARAM_USE_ODOM_ONLY, false);
+        declare_parameter<bool>(PARAM_REVERSE_ROTATION, false);
 
         range_variance = get_parameter(PARAM_RANGE_VARIANCE).as_double();
         bearing_variance = get_parameter(PARAM_BEARING_VARIANCE).as_double();
@@ -102,6 +108,8 @@ class EKFSLAMNode : public rclcpp::Node {
 
         association_dist_threshold = get_parameter(PARAM_ASSOCIATION_DIST_THRESHOLD).as_double();
         use_known_association = get_parameter(PARAM_USE_KNOWN_ASSOCIATION).as_bool();
+        use_odom_only = get_parameter(PARAM_USE_ODOM_ONLY).as_bool();
+        reverse_rotation = get_parameter(PARAM_REVERSE_ROTATION).as_bool();
     }
 
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) { twist_queue.push(msg); }
@@ -115,7 +123,11 @@ class EKFSLAMNode : public rclcpp::Node {
             forward_vel = msg->twist.linear.x;
         }
 
-        rotational_vel = -msg->twist.angular.z;
+        if (reverse_rotation) {
+            rotational_vel = -msg->twist.angular.z;
+        } else {
+            rotational_vel = msg->twist.angular.z;
+        }
 
         if (!last_update.has_value()) {
             last_update = stamp;
@@ -159,8 +171,11 @@ class EKFSLAMNode : public rclcpp::Node {
 
         ekf_slam.predict(forward_vel, rotational_vel, dt, uncertanty_time_weight, uncertanty_rotation_weight,
                          uncertanty_forward_weight, uncertanty_heading_time_weight);
-        ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
-                        use_known_association, this->get_logger());
+
+        if (!use_odom_only) {
+            ekf_slam.update(detection_msg->cones, range_variance, bearing_variance, association_dist_threshold,
+                            use_known_association, this->get_logger());
+        }
 
         last_update = stamp;
         publish_state(detection_msg->header.stamp);
