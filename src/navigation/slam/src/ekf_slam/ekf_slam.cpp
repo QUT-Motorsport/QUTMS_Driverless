@@ -271,7 +271,6 @@ void EKFslam::update(const std::vector<driverless_msgs::msg::Cone>& detected_con
         if (use_known_association) {
             associated_idx = find_associated_cone_idx_from_sim_idx(cone.sim_cone_index);
         } else {
-            RCLCPP_INFO(logger.value(), "Thresh: %f", association_dist_threshold);
             associated_idx = find_associated_landmark_idx(pred_mu, lm_map_x, lm_map_y, association_dist_threshold);
         }
 
