@@ -3,8 +3,12 @@ from launch_ros.actions import Node
 
 # bearing 0.00872665
 
-# range 0.01
-RANGE_VAR = 0.05
+# # range 0.01
+# RANGE_VAR = 0.05
+# BEARING_VAR = 0.01
+
+# range 0.3
+RANGE_VAR = 0.5
 BEARING_VAR = 0.01
 
 
