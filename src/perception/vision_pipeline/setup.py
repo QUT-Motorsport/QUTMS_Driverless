@@ -41,6 +41,7 @@ setup(
             "torch_detector = vision_pipeline.node_detector:main_torch",
             "trt_detector = vision_pipeline.node_detector:main_trt",
             "annotator = vision_pipeline.node_annotator:main",
+            "image_saver = vision_pipeline.node_image_saver:main",
         ],
     },
 )
