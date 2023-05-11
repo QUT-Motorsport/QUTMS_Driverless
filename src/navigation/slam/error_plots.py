@@ -14,9 +14,9 @@ SLAM_TRACK = "_slam_track_"
 SLAM_POSE = "_slam_pose_"
 GT_TRACK = "_ground_truth_global_map_"
 GT_ODOM = "_ground_truth_odom_"
-CSV_PATH = "/home/alistair/dev/repos/QUTMS_Driverless/csv_data/"
+CSV_PATH = "/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/small_track/sim_lidar_test/csv_data/"
 
-TIMESTAMP = "2023-05-06T09:58:56"
+TIMESTAMP = "2023-05-08T15:41:19"
 
 slam_track_path = Path(CSV_PATH + SLAM_TRACK + TIMESTAMP + ".csv")
 slam_pose_path = Path(CSV_PATH + SLAM_POSE + TIMESTAMP + ".csv")
@@ -57,6 +57,11 @@ def cone_dist(c1: Cone, c2: Cone) -> float:
 
 def pose_euc_dist(p1: Pose, p2: Pose) -> float:
     return sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+
+
+def smallest_angle_dist(target_a: float, source_a: float):
+    a = target_a - source_a
+    return (a + 180) % 360 - 180
 
 
 with open(gt_track_path) as f:
@@ -110,6 +115,7 @@ with open(slam_track_path) as f:
         unmatched_cones_stamp.append(stamp)
 
 slam_poses = []
+slam_pose_uncertanties = []
 slam_pose_stamps = []
 
 with open(slam_pose_path) as f:
@@ -134,6 +140,11 @@ with open(slam_pose_path) as f:
                 theta=degrees(ak),
             ),
         )
+
+        covariance = eval(row["pose.covariance"])
+
+        slam_pose_uncertanties.append(Pose(x=covariance[0], y=covariance[1], theta=degrees(covariance[-1])))
+
         slam_pose_stamps.append(stamp)
 
 x_err = []
@@ -143,6 +154,7 @@ y_err_stamp = []
 euc_err = []
 euc_err_stamp = []
 theta_err = []
+theta_err_uncertanty = []
 theta_err_stamp = []
 
 with open(gt_odom_path) as f:
@@ -167,7 +179,8 @@ with open(gt_odom_path) as f:
         stamp_diff = slam_pose_stamps[slam_id] - stamp
 
         if abs(stamp_diff) > 0.1:
-            break
+            print(f"Pose out of sync: {stamp} ({stamp_diff})")
+            continue
 
         print(f"Pose: {stamp} ({stamp_diff})")
 
@@ -175,21 +188,23 @@ with open(gt_odom_path) as f:
         x_err.append(slam_pose.x - pose.x)
         y_err.append(slam_pose.y - pose.y)
         euc_err.append(pose_euc_dist(pose, slam_pose))
-        theta_err.append(slam_pose.theta - pose.theta)
+        theta_err.append(smallest_angle_dist(slam_pose.theta, pose.theta))
+        theta_err_uncertanty.append(slam_pose_uncertanties[slam_id].theta)
         x_err_stamp.append(stamp)
         y_err_stamp.append(stamp)
         euc_err_stamp.append(stamp)
         theta_err_stamp.append(stamp)
 
 # plot
-fig, axs = plt.subplots(2, 1, sharex="col")
+fig, axs = plt.subplots(7, 1, sharex="col")
 
 axs[0].plot(cone_err_stamp, cone_err, linewidth=2.0)
-axs[0].plot(unmatched_cones_stamp, unmatched_cones, linewidth=2.0)
+axs[1].plot(unmatched_cones_stamp, unmatched_cones, linewidth=2.0)
 
-axs[1].plot(x_err_stamp, x_err, linewidth=2.0)
-axs[1].plot(y_err_stamp, y_err, linewidth=2.0)
-axs[1].plot(euc_err_stamp, euc_err, linewidth=2.0)
-axs[1].plot(theta_err_stamp, theta_err, linewidth=2.0)
+axs[2].plot(x_err_stamp, x_err, linewidth=2.0)
+axs[3].plot(y_err_stamp, y_err, linewidth=2.0)
+axs[4].plot(euc_err_stamp, euc_err, linewidth=2.0)
+axs[5].plot(theta_err_stamp, theta_err, linewidth=2.0)
+axs[6].plot(theta_err_stamp, theta_err_uncertanty, linewidth=2.0)
 
 plt.show()
