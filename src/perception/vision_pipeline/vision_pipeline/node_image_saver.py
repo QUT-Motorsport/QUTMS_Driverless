@@ -1,8 +1,11 @@
-import rclpy
 import cv2
-from rclpy.node import Node
-from sensor_msgs.msg import Image
+
 from cv_bridge import CvBridge, CvBridgeError
+import rclpy
+from rclpy.node import Node
+
+from sensor_msgs.msg import Image
+
 
 class BagToImageFile(Node):
     bridge = CvBridge()
@@ -10,9 +13,11 @@ class BagToImageFile(Node):
     path = "bags/"
 
     def __init__(self):
-        super().__init__('bag_to_image_file_node')
-        self.subscription = self.create_subscription(Image, '/zed2i/zed_node/rgb/image_rect_color', self.listener_callback, 10)
-        
+        super().__init__("bag_to_image_file_node")
+        self.subscription = self.create_subscription(
+            Image, "/zed2i/zed_node/rgb/image_rect_color", self.listener_callback, 10
+        )
+
         # create a folder for the images
         print("Node has been initialized")
 
@@ -25,6 +30,7 @@ class BagToImageFile(Node):
 
         except CvBridgeError as e:
             print(e)
+
 
 def main(args=None):
     rclpy.init(args=args)
