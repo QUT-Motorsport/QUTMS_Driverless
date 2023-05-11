@@ -61,19 +61,20 @@ RUN rm -f ./requirements.conda ./requirements.pip ./tensorrt-8.2.1.8-cp310-none-
 
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
-RUN rm -rf ./src/hardware/zed_ros2_driver
-
 RUN git clone --recurse-submodules https://github.com/stereolabs/zed-ros2-wrapper.git --branch foxy-humble-v3.8.2
+
+ENV PYTHON_EXECUTABLE /home/${USERNAME}/mambaforge/envs/driverless_env/bin/python
 
 # run a build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
-    colcon build --symlink-install --packages-up-to jetson_machine --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
+    rm -rf ./src/hardware/zed_ros2_driver && \
+    colcon build --symlink-install --packages-up-to jetson_machine --cmake-args -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DPython3_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
 # delete source
 RUN rm -rf ./src
 
-USER ${USERNAME}
+# USER ${USERNAME}
 
 # tell ROS to use Cyclone DDS
 # ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
