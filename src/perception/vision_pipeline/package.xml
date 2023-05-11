@@ -7,8 +7,11 @@
     <maintainer email="team@qutmotorsport.com">Alistair English, Alastair Bradford</maintainer>
     <license>MIT</license>
 
+    <depend>cv_bridge</depend>
+    <depend>message_filters</depend>
+    <!-- Messages -->
+    <depend>geometry_msgs</depend>
     <depend>driverless_msgs</depend>
-    <depend>driverless_common</depend>
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>
 
