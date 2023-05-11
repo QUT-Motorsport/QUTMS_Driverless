@@ -5,6 +5,7 @@ dependencies:
   # ROS Base Env deps
   - python=3.10
   - ros-humble-desktop
+  - colcon-common-extensions
   - ca-certificates
   - openssl
   - compilers
@@ -16,11 +17,6 @@ dependencies:
   - typing-extensions # for some reason, not installed in base python?
   - pip
   - pip:
-    - colcon-common-extensions
-    # colcon shell support
-    - colcon-argcomplete
-    - colcon-bash
-    - colcon-zsh
     # package requirements
     - simplejpeg
 variables:

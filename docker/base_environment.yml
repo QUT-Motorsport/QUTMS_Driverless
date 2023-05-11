@@ -3,14 +3,15 @@ channels:
   - conda-forge
 dependencies:
   # ---------------------------------------------------------------------------
-  # ROS Base Env deps (common across Tetson and ROScube)
+  # ROS Base Env deps (common across Jetson and ROScube)
   # ---------------------------------------------------------------------------
   - python=3.10
   - ros-humble-desktop
+  - colcon-common-extensions
   - ca-certificates
   - openssl
   - compilers
-  - cmake=3.21
+  - cmake=3.18
   - pkg-config
   - make
   - ninja
@@ -19,12 +20,6 @@ dependencies:
   - tornado
   - colour
   - pip
-  - pip:
-    - colcon-common-extensions
-    # colcon shell support
-    - colcon-argcomplete
-    - colcon-bash
-    - colcon-zsh
 variables:
   # fix for WSL RVIZ2
   LIBGL_ALWAYS_INDIRECT:
