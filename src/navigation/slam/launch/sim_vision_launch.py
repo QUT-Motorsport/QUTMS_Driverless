@@ -1,4 +1,6 @@
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 # bearing 0.00872665
@@ -20,8 +22,13 @@ ASSOCIATION = 1.0
 
 
 def generate_launch_description():
+    range_variance = LaunchConfiguration("range_variance")
+    use_known_assocation = LaunchConfiguration("use_known_assocation")
+
     return LaunchDescription(
         [
+            DeclareLaunchArgument(name="range_variance"),
+            DeclareLaunchArgument(name="use_known_assocation"),
             Node(
                 package="slam",
                 executable="node_ekf_slam",
@@ -31,15 +38,13 @@ def generate_launch_description():
                     ("cone_detection", "vision/cone_detection"),
                 ],
                 parameters=[
-                    {"range_variance": RANGE_VAR},
-                    {"bearing_variance": BEARING_VAR},
-                    # {"uncertanty_time_weight": 0.005},
-                    # {"uncertanty_heading_time_weight": 0.8},
+                    {"range_variance": range_variance},
+                    {"bearing_variance": 0.01},
                     {"uncertanty_time_weight": 0.005},
                     {"uncertanty_heading_time_weight": 0.00005},
-                    {"association_dist_threshold": ASSOCIATION},
+                    {"association_dist_threshold": 1.0},
                     {"use_total_abs_vel": False},
-                    {"use_known_assocation": False},
+                    {"use_known_assocation": use_known_assocation},
                     {"use_odom_only": False},
                     {"reverse_rotation": False},
                 ],

@@ -1,0 +1,161 @@
+import os
+from pathlib import Path
+from pprint import pprint
+import shlex
+import signal
+import subprocess
+import time
+import traceback
+
+import rclpy
+from rclpy.node import Node
+
+from nav_msgs.msg import Odometry
+
+
+def start_sim(track_name: str, camera_range_noise: float, camera_gaussian_range_noise: bool):
+    env_vars = os.environ.copy()
+    env_vars["EUFS_MASTER"] = "/home/alistair/dev/repos/eufs_sim"
+    cmd = f"ros2 launch eufs_launcher simulation2.launch.py track:={track_name} camera_range_noise:={camera_range_noise} camera_gaussian_range_noise:={camera_gaussian_range_noise}"
+    return subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, shell=False, env=env_vars)
+
+
+def manual_mode():
+    cmd = 'ros2 service call /ros_can/set_mission eufs_msgs/srv/SetCanState "{ami_state: 21}"'
+    subprocess.run(shlex.split(cmd))
+
+
+def start_slam(known_association: bool, slam_range_var: float):
+    cmd = f"ros2 launch slam sim_vision_launch.py range_variance:={slam_range_var} use_known_assocation:={known_association}"
+    return subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, shell=False)
+
+
+def start_controls(track_name: str):
+    cmd = f"ros2 bag play /home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/controls"
+    return subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, shell=False)
+
+
+def record_bag(path: Path):
+    cmd = f"ros2 bag record /slam/pose /slam/track /ground_truth/odom /ground_truth/global_map -o {path.absolute()}"
+    return subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, shell=False)
+
+
+class DataWatcherNode(Node):
+    start_box_x = 9
+    start_box_y = 4
+    start_box_exit_count = 0
+    in_start_box = True
+
+    processes: list
+
+    def __init__(
+        self,
+        track_name: str,
+        camera_range_noise: float,
+        camera_gaussian_range_noise: bool,
+        known_association: bool,
+        slam_range_var: float,
+        processes: list,
+    ):
+        super().__init__("data_grabber")
+
+        self.create_subscription(Odometry, "/ground_truth/odom", self.callback, 10)
+
+        csv_folder = Path(
+            f"./csv_data/{track_name}/{'known_association' if known_association else 'unknown_association'}/{'gaussian' if camera_gaussian_range_noise else 'uniform'}/sim_range_var_{camera_range_noise}/slam_range_var_{slam_range_var}"
+        )
+        csv_folder.mkdir(parents=True, exist_ok=True)
+
+        self.processes = processes
+
+    def callback(self, msg: Odometry):
+        now_in_start_box = (
+            abs(msg.pose.pose.position.x) < self.start_box_x and abs(msg.pose.pose.position.y) < self.start_box_y
+        )
+        if not now_in_start_box and self.in_start_box:
+            self.start_box_exit_count += 1
+            if self.start_box_exit_count > 1:
+                raise SystemExit
+
+        self.in_start_box = now_in_start_box
+
+
+def exit_processes(processes):
+    for p in processes:
+        p.send_signal(signal.SIGINT)
+
+    while True:
+        try:
+            all_finished = True
+            for p in processes:
+                ret = p.wait()
+                if ret is None:
+                    all_finished = False
+            if all_finished:
+                break
+
+        except KeyboardInterrupt:
+            for p in processes:
+                p.send_signal(signal.SIGINT)
+
+
+if __name__ == "__main__":
+    for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
+        for camera_gaussian_range_noise in [True, False]:
+            for known_association in [True, False]:
+                for camera_range_noise in [0.01, 0.05] + [round(0.1 * i, 1) for i in range(1, 6)]:
+                    for slam_range_var in [0.05, 0.08] + [round(0.1 * i, 1) for i in range(1, 6)]:
+                        for run_num in range(1, 4):
+                            print(
+                                track_name,
+                                camera_gaussian_range_noise,
+                                known_association,
+                                camera_range_noise,
+                                slam_range_var,
+                                run_num,
+                            )
+                            bag_folder = Path(
+                                f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing"
+                            )
+                            bag_folder.mkdir(parents=True, exist_ok=True)
+                            bag_name = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_sim_rv_{camera_range_noise}_slam_rv_{slam_range_var}_{run_num}"
+
+                            processes = []
+                            try:
+                                sim = start_sim(track_name, camera_range_noise, camera_gaussian_range_noise)
+                                processes.append(sim)
+
+                                time.sleep(5)
+
+                                manual_mode()
+
+                                slam = start_slam(known_association, slam_range_var)
+                                processes.append(slam)
+
+                                bag = record_bag(bag_folder / bag_name)
+                                processes.append(bag)
+
+                                time.sleep(2)
+
+                                controls = start_controls(track_name)
+                                processes.append(controls)
+
+                                rclpy.init()
+                                node = DataWatcherNode(
+                                    track_name,
+                                    camera_range_noise,
+                                    camera_gaussian_range_noise,
+                                    known_association,
+                                    slam_range_var,
+                                    processes,
+                                )
+                                try:
+                                    rclpy.spin(node)
+                                except SystemExit:
+                                    node.destroy_node()
+                                    rclpy.shutdown()
+
+                            except Exception as e:
+                                print(traceback.format_exc())
+                            finally:
+                                exit_processes(processes)
