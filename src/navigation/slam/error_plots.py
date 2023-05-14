@@ -143,7 +143,7 @@ with open(slam_pose_path) as f:
 
         covariance = eval(row["pose.covariance"])
 
-        slam_pose_uncertanties.append(Pose(x=covariance[0], y=covariance[1], theta=degrees(covariance[-1])))
+        slam_pose_uncertanties.append(Pose(x=covariance[0], y=covariance[8], theta=degrees(covariance[-1])))
 
         slam_pose_stamps.append(stamp)
 

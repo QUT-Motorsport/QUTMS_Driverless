@@ -26,7 +26,7 @@ def manual_mode():
 
 
 def start_slam(known_association: bool, slam_range_var: float):
-    cmd = f"ros2 launch slam sim_vision_launch.py range_variance:={slam_range_var} use_known_assocation:={known_association}"
+    cmd = f"ros2 launch slam sim_vision_launch.py range_variance:={slam_range_var} use_known_association:={known_association}"
     return subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE, shell=False)
 
 
@@ -61,11 +61,6 @@ class DataWatcherNode(Node):
 
         self.create_subscription(Odometry, "/ground_truth/odom", self.callback, 10)
 
-        csv_folder = Path(
-            f"./csv_data/{track_name}/{'known_association' if known_association else 'unknown_association'}/{'gaussian' if camera_gaussian_range_noise else 'uniform'}/sim_range_var_{camera_range_noise}/slam_range_var_{slam_range_var}"
-        )
-        csv_folder.mkdir(parents=True, exist_ok=True)
-
         self.processes = processes
 
     def callback(self, msg: Odometry):
@@ -99,14 +94,100 @@ def exit_processes(processes):
                 p.send_signal(signal.SIGINT)
 
 
+def do_one_run(
+    track_name: str,
+    camera_gaussian_range_noise: bool,
+    known_association: bool,
+    camera_range_noise: float,
+    slam_range_var: float,
+    run_num: int,
+):
+    print(
+        track_name,
+        camera_gaussian_range_noise,
+        known_association,
+        camera_range_noise,
+        slam_range_var,
+        run_num,
+    )
+    bag_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
+    bag_folder.mkdir(parents=True, exist_ok=True)
+    bag_name = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_sim_rv_{camera_range_noise}_slam_rv_{slam_range_var}_{run_num}"
+
+    processes = []
+    try:
+        sim = start_sim(track_name, camera_range_noise, camera_gaussian_range_noise)
+        processes.append(sim)
+
+        time.sleep(5)
+
+        manual_mode()
+
+        slam = start_slam(known_association, slam_range_var)
+        processes.append(slam)
+
+        bag = record_bag(bag_folder / bag_name)
+        processes.append(bag)
+
+        time.sleep(2)
+
+        controls = start_controls(track_name)
+        processes.append(controls)
+
+        rclpy.init()
+        node = DataWatcherNode(
+            track_name,
+            camera_range_noise,
+            camera_gaussian_range_noise,
+            known_association,
+            slam_range_var,
+            processes,
+        )
+        try:
+            rclpy.spin(node)
+        except SystemExit:
+            node.destroy_node()
+            rclpy.shutdown()
+
+    except Exception as e:
+        print(traceback.format_exc())
+    finally:
+        exit_processes(processes)
+
+
 if __name__ == "__main__":
-    for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
+    # do_one_run(
+    #     track_name="small_track",
+    #     camera_gaussian_range_noise=True,
+    #     known_association=True,
+    #     camera_range_noise=0.8,
+    #     slam_range_var=0.8,
+    #     run_num=1,
+    # )
+
+    # for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
+    for track_name in ["small_track"]:
+
         for camera_gaussian_range_noise in [True, False]:
-            for known_association in [True, False]:
-                for camera_range_noise in [0.01, 0.05] + [round(0.1 * i, 1) for i in range(1, 6)]:
-                    for slam_range_var in [0.05, 0.08] + [round(0.1 * i, 1) for i in range(1, 6)]:
+
+            for known_association in [False]:
+
+                # for camera_range_noise in [0.01, 0.05] + [round(0.1 * i, 1) for i in range(1, 5)]:
+                for camera_range_noise in [round(0.1 * i, 1) for i in range(1, 5)]:
+
+                    if camera_range_noise < 0.1:
+                        range_var_options = [0.05, 0.08, 0.1]
+                    else:
+                        range_var_options = [
+                            round(0.1 * i, 1)
+                            for i in range(int(10 * camera_range_noise), int(10 * camera_range_noise) + 4)
+                        ]
+
+                    for slam_range_var in range_var_options:
+
                         for run_num in range(1, 4):
-                            print(
+
+                            do_one_run(
                                 track_name,
                                 camera_gaussian_range_noise,
                                 known_association,
@@ -114,48 +195,3 @@ if __name__ == "__main__":
                                 slam_range_var,
                                 run_num,
                             )
-                            bag_folder = Path(
-                                f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing"
-                            )
-                            bag_folder.mkdir(parents=True, exist_ok=True)
-                            bag_name = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_sim_rv_{camera_range_noise}_slam_rv_{slam_range_var}_{run_num}"
-
-                            processes = []
-                            try:
-                                sim = start_sim(track_name, camera_range_noise, camera_gaussian_range_noise)
-                                processes.append(sim)
-
-                                time.sleep(5)
-
-                                manual_mode()
-
-                                slam = start_slam(known_association, slam_range_var)
-                                processes.append(slam)
-
-                                bag = record_bag(bag_folder / bag_name)
-                                processes.append(bag)
-
-                                time.sleep(2)
-
-                                controls = start_controls(track_name)
-                                processes.append(controls)
-
-                                rclpy.init()
-                                node = DataWatcherNode(
-                                    track_name,
-                                    camera_range_noise,
-                                    camera_gaussian_range_noise,
-                                    known_association,
-                                    slam_range_var,
-                                    processes,
-                                )
-                                try:
-                                    rclpy.spin(node)
-                                except SystemExit:
-                                    node.destroy_node()
-                                    rclpy.shutdown()
-
-                            except Exception as e:
-                                print(traceback.format_exc())
-                            finally:
-                                exit_processes(processes)

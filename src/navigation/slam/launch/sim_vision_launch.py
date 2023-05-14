@@ -23,12 +23,12 @@ ASSOCIATION = 1.0
 
 def generate_launch_description():
     range_variance = LaunchConfiguration("range_variance")
-    use_known_assocation = LaunchConfiguration("use_known_assocation")
+    use_known_association = LaunchConfiguration("use_known_association")
 
     return LaunchDescription(
         [
             DeclareLaunchArgument(name="range_variance"),
-            DeclareLaunchArgument(name="use_known_assocation"),
+            DeclareLaunchArgument(name="use_known_association"),
             Node(
                 package="slam",
                 executable="node_ekf_slam",
@@ -44,7 +44,7 @@ def generate_launch_description():
                     {"uncertanty_heading_time_weight": 0.00005},
                     {"association_dist_threshold": 1.0},
                     {"use_total_abs_vel": False},
-                    {"use_known_assocation": use_known_assocation},
+                    {"use_known_association": use_known_association},
                     {"use_odom_only": False},
                     {"reverse_rotation": False},
                 ],
