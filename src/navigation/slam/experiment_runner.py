@@ -164,43 +164,60 @@ def do_one_run(
         exit_processes(processes)
 
 
-if __name__ == "__main__":
-    # do_one_run(
-    #     track_name="small_track",
-    #     camera_gaussian_range_noise=True,
-    #     known_association=True,
-    #     camera_range_noise=0.8,
-    #     slam_range_var=0.8,
-    #     run_num=1,
-    # )
+def float_point_one_range(start: float, end: float):
+    return (round(0.1 * i, 1) for i in range(int(10 * start), int(10 * end)))
 
+
+if __name__ == "__main__":
     # for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
     for track_name in ["small_track"]:
+        camera_gaussian_range_noise = True
+        known_association = True
 
-        for camera_gaussian_range_noise in [True, False]:
+        for camera_range_noise in [0.01, 0.05]:
+            for slam_range_var in [0.01, 0.05, 0.08]:
+                for run_num in range(1, 4):
+                    do_one_run(
+                        track_name,
+                        camera_gaussian_range_noise,
+                        known_association,
+                        camera_range_noise,
+                        slam_range_var,
+                        run_num,
+                    )
 
-            for known_association in [False]:
+        camera_range_noise = 0.1
+        for slam_range_var in [0.05, 0.08, 0.1, 0.2, 0.3]:
+            for run_num in range(1, 4):
+                do_one_run(
+                    track_name,
+                    camera_gaussian_range_noise,
+                    known_association,
+                    camera_range_noise,
+                    slam_range_var,
+                    run_num,
+                )
 
-                # for camera_range_noise in [0.01, 0.05] + [round(0.1 * i, 1) for i in range(1, 5)]:
-                for camera_range_noise in [round(0.1 * i, 1) for i in range(1, 5)]:
+        camera_range_noise = 0.2
+        for slam_range_var in [0.08, 0.1, 0.2, 0.3, 0.4]:
+            for run_num in range(1, 4):
+                do_one_run(
+                    track_name,
+                    camera_gaussian_range_noise,
+                    known_association,
+                    camera_range_noise,
+                    slam_range_var,
+                    run_num,
+                )
 
-                    if camera_range_noise < 0.1:
-                        range_var_options = [0.05, 0.08, 0.1]
-                    else:
-                        range_var_options = [
-                            round(0.1 * i, 1)
-                            for i in range(int(10 * camera_range_noise), int(10 * camera_range_noise) + 4)
-                        ]
-
-                    for slam_range_var in range_var_options:
-
-                        for run_num in range(1, 4):
-
-                            do_one_run(
-                                track_name,
-                                camera_gaussian_range_noise,
-                                known_association,
-                                camera_range_noise,
-                                slam_range_var,
-                                run_num,
-                            )
+        for camera_range_noise in float_point_one_range(0.3, 0.6):
+            for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+                for run_num in range(1, 4):
+                    do_one_run(
+                        track_name,
+                        camera_gaussian_range_noise,
+                        known_association,
+                        camera_range_noise,
+                        slam_range_var,
+                        run_num,
+                    )

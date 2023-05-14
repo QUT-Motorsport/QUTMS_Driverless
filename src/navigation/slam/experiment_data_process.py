@@ -14,12 +14,15 @@ from builtin_interfaces.msg import Time
 from experiment_helpers import search_query
 
 track_name = "small_track"
-camera_gaussian_range_noise = True
-known_association = True
-camera_range_noise = 0.1
-slam_range_var = 0.2
 
-SEARCH_QUERY = search_query(track_name=track_name)
+SEARCH_QUERY = search_query(
+    track_name=track_name,
+    camera_gaussian_range_noise=True,
+    known_association=True,
+    include_csv=False,
+)
+
+print(SEARCH_QUERY)
 
 add_types = {}
 msgs_folder = Path("/home/alistair/dev/repos/QUTMS_Driverless/src/common/driverless_msgs/msg")

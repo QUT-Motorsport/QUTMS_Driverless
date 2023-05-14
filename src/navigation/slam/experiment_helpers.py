@@ -19,6 +19,7 @@ def search_query(
     camera_range_noise: Union[float, str] = "*",
     slam_range_var: Union[float, str] = "*",
     run_num: Union[float, str] = "*",
+    include_csv: bool = False,
 ) -> str:
     if camera_gaussian_range_noise is not None:
         gaus = "gaus" if camera_gaussian_range_noise else "uni"
@@ -36,8 +37,8 @@ def search_query(
         + f"{ka}_"
         + f"sim_rv_{camera_range_noise}_"
         + f"slam_rv_{slam_range_var}_"
-        + f"{run_num}_"
-        + f"csv_data"
+        + f"{run_num}"
+        + (f"_csv_data" if include_csv else "")
     )
 
 

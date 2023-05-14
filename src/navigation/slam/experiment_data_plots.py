@@ -7,7 +7,7 @@ from experiment_helpers import get_run_details_from_name, search_query
 
 track_name = "small_track"
 camera_gaussian_range_noise = True
-known_association = False
+known_association = True
 
 data_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
 
@@ -21,6 +21,7 @@ for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
         camera_gaussian_range_noise=camera_gaussian_range_noise,
         known_association=known_association,
         camera_range_noise=r,
+        include_csv=True,
     )
 
     range_noises = set()
@@ -50,6 +51,7 @@ for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
             known_association=known_association,
             camera_range_noise=r,
             slam_range_var=range_noise,
+            include_csv=True,
         )
 
         for p in sorted(data_folder.glob(range_search_query)):
