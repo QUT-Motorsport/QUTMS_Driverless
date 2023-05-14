@@ -12,6 +12,8 @@ from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
 
+from experiment_helpers import get_run_name
+
 
 def start_sim(track_name: str, camera_range_noise: float, camera_gaussian_range_noise: bool):
     env_vars = os.environ.copy()
@@ -112,7 +114,14 @@ def do_one_run(
     )
     bag_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
     bag_folder.mkdir(parents=True, exist_ok=True)
-    bag_name = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_sim_rv_{camera_range_noise}_slam_rv_{slam_range_var}_{run_num}"
+    bag_name = get_run_name(
+        track_name,
+        camera_gaussian_range_noise,
+        known_association,
+        camera_range_noise,
+        slam_range_var,
+        run_num,
+    )
 
     processes = []
     try:

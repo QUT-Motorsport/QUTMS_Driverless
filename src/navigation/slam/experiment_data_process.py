@@ -11,14 +11,15 @@ from transforms3d.euler import quat2euler
 
 from builtin_interfaces.msg import Time
 
+from experiment_helpers import search_query
+
 track_name = "small_track"
 camera_gaussian_range_noise = True
 known_association = True
 camera_range_noise = 0.1
 slam_range_var = 0.2
-# SEARCH_QUERY = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_*"
-# SEARCH_QUERY = f"{track_name}_{'gaus' if camera_gaussian_range_noise else 'uni'}_{'ka' if known_association else 'uka'}_sim_rv_{camera_range_noise}_slam_rv_{slam_range_var}_*"
-SEARCH_QUERY = f"*"
+
+SEARCH_QUERY = search_query(track_name=track_name)
 
 add_types = {}
 msgs_folder = Path("/home/alistair/dev/repos/QUTMS_Driverless/src/common/driverless_msgs/msg")
@@ -35,26 +36,6 @@ register_types(add_types)
 
 
 bag_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
-
-
-def get_name_parts(p: Path) -> tuple:
-    name_parts = list(reversed(p.name.split("_")))
-
-    track_name = "_".join(name_parts[9:])
-    gaussian = name_parts[8] == "gaus"
-    known_association = name_parts[7] == "ka"
-    sim_rv = name_parts[4]
-    slam_rv = name_parts[1]
-    run_num = name_parts[0]
-
-    return (
-        track_name,
-        gaussian,
-        known_association,
-        sim_rv,
-        slam_rv,
-        run_num,
-    )
 
 
 def time_to_float(time: Time) -> float:
