@@ -68,7 +68,6 @@ ENV PYTHON_EXECUTABLE /home/${USERNAME}/mambaforge/envs/driverless_env/bin/pytho
 # run a build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env && \
-    rm -rf ./src/hardware/zed_ros2_driver && \
     colcon build --symlink-install --packages-up-to jetson_machine --cmake-args -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DPython3_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined
 
 # delete source
