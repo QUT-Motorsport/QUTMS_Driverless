@@ -13,13 +13,14 @@ from builtin_interfaces.msg import Time
 
 from experiment_helpers import search_query
 
+# track_name = "B_shape_02_03_2023"
 track_name = "small_track"
 
 SEARCH_QUERY = search_query(
     track_name=track_name,
-    camera_gaussian_range_noise=True,
-    known_association=True,
-    include_csv=False,
+    camera_gaussian_range_noise=False,
+    # known_association=True,
+    # include_csv=False,
 )
 
 print(SEARCH_QUERY)
@@ -133,7 +134,10 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                         final_pairs.append((gt_c, slam_c))
                         total_err += cone_dist(gt_c, slam_c)
 
-                adj_total_err = total_err / (len(slam_cones) - len(unprocessed_slam))
+                if len(slam_cones) < 1:
+                    adj_total_err = 0
+                else:
+                    adj_total_err = total_err / (len(slam_cones) - len(unprocessed_slam))
 
                 cone_err_writer.writerow(
                     {"stamp": stamp, "cone_error": adj_total_err, "unmatched_cones": len(unprocessed_slam)}

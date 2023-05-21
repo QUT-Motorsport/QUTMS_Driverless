@@ -7,14 +7,18 @@ from experiment_helpers import get_run_details_from_name, search_query
 
 track_name = "small_track"
 camera_gaussian_range_noise = True
-known_association = True
+known_association = False
 
 data_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
 
+sim_variance = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
+final_error = []
+unmached_cones = []
 
-for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
+
+for r in sim_variance:
+    # fig, axs = plt.subplots(2, 1, sharex="col")
     print(r)
-    fig, axs = plt.subplots(2, 1, sharex="col")
 
     range_query = search_query(
         track_name=track_name,
@@ -39,7 +43,8 @@ for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
     range_noises = sorted(list(range_noises))
     print(range_noises)
 
-    for range_noise in range_noises:
+    # for range_noise in range_noises:
+    for i in [1]:
         lowest_cone_err_cone_data = {}
         lowest_cone_err_pose_data = {}
         lowest_cone_err_name = {}
@@ -50,7 +55,7 @@ for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
             camera_gaussian_range_noise=camera_gaussian_range_noise,
             known_association=known_association,
             camera_range_noise=r,
-            slam_range_var=range_noise,
+            # slam_range_var=range_noise,
             include_csv=True,
         )
 
@@ -72,24 +77,42 @@ for r in [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]:
                                 lowest_cone_err_pose_data = {k: [float(row[k]) for row in rows] for k in rows[0]}
 
         if len(lowest_cone_err_cone_data) < 1:
-            print(f"No data for range {range_noise}.")
+            # print(f"No data for range {range_noise}.")
+            print(f"No data for range {r}.")
             continue
 
-        axs[0].plot("stamp", "cone_error", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0)
-        axs[1].plot(
-            "stamp", "unmatched_cones", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0
-        )
+        final_error.append(lowest_cone_err_cone_data["cone_error"][-1])
+        unmached_cones.append(lowest_cone_err_cone_data["unmatched_cones"][-1])
 
-        # axs[2].plot("stamp", "x_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[3].plot("stamp", "y_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[4].plot("stamp", "euc_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[5].plot("stamp", "theta_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[6].plot("stamp", "x_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[7].plot("stamp", "y_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
-        # axs[8].plot("stamp", "theta_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+    #     axs[0].plot("stamp", "cone_error", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0)
+    #     axs[1].plot(
+    #         "stamp", "unmatched_cones", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0
+    #     )
 
-    for ax in axs:
-        ax.legend()
-        ax.set_ylim(0, 1)
+    #     for ax in axs:
+    #         ax.legend()
+    #         ax.set_ylim(0, 1)
 
-    plt.show()
+    # plt.show()
+
+fig, axs = plt.subplots(2, 1, sharex="col")
+
+print(sim_variance)
+print(final_error)
+print(unmached_cones)
+axs[0].plot(sim_variance, final_error, linewidth=2.0)
+axs[1].plot(sim_variance, unmached_cones, linewidth=2.0)
+
+# axs[2].plot("stamp", "x_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[3].plot("stamp", "y_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[4].plot("stamp", "euc_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[5].plot("stamp", "theta_err", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[6].plot("stamp", "x_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[7].plot("stamp", "y_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+# axs[8].plot("stamp", "theta_uncertanty", data=lowest_cone_err_pose_data, label=lowest_cone_err_name, linewidth=2.0)
+
+for ax in axs:
+    ax.legend()
+    # ax.set_ylim(0, 1)
+
+plt.show()
