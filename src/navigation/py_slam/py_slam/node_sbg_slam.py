@@ -172,7 +172,9 @@ class SBGSlam(Node):
         for detection in self.properties:
             if detection.confirmed:
                 track_msg.cones.append(detection.cone_as_msg)
-                track_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
+                track_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg)
+                )
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
@@ -182,7 +184,9 @@ class SBGSlam(Node):
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
                 local_map_msg.cones.append(detection.local_cone_as_msg)
-                local_map_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg))
+                local_map_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg)
+                )
         self.local_publisher.publish(local_map_msg)
 
         # publish localisation msg

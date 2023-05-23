@@ -17,8 +17,8 @@ from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
 from nav_msgs.msg import Path
 
-from py_slam.cone_props import ConeProps
 from driverless_common.common import wrap_to_pi
+from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
 
@@ -43,7 +43,7 @@ class SBGSlam(Node):
     def __init__(self):
         super().__init__("sbg_slam_node")
 
-        self.create_timer((1/50), self.timer_callback)  # 50hz state 'prediction'
+        self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
@@ -72,11 +72,11 @@ class SBGSlam(Node):
     def timer_callback(self):
         """
         Listens to odom->base_footprint transform and updates the state.
-        Solution is to get the delta and add it to the previous state 
+        Solution is to get the delta and add it to the previous state
         and subtract the delta from the previous map->odom transform.
         """
         try:
-            odom_to_base = self.tf_buffer.lookup_transform('odom', 'base_footprint', rclpy.time.Time())
+            odom_to_base = self.tf_buffer.lookup_transform("odom", "base_footprint", rclpy.time.Time())
             # map_to_odom = self.tf_buffer.lookup_transform("track", "odom", rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e))
@@ -101,14 +101,13 @@ class SBGSlam(Node):
         # print("odom: ", self.last_odom_pose)
 
         # update the state
-        self.state[0:3] += (np.array([odom_x, odom_y, odom_ang]) - self.last_odom_pose)
+        self.state[0:3] += np.array([odom_x, odom_y, odom_ang]) - self.last_odom_pose
         self.state[2] = wrap_to_pi(self.state[2])
 
         # update the last odom pose
         self.last_odom_pose = np.array([odom_x, odom_y, odom_ang])
-        
-        # print("odom: ", self.state)
 
+        # print("odom: ", self.state)
 
     def callback(self, msg: ConeDetectionStamped):
         # skip if no transform received
@@ -178,7 +177,9 @@ class SBGSlam(Node):
         for detection in self.properties:
             if detection.confirmed:
                 track_msg.cones.append(detection.cone_as_msg)
-                track_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
+                track_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg)
+                )
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
@@ -188,7 +189,9 @@ class SBGSlam(Node):
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
                 local_map_msg.cones.append(detection.local_cone_as_msg)
-                local_map_msg.cones_with_cov.append(ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg))
+                local_map_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.local_cone_as_msg, covariance=detection.cov_as_msg)
+                )
         self.local_publisher.publish(local_map_msg)
 
         # update localisation transform
@@ -203,7 +206,9 @@ class SBGSlam(Node):
         map_to_base.header.frame_id = "track"
         map_to_base.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
-        map_to_base.pose.pose.orientation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
+        map_to_base.pose.pose.orientation = Quaternion(
+            x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0]
+        )
         # covariance as a 6x6 matrix
         cov = np.zeros((6, 6))
         cov[0:2, 0:2] = self.sigma[0:2, 0:2]
@@ -228,8 +233,10 @@ class SBGSlam(Node):
         map_to_odom_tf.transform.translation.x = self.state[0] - self.last_odom_pose[0]
         map_to_odom_tf.transform.translation.y = self.state[1] - self.last_odom_pose[1]
         map_to_odom_tf.transform.translation.z = 0.0
-        quaternion = euler2quat(0.0, 0.0, wrap_to_pi(self.state[2]-self.last_odom_pose[2]))
-        map_to_odom_tf.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
+        quaternion = euler2quat(0.0, 0.0, wrap_to_pi(self.state[2] - self.last_odom_pose[2]))
+        map_to_odom_tf.transform.rotation = Quaternion(
+            x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0]
+        )
         self.broadcaster.sendTransform(map_to_odom_tf)
 
     def predict(self, x_delta: float, y_delta: float, theta_delta: float):
