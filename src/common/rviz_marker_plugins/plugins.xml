@@ -1,0 +1,13 @@
+<library path="rviz_marker_plugins">
+
+    <class
+        name="rviz_marker_plugins/ConeDetectionStamped"
+        type="rviz_marker_plugins::displays::ConeDetectionStampedPlugin"
+        base_class_type="rviz_common::Display"
+    >
+        <description>
+            Displays a cone array relative to the Target Frame.
+        </description>
+    </class>
+
+</library>
