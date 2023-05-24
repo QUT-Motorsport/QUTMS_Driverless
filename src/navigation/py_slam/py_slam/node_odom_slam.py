@@ -4,25 +4,26 @@ import time
 from geodesy.utm import UTMPoint, fromLatLong
 import numpy as np
 from sklearn.neighbors import KDTree
-from tf2_ros import TransformBroadcaster
+from tf2_ros import TransformBroadcaster, TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from transforms3d.euler import euler2quat, quat2euler
 
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
 from nav_msgs.msg import Path
-from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
+from driverless_common.common import wrap_to_pi
 from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
 
-R = np.diag([0.01, 0.1]) ** 2  # motion model
-Q_LIDAR = np.diag([0.5, 0.5]) ** 2
+R = np.diag([0.01, 0.001]) ** 2  # motion model
+Q_LIDAR = np.diag([1, 1]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 15  # minimum frames before confirming cones
@@ -31,15 +32,8 @@ X_RANGE = 15  # max x distance from car
 Y_RANGE = 10  # max y distance from car
 
 
-def wrap_to_pi(angle: float) -> float:  # in rads
-    return (angle + pi) % (2 * pi) - pi
-
-
-# SLAM with the SBG GPS and internal orientation
 class SBGSlam(Node):
-    initial_pos: Optional[Tuple[float, float]] = None
-    prev_pos: Optional[Tuple[float, float]] = None
-    initial_ang: Optional[float] = None
+    last_odom_pose: Optional[np.ndarray] = None
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
@@ -49,16 +43,14 @@ class SBGSlam(Node):
     def __init__(self):
         super().__init__("sbg_slam_node")
 
-        # sync subscribers
-        # pos_sub = message_filters.Subscriber(self, SbgEkfNav, "/sbg/ekf_nav")
-        pos_sub = message_filters.Subscriber(self, SbgGpsPos, "/sbg/gps_pos")  # use gps rather than filtered
-        ang_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
-        ins_synchronizer.registerCallback(self.ins_callback)
+        self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
@@ -71,44 +63,57 @@ class SBGSlam(Node):
 
         self.get_logger().info("---SLAM node initialised---")
 
-    def ins_callback(self, gps_msg: SbgGpsPos, ekf_euler_msg: SbgEkfEuler):
-        if not self.initial_pos and not self.initial_ang:
-            coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-            self.prev_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z  # - pi
-            return
-
-        # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
-        coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-        # get relative to initial position and last state prediction
-        d_e = coords.easting - self.prev_pos[0]
-        d_n = coords.northing - self.prev_pos[1]
-        self.prev_pos = (coords.easting, coords.northing)
-
-        # get magnitude by prev angle
-        d_mag = hypot(d_e, d_n)
-        d_x = d_mag * cos(self.state[2])
-        d_y = d_mag * sin(self.state[2])
-
-        # current angle
-        imu_ang = ekf_euler_msg.angle.z
-        # get relative to initial angle and last state prediction
-        d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
-
-        self.predict(d_x, d_y, d_th)
-        self.publish_localisation(gps_msg.header.stamp)
-
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")
-        self.initial_pos = None
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.0, 0.0, 0.0])
         self.properties = np.array([])
-        self.initial_pos = None
-        self.initial_ang = None
+
+    def timer_callback(self):
+        """
+        Listens to odom->base_footprint transform and updates the state.
+        Solution is to get the delta and add it to the previous state
+        and subtract the delta from the previous map->odom transform.
+        """
+        try:
+            odom_to_base = self.tf_buffer.lookup_transform("odom", "base_footprint", rclpy.time.Time())
+            # map_to_odom = self.tf_buffer.lookup_transform("track", "odom", rclpy.time.Time())
+        except TransformException as e:
+            self.get_logger().warn("Transform exception: " + str(e))
+            return
+
+        # get the delta from the previous state
+        odom_x = odom_to_base.transform.translation.x
+        odom_y = odom_to_base.transform.translation.y
+        odom_ang = quat2euler(
+            [
+                odom_to_base.transform.rotation.w,
+                odom_to_base.transform.rotation.x,
+                odom_to_base.transform.rotation.y,
+                odom_to_base.transform.rotation.z,
+            ]
+        )[2]
+
+        if self.last_odom_pose is None:
+            self.last_odom_pose = np.array([odom_x, odom_y, odom_ang])
+            return
+
+        # print("odom: ", self.last_odom_pose)
+
+        # update the state
+        self.state[0:3] += np.array([odom_x, odom_y, odom_ang]) - self.last_odom_pose
+        self.state[2] = wrap_to_pi(self.state[2])
+
+        # update the last odom pose
+        self.last_odom_pose = np.array([odom_x, odom_y, odom_ang])
+
+        # print("odom: ", self.state)
 
     def callback(self, msg: ConeDetectionStamped):
-        self.get_logger().debug("Received detection")
+        # skip if no transform received
+        if self.last_odom_pose is None:
+            return
+
         start: float = time.perf_counter()
 
         # process detected cones
@@ -189,45 +194,50 @@ class SBGSlam(Node):
                 )
         self.local_publisher.publish(local_map_msg)
 
-        # publish localisation msg
-        self.publish_localisation(msg.header.stamp)
+        # update localisation transform
+        self.correct_transform(msg.header.stamp)
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    def publish_localisation(self, timestamp):
+    def correct_transform(self, timestamp):
         # publish pose msg
-        pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = timestamp
-        pose_msg.header.frame_id = "track"
-        pose_msg.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
+        map_to_base = PoseWithCovarianceStamped()
+        map_to_base.header.stamp = timestamp
+        map_to_base.header.frame_id = "track"
+        map_to_base.pose.pose.position = Point(x=self.state[0], y=self.state[1], z=0.2)
         quaternion = euler2quat(0.0, 0.0, self.state[2])
-        pose_msg.pose.pose.orientation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
+        map_to_base.pose.pose.orientation = Quaternion(
+            x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0]
+        )
         # covariance as a 6x6 matrix
         cov = np.zeros((6, 6))
         cov[0:2, 0:2] = self.sigma[0:2, 0:2]
         cov[0:2, 5] = self.sigma[0:2, 2]
         cov[5, 0:2] = self.sigma[2, 0:2]
         cov[5, 5] = self.sigma[2, 2]
-        pose_msg.pose.covariance = cov.flatten().tolist()
-        self.pose_publisher.publish(pose_msg)
+        map_to_base.pose.covariance = cov.flatten().tolist()
+        self.pose_publisher.publish(map_to_base)
 
         self.path_viz.header.stamp = timestamp
         self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
+        self.path_viz.poses.append(PoseStamped(pose=map_to_base.pose.pose))
         self.path_publisher.publish(self.path_viz)
 
         # send transformation
-        t = TransformStamped()
+        map_to_odom_tf = TransformStamped()
         # read message content and assign it to corresponding tf variables
-        t.header.stamp = timestamp
-        t.header.frame_id = "track"
-        t.child_frame_id = "base_footprint"
+        map_to_odom_tf.header.stamp = timestamp
+        map_to_odom_tf.header.frame_id = "track"
+        map_to_odom_tf.child_frame_id = "odom"
 
-        t.transform.translation.x = self.state[0]
-        t.transform.translation.y = self.state[1]
-        t.transform.translation.z = 0.0
-        t.transform.rotation = Quaternion(x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0])
-        self.broadcaster.sendTransform(t)
+        map_to_odom_tf.transform.translation.x = self.state[0] - self.last_odom_pose[0]
+        map_to_odom_tf.transform.translation.y = self.state[1] - self.last_odom_pose[1]
+        map_to_odom_tf.transform.translation.z = 0.0
+        quaternion = euler2quat(0.0, 0.0, wrap_to_pi(self.state[2] - self.last_odom_pose[2]))
+        map_to_odom_tf.transform.rotation = Quaternion(
+            x=quaternion[1], y=quaternion[2], z=quaternion[3], w=quaternion[0]
+        )
+        self.broadcaster.sendTransform(map_to_odom_tf)
 
     def predict(self, x_delta: float, y_delta: float, theta_delta: float):
         """
