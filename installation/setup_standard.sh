@@ -26,10 +26,10 @@ git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverles
 cd QUTMS_Driverless
 
 ## Set ROS2 repositories
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_source.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_source.sh
 
 ## Install ROS2 Humble
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_ros_humble.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_humble.sh
 
 ## Package requirements
 echo ""
@@ -42,22 +42,22 @@ pip install -r ~/QUTMS/QUTMS_Driverless/installation/requirements.txt
 echo "alias a='source install/setup.bash'" >> ~/.bashrc
 
 ## Check if user is going to work with vision
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_pip.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_torch_pip.sh
 
 ## Source ROS
 source /opt/ros/humble/setup.bash
 
 ## Install EUFS
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_eufs_sim.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_eufs_sim.sh
 
 ## Install dependencies from src/
 rosdep install --from-paths ~/QUTMS --ignore-src -r -y
 
 ## Pre commit for git
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_pre-commit.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_pre-commit.sh
 
 ## Check if user wants to install WSL version of GitKraken
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_gitkraken.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_gitkraken.sh
 
 echo ""
 echo "---Building packages---"
