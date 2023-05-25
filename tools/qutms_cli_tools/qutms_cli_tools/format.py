@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 import colorama
 
@@ -8,6 +8,7 @@ R = colorama.Fore.RED
 Y = colorama.Fore.YELLOW
 B = colorama.Fore.BLUE
 RESET = colorama.Fore.RESET
+
 
 def main():
     """

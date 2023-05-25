@@ -24,7 +24,7 @@ def main():
     ]
 
     # build packages listed as args
-    parser = ArgumentParser(description="Building selected packages")
+    parser = ArgumentParser(description="Building selected packages. Must select a build group.")
     parser.add_argument(
         "--select",
         "-s",
@@ -46,7 +46,11 @@ def main():
         action="store",
         dest="up_to_package",
     )
-    parser.add_argument("--sim", action="store_true", help="Build the sim only")
+    parser.add_argument(
+        "--sim",
+        help="Build the sim only",
+        action="store_true",
+    )
     parser.add_argument(
         "--all",
         help="Build all packages not in colcon_ignore.yaml",
@@ -89,7 +93,7 @@ def main():
         return
 
     print(G, "Building packages...", RESET, flush=True)
-    print(f"Command: {' '.join(command)}")
+    print(B, f"Command: {' '.join(command)}", RESET, flush=True)
     process = subprocess.Popen(command, text=True, cwd=ws_path)
     try:
         process.wait()
