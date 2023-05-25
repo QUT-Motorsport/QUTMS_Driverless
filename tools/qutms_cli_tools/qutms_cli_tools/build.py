@@ -72,10 +72,10 @@ def main():
         colcon_ignores: dict = yaml.safe_load(f.read())
 
     if args.selected_package:
-        command = command_prefix + ["--packages-select"] + args.select
+        command = command_prefix + ["--packages-select"] + args.selected_package
 
     elif args.up_to_package:
-        command = command_prefix + ["--packages-up-to"] + args.up_to
+        command = command_prefix + ["--packages-up-to"] + args.up_to_package
 
     elif args.sim:
         command = command_prefix + ["--packages-up-to", "eufs_launcher"]

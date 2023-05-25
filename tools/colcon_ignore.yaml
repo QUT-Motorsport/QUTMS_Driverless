@@ -1,9 +1,13 @@
 colcon_ignore:
-- zed_components
-- zed_ros2
-- zed_wrapper
-- zed_interfaces
-- zed_driver
 - cpp_lidar
 - hsv_thresholder
 - qutms_cli_tools
+- jetson_machine
+- roscube_machine
+- sensors
+- vehicle_supervisor
+- velocity_controller
+- canbus
+- car_status
+- steering_actuator
+- yaw_controller

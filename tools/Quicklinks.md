@@ -33,3 +33,15 @@ Will output:
 ```
 
 To find out more about a tool, use the `-h` flag
+
+
+# ROSBoard in VSCode
+Ensure a ROSBoard node is running on your machine or a remote machine.
+
+Go to `View` in the topmost menu bar and select `Command Palette` or press `Ctrl+Shift+P`.
+
+Type and select `Simple Browser: Show`. This will open a new tab in VSCode.
+
+The address for ROSBoard when you are running it locally is `http://localhost:8888`.
+
+You will have to change this to the IP address of the machine running ROSBoard if you are running it remotely, but the port `:8888` will remain the same.
