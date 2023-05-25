@@ -18,8 +18,10 @@ def helper():
         RESET,
         flush=True,
     )
-    print(
-        Y,
-        "Usage: ws_<command> [<args>]\n\nCommands:\n\tbuild\t\tBuild selected packages\n\tlaunch\t\tLaunch groups of ROS launch files\n\tpull\t\tPull selected repos\n\trecord\t\tRecord ROS2 bag",
-        flush=True,
-    )
+    print(Y, "Usage: ws_<command> [<args>]")
+    print(Y, "Workspace Commands:")
+    print(Y, "\tws_pull\t\tPull selected repos")
+    print(Y, "\tws_build\tBuild selected packages")
+    print(Y, "\tws_launch\tLaunch groups of ROS launch files")
+    print(Y, "\tws_format\tPre-commit format in repo")
+    print(Y, "\tws_record\tRecord topics to ROS2 bag")
