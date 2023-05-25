@@ -8,7 +8,26 @@ import yaml
 G = colorama.Fore.GREEN
 R = colorama.Fore.RED
 Y = colorama.Fore.YELLOW
+B = colorama.Fore.BLUE
 RESET = colorama.Fore.RESET
+
+
+def helper():
+    """
+    Print help message
+    """
+
+    print(
+        G,
+        "QUTMS CLI Tools",
+        RESET,
+        flush=True,
+    )
+    print(
+        Y,
+        "Usage: ws_<command> [<args>]\n\nCommands:\n\tbuild\t\tBuild selected packages\n\tlaunch\t\tLaunch groups of ROS launch files\n\tpull\t\tPull selected repos\n\trecord\t\tRecord ROS2 bag",
+        flush=True,
+    )
 
 
 def build():
@@ -32,7 +51,7 @@ def build():
         help="A list of packages to build",
         default=[],
         action="store",
-        dest="select",
+        dest="package",
     )
     # build up to packages listed as args
     parser.add_argument(
@@ -43,12 +62,12 @@ def build():
         help="A list of packages to build up to",
         default=[],
         action="store",
-        dest="up_to",
+        dest="package",
     )
     parser.add_argument("--sim", action="store_true", help="Build the sim only")
     parser.add_argument(
         "--all",
-        help="Build all packages not in ignore",
+        help="Build all packages not in colcon_ignore.yaml",
         action="store_true",
     )
 
@@ -58,7 +77,7 @@ def build():
     colcon_ignore_path = os.path.join(
         ws_path,
         "QUTMS_Driverless",
-        "installation",
+        "tools",
         "colcon_ignore.yaml",
     )
 
@@ -76,13 +95,13 @@ def build():
         command = command_prefix + ["--packages-up-to", "eufs_launcher"]
 
     elif args.all:
-        print(Y, "Ignoring packages: ", colcon_ignores["colcon_ignore"], RESET, flush=True)
+        print(R, "Ignoring packages: ", colcon_ignores["colcon_ignore"], RESET, flush=True)
         command = command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
 
     else:
         print(
             R,
-            "Please specify a build group:\n\t--selected, -s\tBuild selected package list\n\t--up-to, -u\tBuild up to selected package list\n\t--sim\t\tBuild the sim only\n\t--all\t\tBuild all packages outside of ignore",
+            "Please specify a build group, use --help or -h for more info",
             RESET,
             flush=True,
         )
@@ -91,8 +110,14 @@ def build():
     print(G, "Building packages...", RESET, flush=True)
     print(f"Command: {' '.join(command)}")
     process = subprocess.Popen(command, text=True, cwd=ws_path)
-    process.wait()
-
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        try:
+            process.terminate()
+        except OSError:
+            pass
+        process.wait()
 
 def launch():
     """
@@ -111,7 +136,7 @@ def launch():
     else:
         print(
             R,
-            "Please specify a launch group:\n\t--sim\t\tLaunch the EUFS sim",
+            "Please specify a launch group, use --help or -h for more info",
             RESET,
             flush=True,
         )
@@ -156,7 +181,7 @@ def pull():
     if not args.alist:
         print(
             R,
-            "Please specify a repo:\n\t--repos, -r\tPull selected repo list\n\t--all\t\tPull all repos",
+            "Please specify a repo, use --help or -h for more info",
             RESET,
             flush=True,
         )
