@@ -20,7 +20,7 @@ ws
 ```
 Will output:
 ```
- QUTMS CLI Tools 
+ QUTMS CLI Tools
  Usage: ws_<command> [<args>]
  Workspace Commands:
         ws_pull         Pull selected repos

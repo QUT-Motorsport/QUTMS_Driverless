@@ -11,6 +11,7 @@ Y = colorama.Fore.YELLOW
 B = colorama.Fore.BLUE
 RESET = colorama.Fore.RESET
 
+
 def main():
     """
     Record ros2 bag
@@ -69,7 +70,7 @@ def main():
         flush=True,
     )
 
-    config_path = os.path.join(ws_path, "QUTMS_Driverless", "tools", "topics_to_record", str(args.yaml)+".yaml")
+    config_path = os.path.join(ws_path, "QUTMS_Driverless", "tools", "topics_to_record", str(args.yaml) + ".yaml")
 
     with open(config_path, "r") as f:
         topics = yaml.safe_load(f)
