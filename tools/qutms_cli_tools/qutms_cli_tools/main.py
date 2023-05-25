@@ -25,3 +25,5 @@ def helper():
     print(Y, "\tws_launch\tLaunch groups of ROS launch files")
     print(Y, "\tws_format\tPre-commit format in repo")
     print(Y, "\tws_record\tRecord topics to ROS2 bag")
+    print(Y, "Args:")
+    print(Y, "\tCheck help for each command for specific args")
