@@ -25,25 +25,25 @@ sleep 3
 git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 
 ## Download and install mambaforge
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_mambaforge.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_mambaforge.sh
 
 ## Create driverless development environment
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_conda_env.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_conda_env.sh
 
 ## Create an alias for ease
 echo "alias a='conda activate driverless_env && source install/setup.bash'" >> ~/.bashrc
 
 ## Check if user is going to work with vision
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_torch_conda.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_torch_conda.sh
 
 ## Install EUFS
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_eufs_sim.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_eufs_sim.sh
 
 ## Pre commit for git
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_pre-commit.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_pre-commit.sh
 
 ## Check if user wants to install WSL version of GitKraken
-source ~/QUTMS/QUTMS_Driverless/installation/setup_scripts/install_gitkraken.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_gitkraken.sh
 
 echo ""
 echo "---Building packages---"
