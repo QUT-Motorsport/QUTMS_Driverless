@@ -36,14 +36,18 @@ SPLINES = 11
 if SPLINES % 2 == 0:
     SPLINES += 1
 
+LIDAR_DIST = 1.65  # distance from lidar to front of car
+Y_CROP = 6
+X_CROP = 7
+LINE_LEN = 10.0  # len of spline line
+STEERING_VALS = np.linspace(-90, 90, SPLINES)  # steering values to take
+
 
 class PointFitController(Node):
-    targ_vel: float = 3  # m/s
+    targ_vel: float = 1.5  # m/s
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     steering_paths: List[List[Point]] = []
-    steering_vals: np.ndarray = np.linspace(-110, 110, SPLINES)  # steering values to take
-    line_len: float = 7.0  # len of spline line
     last_steering_index: int = int(SPLINES / 2)  # index of last steering path takens
     last_counter: int = 0  # counter for last steering path taken
 
@@ -68,17 +72,17 @@ class PointFitController(Node):
         # cicle will pass through 0,0 and and additional point:
         # for each end point, determine the circle defining it with 10 points
         end_points = []
-        end_points.append(Point(self.line_len / 2 + 1 * self.line_len / 10, -5 * self.line_len / 10))  # origin
-        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, -4 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, -3 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, -2 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 5 * self.line_len / 10, -1 * self.line_len / 10))
-        end_points.append(Point(self.line_len, 0.0))
-        end_points.append(Point(self.line_len / 2 + 5 * self.line_len / 10, 1 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 4 * self.line_len / 10, 2 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 3 * self.line_len / 10, 3 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 2 * self.line_len / 10, 4 * self.line_len / 10))
-        end_points.append(Point(self.line_len / 2 + 1 * self.line_len / 10, 5 * self.line_len / 10))
+        end_points.append(Point(LINE_LEN / 2 + 1 * LINE_LEN / 10, -5 * LINE_LEN / 10))  # origin
+        end_points.append(Point(LINE_LEN / 2 + 2 * LINE_LEN / 10, -4 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 3 * LINE_LEN / 10, -3 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 4 * LINE_LEN / 10, -2 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 5 * LINE_LEN / 10, -1 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN, 0.0))
+        end_points.append(Point(LINE_LEN / 2 + 5 * LINE_LEN / 10, 1 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 4 * LINE_LEN / 10, 2 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 3 * LINE_LEN / 10, 3 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 2 * LINE_LEN / 10, 4 * LINE_LEN / 10))
+        end_points.append(Point(LINE_LEN / 2 + 1 * LINE_LEN / 10, 5 * LINE_LEN / 10))
 
         self.steering_paths = [[] for i in range(SPLINES)]  # create empty list of lists
         for index in range(SPLINES):
@@ -91,13 +95,13 @@ class PointFitController(Node):
                 self.steering_paths[int(SPLINES / 2)] = []
                 for i in range(POINTS_PER_LINE):
                     self.steering_paths[int(SPLINES / 2)].append(Point(x, y))  # store
-                    x = x + self.line_len / 9
+                    x = x + LINE_LEN / 9
                 continue
 
             h = (end_points[index].x ** 2 + end_points[index].y ** 2) / (2 * end_points[index].y)  # center
             r = abs(h)  # radius
             circum = pi * 2 * r  # circumference
-            fraction = self.line_len / circum  # percentage of circle
+            fraction = LINE_LEN / circum  # percentage of circle
             angle = 2 * pi * fraction / 10.0  # angle / 10 in radians
 
             # if the circle is to the right of the origin, the angle needs to be negative
@@ -125,7 +129,7 @@ class PointFitController(Node):
         steering_angle = 0.0
 
         cones: List[Cone] = [
-            c for c in cone_msg.cones if abs(c.location.y) < 7.5 and (c.location.x + 1.65) < 10
+            c for c in cone_msg.cones if abs(c.location.y) < Y_CROP and (c.location.x + LIDAR_DIST) < X_CROP
         ]  # only cones in front of car
 
         best_spline = 0
@@ -137,22 +141,22 @@ class PointFitController(Node):
                 n_spline_points = len(steering_path)
                 for cone in cones:
                     # distance from origin
-                    distance = sqrt((cone.location.x + 1.65) ** 2 + cone.location.y**2)
+                    distance = sqrt((cone.location.x + LIDAR_DIST) ** 2 + cone.location.y**2)
 
                     # bin
-                    bin = min(n_spline_points - 1, int(round(distance / self.line_len * n_spline_points, 0)) - 1)
+                    bin = min(n_spline_points - 1, int(round(distance / LINE_LEN * n_spline_points, 0)) - 1)
                     if bin < 0:
                         bin = 0
 
                     s_error[n_spline] += sqrt(
-                        ((cone.location.x + 1.65) - steering_path[bin].x) ** 2
+                        ((cone.location.x + LIDAR_DIST) - steering_path[bin].x) ** 2
                         + (cone.location.y - steering_path[bin].y) ** 2
                     )
 
                     # draw cones that are being used
                     cv2.drawMarker(
                         self.debug_img,
-                        loc_to_img_pt((cone.location.x + 1.65), cone.location.y).to_tuple(),
+                        loc_to_img_pt((cone.location.x + LIDAR_DIST), cone.location.y).to_tuple(),
                         (0, 255, 255),
                         markerType=cv2.MARKER_SQUARE,
                         markerSize=5,
@@ -198,7 +202,7 @@ class PointFitController(Node):
             self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
 
             speed = self.targ_vel
-            steering_angle = self.steering_vals[self.last_steering_index]
+            steering_angle = STEERING_VALS[self.last_steering_index]
 
         # publish message
         control_msg = AckermannDriveStamped()
