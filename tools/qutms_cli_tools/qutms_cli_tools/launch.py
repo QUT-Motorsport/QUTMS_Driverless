@@ -9,6 +9,7 @@ Y = colorama.Fore.YELLOW
 B = colorama.Fore.BLUE
 RESET = colorama.Fore.RESET
 
+
 def main():
     """
     Launch groups of ROS launch files

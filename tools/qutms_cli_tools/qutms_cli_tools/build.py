@@ -11,6 +11,7 @@ Y = colorama.Fore.YELLOW
 B = colorama.Fore.BLUE
 RESET = colorama.Fore.RESET
 
+
 def main():
     """
     Colcon build selected packages
