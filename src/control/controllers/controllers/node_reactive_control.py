@@ -37,24 +37,20 @@ class ReactiveController(Node):
 
         if self.ebs_test:
             self.Kp_ang = 2.0
-            self.target_vel = 0.0  # m/s
-            self.target_accel = 0.5
+            self.target_vel = 12.0  # m/s
+            self.target_accel = 0.0
             self.target_cone_count = 2
-            self.pub_accel = True
-
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
             self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
-            self.target_vel = 3.0  # m/s
+            self.target_vel = 2.0  # m/s
             self.target_accel = 0.0
             self.target_cone_count = 3
-            self.pub_accel = False
-            # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
         self.get_logger().info("---Reactive Controller Node Initalised---")
 
@@ -77,6 +73,13 @@ class ReactiveController(Node):
 
         left_cones = [c for c in cones if c.color == LEFT_CONE_COLOUR]
         right_cones = [c for c in cones if c.color == RIGHT_CONE_COLOUR]
+        # map orange cones to left and right cones
+        orange_cones = [c for c in cones if c.color == Cone.ORANGE_BIG]
+        for i in range(len(orange_cones)):
+            if cones[i].location.y > 0:
+                left_cones.append(cones[i])
+            else:
+                right_cones.append(cones[i])
 
         closest_left: Optional[Cone] = None
         closest_right: Optional[Cone] = None
