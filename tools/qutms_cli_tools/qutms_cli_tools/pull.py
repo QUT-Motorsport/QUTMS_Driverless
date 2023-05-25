@@ -24,17 +24,17 @@ def main():
         help="A list of repos to pull",
         default=[],
         action="store",
-        dest="alist",
+        dest="repo",
     )
     parser.add_argument("--all", help="Pull all repos", action="store_true")
     args = parser.parse_args()
 
-    ws_path = os.environ["QUTMS_WS"]
+    ws_path = os.path.expanduser(os.environ["QUTMS_WS"])
 
     if args.all:
-        args.alist = ["QUTMS_Driverless", "eufs_sim", "eufs_rviz_plugins"]
+        args.repo = ["QUTMS_Driverless", "eufs_sim", "eufs_rviz_plugins"]
 
-    if not args.alist:
+    if not args.repo:
         print(
             R,
             "Please specify a repo, use --help or -h for more info",
@@ -50,7 +50,7 @@ def main():
         flush=True,
     )
 
-    for repo in args.alist:
+    for repo in args.repo:
         print(repo)
         repo = os.path.join(ws_path, repo)
         command = ["git", "pull"]
