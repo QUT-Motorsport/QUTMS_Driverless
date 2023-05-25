@@ -1,0 +1,15 @@
+cython
+dataclasses
+eigen
+matplotlib
+opencv
+ros-humble-ackermann-msgs
+ros-humble-joint-state-publisher
+ros-humble-tf-transformations
+ros-humble-velodyne
+ros-humble-geodesy
+ros-humble-xacro
+ros-humble-robot-state-publisher
+scipy
+scikit-learn
+transforms3d

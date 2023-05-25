@@ -20,7 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # add more stuff here if needed
     && rm -rf /var/lib/apt/lists/
 
-
 # ==============================================================================
 #                           Set up a user using host UID
 #    (this helps with file permissions when mounting folders into a container)
@@ -43,23 +42,22 @@ RUN useradd \
     echo ${USERNAME}:${USERNAME} | chpasswd && \
     echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
 
-
 # ==============================================================================
 #                              Conda setup
 # ==============================================================================
+
 WORKDIR /tmp
 RUN curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh -o mambaforge.sh && \
     chmod +x Mambaforge-$(uname)-$(uname -m).sh && \
     ./Mambaforge-$(uname)-$(uname -m).sh -b -p /home/${USERNAME}/mambaforge
 
-# CHANGE THIS WHEN UPGRADING TO HUMBLE
-COPY installation/galactic_environment.yml /tmp/environment.yml
+COPY docker/base_environment.yml /tmp/environment.yml
 
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba env create --name driverless_env --file environment.yml && \
     conda activate driverless_env && \
     conda config --env --add channels conda-forge && \
-    conda config --env --add channels robostack-experimental && \
+    conda config --env --add channels robostack-staging && \
     conda config --env --set channel_priority strict && \
     mamba clean --all --yes
 
@@ -69,10 +67,10 @@ RUN echo "test -f /home/developer/driverless_ws/install/setup.bash && source /ho
 COPY ./docker/conda_entrypoint.sh /conda_entrypoint.sh
 ENTRYPOINT ["/conda_entrypoint.sh"]
 
-
 # ==============================================================================
 #                              Workspace setup
 # ==============================================================================
+
 RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
     chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
 WORKDIR /home/$USERNAME/driverless_ws

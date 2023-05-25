@@ -1,5 +1,5 @@
 *
 !src/
 !docker/
-!installation/galactic_environment.yml
+!installation/humble_environment.yml
 !csv_data/

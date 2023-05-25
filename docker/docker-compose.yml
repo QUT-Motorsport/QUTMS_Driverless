@@ -50,34 +50,15 @@ x-jetson-extras: &jetson-extras
 # ==============================================================================
 
 services:
-    zed_camera_driver:
-        build:
-            context: ../
-            dockerfile: ./src/hardware/zed_driver/docker/Dockerfile
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        volumes:
-            # see x-volumes-roscube above for explanation of this
-            - /dev/shm:/dev/shm
-            # mount in X11 stuff for display
-            - /tmp/.X11-unix:/tmp/.X11-unix
-            # mount in the relevant source
-            - ../src/hardware/zed_driver:/driverless_ws/src/zed_driver
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        <<: *jetson-extras
-
     jetson:
         build:
             context: ../
-            dockerfile: ./src/machines/jetson_machine/Dockerfile
+            dockerfile: ./docker/Dockerfile.jetson
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
         <<: *volumes-jetson
-        <<: *user
+        # <<: *user
         <<: *devices
         <<: *network
         <<: *interactive
@@ -87,7 +68,7 @@ services:
     roscube:
         build:
             context: ../
-            dockerfile: ./src/machines/roscube_machine/Dockerfile
+            dockerfile: ./docker/Dockerfile.roscube
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -101,12 +82,12 @@ services:
     jetson_terminal:
         build:
             context: ../
-            dockerfile: ./src/machines/jetson_machine/Dockerfile
+            dockerfile: ./docker/Dockerfile.jetson
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
         <<: *volumes-jetson
-        <<: *user
+        # <<: *user
         <<: *devices
         <<: *network
         <<: *interactive
@@ -116,7 +97,7 @@ services:
     roscube_terminal:
         build:
             context: ../
-            dockerfile: ./src/machines/roscube_machine/Dockerfile
+            dockerfile: ./docker/Dockerfile.roscube
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}

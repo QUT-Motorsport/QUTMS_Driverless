@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_1804 build_docker_base_l4t build run
+.PHONY: all help build_docker_base_jetson build_docker_base_roscube build run
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -21,35 +21,34 @@ all:
 	@echo "    build_docker_base_[IMAGE_TYPE]"
 	@echo "        - build the base docker container"
 	@echo "        - IMAGE_TYPE options:"
-	@echo "            - 1804 (for most environments)"
-	@echo "            - l4t (for nvidia jetson)"
+	@echo "            - roscube"
+	@echo "            - jetson"
 	@echo "    build target=[ENVIRONMENT_TARGET]"
 	@echo "        - build a target (see ENVIRONMENT_TARGET options)"
 	@echo "    run target=[ENVIRONMENT_TARGET]"
 	@echo "        - run a target (see ENVIRONMENT_TARGET options)"
 	@echo
 	@echo "ENVIRONMENT_TARGET options:"
-	@echo "    roscube (requires IMAGE_TYPE=1804)"
-	@echo "    roscube_terminal (requires IMAGE_TYPE=1804)"
-	@echo "    jetson (requires IMAGE_TYPE=l4t)"
-	@echo "    jetson_terminal (requires IMAGE_TYPE=l4t)"
-	@echo "    zed_camera_driver (standalone - Launches ZED2i ROS2 wrapper)"
+	@echo "    roscube (requires IMAGE_TYPE=roscube)"
+	@echo "    roscube_terminal (requires IMAGE_TYPE=roscube)"
+	@echo "    jetson (requires IMAGE_TYPE=jetson)"
+	@echo "    jetson_terminal (requires IMAGE_TYPE=jetson)"
 	@echo
 
 help: all
 
-build_docker_base_1804:
-	docker build -f Dockerfile.base -t qutms_driverless_base:18.04 \
+build_docker_base_roscube:
+	docker build -f Dockerfile.base -t qutms_driverless_base:ubuntu-22.04 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=ubuntu:18.04 \
+	--build-arg BASE_IMAGE=ubuntu:22.04 \
 	..
 
-build_docker_base_l4t:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.0.1 \
+build_docker_base_jetson:
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.2.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime \
 	..
 
 # use make build target=<value>

@@ -33,7 +33,6 @@ bags
 
 # TensorRT
 !libplugins.so
-*.engine
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
