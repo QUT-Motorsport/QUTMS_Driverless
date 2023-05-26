@@ -20,8 +20,8 @@ track_name = "QR_Nov_2022"
 
 SEARCH_QUERY = search_query(
     track_name=track_name,
-    # camera_gaussian_range_noise=False,
-    # known_association=True,
+    camera_gaussian_range_noise=True,
+    known_association=False,
     # include_csv=False,
 )
 
@@ -81,12 +81,12 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
         continue
 
     csv_folder = Path(str(p.absolute()) + "_csv_data")
-    if csv_folder.exists():
-        continue
+    # if csv_folder.exists():
+    #     continue
 
-    csv_folder.mkdir()
-
+    csv_folder.mkdir(exist_ok=True)
     print(p.name)
+
     try:
         with AnyReader([Path(p)]) as reader:
             gt_track_conn = next((c for c in reader.connections if c.topic == "/ground_truth/global_map"))
@@ -105,7 +105,10 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                 )
 
             with open(csv_folder / "cone_error.csv", "w") as f:
-                cone_err_writer = csv.DictWriter(f, fieldnames=["stamp", "cone_error", "unmatched_cones"])
+                cone_err_writer = csv.DictWriter(
+                    f,
+                    fieldnames=["stamp", "total_cone_error", "average_cone_error", "matched_cones", "unmatched_cones"],
+                )
                 cone_err_writer.writeheader()
 
                 for connection, _, rawdata in reader.messages(connections=[slam_track_conn]):
@@ -121,15 +124,20 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                     final_pairs = []
                     total_err = 0
 
-                    for gt_c, slam_c in sorted(
+                    cone_pairs = sorted(
                         product(gt_cones, slam_cones),
                         key=lambda e: cone_dist(e[0], e[1])
                         + (float("inf") if e[1].colour != 1 and e[0].colour != e[1].colour else 0),
-                    ):
+                    )
+
+                    for gt_c, slam_c in cone_pairs:
                         if len(unprocessed_gt) == 0 or len(unprocessed_slam) == 0:
                             break
 
                         if slam_c.colour != 1 and gt_c.colour != slam_c.colour:
+                            continue
+
+                        if cone_dist(gt_c, slam_c) > 1.5:
                             continue
 
                         if gt_c.id_ in unprocessed_gt and slam_c.id_ in unprocessed_slam:
@@ -138,106 +146,112 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                             final_pairs.append((gt_c, slam_c))
                             total_err += cone_dist(gt_c, slam_c)
 
-                    if len(slam_cones) < 1:
-                        adj_total_err = 0
+                    if len(final_pairs) < 1:
+                        avg_total_err = 0
                     else:
-                        adj_total_err = total_err / (len(slam_cones) - len(unprocessed_slam))
+                        avg_total_err = total_err / len(final_pairs)
 
                     cone_err_writer.writerow(
-                        {"stamp": stamp, "cone_error": adj_total_err, "unmatched_cones": len(unprocessed_slam)}
-                    )
-
-            print("Poses...")
-
-            slam_poses: list[Pose] = []
-            slam_pose_uncertanties: list[Pose] = []
-            slam_pose_stamps: list[float] = []
-
-            for connection, _, rawdata in reader.messages(connections=[slam_pose_conn]):
-                msg = reader.deserialize(rawdata, connection.msgtype)
-                stamp = time_to_float(msg.header.stamp)
-
-                # i, j, k angles in rad
-                ai, aj, ak = quat2euler(
-                    [
-                        msg.pose.pose.orientation.w,
-                        msg.pose.pose.orientation.x,
-                        msg.pose.pose.orientation.y,
-                        msg.pose.pose.orientation.z,
-                    ]
-                )
-
-                slam_poses.append(
-                    Pose(
-                        x=msg.pose.pose.position.x,
-                        y=msg.pose.pose.position.y,
-                        theta=degrees(ak),
-                    ),
-                )
-
-                slam_pose_uncertanties.append(
-                    Pose(
-                        x=msg.pose.covariance[0],
-                        y=msg.pose.covariance[7],
-                        theta=degrees(msg.pose.covariance[-1]),
-                    )
-                )
-
-                slam_pose_stamps.append(stamp)
-
-            with open(csv_folder / "pose_erorr.csv", "w") as f:
-                pose_err_writer = csv.DictWriter(
-                    f,
-                    fieldnames=[
-                        "stamp",
-                        "x_err",
-                        "y_err",
-                        "euc_err",
-                        "theta_err",
-                        "x_uncertanty",
-                        "y_uncertanty",
-                        "theta_uncertanty",
-                    ],
-                )
-                pose_err_writer.writeheader()
-
-                for connection, _, rawdata in reader.messages(connections=[gt_odom_conn]):
-                    msg = reader.deserialize(rawdata, connection.msgtype)
-                    stamp = time_to_float(msg.header.stamp)
-
-                    # i, j, k angles in rad
-                    ai, aj, ak = quat2euler(
-                        [
-                            msg.pose.pose.orientation.w,
-                            msg.pose.pose.orientation.x,
-                            msg.pose.pose.orientation.y,
-                            msg.pose.pose.orientation.z,
-                        ]
-                    )
-                    pose = Pose(
-                        x=msg.pose.pose.position.x,
-                        y=msg.pose.pose.position.y,
-                        theta=degrees(ak),
-                    )
-                    slam_id = np.argmin([abs(s - stamp) for s in slam_pose_stamps])
-                    stamp_diff = slam_pose_stamps[slam_id] - stamp
-
-                    if abs(stamp_diff) > 0.1:
-                        print(f"Pose out of sync: {stamp} ({stamp_diff})")
-                        continue
-
-                    slam_pose = slam_poses[slam_id]
-                    pose_err_writer.writerow(
                         {
                             "stamp": stamp,
-                            "x_err": slam_pose.x - pose.x,
-                            "y_err": slam_pose.y - pose.y,
-                            "euc_err": pose_euc_dist(pose, slam_pose),
-                            "theta_err": smallest_angle_dist(slam_pose.theta, pose.theta),
-                            "x_uncertanty": slam_pose_uncertanties[slam_id].x,
-                            "y_uncertanty": slam_pose_uncertanties[slam_id].y,
-                            "theta_uncertanty": slam_pose_uncertanties[slam_id].theta,
+                            "total_cone_error": total_err,
+                            "average_cone_error": avg_total_err,
+                            "matched_cones": len(final_pairs),
+                            "unmatched_cones": len(unprocessed_slam),
                         }
                     )
+
+            # print("Poses...")
+
+            # slam_poses: list[Pose] = []
+            # slam_pose_uncertanties: list[Pose] = []
+            # slam_pose_stamps: list[float] = []
+
+            # for connection, _, rawdata in reader.messages(connections=[slam_pose_conn]):
+            #     msg = reader.deserialize(rawdata, connection.msgtype)
+            #     stamp = time_to_float(msg.header.stamp)
+
+            #     # i, j, k angles in rad
+            #     ai, aj, ak = quat2euler(
+            #         [
+            #             msg.pose.pose.orientation.w,
+            #             msg.pose.pose.orientation.x,
+            #             msg.pose.pose.orientation.y,
+            #             msg.pose.pose.orientation.z,
+            #         ]
+            #     )
+
+            #     slam_poses.append(
+            #         Pose(
+            #             x=msg.pose.pose.position.x,
+            #             y=msg.pose.pose.position.y,
+            #             theta=degrees(ak),
+            #         ),
+            #     )
+
+            #     slam_pose_uncertanties.append(
+            #         Pose(
+            #             x=msg.pose.covariance[0],
+            #             y=msg.pose.covariance[7],
+            #             theta=degrees(msg.pose.covariance[-1]),
+            #         )
+            #     )
+
+            #     slam_pose_stamps.append(stamp)
+
+            # with open(csv_folder / "pose_erorr.csv", "w") as f:
+            #     pose_err_writer = csv.DictWriter(
+            #         f,
+            #         fieldnames=[
+            #             "stamp",
+            #             "x_err",
+            #             "y_err",
+            #             "euc_err",
+            #             "theta_err",
+            #             "x_uncertanty",
+            #             "y_uncertanty",
+            #             "theta_uncertanty",
+            #         ],
+            #     )
+            #     pose_err_writer.writeheader()
+
+            #     for connection, _, rawdata in reader.messages(connections=[gt_odom_conn]):
+            #         msg = reader.deserialize(rawdata, connection.msgtype)
+            #         stamp = time_to_float(msg.header.stamp)
+
+            #         # i, j, k angles in rad
+            #         ai, aj, ak = quat2euler(
+            #             [
+            #                 msg.pose.pose.orientation.w,
+            #                 msg.pose.pose.orientation.x,
+            #                 msg.pose.pose.orientation.y,
+            #                 msg.pose.pose.orientation.z,
+            #             ]
+            #         )
+            #         pose = Pose(
+            #             x=msg.pose.pose.position.x,
+            #             y=msg.pose.pose.position.y,
+            #             theta=degrees(ak),
+            #         )
+            #         slam_id = np.argmin([abs(s - stamp) for s in slam_pose_stamps])
+            #         stamp_diff = slam_pose_stamps[slam_id] - stamp
+
+            #         if abs(stamp_diff) > 0.1:
+            #             print(f"Pose out of sync: {stamp} ({stamp_diff})")
+            #             continue
+
+            #         slam_pose = slam_poses[slam_id]
+            #         pose_err_writer.writerow(
+            #             {
+            #                 "stamp": stamp,
+            #                 "x_err": slam_pose.x - pose.x,
+            #                 "y_err": slam_pose.y - pose.y,
+            #                 "euc_err": pose_euc_dist(pose, slam_pose),
+            #                 "theta_err": smallest_angle_dist(slam_pose.theta, pose.theta),
+            #                 "x_uncertanty": slam_pose_uncertanties[slam_id].x,
+            #                 "y_uncertanty": slam_pose_uncertanties[slam_id].y,
+            #                 "theta_uncertanty": slam_pose_uncertanties[slam_id].theta,
+            #             }
+            #        )
     except AnyReaderError:
         continue

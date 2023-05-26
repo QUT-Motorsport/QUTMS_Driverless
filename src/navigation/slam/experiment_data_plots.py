@@ -12,6 +12,7 @@ known_association = False
 # track_name = "small_track"
 # track_name = "B_shape_02_03_2023"
 track_name = "QR_Nov_2022"
+error_metric = "total_cone_error"
 
 data_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_sim/{track_name}/range_testing")
 
@@ -89,7 +90,13 @@ for r in sim_variance:
                     reader = csv.DictReader(f)
                     rows = list(reader)
                     if len(rows) > 0:
-                        err = float(rows[-1]["cone_error"]) * (float(rows[-1]["unmatched_cones"]) + 1)
+                        if float(rows[-1][error_metric]) == 0:
+                            continue
+
+                        if float(rows[-1]["stamp"]) > 300:
+                            continue
+
+                        err = float(rows[-1][error_metric]) * (float(rows[-1]["unmatched_cones"]) + 1)
                         if err < lowest_cone_err:
                             lowest_cone_err = err
                             lowest_cone_err_cone_data = {k: [float(row[k]) for row in rows] for k in rows[0]}
@@ -108,11 +115,11 @@ for r in sim_variance:
             print(f"No data for range {r}.")
             continue
 
-        final_error.append(lowest_cone_err_cone_data["cone_error"][-1])
+        final_error.append(lowest_cone_err_cone_data[error_metric][-1])
         unmached_cones.append(lowest_cone_err_cone_data["unmatched_cones"][-1])
         plot_sim_variance.append(r)
 
-        axs[0].plot("stamp", "cone_error", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0)
+        axs[0].plot("stamp", error_metric, data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0)
         axs[1].plot(
             "stamp", "unmatched_cones", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0
         )
