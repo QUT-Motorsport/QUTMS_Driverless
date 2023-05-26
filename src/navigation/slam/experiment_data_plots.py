@@ -18,7 +18,8 @@ data_folder = Path(f"/home/alistair/dev/repos/QUTMS_Driverless/datasets/final_si
 
 plot_sim_variance = []
 final_error = []
-unmached_cones = []
+unmatched_slam_cones = []
+unmatched_gt_cones = []
 
 sim_var_query = search_query(
     track_name=track_name,
@@ -96,7 +97,7 @@ for r in sim_variance:
                         if float(rows[-1]["stamp"]) > 300:
                             continue
 
-                        err = float(rows[-1][error_metric]) * (float(rows[-1]["unmatched_cones"]) + 1)
+                        err = float(rows[-1][error_metric]) * (float(rows[-1]["unmatched_slam_cones"]) + 1)
                         if err < lowest_cone_err:
                             lowest_cone_err = err
                             lowest_cone_err_cone_data = {k: [float(row[k]) for row in rows] for k in rows[0]}
@@ -116,12 +117,24 @@ for r in sim_variance:
             continue
 
         final_error.append(lowest_cone_err_cone_data[error_metric][-1])
-        unmached_cones.append(lowest_cone_err_cone_data["unmatched_cones"][-1])
+        unmatched_slam_cones.append(lowest_cone_err_cone_data["unmatched_slam_cones"][-1])
+        unmatched_gt_cones.append(lowest_cone_err_cone_data["unmatched_gt_cones"][-1])
         plot_sim_variance.append(r)
 
         axs[0].plot("stamp", error_metric, data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0)
         axs[1].plot(
-            "stamp", "unmatched_cones", data=lowest_cone_err_cone_data, label=lowest_cone_err_name, linewidth=2.0
+            "stamp",
+            "unmatched_slam_cones",
+            data=lowest_cone_err_cone_data,
+            label=lowest_cone_err_name + " slam",
+            linewidth=2.0,
+        )
+        axs[1].plot(
+            "stamp",
+            "unmatched_gt_cones",
+            data=lowest_cone_err_cone_data,
+            label=lowest_cone_err_name + " gt",
+            linewidth=2.0,
         )
 
         for ax in axs:

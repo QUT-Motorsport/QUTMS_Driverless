@@ -107,7 +107,14 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
             with open(csv_folder / "cone_error.csv", "w") as f:
                 cone_err_writer = csv.DictWriter(
                     f,
-                    fieldnames=["stamp", "total_cone_error", "average_cone_error", "matched_cones", "unmatched_cones"],
+                    fieldnames=[
+                        "stamp",
+                        "total_cone_error",
+                        "average_cone_error",
+                        "matched_cones",
+                        "unmatched_slam_cones",
+                        "unmatched_gt_cones",
+                    ],
                 )
                 cone_err_writer.writeheader()
 
@@ -157,7 +164,8 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                             "total_cone_error": total_err,
                             "average_cone_error": avg_total_err,
                             "matched_cones": len(final_pairs),
-                            "unmatched_cones": len(unprocessed_slam),
+                            "unmatched_slam_cones": len(unprocessed_slam),
+                            "unmatched_gt_cones": len(unprocessed_gt),
                         }
                     )
 
