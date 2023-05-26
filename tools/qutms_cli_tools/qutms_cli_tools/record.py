@@ -85,8 +85,10 @@ def main():
         command.append("--output")
         command.append(args.name)
 
-    for topic in topics:
+    for topic in topics[args.yaml]:
         command.append(topic)
+
+    print(B, f"Command: {' '.join(command)}", RESET, flush=True)
 
     if args.dir:
         process = subprocess.Popen(command, text=True, cwd=args.dir)
