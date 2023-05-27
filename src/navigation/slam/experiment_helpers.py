@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from typing import Optional, Union
 
 
@@ -51,9 +53,9 @@ def get_run_details_from_name(name: str) -> tuple:
     track_name = "_".join(reversed(name_parts[9:]))
     gaussian = name_parts[8] == "gaus"
     known_association = name_parts[7] == "ka"
-    sim_rv = name_parts[4]
-    slam_rv = name_parts[1]
-    run_num = name_parts[0]
+    sim_rv = float(name_parts[4])
+    slam_rv = float(name_parts[1])
+    run_num = int(name_parts[0])
 
     return (
         track_name,
@@ -62,4 +64,41 @@ def get_run_details_from_name(name: str) -> tuple:
         sim_rv,
         slam_rv,
         run_num,
+    )
+
+
+def unique_ranges_for_query(data_folder: Path, query: str) -> tuple:
+    sim_ranges = set()
+    slam_ranges = set()
+
+    for p in data_folder.glob(query):
+        (
+            _,
+            _,
+            _,
+            sim_rv,
+            slam_rv,
+            _,
+        ) = get_run_details_from_name(p.name)
+
+        sim_ranges.add(sim_rv)
+        slam_ranges.add(slam_rv)
+
+    return sorted(sim_ranges), sorted(slam_ranges)
+
+
+def float_point_one_range(start: float, end: float, step: float = 0.1):
+    return (round(0.1 * i, 1) for i in range(int(round(10 * start, 1)), int(round(10 * end, 1)), int(step * 10)))
+
+
+range_slam_testing_lists = {
+    0.01: [0.01, 0.05, 0.08],
+    0.05: [0.01, 0.05, 0.08],
+    0.1: [0.05, 0.08, 0.1, 0.2, 0.3],
+    0.2: [0.08, 0.1, 0.2, 0.3, 0.4],
+}
+
+for camera_range_noise in float_point_one_range(0.3, 0.6):
+    range_slam_testing_lists[camera_range_noise] = list(
+        float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3)
     )

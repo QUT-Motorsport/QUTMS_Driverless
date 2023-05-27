@@ -12,7 +12,7 @@ from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
 
-from experiment_helpers import get_run_name
+from experiment_helpers import float_point_one_range, get_run_name, range_slam_testing_lists
 
 
 def sig_handler(signum, frame):
@@ -172,28 +172,12 @@ def do_one_run(
         exit_processes(processes)
 
 
-def float_point_one_range(start: float, end: float, step: float = 0.1):
-    return (round(0.1 * i, 1) for i in range(int(10 * start), int(10 * end), int(step * 10)))
-
-
 # for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
 
 # TO RUN
 # small_track uni from 0.5 - 1.5 with steps of 0.2
 # B_shape_02_03_2023 and QR_Nov_2022 uni for normal range plus 0.5 - 1.5 with steps of 0.2
 
-
-range_slam_testing_lists = {
-    0.01: [0.01, 0.05, 0.08],
-    0.05: [0.01, 0.05, 0.08],
-    0.1: [0.05, 0.08, 0.1, 0.2, 0.3],
-    0.2: [0.08, 0.1, 0.2, 0.3, 0.4],
-}
-
-for camera_range_noise in float_point_one_range(0.3, 0.6):
-    range_slam_testing_lists[camera_range_noise] = list(
-        float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3)
-    )
 
 if __name__ == "__main__":
     # for track_name in ["B_shape_02_03_2023", "QR_Nov_2022"]:
@@ -217,8 +201,25 @@ if __name__ == "__main__":
     #                     signal.alarm(0)
 
     track_name = "B_shape_02_03_2023"
-    # track_name = "QR_Nov_2022"
-    for camera_gaussian_range_noise, known_association in [(True, True), (False, True), (False, False)]:
+    camera_gaussian_range_noise = False
+    known_association = True
+    for camera_range_noise in float_point_one_range(0.3, 0.6, 0.1):
+        for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+            for run_num in range(1, 4):
+                signal.alarm(300)
+                do_one_run(
+                    track_name,
+                    camera_gaussian_range_noise,
+                    known_association,
+                    camera_range_noise,
+                    slam_range_var,
+                    run_num,
+                )
+                signal.alarm(0)
+
+    track_name = "QR_Nov_2022"
+    camera_gaussian_range_noise = False
+    for known_association in [False, True]:
         for camera_range_noise in float_point_one_range(0.6, 1.8, 0.2):
             for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
                 for run_num in range(1, 4):
@@ -232,3 +233,19 @@ if __name__ == "__main__":
                         run_num,
                     )
                     signal.alarm(0)
+
+    # for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
+    #     for camera_gaussian_range_noise, known_association in [(True, False)]:
+    #         for camera_range_noise in float_point_one_range(0.6, 1.8, 0.2):
+    #             for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+    #                 for run_num in range(1, 4):
+    #                     signal.alarm(300)
+    #                     do_one_run(
+    #                         track_name,
+    #                         camera_gaussian_range_noise,
+    #                         known_association,
+    #                         camera_range_noise,
+    #                         slam_range_var,
+    #                         run_num,
+    #                     )
+    #                     signal.alarm(0)

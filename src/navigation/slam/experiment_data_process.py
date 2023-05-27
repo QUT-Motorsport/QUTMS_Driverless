@@ -20,8 +20,8 @@ track_name = "QR_Nov_2022"
 
 SEARCH_QUERY = search_query(
     track_name=track_name,
-    camera_gaussian_range_noise=True,
-    known_association=False,
+    # camera_gaussian_range_noise=True,
+    # known_association=False,
     # include_csv=False,
 )
 
@@ -81,8 +81,8 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
         continue
 
     csv_folder = Path(str(p.absolute()) + "_csv_data")
-    # if csv_folder.exists():
-    #     continue
+    if csv_folder.exists():
+        continue
 
     csv_folder.mkdir(exist_ok=True)
     print(p.name)
@@ -125,8 +125,8 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                     for i, cone in enumerate(msg.cones_with_cov):
                         slam_cones.append(Cone(cone.cone.location.x, cone.cone.location.y, cone.cone.color, i))
 
-                    unprocessed_gt = list(range(len(gt_cones)))
-                    unprocessed_slam = list(range(len(slam_cones)))
+                    unprocessed_gt = [c.id_ for c in gt_cones]
+                    unprocessed_slam = [c.id_ for c in slam_cones]
 
                     final_pairs = []
                     total_err = 0
@@ -168,6 +168,9 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
                             "unmatched_gt_cones": len(unprocessed_gt),
                         }
                     )
+
+            # print(unprocessed_gt)
+            # print([next(c for c in gt_cones if c.id_ == i) for i in unprocessed_gt])
 
             # print("Poses...")
 
@@ -261,5 +264,6 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
             #                 "theta_uncertanty": slam_pose_uncertanties[slam_id].theta,
             #             }
             #        )
+
     except AnyReaderError:
         continue
