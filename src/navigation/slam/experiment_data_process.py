@@ -14,8 +14,8 @@ from builtin_interfaces.msg import Time
 
 from experiment_helpers import search_query
 
-track_name = "QR_Nov_2022"
-# track_name = "B_shape_02_03_2023"
+# track_name = "QR_Nov_2022"
+track_name = "B_shape_02_03_2023"
 # track_name = "small_track"
 
 SEARCH_QUERY = search_query(
@@ -81,10 +81,11 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
         continue
 
     csv_folder = Path(str(p.absolute()) + "_csv_data")
-    if csv_folder.exists():
+    csv_folder.mkdir(exist_ok=True)
+
+    if (csv_folder / "cone_error.csv").exists():
         continue
 
-    csv_folder.mkdir(exist_ok=True)
     print(p.name)
 
     try:

@@ -172,13 +172,6 @@ def do_one_run(
         exit_processes(processes)
 
 
-# for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
-
-# TO RUN
-# small_track uni from 0.5 - 1.5 with steps of 0.2
-# B_shape_02_03_2023 and QR_Nov_2022 uni for normal range plus 0.5 - 1.5 with steps of 0.2
-
-
 if __name__ == "__main__":
     # for track_name in ["B_shape_02_03_2023", "QR_Nov_2022"]:
     # for track_name in ["QR_Nov_2022"]:
@@ -200,52 +193,53 @@ if __name__ == "__main__":
     #                     )
     #                     signal.alarm(0)
 
-    track_name = "B_shape_02_03_2023"
-    camera_gaussian_range_noise = False
-    known_association = True
-    for camera_range_noise in float_point_one_range(0.3, 0.6, 0.1):
-        for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
-            for run_num in range(1, 4):
-                signal.alarm(300)
-                do_one_run(
-                    track_name,
-                    camera_gaussian_range_noise,
-                    known_association,
-                    camera_range_noise,
-                    slam_range_var,
-                    run_num,
-                )
-                signal.alarm(0)
+    # track_name = "B_shape_02_03_2023"
+    # camera_gaussian_range_noise = False
+    # known_association = True
+    # for camera_range_noise in float_point_one_range(0.3, 0.6, 0.1):
+    #     for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+    #         for run_num in range(1, 4):
+    #             signal.alarm(300)
+    #             do_one_run(
+    #                 track_name,
+    #                 camera_gaussian_range_noise,
+    #                 known_association,
+    #                 camera_range_noise,
+    #                 slam_range_var,
+    #                 run_num,
+    #             )
+    #             signal.alarm(0)
 
-    track_name = "QR_Nov_2022"
-    camera_gaussian_range_noise = False
-    for known_association in [False, True]:
-        for camera_range_noise in float_point_one_range(0.6, 1.8, 0.2):
-            for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
-                for run_num in range(1, 4):
-                    signal.alarm(300)
-                    do_one_run(
-                        track_name,
-                        camera_gaussian_range_noise,
-                        known_association,
-                        camera_range_noise,
-                        slam_range_var,
-                        run_num,
-                    )
-                    signal.alarm(0)
+    # track_name = "QR_Nov_2022"
+    # camera_gaussian_range_noise = False
+    # for known_association in [False, True]:
+    #     for camera_range_noise in float_point_one_range(1.2, 1.8, 0.2):
+    #         for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+    #             for run_num in range(1, 4):
+    #                 signal.alarm(300)
+    #                 do_one_run(
+    #                     track_name,
+    #                     camera_gaussian_range_noise,
+    #                     known_association,
+    #                     camera_range_noise,
+    #                     slam_range_var,
+    #                     run_num,
+    #                 )
+    #                 signal.alarm(0)
 
     # for track_name in ["small_track", "B_shape_02_03_2023", "QR_Nov_2022"]:
-    #     for camera_gaussian_range_noise, known_association in [(True, False)]:
-    #         for camera_range_noise in float_point_one_range(0.6, 1.8, 0.2):
-    #             for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
-    #                 for run_num in range(1, 4):
-    #                     signal.alarm(300)
-    #                     do_one_run(
-    #                         track_name,
-    #                         camera_gaussian_range_noise,
-    #                         known_association,
-    #                         camera_range_noise,
-    #                         slam_range_var,
-    #                         run_num,
-    #                     )
-    #                     signal.alarm(0)
+    for track_name in ["QR_Nov_2022"]:
+        for camera_gaussian_range_noise, known_association in [(True, False)]:
+            for camera_range_noise in float_point_one_range(0.8, 1.8, 0.2):
+                for slam_range_var in float_point_one_range(camera_range_noise - 0.2, camera_range_noise + 0.3):
+                    for run_num in range(1, 4):
+                        signal.alarm(300)
+                        do_one_run(
+                            track_name,
+                            camera_gaussian_range_noise,
+                            known_association,
+                            camera_range_noise,
+                            slam_range_var,
+                            run_num,
+                        )
+                        signal.alarm(0)
