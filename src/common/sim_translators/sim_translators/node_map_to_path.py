@@ -153,7 +153,7 @@ class MapPathPlanner(Node):
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        cones = track_msg.cones_with_cov
+        cones = track_msg.cones
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []
@@ -161,16 +161,16 @@ class MapPathPlanner(Node):
         sim_track: List[ConeWithCovariance] = []
 
         for cone in cones:
-            if cone.cone.color == Cone.YELLOW:
-                yellows.append([cone.cone.location.x, cone.cone.location.y])
-            elif cone.cone.color == Cone.BLUE:
-                blues.append([cone.cone.location.x, cone.cone.location.y])
-            elif cone.cone.color == Cone.ORANGE_BIG:
-                oranges.append([cone.cone.location.x, cone.cone.location.y])
+            if cone.color == Cone.YELLOW:
+                yellows.append([cone.location.x, cone.location.y])
+            elif cone.color == Cone.BLUE:
+                blues.append([cone.location.x, cone.location.y])
+            elif cone.color == Cone.ORANGE_BIG:
+                oranges.append([cone.location.x, cone.location.y])
 
             new_cone = ConeWithCovariance()
-            new_cone.cone.location = cone.cone.location
-            new_cone.cone.color = cone.cone.color
+            new_cone.cone.location = cone.location
+            new_cone.cone.color = cone.color
             new_cone.covariance = [0.0, 0.0, 0.0, 0.0]
             sim_track.append(new_cone)
 
