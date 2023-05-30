@@ -12,10 +12,10 @@ from transforms3d.euler import quat2euler
 
 from builtin_interfaces.msg import Time
 
-from experiment_helpers import search_query
+from experiment_helpers import get_run_details_from_name, search_query
 
-# track_name = "QR_Nov_2022"
-track_name = "B_shape_02_03_2023"
+track_name = "QR_Nov_2022"
+# track_name = "B_shape_02_03_2023"
 # track_name = "small_track"
 
 SEARCH_QUERY = search_query(
@@ -82,6 +82,15 @@ for p in sorted(bag_folder.glob(SEARCH_QUERY)):
 
     csv_folder = Path(str(p.absolute()) + "_csv_data")
     csv_folder.mkdir(exist_ok=True)
+
+    (
+        _,
+        _,
+        _,
+        sim_rv,
+        slam_rv,
+        _,
+    ) = get_run_details_from_name(p.name)
 
     if (csv_folder / "cone_error.csv").exists():
         continue
