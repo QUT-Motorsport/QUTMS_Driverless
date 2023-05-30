@@ -11,17 +11,17 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
-from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
+from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
+from nav_msgs.msg import Path
 
-from driverless_common.shutdown_node import ShutdownNode
 from py_slam.cone_props import ConeProps
 
 from typing import Optional
 
-R = np.diag([0.1, 0.001]) ** 2  # motion model
+R = np.diag([0.1, 0.003]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
-Q_LIDAR = np.diag([0.2, 0.2]) ** 2
+Q_LIDAR = np.diag([0.5, 0.5]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 20  # minimum frames before confirming cones
@@ -44,6 +44,8 @@ class IMUSlam(Node):
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
 
+    path_viz = Path()
+
     last_timestamp: Optional[float] = None
 
     def __init__(self):
@@ -58,12 +60,13 @@ class IMUSlam(Node):
         lidar_synchronizer.registerCallback(self.sync_callback)
 
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(Reset, "/reset", self.reset_callback, 10)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)
+        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
+        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -75,6 +78,7 @@ class IMUSlam(Node):
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
+        self.path_viz = Path()
 
     def sync_callback(self, vel_msg: TwistStamped, detection_msg: ConeDetectionStamped):
         # get velocity timestep
@@ -160,29 +164,35 @@ class IMUSlam(Node):
         self.flush_map(track_as_2d.reshape(-1, 2))
 
         # publish track msg
-        track_msg = TrackDetectionStamped()
+        track_msg = ConeDetectionStamped()
         track_msg.header.stamp = msg.header.stamp
         track_msg.header.frame_id = "track"
         for detection in self.properties:
             if detection.confirmed:
-                track_msg.cones.append(ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg))
+                track_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg)
+                )
+                track_msg.cones.append(detection.cone_as_msg)
         self.slam_publisher.publish(track_msg)
 
         # publish local map msg
         local_map_msg = ConeDetectionStamped()
         local_map_msg.header.stamp = msg.header.stamp
-        local_map_msg.header.frame_id = "car"
+        local_map_msg.header.frame_id = "base_footprint"
         for detection in self.get_local_map(track_as_2d.reshape(-1, 2)):
             if detection.confirmed:
-                local_map_msg.cones.append(detection.local_cone_as_msg)
+                local_map_msg.cones_with_cov.append(
+                    ConeWithCovariance(cone=detection.cone_as_msg, covariance=detection.cov_as_msg)
+                )
+                local_map_msg.cones.append(detection.cone_as_msg)
         self.local_publisher.publish(local_map_msg)
 
         # publish localisation msg
-        self.publish_localisation(msg)
+        self.publish_localisation(msg, msg.header.stamp)
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    def publish_localisation(self, msg):
+    def publish_localisation(self, msg, timestamp):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header.stamp = msg.header.stamp
@@ -198,6 +208,11 @@ class IMUSlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
+
+        self.path_viz.header.stamp = timestamp
+        self.path_viz.header.frame_id = "track"
+        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
+        self.path_publisher.publish(self.path_viz)
 
         # send transformation
         t = TransformStamped()

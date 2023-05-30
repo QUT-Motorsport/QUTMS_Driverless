@@ -1,0 +1,5 @@
+paths:
+- /slam/global_map
+- /slam/car_pose_history
+- /sbg_slam/global_map
+- /sbg_slam/car_pose_history

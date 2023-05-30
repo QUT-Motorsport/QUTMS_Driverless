@@ -75,7 +75,7 @@ class SBGSlam(Node):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
             self.prev_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z  # - pi
+            self.initial_ang = -ekf_euler_msg.angle.z  # - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
@@ -91,7 +91,7 @@ class SBGSlam(Node):
         d_y = d_mag * sin(self.state[2])
 
         # current angle
-        imu_ang = ekf_euler_msg.angle.z
+        imu_ang = -ekf_euler_msg.angle.z
         # get relative to initial angle and last state prediction
         d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
 
@@ -106,6 +106,7 @@ class SBGSlam(Node):
         self.properties = np.array([])
         self.initial_pos = None
         self.initial_ang = None
+        self.path_viz = Path()
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

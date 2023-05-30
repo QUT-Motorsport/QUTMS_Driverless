@@ -8,9 +8,12 @@
     <license>MIT</license>
 
     <depend>tf2_ros</depend>
+    <depend>message_filters</depend>
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>geometry_msgs</depend>
+    <depend>sensor_msgs</depend>
+    <depend>nav_msgs</depend>
     <depend>geodesy</depend>
 
     <export>
