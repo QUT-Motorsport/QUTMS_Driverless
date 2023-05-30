@@ -61,10 +61,10 @@ class SBGSlam(Node):
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/sbg_slam/global_map", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/sbg_slam/local_map", 1)
-        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/sbg_slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/sbg_slam/car_pose_history", 1)
+        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
+        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
+        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
