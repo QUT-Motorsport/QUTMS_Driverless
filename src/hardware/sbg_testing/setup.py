@@ -19,7 +19,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "sbg_performance = sbg_testing.sbg_performance:main",
+            "sbg_performance = sbg_testing.node_sbg_performance:main",
+            "sbg_debug = py_slam.node_sbg_debug:main",
         ],
     },
 )

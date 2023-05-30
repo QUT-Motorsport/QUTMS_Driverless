@@ -3,8 +3,6 @@ import time
 
 from geodesy.utm import UTMPoint, fromLatLong
 import numpy as np
-from sklearn.neighbors import KDTree
-from tf2_ros import TransformBroadcaster
 from transforms3d.euler import euler2quat, quat2euler
 
 import message_filters
@@ -12,39 +10,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PointStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos, SbgGpsVel, SbgImuData, SbgMag
 from sensor_msgs.msg import Imu, NavSatFix
 
-from py_slam.cone_props import ConeProps
-
-from typing import Optional, Tuple
-
-R = np.diag([0.1, 0.001]) ** 2  # motion model
-Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
-Q_LIDAR = np.diag([0.2, 0.2]) ** 2
-RADIUS = 1.5  # nn kdtree nearch
-LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
-FRAME_COUNT = 20  # minimum frames before confirming cones
-FRAME_REM_COUNT = 40  # minimum frames that cones have to be seen in to not be removed
-X_RANGE = 15  # max x distance from car
-Y_RANGE = 10  # max y distance from car
-
-
-def wrap_to_pi(angle: float) -> float:  # in rads
-    return (angle + pi) % (2 * pi) - pi
-
 
 class SBGDebug(Node):
-    initial_pos: Optional[Tuple[float, float]] = None
-    initial_ang: Optional[float] = None
-    state = np.array([0.0, 0.0, 0.0])  # initial pose
-    sigma = np.diag([0.5, 0.5, 0.001])
-    properties = np.array([])
-
-    last_timestamp: Optional[float] = None
-
     def __init__(self):
         super().__init__("sbg_debug_node")
 
@@ -60,10 +31,6 @@ class SBGDebug(Node):
         # imu_sub = message_filters.Subscriber(self, Imu, "/imu/data")
         # imu_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[gps_sub, imu_sub], queue_size=20, slop=0.2)
         # imu_synchronizer.registerCallback(self.imu_callback)
-
-        # self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        # self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
         # ekf_nav data visualisation publishers
         self.ekf_nav_coords_point_publisher: Publisher = self.create_publisher(
@@ -206,9 +173,6 @@ class SBGDebug(Node):
         self.sbg_imu_delta_angle_z_time_point_publisher: Publisher = self.create_publisher(
             PointStamped, "/debug/sbg_imu_delta_angle_z_time_point", 1
         )
-
-        # Initialize the transform broadcaster
-        self.broadcaster = TransformBroadcaster(self)
 
         self.get_logger().info("---SLAM node initialised---")
 
