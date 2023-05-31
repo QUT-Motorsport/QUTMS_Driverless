@@ -22,7 +22,7 @@ from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
 
-R = np.diag([0.01, 0.001]) ** 2  # motion model
+R = np.diag([0.1, 0.1]) ** 2  # motion model
 Q_LIDAR = np.diag([1, 1]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
@@ -39,6 +39,7 @@ class SBGSlam(Node):
     properties = np.array([])
 
     path_viz = Path()
+    last_path_time = time.time()
 
     def __init__(self):
         super().__init__("sbg_slam_node")
@@ -53,10 +54,10 @@ class SBGSlam(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # slam publisher
-        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
-        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
-        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
+        self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/odom_slam/global_map", 1)
+        self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/odom_slam/local_map", 1)
+        self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/odom_slam/car_pose", 1)
+        self.path_publisher: Publisher = self.create_publisher(Path, "/odom_slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -221,7 +222,9 @@ class SBGSlam(Node):
         self.path_viz.header.stamp = timestamp
         self.path_viz.header.frame_id = "track"
         self.path_viz.poses.append(PoseStamped(pose=map_to_base.pose.pose))
-        self.path_publisher.publish(self.path_viz)
+        if time.time() - self.last_path_time > 1:
+            self.path_publisher.publish(self.path_viz)
+            self.last_path_time = time.time()
 
         # send transformation
         map_to_odom_tf = TransformStamped()

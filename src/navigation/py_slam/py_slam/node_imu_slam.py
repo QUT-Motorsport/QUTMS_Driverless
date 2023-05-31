@@ -19,7 +19,7 @@ from py_slam.cone_props import ConeProps
 
 from typing import Optional
 
-R = np.diag([0.1, 0.003]) ** 2  # motion model
+R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.5, 0.5]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
@@ -219,7 +219,7 @@ class IMUSlam(Node):
         # read message content and assign it to corresponding tf variables
         t.header.stamp = msg.header.stamp
         t.header.frame_id = "track"
-        t.child_frame_id = "car"
+        t.child_frame_id = "base_footprint"
 
         t.transform.translation.x = self.state[0]
         t.transform.translation.y = self.state[1]
@@ -237,7 +237,7 @@ class IMUSlam(Node):
         ddist = (
             sqrt((vel_msg.twist.linear.x / 2) ** 2 + (vel_msg.twist.linear.y / 2) ** 2) * self.dt
         )  # magnitude of distance
-        dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
+        dtheta = vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])
