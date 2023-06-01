@@ -43,8 +43,6 @@ class IMUSlam(Node):
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
 
-    path_viz = Path()
-
     last_timestamp: Optional[float] = None
 
     def __init__(self):
