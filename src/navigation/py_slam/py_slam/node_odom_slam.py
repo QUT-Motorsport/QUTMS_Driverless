@@ -16,8 +16,6 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
-from nav_msgs.msg import Path
-from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
 from driverless_common.common import wrap_to_pi
 from py_slam.cone_props import ConeProps
@@ -43,9 +41,6 @@ class OdomSlam(Node):
     prev_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
 
-    path_viz = Path()
-    last_path_time = time.time()
-
     def __init__(self):
         super().__init__("sbg_slam_node")
 
@@ -54,10 +49,6 @@ class OdomSlam(Node):
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
-        pos_sub = message_filters.Subscriber(self, SbgGpsPos, "/sbg/gps_pos")  # use gps rather than filtered
-        ang_sub = message_filters.Subscriber(self, SbgEkfEuler, "/sbg/ekf_euler")
-        ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
-        ins_synchronizer.registerCallback(self.ins_callback)
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -66,7 +57,6 @@ class OdomSlam(Node):
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -130,35 +120,6 @@ class OdomSlam(Node):
         # # predict step
         # self.predict(d_x, d_y, d_th)
         # print("state            : ", self.state[:3])
-
-    def ins_callback(self, gps_msg: SbgGpsPos, ekf_euler_msg: SbgEkfEuler):
-        if not self.initial_ang:
-            coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-            self.prev_pos = (coords.easting, coords.northing)
-            self.initial_ang = ekf_euler_msg.angle.z  # - pi
-            return
-
-        # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
-        coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
-        # get relative to initial position and last state prediction
-        d_e = coords.easting - self.prev_pos[0]
-        d_n = coords.northing - self.prev_pos[1]
-        self.prev_pos = (coords.easting, coords.northing)
-
-        # get magnitude by prev angle
-        d_mag = hypot(d_e, d_n)
-        d_x = d_mag * cos(self.state[2]) #- self.state[0]
-        d_y = d_mag * sin(self.state[2]) # - self.state[1]
-
-        # current angle
-        imu_ang = ekf_euler_msg.angle.z
-        # get relative to initial angle and last state prediction
-        d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
-
-        print("Deltas: ", d_x, d_y, d_th)
-
-        self.predict(d_x, d_y, d_th)
-        self.correct_transform(gps_msg.header.stamp)
 
     def callback(self, msg: ConeDetectionStamped):
         # skip if no transform received
@@ -268,13 +229,6 @@ class OdomSlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         map_to_base.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(map_to_base)
-
-        self.path_viz.header.stamp = timestamp
-        self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=map_to_base.pose.pose))
-        if time.time() - self.last_path_time > 1:
-            self.path_publisher.publish(self.path_viz)
-            self.last_path_time = time.time()
 
         # send transformation
         map_to_odom_tf = TransformStamped()

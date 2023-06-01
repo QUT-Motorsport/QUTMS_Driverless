@@ -13,7 +13,6 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
-from nav_msgs.msg import Path
 
 from py_slam.cone_props import ConeProps
 
@@ -66,7 +65,6 @@ class IMUSlam(Node):
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -78,7 +76,6 @@ class IMUSlam(Node):
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
-        self.path_viz = Path()
 
     def sync_callback(self, vel_msg: TwistStamped, detection_msg: ConeDetectionStamped):
         # get velocity timestep
@@ -192,7 +189,7 @@ class IMUSlam(Node):
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    def publish_localisation(self, msg, timestamp):
+    def publish_localisation(self, msg):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header.stamp = msg.header.stamp
@@ -208,11 +205,6 @@ class IMUSlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
-
-        self.path_viz.header.stamp = timestamp
-        self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
-        self.path_publisher.publish(self.path_viz)
 
         # send transformation
         t = TransformStamped()
