@@ -20,13 +20,10 @@ setup(
     entry_points={
         "console_scripts": [
             "sine = controllers.node_sine:main",
-            "constant = controllers.node_constant:main",
             "reactive_control = controllers.node_reactive_control:main",
-            "reactive_trajectory = controllers.node_reactive_trajectory:main",
-            "vector_reactive_control = controllers.node_reactive_vector_control:main",
-            "bang_control = controllers.node_bang_control:main",
-            "simple_straight_control = controllers.node_simple_straight_control:main",
-            "straight_control = controllers.node_straight_control:main",
+            "point_fitting = controllers.node_point_fitting:main",
+            "vector_spline = controllers.node_vector_spline:main",
+            "point_fitting2 = controllers.node_point_fitting2:main",
         ],
     },
 )

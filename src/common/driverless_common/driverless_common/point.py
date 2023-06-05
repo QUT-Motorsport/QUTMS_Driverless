@@ -30,6 +30,9 @@ class Point:
     def to_tuple(self) -> Tuple:
         return (self.x, self.y)
 
+    def print_val(self) -> None:
+        print(f"({self.x}, {self.y})")
+
 
 def dist(a: Point, b: Point) -> float:
     return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
