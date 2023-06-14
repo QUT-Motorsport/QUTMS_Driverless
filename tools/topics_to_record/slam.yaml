@@ -1,7 +1,7 @@
 slam:
 - /odom_slam/global_map
-- /odom_slam/car_pose_history
+- /odom_slam/car_pose
 - /slam/global_map
-- /slam/car_pose_history
+- /slam/car_pose
 - /ground_truth/global_map
-- /ground_truth/car_pose_history
+- /ground_truth/car_pose
