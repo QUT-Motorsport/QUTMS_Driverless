@@ -44,4 +44,10 @@ ament_target_dependencies(node_ekf_slam
 install(TARGETS node_ekf_slam
   DESTINATION lib/${PROJECT_NAME})
 
+# launch folder
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()

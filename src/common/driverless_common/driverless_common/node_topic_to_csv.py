@@ -8,18 +8,18 @@ import rclpy
 from rclpy.node import Node
 from rosidl_runtime_py.convert import message_to_ordereddict
 
-from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import SteeringReading, WSSVelocity
-from geometry_msgs.msg import TwistStamped
-from sensor_msgs.msg import Imu
+from driverless_msgs.msg import ConeDetectionStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from nav_msgs.msg import Odometry
 
 from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
-SUBSCRIPTIONS: List[Tuple[str, Any]] = [
-    (WSSVelocity, "encoder_reading"),
-    (SteeringReading, "steering_reading"),
-    (AckermannDriveStamped, "driving_command"),
+SUBSCRIPTIONS: List[Tuple[Any, str]] = [
+    (PoseWithCovarianceStamped, "/slam/pose"),
+    (ConeDetectionStamped, "/slam/track"),
+    (Odometry, "/ground_truth/odom"),
+    (ConeDetectionStamped, "/ground_truth/global_map"),
 ]
 
 
@@ -39,6 +39,7 @@ class NodeTopicToCSV(Node):
     csv_writers: Dict[str, csv.DictWriter]
     records: int = 0
     start_time: float = 0
+    run_begin: dt.datetime
 
     def __init__(self) -> None:
         super().__init__("topic_to_csv")
@@ -50,6 +51,7 @@ class NodeTopicToCSV(Node):
             callback = lambda x, y=topic: self.msg_callback(x, y)
             self.create_subscription(type_, topic, callback, 10)
 
+        self.run_begin = dt.datetime.now()
         self.get_logger().info("Node topic_to_csv initalised")
 
     def msg_callback(self, msg: Any, topic: str):
@@ -60,7 +62,7 @@ class NodeTopicToCSV(Node):
 
             csv_folder = Path("./csv_data")
             csv_folder.mkdir(exist_ok=True)
-            f = open(csv_folder / f"{topic_readable}_{dt.datetime.now().isoformat(timespec='seconds')}.csv", "w")
+            f = open(csv_folder / f"{topic_readable}_{self.run_begin.isoformat(timespec='seconds')}.csv", "w")
             self.csv_writers[topic_readable] = csv.DictWriter(f, fieldnames=msg_dict.keys(), extrasaction="ignore")
             self.csv_writers[topic_readable].writeheader()
 

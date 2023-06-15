@@ -12,8 +12,11 @@ def generate_yolov5_data_files() -> List[Tuple[str, str]]:
     data_files: List[Tuple[str, str]] = []
     install_base = os.path.join("share", package_name)
     for root, dirs, files in os.walk("yolov5"):
+        if root.startswith("."):
+            continue
+
         install = os.path.join(install_base, root)
-        sources = [os.path.join(root, f) for f in files]
+        sources = [os.path.join(root, f) for f in files if not f.startswith(".")]
         data_files.append((install, sources))
     return data_files
 
