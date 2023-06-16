@@ -12,6 +12,16 @@ find_package(ament_cmake REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
+add_compile_definitions(QUTMS_CAN_VESC)
+add_compile_definitions(QUTMS_CAN_VCU)
+add_compile_definitions(QUTMS_CAN_DVL)
+add_compile_definitions(QUTMS_CAN_RES)
+add_compile_definitions(QUTMS_CAN_SW)
+add_compile_definitions(QUTMS_CAN_BMU)
+
+include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
+
 set (SOURCES
   src/can2ethernet_adapter.cpp
   src/tcp_client.cpp

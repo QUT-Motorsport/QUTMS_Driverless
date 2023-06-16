@@ -109,7 +109,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 break;
             }
 
-            case (0x180 + RES_NODE_ID): {
+            case (RES_Heartbeat_ID): {
                 // RES Reciever Status Packet
                 Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
 
@@ -140,17 +140,12 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (vesc_id < NUM_MOTORS) {
             switch (vesc_masked_id) {
                 case VESC_CAN_PACKET_STATUS: {
+                    uint8_t data[8];
+                    copy_data(msg.data, data, 8);
+                    // extract and publish RPM
                     int32_t rpm;
                     float current;
                     float duty;
-
-                    // data vector to uint8_t array
-                    uint8_t data[8];
-                    for (int i = 0; i < 8; i++) {
-                        data[i] = msg.data[i];
-                    }
-
-                    // extract and publish RPM
                     Parse_VESC_CANPacketStatus(data, &rpm, &current, &duty);
 
                     // driverless_msgs::msg::MotorRPM rpmMsg;

@@ -2,94 +2,74 @@
 #include <bitset>
 #include <iostream>
 
+#include "CAN_VESC.h"
+#include "QUTMS_can.h"
 #include "TritiumCAN.hpp"
-//#include "can2etherenet_adapter.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+#include "driverless_msgs/msg/can.hpp"
+
 using std::placeholders::_1;
 
-const int FRAME_LENGTH = 13;
-const int FI_RESERVED_MASK = 0x30;
+// create array of CAN IDs we care about
+std::vector<uint32_t> can_ids = {
+    0x5F0,  // C5_E stepper ID
+    BMU_TransmitVoltage_ID,
+    BMU_TransmitTemperature_ID,
+    (0x700 + RES_NODE_ID),  // boot up message
+    RES_Heartbeat_ID,
+};
 
 class CanBus : public rclcpp::Node {
    private:
     // std::shared_ptr<Can2Ethernet> c;
     std::shared_ptr<TritiumCAN> tritiumCAN;
 
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-        this->tritiumCAN->tx(msg.get());
-        // this->c->tx(msg->id, msg->id_type, msg->data.data());
-    }
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub_;
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
 
-    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr subscription_;
+    rclcpp::TimerBase::SharedPtr timer_;
 
-    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr publisher_;
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->tritiumCAN->tx(msg.get()); }
 
-    void canmsg_timer_callback() {
+    void canmsg_timer() {
         auto res = this->tritiumCAN->rx();
 
         for (auto& msg : *res) {
-            this->publisher_->publish(msg);
+            uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
+            uint8_t vesc_id = msg.id & 0xFF;
+            uint32_t qutms_masked_id = msg.id & ~0xF;
+            // only publish messages with IDs we care about to not flood memory
+            if (std::find(can_ids.begin(), can_ids.end(), msg.id) != can_ids.end()) {
+                this->can_pub_->publish(msg);
+            }
+            // motor RPM CAN
+            else if (vesc_id < 4 && vesc_masked_id == VESC_CAN_PACKET_STATUS) {
+                this->can_pub_->publish(msg);
+            }
+            // VCU CAN
+            else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == VCU_TransmitSteering_ID ||
+                     qutms_masked_id == SW_Heartbeat_ID) {
+                this->can_pub_->publish(msg);
+            }
         }
-        /*
-                auto res = this->c->rx();
-                if (res != nullptr) {
-                    for (size_t i = 0; i < res->size() / FRAME_LENGTH; i++) {
-                        std::vector<char> packet(FRAME_LENGTH);
-                        std::copy(res->begin() + (FRAME_LENGTH * i), res->begin() + (FRAME_LENGTH * (i + 1)),
-           packet.begin());
-
-                        if (this->validate_frame(std::make_shared<std::vector<char>>(packet))) {
-                            uint32_t id = ((packet.at(1) & 0xFF) << 24) | ((packet.at(2) & 0xFF) << 16) |
-                                          ((packet.at(3) & 0xFF) << 8) | (packet.at(4) & 0xFF);
-                            std::vector<uint8_t> data_bytes(8);
-                            for (int i = 0; i < 8; i++) {
-                                data_bytes.at(i) = packet.at(5 + i);
-                            }
-
-                            char frame_information = packet.at(0);
-                            bool extended, remote;
-                            int dlc;
-
-                            this->parse_frame_information(frame_information, &extended, &remote, &dlc);
-
-                            driverless_msgs::msg::Can msg;
-                            msg.id = id;
-                            msg.id_type = extended;
-                            msg.dlc = dlc;
-                            msg.data = data_bytes;
-                            this->publisher_->publish(msg);
-                        }
-                    }
-                }
-                */
     }
-
-    rclcpp::TimerBase::SharedPtr timer_;
 
    public:
     CanBus() : Node("canbus_translator_node") {
         // Can2Ethernet parameters
-        this->declare_parameter<std::string>("ip", "");
-        this->declare_parameter<int>("port", 0);
+        std::string _ip = this->declare_parameter<std::string>("ip", "192.168.2.125");
+        int _port = this->declare_parameter<int>("port", 20005);
 
         this->subscription_ = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1));
 
         this->publisher_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
 
-        std::string _ip;
-        int _port;
         this->get_parameter("ip", _ip);
         this->get_parameter("port", _port);
-
-        if (_ip == "") {
-            RCLCPP_ERROR(this->get_logger(), "Please provide a rosparam yaml file!");
-            rclcpp::shutdown();
-            exit(EXIT_FAILURE);
-        }
 
         RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
         // this->c = std::make_shared<Can2Ethernet>(_ip, _port);
@@ -97,57 +77,17 @@ class CanBus : public rclcpp::Node {
         this->tritiumCAN->setup(_ip);
         RCLCPP_INFO(this->get_logger(), "done!");
 
-        this->timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer_callback, this));
+        this->timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer, this));
+
+        this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
+            "/can/canbus_carbound", 10, std::bind(&CanBus::canmsg_callback, this, _1));
+
+        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
 
         RCLCPP_INFO(this->get_logger(), "---CANBus Translator Node Initialised---");
     }
 
-    bool validate_frame(std::shared_ptr<std::vector<char>> frame) {
-        if (frame->size() < FRAME_LENGTH) {
-            return false;
-        }
-
-        char frame_information = frame->at(0);
-        bool extended, remote;
-        int dlc;
-
-        if (!this->parse_frame_information(frame_information, &extended, &remote, &dlc)) {
-            return false;
-        }
-
-        std::vector<char> id_bytes = std::vector<char>(frame->begin() + 1, frame->begin() + 4);
-        std::vector<char> data_bytes = std::vector<char>(frame->begin() + 5, frame->begin() + 8);
-
-        for (int i = dlc; i < 8; i++) {
-            if (data_bytes[i] != 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    bool parse_frame_information(char input, bool* extended, bool* remote, int* dlc) {
-        *dlc = input & 0xF;
-        *remote = (input & 0x40) == 0x40;
-        *extended = (input & 0x80) == 0x80;
-
-        if ((input & FI_RESERVED_MASK) != 0) {
-            return false;
-        }
-
-        if (*dlc > 8) {
-            return false;
-        }
-
-        return true;
-    }
-
-    ~CanBus() {
-        // this->c->~Can2Ethernet();
-        this->tritiumCAN->~TritiumCAN();
-    }
+    ~CanBus() { this->tritiumCAN->~TritiumCAN(); }
 };
 
 int main(int argc, char* argv[]) {
