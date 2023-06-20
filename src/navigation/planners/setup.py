@@ -12,7 +12,7 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alastair Bradford",
+    maintainer="Alastair Bradford, Zac Gillerat",
     maintainer_email="team@gqutmotorsport.com",
     description="Path Planner for mapped tracks",
     license="MIT",
@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "delaunay_planner = planners.node_delaunay_planner:main",
+            "ordered_mid_spline = planners.node_ordered_mid_spline:main",
         ],
     },
 )
