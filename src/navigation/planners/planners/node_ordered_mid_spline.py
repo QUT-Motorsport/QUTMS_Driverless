@@ -136,7 +136,7 @@ class OrderedMapSpline(Node):
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        cones = track_msg.cones
+        cones = [cone_with_cov.cone for cone_with_cov in track_msg.cones_with_cov]
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []
