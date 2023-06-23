@@ -8,7 +8,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint, PathStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import Pose, PoseStamped
 from nav_msgs.msg import Path
 
@@ -129,7 +130,7 @@ def sort_cones(cones, start_index=None, end_index=None):
 
 
 class OrderedMapSpline(Node):
-    spline_const: int = 40  # number of points per cone
+    spline_const: int = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
 
     def __init__(self):
@@ -139,8 +140,7 @@ class OrderedMapSpline(Node):
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
 
         # publishers
-        self.qutms_path_pub: Publisher = self.create_publisher(PathStamped, "/planner/path", 1)
-        self.midpoint_path_pub: Publisher = self.create_publisher(Path, "/planner/midpoint_path", 1)
+        self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub: Publisher = self.create_publisher(Path, "/planner/spline_path", 1)
 
         self.get_logger().info("---Sim Path Planner Node Initalised---")
@@ -194,15 +194,39 @@ class OrderedMapSpline(Node):
             mid_x, mid_y = midpoint([yx[i], yy[i]], [bx[i], by[i]])
             tx.append(mid_x)
             ty.append(mid_y)
+            # for old QUTMS path curve intensity calcs
             th.append(angle([bx[i], by[i]], [yx[i], yy[i]]))  # angle of tangent at midpoint
 
+        for i in range(spline_len):
+            # get angle between current point and next point
+            if i < spline_len - 1:
+                th_change = angle([tx[i], ty[i]], [tx[i + 1], ty[i + 1]])
+            elif i == spline_len - 1:
+                th_change = angle([tx[i], ty[i]], [tx[0], ty[0]])
+            # keep between 360
+            if th_change > pi:
+                th_change = th_change - 2 * pi
+            elif th_change < -pi:
+                th_change = th_change + 2 * pi
+
             pose = PoseStamped()
-            pose.pose.position.x = mid_x
-            pose.pose.position.y = mid_y
+            pose.pose.position.x = tx[i]
+            pose.pose.position.y = ty[i]
             pose.pose.position.z = 0.0
-            pose.pose.orientation = euler2quat(0.0, 0.0, th[i])
+            quat = euler2quat(0.0, 0.0, th_change)
+            pose.pose.orientation.w = quat[0]
+            pose.pose.orientation.x = quat[1]
+            pose.pose.orientation.y = quat[2]
+            pose.pose.orientation.z = quat[3]
             poses.append(pose)
 
+        # publish spline path
+        spline_path_msg = Path()
+        spline_path_msg.header.frame_id = "track"
+        spline_path_msg.poses = poses
+        self.spline_path_pub.publish(spline_path_msg)
+
+        # curvature segments
         qutms_path: list[PathPoint] = []
         for i in range(0, spline_len - self.segment, self.segment):
             # check angle between current and 10th spline point ahead
@@ -225,7 +249,7 @@ class OrderedMapSpline(Node):
 
         # Add the first path point to the end of the list to complete the loop
         qutms_path.append(qutms_path[0])
-        qutms_path_msg = PathStamped(path=qutms_path)
+        qutms_path_msg = QUTMSPathStamped(path=qutms_path)
         qutms_path_msg.header.frame_id = "track"
         self.qutms_path_pub.publish(qutms_path_msg)
 
