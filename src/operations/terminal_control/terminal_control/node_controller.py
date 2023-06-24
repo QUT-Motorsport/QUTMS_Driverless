@@ -6,7 +6,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Reset, State
-from std_msgs.msg import UInt8
+from std_msgs.msg import UInt8, Bool
 
 from driverless_common.status_constants import INT_MISSION_TYPE, INT_STATE_TYPE
 
@@ -23,7 +23,7 @@ steering_angle: float = 0.0
 state: int = 0
 mission: int = 0
 actual_mission: int = 0
-
+r2d: bool = False
 
 class KeyboardControllerNode(Node):
     def __init__(self):
@@ -36,13 +36,15 @@ class KeyboardControllerNode(Node):
         )
         self.mission_pub: Publisher = self.create_publisher(UInt8, "/system/mission_select", 1)
         self.reset_pub: Publisher = self.create_publisher(Reset, "/system/reset", 1)
+        self.r2d_pub: Publisher = self.create_publisher(Bool, "/system/r2d", 1)
 
     def publish_drive_command(self, speed: float, steering_angle: float):
-        msg = AckermannDriveStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.drive.speed = speed
-        msg.drive.steering_angle = steering_angle
-        self.drive_command_publisher.publish(msg)
+        if r2d:
+            msg = AckermannDriveStamped()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.drive.speed = speed
+            msg.drive.steering_angle = steering_angle
+            self.drive_command_publisher.publish(msg)
 
     def state_callback(self, msg: State):
         global state, mission
@@ -61,9 +63,9 @@ def print_state(stdscr):
     stdscr.addstr(2, 0, "Use the WASD keys to control the car:")
     stdscr.addstr(3, 0, f"Torque: {speed}")
     stdscr.addstr(4, 0, f"Steering Angle: {steering_angle}")
-    stdscr.addstr(6, 0, f"[Space] to zero torque")
-    stdscr.addstr(7, 0, f"[g] to zero steering")
-    stdscr.addstr(8, 0, f"[Enter] to zero everything")
+    stdscr.addstr(6, 0, f"[Space] to zero everything")
+    stdscr.addstr(7, 0, f"[r] to reset state")
+    stdscr.addstr(8, 0, f"[Enter] to go R2D")
     stdscr.addstr(10, 0, f"Select mission: [0] to [4]")
     stdscr.addstr(
         11,
@@ -77,7 +79,7 @@ def print_state(stdscr):
 
 
 def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
-    global speed, steering_angle, state, mission
+    global speed, steering_angle, state, mission, r2d
 
     stdscr.clear()
     print_state(stdscr)
@@ -94,7 +96,6 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
             steering_angle += STEER_INCREMENT
         if c == ord(" "):
             speed = 0.0
-        if c == ord("g"):
             steering_angle = 0.0
         if c == ord("0"):
             mission = State.MISSION_NONE
@@ -109,6 +110,9 @@ def curses_main(stdscr, keyboard_controller_node: KeyboardControllerNode):
         if c == ord("m"):
             keyboard_controller_node.mission_pub.publish(UInt8(data=mission))
         if c == ord("\n"):
+            r2d = True
+            keyboard_controller_node.r2d_pub.publish(Bool(data=True))
+        if c == ord("r"):
             speed = 0.0
             steering_angle = 0.0
             mission = State.MISSION_NONE

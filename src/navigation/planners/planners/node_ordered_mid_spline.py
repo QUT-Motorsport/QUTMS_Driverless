@@ -12,6 +12,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
+from std_msgs.msg import Bool
 
 from driverless_common.common import angle, midpoint
 
@@ -120,12 +121,14 @@ def sort_cones(cones, start_index=None, end_index=None):
 class OrderedMapSpline(Node):
     spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
+    planning = False
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
+        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
 
         # publishers
         self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
@@ -133,10 +136,18 @@ class OrderedMapSpline(Node):
 
         self.get_logger().info("---Ordered path planner node initalised---")
 
+    def lap_callback(self, msg: Bool):
+        if msg.data:
+            self.planning = True
+            self.get_logger().info("Lap completed, planning commencing")
+
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        cones = [cone_with_cov.cone for cone_with_cov in track_msg.cones_with_cov]
+        if not self.planning:
+            return
+
+        cones = track_msg.cones
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []

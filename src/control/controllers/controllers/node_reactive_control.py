@@ -29,7 +29,7 @@ class ReactiveController(Node):
     target_cone_count: int
     pub_accel: bool
     ebs_test: bool
-    r2d: bool = False
+    discovering: bool = False
 
     def __init__(self):
         super().__init__("reactive_controller_node")
@@ -37,6 +37,7 @@ class ReactiveController(Node):
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
+        self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
         self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
 
         if self.ebs_test:
@@ -48,7 +49,7 @@ class ReactiveController(Node):
             self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
-            self.target_vel = 2.0  # m/s
+            self.target_vel = 1.5  # m/s
             self.target_accel = 0.0
             self.target_cone_count = 3
             self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
@@ -58,22 +59,25 @@ class ReactiveController(Node):
 
         self.get_logger().info("---Reactive controller node initalised---")
 
+    def r2d_callback(self, msg: Bool):
+        if msg.data:
+            self.discovering = True
+
     def lap_callback(self, msg: Bool):
-        # lap has not been completed, start the controller
-        if not msg.data:
-            self.r2d = True
-        else:
-            self.r2d = False
+        # lap has been completed, stop this controller
+        if msg.data:
+            self.discovering = False
+            self.get_logger().info("Lap completed, discovery stopped")
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
 
-        if not self.r2d:
-            return
-
         # safety critical, set to 0 if not good detection
         speed = 0.0
         steering_angle = 0.0
+
+        if not self.discovering:
+            return
 
         cones: List[Cone] = msg.cones
 
@@ -147,10 +151,7 @@ class ReactiveController(Node):
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
         control_msg.drive.acceleration = self.target_accel
-
         self.control_publisher.publish(control_msg)
-        if self.pub_accel:
-            self.accel_publisher.publish(control_msg)
 
 
 def main(args=None):

@@ -48,6 +48,7 @@ class PurePursuit(Node):
     scale = 1
     x_offset = 0
     y_offset = 0
+    following = False
     r2d = False
     fallback_path_points_offset = 0
 
@@ -55,6 +56,7 @@ class PurePursuit(Node):
         super().__init__("pure_pursuit_node")
 
         # subscribers
+        self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
         self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
@@ -67,14 +69,19 @@ class PurePursuit(Node):
         # parameters
         self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
         self.lookahead = self.declare_parameter("lookahead", 3.0).value
-        self.vel_max = self.declare_parameter("vel_max", 7.0).value
+        self.vel_max = self.declare_parameter("vel_max", 5.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
         self.get_logger().info("---Pure pursuit follower initalised---")
 
-    def lap_callback(self, msg: Bool):
+    def r2d_callback(self, msg: Bool):
         if msg.data:
             self.r2d = True
+
+    def lap_callback(self, msg: Bool):
+        if msg.data and self.r2d:
+            # self.following = True
+            self.get_logger().info("Lap completed, following commencing")
 
     def get_rvwp(self, car_pos: List[float]):
         """
@@ -164,7 +171,7 @@ class PurePursuit(Node):
             return
         start_time = time.time()
 
-        if not self.r2d:
+        if not self.following:
             return
 
         # i, j, k angles in rad

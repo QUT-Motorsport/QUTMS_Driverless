@@ -23,7 +23,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "mission_control = mission_controller.node_mission_control:main",
+            "mission_launcher = mission_controller.node_mission_launcher:main",
             "inspection_mission = mission_controller.node_inspection_mission:main",
             "trackdrive_mission = mission_controller.node_trackdrive_mission:main",
         ],
