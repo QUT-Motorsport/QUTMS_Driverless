@@ -66,7 +66,7 @@ class PurePursuit(Node):
         self.vel_max = self.declare_parameter("vel_max", 7.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
-        self.get_logger().info("---Path Follower Node Initalised---")
+        self.get_logger().info("---Pure pursuit follower initalised---")
 
     def get_rvwp(self, car_pos: List[float]):
         """

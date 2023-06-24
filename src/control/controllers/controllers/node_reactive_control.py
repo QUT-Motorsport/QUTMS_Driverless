@@ -52,7 +52,7 @@ class ReactiveController(Node):
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
-        self.get_logger().info("---Reactive Controller Node Initalised---")
+        self.get_logger().info("---Reactive controller node initalised---")
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

@@ -131,7 +131,7 @@ class OrderedMapSpline(Node):
         self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub: Publisher = self.create_publisher(Path, "/planner/spline_path", 1)
 
-        self.get_logger().info("---Sim Path Planner Node Initalised---")
+        self.get_logger().info("---Ordered path planner node initalised---")
 
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
