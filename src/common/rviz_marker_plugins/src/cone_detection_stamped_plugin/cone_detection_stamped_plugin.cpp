@@ -98,7 +98,7 @@ void ConeDetectionStampedPlugin::initMarkers() {
     blue_cone_marker_.scale.x = 1.0;
     blue_cone_marker_.scale.y = 1.0;
     blue_cone_marker_.scale.z = 1.0;
-    blue_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/cone.dae";
+    blue_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/any_small.dae";
     blue_cone_marker_.color.r = 0.0;
     blue_cone_marker_.color.g = 0.0;
     blue_cone_marker_.color.b = 1.0;
@@ -114,7 +114,7 @@ void ConeDetectionStampedPlugin::initMarkers() {
     yellow_cone_marker_.scale.x = 1.0;
     yellow_cone_marker_.scale.y = 1.0;
     yellow_cone_marker_.scale.z = 1.0;
-    yellow_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/cone.dae";
+    yellow_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/any_small.dae";
     yellow_cone_marker_.color.r = 1.0;
     yellow_cone_marker_.color.g = 1.0;
     yellow_cone_marker_.color.b = 0.0;
@@ -130,7 +130,7 @@ void ConeDetectionStampedPlugin::initMarkers() {
     orange_cone_marker_.scale.x = 1.0;
     orange_cone_marker_.scale.y = 1.0;
     orange_cone_marker_.scale.z = 1.0;
-    orange_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/cone.dae";
+    orange_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/any_small.dae";
     orange_cone_marker_.color.r = 1.0;
     orange_cone_marker_.color.g = 0.549;
     orange_cone_marker_.color.b = 0.0;
@@ -146,7 +146,7 @@ void ConeDetectionStampedPlugin::initMarkers() {
     big_orange_cone_marker_.scale.x = 1.0;
     big_orange_cone_marker_.scale.y = 1.0;
     big_orange_cone_marker_.scale.z = 1.0;
-    big_orange_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/big_cone.dae";
+    big_orange_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/orange_big.dae";
     big_orange_cone_marker_.color.r = 1.0;
     big_orange_cone_marker_.color.g = 0.271;
     big_orange_cone_marker_.color.b = 0.0;
@@ -161,7 +161,7 @@ void ConeDetectionStampedPlugin::initMarkers() {
     unknown_cone_marker_.scale.x = 1.0;
     unknown_cone_marker_.scale.y = 1.0;
     unknown_cone_marker_.scale.z = 1.0;
-    unknown_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/cone.dae";
+    unknown_cone_marker_.mesh_resource = "package://rviz_marker_plugins/meshes/any_small.dae";
     unknown_cone_marker_.color.r = 0.0;
     unknown_cone_marker_.color.g = 1.0;
     unknown_cone_marker_.color.b = 0.0;
