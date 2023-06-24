@@ -17,7 +17,7 @@ class TrackToCSV(Node):
         # subscribe to topic
         self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
 
-        self.get_logger().info("---Track Writer Initalised---")
+        self.get_logger().info("---Track to CSV writer node initalised---")
 
     def callback(self, msg: TrackDetectionStamped):
         df = pd.DataFrame(columns=["tag", "x", "y", "direction", "x_variance", "y_variance", "xy_covariance"])

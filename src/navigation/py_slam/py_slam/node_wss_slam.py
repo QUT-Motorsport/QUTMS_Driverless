@@ -67,7 +67,7 @@ class WSSSlam(Node):
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
-        self.get_logger().info("---SLAM node initialised---")
+        self.get_logger().info("---Wheel speed SLAM node initialised---")
 
     def velocity_callback(self, imu_msg: TwistStamped, wss_msg: WSSVelocity):
         if self.last_timestamp is None:

@@ -61,7 +61,7 @@ class OdomSlam(Node):
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
-        self.get_logger().info("---SLAM node initialised---")
+        self.get_logger().info("---Odom SLAM node initialised---")
 
     def reset_callback(self, msg):
         self.get_logger().info("Resetting Map")

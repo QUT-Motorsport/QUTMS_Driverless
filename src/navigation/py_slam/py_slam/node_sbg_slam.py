@@ -65,7 +65,7 @@ class SBGSlam(Node):
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
 
-        self.get_logger().info("---SLAM node initialised---")
+        self.get_logger().info("---SBG SLAM node initialised---")
 
     def ins_callback(self, gps_msg: SbgGpsPos, ekf_euler_msg: SbgEkfEuler):
         if not self.initial_pos and not self.initial_ang:

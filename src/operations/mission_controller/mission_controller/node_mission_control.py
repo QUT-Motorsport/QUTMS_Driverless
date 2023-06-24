@@ -19,7 +19,7 @@ class MissionControl(Node):
 
         self.create_subscription(State, "/system/as_status", self.callback, 10)
 
-        self.get_logger().info("---Mission Control node initialised---")
+        self.get_logger().info("---Mission control node initialised---")
 
     def callback(self, status: State):
         if status.state == State.SELECT_MISSION:

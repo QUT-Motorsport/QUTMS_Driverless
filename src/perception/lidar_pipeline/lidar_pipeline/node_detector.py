@@ -101,7 +101,7 @@ class LiDARDetectorNode(Node):
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 
         # Log info
-        self.get_logger().info("--- LiDAR Processor Node Initialised---")
+        self.get_logger().info("---LiDAR detector node initialised---")
 
     def callback(self, msg: PointCloud2) -> None:
         """
