@@ -14,6 +14,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
+from std_msgs.msg import Bool
 
 from driverless_common.common import angle, dist, fast_dist, wrap_to_pi
 
@@ -47,12 +48,15 @@ class PurePursuit(Node):
     scale = 1
     x_offset = 0
     y_offset = 0
+    r2d = False
     fallback_path_points_offset = 0
 
     def __init__(self):
         super().__init__("pure_pursuit_node")
 
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, qos_profile=qos_profile)
+        # subscribers
+        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, qos_profile=qos_profile)
 
@@ -67,6 +71,10 @@ class PurePursuit(Node):
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
         self.get_logger().info("---Pure pursuit follower initalised---")
+
+    def lap_callback(self, msg: Bool):
+        if msg.data:
+            self.r2d = True
 
     def get_rvwp(self, car_pos: List[float]):
         """
@@ -155,6 +163,9 @@ class PurePursuit(Node):
         if self.path.size == 0:
             return
         start_time = time.time()
+
+        if not self.r2d:
+            return
 
         # i, j, k angles in rad
         theta = quat2euler(

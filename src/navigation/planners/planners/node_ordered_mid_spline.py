@@ -10,7 +10,7 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 
 from driverless_common.common import angle, midpoint
@@ -118,7 +118,7 @@ def sort_cones(cones, start_index=None, end_index=None):
 
 
 class OrderedMapSpline(Node):
-    spline_const: int = 10  # number of points per cone
+    spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
 
     def __init__(self):
@@ -208,7 +208,8 @@ class OrderedMapSpline(Node):
             pose.pose.orientation.z = quat[3]
             poses.append(pose)
 
-        # publish spline path
+        # Add the first path point to the end of the list to complete the loop
+        poses.append(poses[0])
         spline_path_msg = Path()
         spline_path_msg.header.frame_id = "track"
         spline_path_msg.poses = poses

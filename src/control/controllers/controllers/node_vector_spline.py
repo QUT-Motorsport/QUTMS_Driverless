@@ -15,6 +15,7 @@ from rclpy.publisher import Publisher
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
+from std_msgs.msg import Bool
 
 from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
@@ -130,6 +131,7 @@ class VectorReactiveController(Node):
     pub_accel: bool
     ebs_test: bool
     last_time: float = 0
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("reactive_vector_controller_node")
@@ -137,22 +139,24 @@ class VectorReactiveController(Node):
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
+        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
+
         if self.ebs_test:
             self.Kp_ang = -1.0
             self.target_vel = 12.0  # m/s
             self.target_accel = 0.0
             self.in_dist = 2.0
             self.pub_accel = False
-
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = -3.0
             self.target_vel = 3.0  # m/s
             self.target_accel = 0.0
             self.in_dist = 2.0
             self.pub_accel = False
-            # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
@@ -161,8 +165,18 @@ class VectorReactiveController(Node):
 
         self.get_logger().info("---Vector spline controller node initalised---")
 
+    def lap_callback(self, msg: Bool):
+        # lap has not been completed, start the controller
+        if not msg.data:
+            self.r2d = True
+        else:
+            self.r2d = False
+
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+
+        if not self.r2d:
+            return
 
         # safety critical, set to 0 if not good detection
         speed = 0.0

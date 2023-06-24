@@ -6,6 +6,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
+from std_msgs.msg import Bool
 
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
@@ -28,12 +29,15 @@ class ReactiveController(Node):
     target_cone_count: int
     pub_accel: bool
     ebs_test: bool
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("reactive_controller_node")
 
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
+
+        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
 
         if self.ebs_test:
             self.Kp_ang = 2.0
@@ -54,8 +58,18 @@ class ReactiveController(Node):
 
         self.get_logger().info("---Reactive controller node initalised---")
 
+    def lap_callback(self, msg: Bool):
+        # lap has not been completed, start the controller
+        if not msg.data:
+            self.r2d = True
+        else:
+            self.r2d = False
+
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+
+        if not self.r2d:
+            return
 
         # safety critical, set to 0 if not good detection
         speed = 0.0
