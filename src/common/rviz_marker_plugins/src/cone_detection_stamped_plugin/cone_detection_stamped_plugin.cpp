@@ -184,8 +184,8 @@ void ConeDetectionStampedPlugin::initMarkers() {
 }
 
 void ConeDetectionStampedPlugin::setConeMarker(const driverless_msgs::msg::Cone &cone,
-                                                   const std_msgs::msg::Header &header, const int &id,
-                                                   visualization_msgs::msg::Marker *marker) {
+                                               const std_msgs::msg::Header &header, const int &id,
+                                               visualization_msgs::msg::Marker *marker) {
     marker->id = id;
     marker->header = header;
     marker->pose.position.x = cone.location.x;
@@ -194,7 +194,7 @@ void ConeDetectionStampedPlugin::setConeMarker(const driverless_msgs::msg::Cone 
 }
 
 void ConeDetectionStampedPlugin::setCovarianceMarker(const driverless_msgs::msg::ConeWithCovariance &cone,
-                                                         const std_msgs::msg::Header &header, const int &id) {
+                                                     const std_msgs::msg::Header &header, const int &id) {
     // https://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/
     covariance_marker_.id = id;
     covariance_marker_.header = header;
@@ -241,8 +241,7 @@ visualization_msgs::msg::Marker ConeDetectionStampedPlugin::getColoredMarker(
     return marker;
 }
 
-void ConeDetectionStampedPlugin::setMarkerArray(
-    const driverless_msgs::msg::ConeDetectionStamped::ConstSharedPtr &msg) {
+void ConeDetectionStampedPlugin::setMarkerArray(const driverless_msgs::msg::ConeDetectionStamped::ConstSharedPtr &msg) {
     for (const auto &cone : msg->cones_with_cov) {
         visualization_msgs::msg::Marker cone_marker;
         switch (cone.cone.color) {
@@ -296,5 +295,5 @@ void ConeDetectionStampedPlugin::setMarkerArray(
     }
 }
 
-}
-}
+}  // namespace displays
+}  // namespace rviz_marker_plugins

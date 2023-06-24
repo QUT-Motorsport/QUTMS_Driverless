@@ -19,6 +19,7 @@
 #include <driverless_msgs/msg/cone_detection_stamped.hpp>
 #include <driverless_msgs/msg/cone_with_covariance.hpp>
 #include <memory>
+#include <pluginlib/class_list_macros.hpp>
 #include <rviz_common/properties/color_property.hpp>
 #include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/ros_topic_display.hpp>
@@ -27,7 +28,6 @@
 #include <vector>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <pluginlib/class_list_macros.hpp>
 
 #include "rviz_default_plugins/visibility_control.hpp"
 
@@ -56,8 +56,8 @@ class ConeDetectionStampedPlugin : public rviz_common::RosTopicDisplay<driverles
    private:
     void initMarkers();
 
-    void setConeMarker(const driverless_msgs::msg::Cone &cone, const std_msgs::msg::Header &header,
-                       const int &id, visualization_msgs::msg::Marker *marker);
+    void setConeMarker(const driverless_msgs::msg::Cone &cone, const std_msgs::msg::Header &header, const int &id,
+                       visualization_msgs::msg::Marker *marker);
 
     visualization_msgs::msg::Marker getColoredMarker(visualization_msgs::msg::Marker cone_marker);
 
@@ -94,7 +94,7 @@ class ConeDetectionStampedPlugin : public rviz_common::RosTopicDisplay<driverles
     visualization_msgs::msg::MarkerArray marker_array_;
 };
 
-}
-}
+}  // namespace displays
+}  // namespace rviz_marker_plugins
 
 #endif
