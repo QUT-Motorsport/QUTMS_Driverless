@@ -1,9 +1,14 @@
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
 from launch_ros.actions import Node
+
+import os
 
 
 def generate_launch_description():
+    nav_package_share = get_package_share_path("qutms_nav2")
     return LaunchDescription(
         [
             Node(
@@ -19,13 +24,17 @@ def generate_launch_description():
                 executable="pure_pursuit",
             ),
             Node(
-                package="py_slam",
-                executable="sbg_slam",
-            ),
-            Node(
                 package="planners",
                 executable="ordered_mid_spline",
             ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(nav_package_share, "launch", "cone_association_slam.launch.py")
+                ),
+                launch_arguments={
+                    "slam_params_file": os.path.join(nav_package_share, "config/slam_params.yaml")
+                }.items(),
+            )
             # Node(
             #     package="steering_actuator",
             #     executable="steering_actuator_node",

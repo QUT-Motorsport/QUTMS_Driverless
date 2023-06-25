@@ -15,7 +15,7 @@ from rclpy.publisher import Publisher
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, UInt8
 
 from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
@@ -139,7 +139,8 @@ class VectorReactiveController(Node):
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
-        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
+        self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
+        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, 10)
 
         if self.ebs_test:
             self.Kp_ang = -1.0
@@ -165,12 +166,16 @@ class VectorReactiveController(Node):
 
         self.get_logger().info("---Vector spline controller node initalised---")
 
-    def lap_callback(self, msg: Bool):
-        # lap has not been completed, start the controller
-        if not msg.data:
-            self.r2d = True
-        else:
-            self.r2d = False
+    def r2d_callback(self, msg: Bool):
+        if msg.data:
+            self.discovering = True
+            self.get_logger().info("Discovery started")
+
+    def lap_callback(self, msg: UInt8):
+        # lap has been completed, stop this controller
+        if msg.data > 0:
+            self.discovering = False
+            self.get_logger().info("Lap completed, discovery stopped")
 
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

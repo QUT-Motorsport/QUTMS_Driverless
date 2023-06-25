@@ -6,7 +6,7 @@ import time
 
 from driverless_msgs.msg import Reset, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, UInt8
 
 from driverless_common.shutdown_node import ShutdownNode
 
@@ -22,27 +22,25 @@ class TrackdriveMission(ShutdownNode):
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.pose_callback, 10)
 
         self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "/system/shutdown", 1)
-        self.lap_trig_pub: Publisher = self.create_publisher(Bool, "/system/lap_completed", 1)
-        
-        self.last_lap_time = time.time()
+        self.lap_trig_pub: Publisher = self.create_publisher(UInt8, "/system/laps_completed", 1)
 
         self.get_logger().info("---Trackdrive mission node initialised---")
 
-    def r2d_callback(self, msg: Reset):
-        if not self.r2d:
+    def r2d_callback(self, msg: Bool):
+        if not self.r2d and msg.data:
             self.r2d = True
-            self.lap_trig_pub.publish(Bool(data=False))
+            self.last_lap_time = time.time()
             self.get_logger().info("Trackdrive mission started")
 
     def pose_callback(self, msg: PoseWithCovarianceStamped):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
-        if self.r2d and abs(msg.pose.pose.position.x) < 0.7 and abs(msg.pose.pose.position.y) < 0.7:
+        if self.r2d and abs(msg.pose.pose.position.x) < 0.5 and abs(msg.pose.pose.position.y) < 2:
             if time.time() - self.last_lap_time > 20:  # 20 seconds at least between laps
                 self.laps += 1
                 self.last_lap_time = time.time()
-                self.lap_trig_pub.publish(Bool(data=True))
+                self.lap_trig_pub.publish(UInt8(data=self.laps))
                 self.get_logger().info(f"Lap {self.laps} completed")
 
         if self.laps == 10:

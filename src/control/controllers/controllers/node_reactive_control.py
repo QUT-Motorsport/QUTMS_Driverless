@@ -6,7 +6,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, UInt8
 
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
@@ -38,7 +38,7 @@ class ReactiveController(Node):
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
         self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
-        self.create_subscription(Bool, "/system/lap_completed", self.lap_callback, 10)
+        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, 10)
 
         if self.ebs_test:
             self.Kp_ang = 2.0
@@ -51,7 +51,7 @@ class ReactiveController(Node):
             self.Kp_ang = 2.0
             self.target_vel = 1.5  # m/s
             self.target_accel = 0.0
-            self.target_cone_count = 3
+            self.target_cone_count = 2
             self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
@@ -62,10 +62,11 @@ class ReactiveController(Node):
     def r2d_callback(self, msg: Bool):
         if msg.data:
             self.discovering = True
+            self.get_logger().info("Discovery started")
 
-    def lap_callback(self, msg: Bool):
+    def lap_callback(self, msg: UInt8):
         # lap has been completed, stop this controller
-        if msg.data:
+        if msg.data > 0:
             self.discovering = False
             self.get_logger().info("Lap completed, discovery stopped")
 
