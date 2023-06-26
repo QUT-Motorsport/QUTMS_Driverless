@@ -13,13 +13,12 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
-from nav_msgs.msg import Path
 
 from py_slam.cone_props import ConeProps
 
 from typing import Optional
 
-R = np.diag([0.1, 0.003]) ** 2  # motion model
+R = np.diag([0.1, 0.001]) ** 2  # motion model
 Q_CAM = np.diag([0.5, 0.5]) ** 2  # measurement
 Q_LIDAR = np.diag([0.5, 0.5]) ** 2
 RADIUS = 1.5  # nn kdtree nearch
@@ -44,8 +43,6 @@ class IMUSlam(Node):
     sigma = np.diag([0.5, 0.5, 0.001])
     properties = np.array([])
 
-    path_viz = Path()
-
     last_timestamp: Optional[float] = None
 
     def __init__(self):
@@ -66,7 +63,6 @@ class IMUSlam(Node):
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -78,7 +74,6 @@ class IMUSlam(Node):
         self.state = np.array([0.0, 0.0, 0.0])
         self.sigma = np.diag([0.5, 0.5, 0.001])
         self.properties = np.array([])
-        self.path_viz = Path()
 
     def sync_callback(self, vel_msg: TwistStamped, detection_msg: ConeDetectionStamped):
         # get velocity timestep
@@ -192,7 +187,7 @@ class IMUSlam(Node):
 
         self.get_logger().debug(f"Wait time: {str(time.perf_counter()-start)}")  # log time
 
-    def publish_localisation(self, msg, timestamp):
+    def publish_localisation(self, msg):
         # publish pose msg
         pose_msg = PoseWithCovarianceStamped()
         pose_msg.header.stamp = msg.header.stamp
@@ -209,17 +204,12 @@ class IMUSlam(Node):
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
 
-        self.path_viz.header.stamp = timestamp
-        self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
-        self.path_publisher.publish(self.path_viz)
-
         # send transformation
         t = TransformStamped()
         # read message content and assign it to corresponding tf variables
         t.header.stamp = msg.header.stamp
         t.header.frame_id = "track"
-        t.child_frame_id = "car"
+        t.child_frame_id = "base_footprint"
 
         t.transform.translation.x = self.state[0]
         t.transform.translation.y = self.state[1]
@@ -237,7 +227,7 @@ class IMUSlam(Node):
         ddist = (
             sqrt((vel_msg.twist.linear.x / 2) ** 2 + (vel_msg.twist.linear.y / 2) ** 2) * self.dt
         )  # magnitude of distance
-        dtheta = -vel_msg.twist.angular.z * self.dt  # change in angle
+        dtheta = vel_msg.twist.angular.z * self.dt  # change in angle
 
         Jx = np.array([[1, 0, -ddist * sin(self.state[2])], [0, 1, ddist * cos(self.state[2])], [0, 0, 1]])
         Ju = np.array([[cos(self.state[2]), 0], [sin(self.state[2]), 0], [0, 1]])

@@ -14,7 +14,6 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
-from nav_msgs.msg import Path
 from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
 from py_slam.cone_props import ConeProps
@@ -44,8 +43,6 @@ class SBGSlam(Node):
     sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
 
-    path_viz = Path()
-
     def __init__(self):
         super().__init__("sbg_slam_node")
 
@@ -64,7 +61,6 @@ class SBGSlam(Node):
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -75,7 +71,7 @@ class SBGSlam(Node):
         if not self.initial_pos and not self.initial_ang:
             coords: UTMPoint = fromLatLong(gps_msg.latitude, gps_msg.longitude, gps_msg.altitude)
             self.prev_pos = (coords.easting, coords.northing)
-            self.initial_ang = -ekf_euler_msg.angle.z  # - pi
+            self.initial_ang = ekf_euler_msg.angle.z  # - pi
             return
 
         # https://answers.ros.org/question/50763/need-help-converting-lat-long-coordinates-into-meters/
@@ -91,7 +87,7 @@ class SBGSlam(Node):
         d_y = d_mag * sin(self.state[2])
 
         # current angle
-        imu_ang = -ekf_euler_msg.angle.z
+        imu_ang = ekf_euler_msg.angle.z
         # get relative to initial angle and last state prediction
         d_th = wrap_to_pi(imu_ang - self.initial_ang - self.state[2])
 
@@ -106,7 +102,6 @@ class SBGSlam(Node):
         self.properties = np.array([])
         self.initial_pos = None
         self.initial_ang = None
-        self.path_viz = Path()
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -211,11 +206,6 @@ class SBGSlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         pose_msg.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(pose_msg)
-
-        self.path_viz.header.stamp = timestamp
-        self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=pose_msg.pose.pose))
-        self.path_publisher.publish(self.path_viz)
 
         # send transformation
         t = TransformStamped()

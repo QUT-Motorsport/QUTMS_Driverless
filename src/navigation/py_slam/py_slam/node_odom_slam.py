@@ -9,21 +9,22 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from transforms3d.euler import euler2quat, quat2euler
 
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
-from nav_msgs.msg import Path
 
 from driverless_common.common import wrap_to_pi
 from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
 
-R = np.diag([0.01, 0.001]) ** 2  # motion model
-Q_LIDAR = np.diag([1, 1]) ** 2
+R = np.diag([0.1, 0.1]) ** 2  # motion model
+Q_INS = np.diag([0.1, 0.1]) ** 2  # gps measurement
+Q_LIDAR = np.diag([1, 1]) ** 2  # lidar measurement
 RADIUS = 1.5  # nn kdtree nearch
 LEAF_SIZE = 50  # nodes per tree before it starts brute forcing?
 FRAME_COUNT = 15  # minimum frames before confirming cones
@@ -32,13 +33,13 @@ X_RANGE = 15  # max x distance from car
 Y_RANGE = 10  # max y distance from car
 
 
-class SBGSlam(Node):
+class OdomSlam(Node):
     last_odom_pose: Optional[np.ndarray] = None
     state = np.array([0.0, 0.0, 0.0])  # initial pose
     sigma = np.diag([0.0, 0.0, 0.0])
     properties = np.array([])
-
-    path_viz = Path()
+    prev_pos: Optional[Tuple[float, float]] = None
+    initial_ang: Optional[float] = None
 
     def __init__(self):
         super().__init__("sbg_slam_node")
@@ -56,7 +57,6 @@ class SBGSlam(Node):
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)
         self.local_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/local_map", 1)
         self.pose_publisher: Publisher = self.create_publisher(PoseWithCovarianceStamped, "/slam/car_pose", 1)
-        self.path_publisher: Publisher = self.create_publisher(Path, "/slam/car_pose_history", 1)
 
         # Initialize the transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -107,7 +107,19 @@ class SBGSlam(Node):
         # update the last odom pose
         self.last_odom_pose = np.array([odom_x, odom_y, odom_ang])
 
-        # print("odom: ", self.state)
+        # # get deltas
+        # d_x = odom_x - self.last_odom_pose[0]
+        # d_y = odom_y - self.last_odom_pose[1]
+        # d_th = wrap_to_pi(odom_ang - self.last_odom_pose[2])
+
+        # # update the last odom pose
+        # self.last_odom_pose = np.array([odom_x, odom_y, odom_ang])
+
+        # print("Last odom pose   : ", self.last_odom_pose)
+
+        # # predict step
+        # self.predict(d_x, d_y, d_th)
+        # print("state            : ", self.state[:3])
 
     def callback(self, msg: ConeDetectionStamped):
         # skip if no transform received
@@ -217,11 +229,6 @@ class SBGSlam(Node):
         cov[5, 5] = self.sigma[2, 2]
         map_to_base.pose.covariance = cov.flatten().tolist()
         self.pose_publisher.publish(map_to_base)
-
-        self.path_viz.header.stamp = timestamp
-        self.path_viz.header.frame_id = "track"
-        self.path_viz.poses.append(PoseStamped(pose=map_to_base.pose.pose))
-        self.path_publisher.publish(self.path_viz)
 
         # send transformation
         map_to_odom_tf = TransformStamped()
@@ -379,7 +386,7 @@ class SBGSlam(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SBGSlam()
+    node = OdomSlam()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
