@@ -8,12 +8,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_common.common import midpoint, angle
-
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import Pose, PoseStamped
 from nav_msgs.msg import Path
+
+from driverless_common.common import angle, midpoint
 
 from typing import List, Tuple
 
