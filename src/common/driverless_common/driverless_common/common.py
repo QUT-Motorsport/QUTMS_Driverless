@@ -2,7 +2,7 @@ from math import atan2, cos, sin, sqrt
 
 import numpy as np
 
-from typing import List
+from typing import List, Tuple
 
 
 def dist(p1: List[float], p2: List[float]) -> float:
@@ -34,3 +34,13 @@ def wrap_to_pi(angle: float) -> float:
     * return: angle in rads wrapped to -pi and pi
     """
     return (angle + np.pi) % (2 * np.pi) - np.pi
+
+
+def midpoint(p1: List[float], p2: List[float]) -> Tuple[float]:
+    """
+    Retrieve midpoint between two points
+    * param p1: [x,y] coords of point 1
+    * param p2: [x,y] coords of point 2
+    * return: x,y tuple of midpoint coord
+    """
+    return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
