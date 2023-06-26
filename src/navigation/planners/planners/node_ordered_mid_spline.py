@@ -8,6 +8,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
+from driverless_common.common import midpoint, angle
+
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import Pose, PoseStamped
@@ -44,28 +46,6 @@ def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int 
     spline_y = scipy_interpolate.splev(ipl_t, y_list)
 
     return spline_x, spline_y
-
-
-def midpoint(p1: List[float], p2: List[float]) -> Tuple[float]:
-    """
-    Retrieve midpoint between two points
-    * param p1: [x,y] coords of point 1
-    * param p2: [x,y] coords of point 2
-    * return: x,y tuple of midpoint coord
-    """
-    return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
-
-
-def angle(p1: List[float], p2: List[float]) -> float:
-    """
-    Retrieve angle between two points
-    * param p1: [x,y] coords of point 1
-    * param p2: [x,y] coords of point 2
-    * return: angle in rads
-    """
-    x_disp = p2[0] - p1[0]
-    y_disp = p2[1] - p1[1]
-    return atan2(y_disp, x_disp)
 
 
 def sort_cones(cones, start_index=None, end_index=None):
