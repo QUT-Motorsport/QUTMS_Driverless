@@ -5,10 +5,6 @@
 	path = src/perception/vision_pipeline/yolov5
 	url = https://github.com/ultralytics/yolov5.git
     branch = v6.2
-[submodule "src/common/fs_msgs"]
-	path = src/common/fs_msgs
-	url = https://github.com/FS-Driverless/fs_msgs.git
-	branch = ros2
 [submodule "src/hardware/QUTMS_Embedded_Common"]
 	path = src/hardware/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
