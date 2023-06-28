@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pure_pursuit = path_follower.node_pure_pursuit:main",
+            "pure_pursuit_kdtree = path_follower.node_pure_pursuit_kdtree:main",
         ],
     },
 )
