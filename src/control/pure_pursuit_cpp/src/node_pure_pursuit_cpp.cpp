@@ -23,6 +23,8 @@ struct Point {
     double const y;
     double const turn_intensity;
 
+    Point() : x(0), y(0), turn_intensity(0) {}
+
     Point(double x, double y, double turn_intensity) : x(x), y(y), turn_intensity(turn_intensity) {}
 };
 
@@ -49,6 +51,7 @@ class Fast : public rclcpp::Node {
     double squared_lookahead;  // allows us to skip performing sqrts in get_rvwp()
     double kp_ang;
     double target_velocity;
+    int fallback_path_points_offset;  // The number of path points to be skipped for an approximate rvwp
     size_t count{0};
 
     static Pose calc_car_axle_pos(double car_pos_x, double car_pos_y, double heading) {
@@ -59,6 +62,7 @@ class Fast : public rclcpp::Node {
     }
 
     Point get_rvwp(Pose const& car_axle_pos) const {
+        // Find the path point closest the to position of the car's axle.
         auto closest_dist = DBL_MAX;
         int closest_index = -1;
         for (size_t i = 0; i < path.size(); i++) {
@@ -71,9 +75,12 @@ class Fast : public rclcpp::Node {
                 closest_index = i;
             }
         }
-        assert(closest_index != -1);
 
-        auto const& closest_path_point = path.at(closest_index);
+        // Note that it is logically impossible for closest_index to be -1 (no closest point found) as this method
+        // is called after a path.size() > 0 check.
+        Point closest_path_point =
+            closest_index > -1 ? path.at(closest_index) : Point(car_axle_pos.x, car_axle_pos.y, 0);
+        if (closest_index == -1) RCLCPP_WARN(get_logger(), "Could not find closest point, have used car's axle pos");
 
         auto rvwp_dist = DBL_MAX;
         int rvwp_index = -1;
@@ -91,17 +98,37 @@ class Fast : public rclcpp::Node {
                 rvwp_index = i;
             }
         }
-        assert(rvwp_index != -1);
 
-        auto const& rvwp = path.at(rvwp_index);
-        assert(!(rvwp.x == path.at(closest_index).x && rvwp.y == path.at(closest_index).y));
-        return rvwp;
+        if (rvwp_index == -1 || rvwp_index == closest_index) {
+            RCLCPP_WARN(get_logger(), "No valid RVWP found, using fallback point");
+            // Handle path points size overflow.
+            int path_points_count = path.size() - 1;
+            if (closest_index + fallback_path_points_offset > path_points_count)
+                rvwp_index = abs(path_points_count - (closest_index + fallback_path_points_offset));
+            else
+                rvwp_index = closest_index + fallback_path_points_offset;
+        }
+
+        return path.at(rvwp_index);
     }
 
     void path_callback(driverless_msgs::msg::PathStamped const& spline_path_msg) {
+        double distance = 0.0;
         path.clear();
-        for (const auto& point : spline_path_msg.path)
+        for (const auto& point : spline_path_msg.path) {
+            if (path.size() >= 2) {
+                auto const& previous_point = path.at(path.size() - 1);
+                auto diff_x = previous_point.x - point.location.x;
+                auto diff_y = previous_point.y - point.location.y;
+                distance += sqrt(diff_x * diff_x + diff_y * diff_y);
+            }
             path.emplace_back(point.location.x, point.location.y, point.turn_intensity);
+        }
+        // Calculate the number of path points to skip when finding a fallback RVWP.
+        // Formula is the number of path points divided by the calculated distance in metres, giving the number of
+        // points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
+        // path points that shuld be skipped.
+        fallback_path_points_offset = round(path.size() / distance) * lookahead;
     }
 
     void pose_callback(geometry_msgs::msg::PoseWithCovarianceStamped const& pose_msg) {
