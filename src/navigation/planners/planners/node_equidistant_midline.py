@@ -175,7 +175,7 @@ def sort_cones(cones, start_index=None, end_index=None):
 
 
 class EquidistantMidline(Node):
-    DISTANCE_BETWEEN_POINTS = 0.01  # Distance between midpoints in meters
+    DISTANCE_BETWEEN_POINTS = 0.15  # Distance between midpoints in meters
 
     def __init__(self):
         super().__init__("Equidistant_Midline_Node")
