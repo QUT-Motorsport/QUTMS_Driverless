@@ -128,7 +128,7 @@ class Fast : public rclcpp::Node {
         // Formula is the number of path points divided by the calculated distance in metres, giving the number of
         // points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
         // path points that shuld be skipped.
-        fallback_path_points_offset = round(path.size() / distance) * lookahead;
+        fallback_path_points_offset = round(path.size() / distance * lookahead);
     }
 
     void pose_callback(geometry_msgs::msg::PoseWithCovarianceStamped const& pose_msg) {
@@ -167,10 +167,11 @@ class Fast : public rclcpp::Node {
 
    public:
     Fast() : Node("pure_pursuit_cpp_node") {
+        rclcpp::QoS qos_profile(rclcpp::KeepLast(1), rmw_qos_profile_sensor_data);
         this->path_sub = this->create_subscription<driverless_msgs::msg::PathStamped>(
-            "/planner/path", 10, std::bind(&Fast::path_callback, this, _1));
+            "/planner/path", qos_profile, std::bind(&Fast::path_callback, this, _1));
         this->slam_pose_sub = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/slam/car_pose", 10, std::bind(&Fast::pose_callback, this, _1));
+            "/slam/car_pose", qos_profile, std::bind(&Fast::pose_callback, this, _1));
 
         this->driving_command_pub =
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);

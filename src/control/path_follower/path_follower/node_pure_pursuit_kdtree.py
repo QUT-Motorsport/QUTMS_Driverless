@@ -17,6 +17,8 @@ from sensor_msgs.msg import Image
 
 from driverless_common.common import angle, dist, wrap_to_pi
 
+from . import qos_profile
+
 from typing import List
 
 cv_bridge = CvBridge()
@@ -40,16 +42,15 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
 
 class FastPurePursuit(Node):
     path = np.array([])
-    start_time = time.time()
     count = 0
     fallback_path_points_offset = 0
 
     def __init__(self):
         super().__init__("fast_pure_pursuit_node")
 
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 10)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, qos_profile=qos_profile)
         # sync subscribers pose + velocity
-        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, 10)
+        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, qos_profile=qos_profile)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
@@ -141,9 +142,9 @@ class FastPurePursuit(Node):
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved
-        self.start_time = time.time()
         if self.path.size == 0:
             return
+        start_time = time.time()
 
         # i, j, k angles in rad
         theta = quat2euler(
@@ -174,7 +175,7 @@ class FastPurePursuit(Node):
         self.count += 1
         if self.count == 50:
             self.count = 0
-            self.get_logger().info(f"{(time.time() - self.start_time) * 1000}")
+            self.get_logger().info(f"{(time.time() - start_time) * 1000}")
 
 
 def main(args=None):  # begin ros node
