@@ -13,6 +13,7 @@ from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.draw import draw_map, draw_markers, draw_steering
+from driverless_common.marker import path_marker_msg
 
 from typing import List
 
@@ -112,6 +113,8 @@ class DisplayDetections(Node):
 
             except:
                 continue
+
+        self.path_marker_publisher.publish(path_marker_msg(path_markers, path_colours))
 
     def slam_callback(self, msg: ConeDetectionStamped):
         if self.slam_img_publisher.get_subscription_count() == 0:

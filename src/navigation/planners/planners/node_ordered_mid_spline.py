@@ -78,6 +78,14 @@ def sort_cones(cones, start_index=None, end_index=None):
         for j, b in enumerate(cones):
             if i == j:
                 continue
+
+            # Ensures we sort in the direction that the car is pointing
+            # If the current cone is the far orange cone, we ignore all cones where the x coord is less than the
+            # selected cone's x coord.
+            # I can't image a track that this would cause problems on.
+            if i == start_index and b[0] < a[0]:
+                continue
+
             # Prevent unnecessary square root calculations. We don't need to
             # calculate distance if the distance is going to be greater than 5m (sqrt(25)).
             # So don't square root, or store the distance in the mat.
@@ -128,7 +136,7 @@ class OrderedMapSpline(Node):
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
 
-        cones = track_msg.cones
+        cones = [cone_with_cov.cone for cone_with_cov in track_msg.cones_with_cov]
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []

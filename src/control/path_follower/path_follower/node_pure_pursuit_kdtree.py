@@ -1,8 +1,8 @@
 from math import cos, sin
 import time
 
-import cv2
 import numpy as np
+from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
@@ -15,7 +15,7 @@ from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
-from driverless_common.common import angle, dist, fast_dist, wrap_to_pi
+from driverless_common.common import angle, dist, wrap_to_pi
 
 from . import qos_profile
 
@@ -40,17 +40,13 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     return [x_axle, y_axle, heading]
 
 
-class PurePursuit(Node):
+class FastPurePursuit(Node):
     path = np.array([])
     count = 0
-    img_initialised = False
-    scale = 1
-    x_offset = 0
-    y_offset = 0
     fallback_path_points_offset = 0
 
     def __init__(self):
-        super().__init__("pure_pursuit_node")
+        super().__init__("fast_pure_pursuit_node")
 
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, qos_profile=qos_profile)
         # sync subscribers pose + velocity
@@ -76,32 +72,46 @@ class PurePursuit(Node):
         * param rvwp_lookahead: distance to look ahead for the RVWP
         * return: RVWP position as [x,y,i]
         """
+        path_xy = [[p[0], p[1]] for p in self.path]
+
         # find the closest point on the path to the car
-        close_dist = float("inf")
-        close_index = None
-        for i, p in enumerate(self.path):
-            distance = fast_dist(p, car_pos)
-            if distance < close_dist:
-                close_dist = distance
-                close_index = i
-        close = self.path[close_index] if close_index is not None else car_pos
+        kdtree = KDTree(path_xy)
+        close_index = kdtree.query([[car_pos[0], car_pos[1]]], return_distance=False)[0][0]
+        close = path_xy[close_index] if close_index is not None else car_pos
         if close_index is None:
             self.get_logger().warn("Could not find closest point, have used car's axle pos")
 
         # find the first point on the path that is further than the lookahead distance
+        # Tragically, there is no way to set a minimum search distance, so I'm giving it the lookahead doubled, we'll
+        # receive everything under that distance and filter out the items under the lookahead distance below.
+        # Problem there is if there are no points under the double lookahead distance, we're in trouble.
+        indexes_raw, distances_raw = kdtree.query_radius(
+            [close], r=self.lookahead * 2, return_distance=True, sort_results=True
+        )
+        indexes_raw, distances_raw = indexes_raw[0], distances_raw[0]
+
+        indexes, distances = [], []
+        for i in range(len(indexes_raw)):
+            if distances_raw[i] < self.lookahead:
+                continue
+            # Distances are sorted, so once we get here just grab everything.
+            indexes = indexes_raw[i:]
+            distances = distances_raw[i:]
+            break
+
         rvwp_dist = float("inf")
         rvwp_index = None
-        for i, p in enumerate(self.path):
-            distance = fast_dist(p, close)
-            if distance <= self.lookahead or distance >= rvwp_dist:
-                continue
+        for i in range(len(indexes)):
+            index = indexes[i]
+            p = path_xy[index]
+            d = distances[i]
 
             # get angle to check if the point is in front of the car
             ang = angle(close, p)
             error = wrap_to_pi(car_pos[2] - ang)
-            if np.pi / 2 > error > -np.pi / 2:
-                rvwp_dist = distance
-                rvwp_index = i
+            if np.pi / 2 > error > -np.pi / 2 and d < rvwp_dist:
+                rvwp_dist = d
+                rvwp_index = index
 
         if rvwp_index is None or rvwp_index == close_index:
             self.get_logger().warn("No valid RVWP found, using fallback point")
@@ -118,6 +128,7 @@ class PurePursuit(Node):
         # convert List[PathPoint] to 2D numpy array
         self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
+
         distance = 0
         for i in range(len(self.path) - 1):
             prev = self.path[i]
@@ -128,27 +139,6 @@ class PurePursuit(Node):
         # points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
         # path points that should be skipped.
         self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
-
-        if not self.img_initialised:
-            # get dimensions of the path
-            path_x_min = np.min(self.path[:, 0])
-            path_x_max = np.max(self.path[:, 0])
-            path_y_min = np.min(self.path[:, 1])
-            path_y_max = np.max(self.path[:, 1])
-
-            # scale the path to fit in a 1000x1000 image, pixels per meter
-            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
-
-            # add a border around the path for all elements
-            self.scale *= 0.90
-
-            # set offsets to the corner of the image
-            self.x_offset = -path_x_min * self.scale
-            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
-            self.y_offset = -path_y_min * self.scale
-            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
-
-            self.img_initialised = True
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved
@@ -176,48 +166,6 @@ class PurePursuit(Node):
         error = wrap_to_pi(theta - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
 
-        if self.DEBUG_IMG:
-            debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
-            for i in range(0, len(self.path) - 1):
-                cv2.line(
-                    debug_img,
-                    (
-                        int(self.path[i, 0] * self.scale + self.x_offset),
-                        int(self.path[i, 1] * self.scale + self.y_offset),
-                    ),
-                    (
-                        int(self.path[i + 1, 0] * self.scale + self.x_offset),
-                        int(self.path[i + 1, 1] * self.scale + self.y_offset),
-                    ),
-                    (255, 0, 0),
-                    thickness=5,
-                )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(rvwp[0] * self.scale + self.x_offset), int(rvwp[1] * self.scale + self.y_offset)),
-                (0, 255, 0),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(position[0] * self.scale + self.x_offset), int(position[1] * self.scale + self.y_offset)),
-                (0, 0, 255),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-            cv2.flip(debug_img, 1, debug_img)
-
-            text_angle = "Steering: " + str(round(steering_angle, 2))
-            cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            text_vel = "Velocity: " + str(round(self.vel_max, 2))
-            cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
@@ -232,7 +180,7 @@ class PurePursuit(Node):
 
 def main(args=None):  # begin ros node
     rclpy.init(args=args)
-    node = PurePursuit()
+    node = FastPurePursuit()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
