@@ -38,68 +38,11 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     return [x_axle, y_axle, heading]
 
 
-def get_RVWP(car_pos: List[float], path: np.ndarray, lookahead: float) -> np.ndarray:
-    """
-    Retrieve angle between two points
-    * param car_pos: [x,y,theta] pose of the car
-    * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
-    * param rvwp_lookahead: distance to look ahead for the RVWP
-    * return: RVWP position as [x,y,i]
-    """
-    path_xy = [[p[0], p[1]] for p in path]
-
-    # find the closest point on the path to the car
-    kdtree = KDTree(path_xy)
-    min_index = kdtree.query([[car_pos[0], car_pos[1]]], return_distance=False)[0][0]
-    close = path_xy[min_index]
-
-    # find the first point on the path that is further than the lookahead distance
-    # Tragically, there is no way to set a minimum search distance, so I'm giving it the lookahead doubled, we'll
-    # receive everything under that distance and filter out the items under the lookahead distance below.
-    # Problem there is if there are no points under the double lookahead distance, we're in trouble.
-    indexes_raw, distances_raw = kdtree.query_radius([close], r=lookahead * 2, return_distance=True, sort_results=True)
-    indexes_raw, distances_raw = indexes_raw[0], distances_raw[0]
-
-    indexes, distances = [], []
-    for i in range(len(indexes_raw)):
-        if distances_raw[i] < lookahead:
-            continue
-        # Distances are sorted, so once we get here just grab everything.
-        indexes = indexes_raw[i:]
-        distances = distances_raw[i:]
-        break
-
-    rvwp_dist = float("inf")
-    rvwp = None
-    for i in range(len(indexes)):
-        index = indexes[i]
-        p = path_xy[index]
-        d = distances[i]
-
-        # get angle to check if the point is in front of the car
-        ang = angle(close, p)
-        error = wrap_to_pi(car_pos[2] - ang)
-        if np.pi / 2 > error > -np.pi / 2 and d < rvwp_dist:
-            rvwp_dist = d
-            rvwp = p
-
-    if rvwp[0] == path_xy[min_index][0] and rvwp[1] == path_xy[min_index][1]:
-        print("RVWP not found @ ", min_index, " | ", close)
-        if min_index + 5 > len(path_xy):
-            min_index = 0
-        rvwp = path_xy[min_index + 5]
-    return rvwp
-
-
 class FastPurePursuit(Node):
     path = np.array([])
     start_time = time.time()
     count = 0
-    img_initialised = False
-    scale = 1
-    x_offset = 0
-    y_offset = 0
-    avg = []
+    fallback_path_points_offset = 0
 
     def __init__(self):
         super().__init__("fast_pure_pursuit_node")
@@ -120,31 +63,81 @@ class FastPurePursuit(Node):
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
+    def get_rvwp(self, car_pos: List[float]):
+        """
+        Retrieve angle between two points
+        * param car_pos: [x,y,theta] pose of the car
+        * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
+        * param rvwp_lookahead: distance to look ahead for the RVWP
+        * return: RVWP position as [x,y,i]
+        """
+        path_xy = [[p[0], p[1]] for p in self.path]
+
+        # find the closest point on the path to the car
+        kdtree = KDTree(path_xy)
+        close_index = kdtree.query([[car_pos[0], car_pos[1]]], return_distance=False)[0][0]
+        close = path_xy[close_index] if close_index is not None else car_pos
+        if close_index is None:
+            self.get_logger().warn("Could not find closest point, have used car's axle pos")
+
+        # find the first point on the path that is further than the lookahead distance
+        # Tragically, there is no way to set a minimum search distance, so I'm giving it the lookahead doubled, we'll
+        # receive everything under that distance and filter out the items under the lookahead distance below.
+        # Problem there is if there are no points under the double lookahead distance, we're in trouble.
+        indexes_raw, distances_raw = kdtree.query_radius(
+            [close], r=self.lookahead * 2, return_distance=True, sort_results=True
+        )
+        indexes_raw, distances_raw = indexes_raw[0], distances_raw[0]
+
+        indexes, distances = [], []
+        for i in range(len(indexes_raw)):
+            if distances_raw[i] < self.lookahead:
+                continue
+            # Distances are sorted, so once we get here just grab everything.
+            indexes = indexes_raw[i:]
+            distances = distances_raw[i:]
+            break
+
+        rvwp_dist = float("inf")
+        rvwp_index = None
+        for i in range(len(indexes)):
+            index = indexes[i]
+            p = path_xy[index]
+            d = distances[i]
+
+            # get angle to check if the point is in front of the car
+            ang = angle(close, p)
+            error = wrap_to_pi(car_pos[2] - ang)
+            if np.pi / 2 > error > -np.pi / 2 and d < rvwp_dist:
+                rvwp_dist = d
+                rvwp_index = index
+
+        if rvwp_index is None or rvwp_index == close_index:
+            self.get_logger().warn("No valid RVWP found, using fallback point")
+            path_points_count = len(self.path) - 1
+            fallback_point = close_index + self.fallback_path_points_offset
+            if fallback_point > path_points_count:
+                rvwp_index = abs(path_points_count - fallback_point)
+            else:
+                rvwp_index = fallback_point
+
+        return self.path[rvwp_index]
+
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
+        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
-        self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
 
-        if not self.img_initialised:
-            # get dimensions of the path
-            path_x_min = np.min(self.path[:, 0])
-            path_x_max = np.max(self.path[:, 0])
-            path_y_min = np.min(self.path[:, 1])
-            path_y_max = np.max(self.path[:, 1])
-
-            # scale the path to fit in a 1000x1000 image, pixels per meter
-            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
-
-            # add a border around the path for all elements
-            self.scale *= 0.90
-
-            # set offsets to the corner of the image
-            self.x_offset = -path_x_min * self.scale
-            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
-            self.y_offset = -path_y_min * self.scale
-            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
-
-            self.img_initialised = True
+        distance = 0
+        for i in range(len(self.path) - 1):
+            prev = self.path[i]
+            curr = self.path[i + 1]
+            distance += dist(prev, curr)
+        # Calculate the number of path points to skip when finding a fallback RVWP.
+        # Formula is the number of path points divided by the calculated distance in metres, giving the number of
+        # points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
+        # path points that should be skipped.
+        self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved
@@ -166,7 +159,7 @@ class FastPurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = get_RVWP(position, self.path, self.lookahead)
+        rvwp: List[float] = self.get_rvwp(position)
 
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         error = wrap_to_pi(theta - des_heading_ang)

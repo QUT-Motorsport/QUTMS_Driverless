@@ -1,4 +1,4 @@
-from math import atan2, cos, sin, sqrt
+from math import cos, sin
 import time
 
 import cv2
@@ -15,10 +15,9 @@ from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
-from driverless_common.common import angle, dist, wrap_to_pi
-from driverless_common.shutdown_node import ShutdownNode
+from driverless_common.common import angle, dist, fast_dist, wrap_to_pi
 
-from typing import List, Tuple
+from typing import List
 
 cv_bridge = CvBridge()
 WIDTH = 1000
@@ -39,40 +38,6 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     return [x_axle, y_axle, heading]
 
 
-def get_RVWP(car_pos: List[float], path: np.ndarray, lookahead: float) -> np.ndarray:
-    """
-    Retrieve angle between two points
-    * param car_pos: [x,y,theta] pose of the car
-    * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
-    * param rvwp_lookahead: distance to look ahead for the RVWP
-    * return: RVWP position as [x,y,i]
-    """
-    # find the closest point on the path to the car
-    close_dist: float = 100.0
-    for i, p in enumerate(path):
-        if dist(p, car_pos) < close_dist:
-            close_dist = dist(p, car_pos)
-            min_index = i
-    close = path[min_index]
-
-    # find the first point on the path that is further than the lookahead distance
-    rvwp_dist: float = 100.0
-    for i, p in enumerate(path):
-        current_dist = dist(p, close)
-        if current_dist > lookahead and current_dist < rvwp_dist:
-            # get angle to check if the point is in front of the car
-            ang = angle(close, p)
-            error = wrap_to_pi(car_pos[2] - ang)
-            if error < np.pi / 2 and error > -np.pi / 2:
-                rvwp_dist = current_dist
-                rvwp = path[i]
-
-    if rvwp[0] == path[min_index][0] and rvwp[1] == path[min_index][1]:
-        print("RVWP not found @ ", min_index, " | ", close)
-        rvwp = path[min_index + 5]
-    return rvwp
-
-
 class PurePursuit(Node):
     path = np.array([])
     last_time = time.time()
@@ -81,6 +46,7 @@ class PurePursuit(Node):
     scale = 1
     x_offset = 0
     y_offset = 0
+    fallback_path_points_offset = 0
 
     def __init__(self):
         super().__init__("pure_pursuit_node")
@@ -101,10 +67,66 @@ class PurePursuit(Node):
 
         self.get_logger().info("---Path Follower Node Initalised---")
 
+    def get_rvwp(self, car_pos: List[float]):
+        """
+        Retrieve angle between two points
+        * param car_pos: [x,y,theta] pose of the car
+        * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
+        * param rvwp_lookahead: distance to look ahead for the RVWP
+        * return: RVWP position as [x,y,i]
+        """
+        # find the closest point on the path to the car
+        close_dist = float("inf")
+        close_index = None
+        for i, p in enumerate(self.path):
+            distance = fast_dist(p, car_pos)
+            if distance < close_dist:
+                close_dist = distance
+                close_index = i
+        close = self.path[close_index] if close_index is not None else car_pos
+        if close_index is None:
+            self.get_logger().warn("Could not find closest point, have used car's axle pos")
+
+        # find the first point on the path that is further than the lookahead distance
+        rvwp_dist = float("inf")
+        rvwp_index = None
+        for i, p in enumerate(self.path):
+            distance = fast_dist(p, close)
+            if distance <= self.lookahead or distance >= rvwp_dist:
+                continue
+
+            # get angle to check if the point is in front of the car
+            ang = angle(close, p)
+            error = wrap_to_pi(car_pos[2] - ang)
+            if np.pi / 2 > error > -np.pi / 2:
+                rvwp_dist = distance
+                rvwp_index = i
+
+        if rvwp_index is None or rvwp_index == close_index:
+            self.get_logger().warn("No valid RVWP found, using fallback point")
+            path_points_count = len(self.path) - 1
+            fallback_point = close_index + self.fallback_path_points_offset
+            if fallback_point > path_points_count:
+                rvwp_index = abs(path_points_count - fallback_point)
+            else:
+                rvwp_index = fallback_point
+
+        return self.path[rvwp_index]
+
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
+        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
-        self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
+        distance = 0
+        for i in range(len(self.path) - 1):
+            prev = self.path[i]
+            curr = self.path[i + 1]
+            distance += dist(prev, curr)
+        # Calculate the number of path points to skip when finding a fallback RVWP.
+        # Formula is the number of path points divided by the calculated distance in metres, giving the number of
+        # points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
+        # path points that should be skipped.
+        self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
 
         if not self.img_initialised:
             # get dimensions of the path
@@ -146,7 +168,7 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = get_RVWP(position, self.path, self.lookahead)
+        rvwp: List[float] = self.get_rvwp(position)
 
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         error = wrap_to_pi(theta - des_heading_ang)
@@ -201,10 +223,9 @@ class PurePursuit(Node):
         self.control_publisher.publish(control_msg)
 
         self.count += 1
-        if self.count % 100 == 0:
+        if self.count == 50:
             self.count = 0
-            self.get_logger().debug(f"Process time: {time.time() - self.last_time:.2f}")
-        self.last_time = time.time()
+            self.get_logger().info(f"{(time.time() - self.start_time) * 1000}")
 
 
 def main(args=None):  # begin ros node
