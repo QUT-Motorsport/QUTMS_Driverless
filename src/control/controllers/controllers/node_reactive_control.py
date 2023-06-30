@@ -29,7 +29,8 @@ class ReactiveController(Node):
     target_cone_count: int
     pub_accel: bool
     ebs_test: bool
-    discovering: bool = False
+    discovering: bool = True
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("reactive_controller_node")
@@ -61,8 +62,11 @@ class ReactiveController(Node):
 
     def r2d_callback(self, msg: Bool):
         if msg.data:
-            self.discovering = True
-            self.get_logger().info("Discovery started")
+            self.r2d = True
+            self.get_logger().info("Ready to drive, discovery started")
+        else:
+            self.r2d = False
+            self.get_logger().info("Driving disabled")
 
     def lap_callback(self, msg: UInt8):
         # lap has been completed, stop this controller
@@ -77,7 +81,7 @@ class ReactiveController(Node):
         speed = 0.0
         steering_angle = 0.0
 
-        if not self.discovering:
+        if not self.discovering or not self.r2d:
             return
 
         cones: List[Cone] = msg.cones

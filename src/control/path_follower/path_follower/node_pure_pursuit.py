@@ -77,11 +77,17 @@ class PurePursuit(Node):
     def r2d_callback(self, msg: Bool):
         if msg.data:
             self.r2d = True
+            self.get_logger().info("Ready to drive")
+        else:
+            self.r2d = False
+            self.get_logger().info("Driving disabled")
 
     def lap_callback(self, msg: UInt8):
-        if msg.data > 0 and self.r2d:
+        if msg.data > 0:
             self.following = True
             self.get_logger().info("Lap completed, following commencing")
+        else:
+            self.following = False
 
     def get_rvwp(self, car_pos: List[float]):
         """
@@ -166,13 +172,11 @@ class PurePursuit(Node):
             self.img_initialised = True
 
     def callback(self, msg: PoseWithCovarianceStamped):
-        # Only start once the path has been recieved
-        if self.path.size == 0:
+        # Only start once the path has been recieved, it's a following lap, and we are ready to drive
+        if not self.following or not self.r2d or self.path.size == 0:
             return
-        start_time = time.time()
 
-        if not self.following:
-            return
+        start_time = time.time()
 
         # i, j, k angles in rad
         theta = quat2euler(
