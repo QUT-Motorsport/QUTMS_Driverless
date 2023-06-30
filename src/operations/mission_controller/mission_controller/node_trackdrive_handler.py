@@ -11,7 +11,7 @@ from std_msgs.msg import Bool, UInt8
 from driverless_common.shutdown_node import ShutdownNode
 
 
-class TrackdriveMission(ShutdownNode):
+class TrackdriveHandler(ShutdownNode):
     r2d: bool = False
     laps: int = 0
     last_lap_time: float = 0
@@ -24,7 +24,7 @@ class TrackdriveMission(ShutdownNode):
         self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "/system/shutdown", 1)
         self.lap_trig_pub: Publisher = self.create_publisher(UInt8, "/system/laps_completed", 1)
 
-        self.get_logger().info("---Trackdrive mission node initialised---")
+        self.get_logger().info("---Trackdrive handler node initialised---")
 
     def r2d_callback(self, msg: Bool):
         if not self.r2d and msg.data:
@@ -51,7 +51,7 @@ class TrackdriveMission(ShutdownNode):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TrackdriveMission()
+    node = TrackdriveHandler()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

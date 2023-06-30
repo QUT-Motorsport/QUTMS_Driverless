@@ -7,7 +7,7 @@ from driverless_msgs.msg import Reset, Shutdown
 from driverless_common.shutdown_node import ShutdownNode
 
 
-class InspectionMission(ShutdownNode):
+class InspectionHandler(ShutdownNode):
     started: bool = False
 
     def __init__(self):
@@ -16,7 +16,7 @@ class InspectionMission(ShutdownNode):
         self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "/system/shutdown", 1)
         self.reset_sub = self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
 
-        self.get_logger().info("---Inspection mission node initialised---")
+        self.get_logger().info("---Inspection handler node initialised---")
 
     def reset_callback(self, msg: Reset):
         self.timer.reset()
@@ -30,7 +30,7 @@ class InspectionMission(ShutdownNode):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = InspectionMission()
+    node = InspectionHandler()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

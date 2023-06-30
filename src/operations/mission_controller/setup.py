@@ -24,8 +24,8 @@ setup(
     entry_points={
         "console_scripts": [
             "mission_launcher = mission_controller.node_mission_launcher:main",
-            "inspection_mission = mission_controller.node_inspection_mission:main",
-            "trackdrive_mission = mission_controller.node_trackdrive_mission:main",
+            "inspection_handler = mission_controller.node_inspection_handler:main",
+            "trackdrive_handler = mission_controller.node_trackdrive_handler:main",
         ],
     },
 )
