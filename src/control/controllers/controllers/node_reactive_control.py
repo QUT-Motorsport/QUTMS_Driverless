@@ -73,6 +73,8 @@ class ReactiveController(Node):
         if msg.data > 0:
             self.discovering = False
             self.get_logger().info("Lap completed, discovery stopped")
+        else:
+            self.discovering = True
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
