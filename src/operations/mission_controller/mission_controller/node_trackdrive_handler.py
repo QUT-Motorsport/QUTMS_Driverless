@@ -1,8 +1,8 @@
+import time
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
-
-import time
 
 from driverless_msgs.msg import Reset, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped

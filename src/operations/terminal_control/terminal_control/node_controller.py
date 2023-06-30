@@ -6,7 +6,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Reset, State
-from std_msgs.msg import UInt8, Bool
+from std_msgs.msg import Bool, UInt8
 
 from driverless_common.status_constants import INT_MISSION_TYPE, INT_STATE_TYPE
 
@@ -25,6 +25,7 @@ mission: int = State.MISSION_NONE
 actual_mission: int = 0
 r2d: bool = False
 laps: int = 0
+
 
 class KeyboardControllerNode(Node):
     def __init__(self):
