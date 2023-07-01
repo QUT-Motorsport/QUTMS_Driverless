@@ -64,19 +64,19 @@ def print_state(stdscr):
 
     stdscr.addstr(0, 0, f"State: {state_str} | Selected Mission: {mission_str} | Laps Completed: {laps}")
     stdscr.addstr(1, 0, f"Requested Velocity: {speed} | Requested Steering Angle: {steering_angle}")
-    stdscr.addstr(3, 0, "Use the [wasd] keys to control the car")
-    stdscr.addstr(4, 0, f"[Space] to zero everything")
-    stdscr.addstr(5, 0, f"[r] to reset state")
-    stdscr.addstr(6, 0, f"[l] to increment a lap")
-    stdscr.addstr(7, 0, f"[Enter] to go R2D")
-    stdscr.addstr(9, 0, f"Select mission: [0] to [4]")
+    stdscr.addstr(3, 0, f"Select mission to launch ROS nodes: [0] to [4]")
     stdscr.addstr(
-        10,
+        4,
         0,
         f"\t0: None | 1: Manual Driving | 2: Inspection | 3: EBS Test | 4: Trackdrive",
     )
-    stdscr.addstr(12, 0, f"Press [m] to confirm mission selection")
-    stdscr.addstr(13, 0, f"")
+    stdscr.addstr(5, 0, f"Press [m] to confirm mission selection")
+    stdscr.addstr(7, 0, "Use the [wasd] keys to control the car")
+    stdscr.addstr(8, 0, f"[Space] to zero everything")
+    stdscr.addstr(9, 0, f"[r] to reset state")
+    stdscr.addstr(10, 0, f"[l] to increment a lap")
+    stdscr.addstr(11, 0, f"[Enter] to go R2D")
+    stdscr.addstr(12, 0, f"")
     # THIS WILL ERROR IF TERMINAL BY DEFAULT IS TOO SMALL (NOT ENOUGH LINES)
     # INCREASE TERMINAL SIZE TO FIX
 
