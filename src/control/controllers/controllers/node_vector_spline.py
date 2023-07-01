@@ -16,9 +16,9 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
 
+from driverless_common.common import QOS_ALL
 from driverless_common.draw import draw_markers, draw_steering, loc_to_img_pt
 from driverless_common.point import Point, cone_to_point, dist
-from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Optional, Tuple
 
@@ -29,7 +29,6 @@ blue = Color("blue")
 col_range = list(blue.range_to(red, 100))
 
 Colour = Tuple[int, int, int]
-
 
 ORIGIN = Point(0, 0)
 
@@ -144,7 +143,7 @@ class VectorReactiveController(Node):
             self.in_dist = 2.0
             self.pub_accel = False
 
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_ALL)
         else:
             self.Kp_ang = -3.0
             self.target_vel = 3.0  # m/s
@@ -152,7 +151,7 @@ class VectorReactiveController(Node):
             self.in_dist = 2.0
             self.pub_accel = False
             # self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_ALL)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)

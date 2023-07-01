@@ -10,6 +10,7 @@
     <!-- Messages -->
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>
+    <depend>driverless_common</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

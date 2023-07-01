@@ -17,7 +17,7 @@ from rclpy.publisher import Publisher
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
 
-from driverless_common.common import wrap_to_pi
+from driverless_common.common import QOS_ALL, QOS_LATEST, wrap_to_pi
 from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
@@ -46,9 +46,9 @@ class OdomSlam(Node):
 
         self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_ALL)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, QOS_LATEST)
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)

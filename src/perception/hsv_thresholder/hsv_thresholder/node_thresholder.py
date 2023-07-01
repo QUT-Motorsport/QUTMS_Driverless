@@ -9,6 +9,8 @@ from rclpy.publisher import Publisher
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 
+from driverless_common.common import QOS_LATEST
+
 from .threshold import Threshold
 
 cv_bridge = CvBridge()
@@ -17,15 +19,9 @@ cv_bridge = CvBridge()
 class ThresholderNode(Node):
     def __init__(self):
         super().__init__("thresholder")
-        self.create_subscription(String, "hsv_thresholder/threshold", self.threshold_callback, 1)
-        self.create_subscription(
-            Image,
-            "/zed2i/zed_node/rgb/image_rect_color",
-            self.image_callback,
-            1,
-        )
-
-        self.threshold_img_publisher: Publisher = self.create_publisher(Image, "hsv_thresholder/thresholded_img", 1)
+        self.create_subscription(String, "hsv_thresholder/threshold", self.threshold_callback, QOS_LATEST)
+        self.create_subscription(Image, "/zed2i/zed_node/rgb/image_rect_color", self.image_callback, QOS_LATEST)
+        threshold_img_publisher: Publisher = self.create_publisher(Image, "hsv_thresholder/thresholded_img", 1)
 
         self.threshold = Threshold(
             lower=[0, 0, 0],

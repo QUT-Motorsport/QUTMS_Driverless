@@ -8,6 +8,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Reset, State
 from std_msgs.msg import Bool, UInt8
 
+from driverless_common.common import QOS_LATEST
 from driverless_common.status_constants import INT_MISSION_TYPE, INT_STATE_TYPE
 
 SPEED_MIN = 0.0
@@ -31,7 +32,7 @@ class KeyboardControllerNode(Node):
     def __init__(self):
         super().__init__("terminal_controller_node")
 
-        self.state_sub: Publisher = self.create_subscription(State, "/system/as_status", self.state_callback, 1)
+        self.state_subr = self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
 
         self.drive_command_publisher: Publisher = self.create_publisher(
             AckermannDriveStamped, "/control/driving_command", 1

@@ -15,7 +15,7 @@ from driverless_msgs.msg import PathStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
-from driverless_common.common import angle, dist, wrap_to_pi
+from driverless_common.common import QOS_LATEST, angle, dist, wrap_to_pi
 
 from . import qos_profile
 
@@ -48,9 +48,9 @@ class FastPurePursuit(Node):
     def __init__(self):
         super().__init__("fast_pure_pursuit_node")
 
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, qos_profile=qos_profile)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
         # sync subscribers pose + velocity
-        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, qos_profile=qos_profile)
+        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, QOS_LATEST)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)

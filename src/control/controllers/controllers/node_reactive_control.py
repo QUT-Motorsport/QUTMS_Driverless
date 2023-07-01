@@ -8,6 +8,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from std_msgs.msg import Bool, UInt8
 
+from driverless_common.common import QOS_ALL, QOS_LATEST
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
 
@@ -47,13 +48,13 @@ class ReactiveController(Node):
             self.target_accel = 0.0
             self.target_cone_count = 2
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
         else:
             self.Kp_ang = 2.0
             self.target_vel = 1.5  # m/s
             self.target_accel = 0.0
             self.target_cone_count = 2
-            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, QOS_ALL)
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)

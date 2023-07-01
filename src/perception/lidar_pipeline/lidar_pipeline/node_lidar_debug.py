@@ -14,6 +14,8 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2, PointField
 
+from driverless_common.common import QOS_ALL
+
 from .library import constants as const
 from .library import lidar_manager, video_stitcher
 from .library.utils import Config  # For typing
@@ -96,7 +98,7 @@ class ConeDetectionNode(Node):
 
         # Create subscribers and publishers
         self.pc_subscription: Subscription = self.create_subscription(
-            PointCloud2, self.config.pc_node, self.pc_callback, 1
+            PointCloud2, self.config.pc_node, self.pc_callback, QOS_ALL
         )
         self.cone_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 

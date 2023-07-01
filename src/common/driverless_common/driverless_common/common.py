@@ -2,7 +2,42 @@ from math import atan2, sqrt
 
 import numpy as np
 
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
+
 from typing import List, Tuple
+
+# https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html
+# This article explains what QoS (quality of service) is and how to use it properly. Simply put, QoS policies give us
+# control over how publishers and subscribers manage messages up until they are processed. Internally, subscribers store
+# the messages they receive in a queue (the data structure), when the subscriber finishes processing a message, it
+# processes the next message in the queue. As queues are FIFO, the subscriber processes older messages before newer
+# messages, this is not always the behaviour we want. For example, when using the car's pose to calculate the next
+# steering angle, we only ever want to be using the latest pose. The default behaviour of a subscriber is to store the
+# previous 10 messages, in this example, that would mean we calculate the steering angle for where the car was 10
+# messages ago, and apply it to where the car currently is, leading to the car following a  delayed version of the
+# track.
+
+# This profile will only store one message in its internal queue, meaning it only holds onto the latest message.
+# You should only use this when you only want to process the latest message, and don't care about any messages that you
+# may miss while processing another message. For example, when using car pose to calculate where to steer in order to
+# follow the track, you only want to be using the latest car pose.
+QOS_LATEST = QoSProfile(
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=1,
+    durability=QoSDurabilityPolicy.VOLATILE,
+)
+
+# This profile will store up to 100 messages in its internal queue. You should use this profile when you need to process
+# all messages sent by the publisher in the order that they are received. For example, /vision/cone_detection
+# subscribers should use this profile as they need to process every message in order to see every cone and build a
+# correct track layout.
+QOS_ALL = QoSProfile(
+    reliability=QoSReliabilityPolicy.RELIABLE,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=100,
+    durability=QoSDurabilityPolicy.VOLATILE,
+)
 
 
 def dist(p1: List[float], p2: List[float]) -> float:

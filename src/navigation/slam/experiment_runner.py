@@ -12,6 +12,7 @@ from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
 
+from driverless_common.common import QOS_ALL
 from experiment_helpers import float_point_one_range, get_run_name, range_slam_testing_lists
 
 
@@ -69,7 +70,7 @@ class DataWatcherNode(Node):
     ):
         super().__init__("data_grabber")
 
-        self.create_subscription(Odometry, "/ground_truth/odom", self.callback, 10)
+        self.create_subscription(Odometry, "/ground_truth/odom", self.callback, QOS_ALL)
 
         self.processes = processes
 

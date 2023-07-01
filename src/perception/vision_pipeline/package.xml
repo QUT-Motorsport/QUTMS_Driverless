@@ -12,6 +12,7 @@
     <!-- Messages -->
     <depend>geometry_msgs</depend>
     <depend>driverless_msgs</depend>
+    <depend>driverless_common</depend>
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>
 

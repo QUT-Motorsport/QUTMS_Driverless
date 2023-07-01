@@ -7,6 +7,8 @@ from rclpy.node import Node
 
 from driverless_msgs.msg import TrackDetectionStamped
 
+from driverless_common.common import QOS_ALL
+
 
 class TrackToCSV(Node):
     csv_folder = Path("./csv_data")
@@ -15,7 +17,7 @@ class TrackToCSV(Node):
         super().__init__("track_to_csv_node")
 
         # subscribe to topic
-        self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, 10)
+        self.subscription = self.create_subscription(TrackDetectionStamped, "/slam/global_map", self.callback, QOS_ALL)
 
         self.get_logger().info("---Track to CSV writer node initalised---")
 

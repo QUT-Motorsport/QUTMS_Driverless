@@ -13,6 +13,7 @@
     <!-- Messages -->
     <depend>geometry_msgs</depend>
     <depend>sensor_msgs</depend>
+    <depend>driverless_common</depend>
 
     <export>
         <build_type>ament_python</build_type>

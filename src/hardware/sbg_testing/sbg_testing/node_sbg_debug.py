@@ -14,6 +14,8 @@ from geometry_msgs.msg import Point, PointStamped, PoseWithCovarianceStamped, Qu
 from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos, SbgGpsVel, SbgImuData, SbgMag
 from sensor_msgs.msg import Imu, NavSatFix
 
+from driverless_common.common import QOS_LATEST
+
 
 class SBGDebug(Node):
     def __init__(self):
@@ -50,11 +52,11 @@ class SBGDebug(Node):
         )
 
         # sbg & imu data visualisation subscribers
-        self.create_subscription(SbgGpsPos, "/sbg/gps_pos", self.sbg_gps_pos_callback, 1)
-        self.create_subscription(SbgGpsVel, "/sbg/gps_vel", self.sbg_gps_vel_callback, 1)
-        self.create_subscription(SbgMag, "/sbg/mag", self.sbg_mag_callback, 1)
-        self.create_subscription(Imu, "/imu/data", self.imu_data_callback, 1)
-        self.create_subscription(SbgImuData, "/sbg/imu_data", self.sbg_imu_data_callback, 1)
+        self.create_subscription(SbgGpsPos, "/sbg/gps_pos", self.sbg_gps_pos_callback, QOS_LATEST)
+        self.create_subscription(SbgGpsVel, "/sbg/gps_vel", self.sbg_gps_vel_callback, QOS_LATEST)
+        self.create_subscription(SbgMag, "/sbg/mag", self.sbg_mag_callback, QOS_LATEST)
+        self.create_subscription(Imu, "/imu/data", self.imu_data_callback, QOS_LATEST)
+        self.create_subscription(SbgImuData, "/sbg/imu_data", self.sbg_imu_data_callback, QOS_LATEST)
 
         # sbg gps pos visualisation publishers
         self.sbg_gps_pos_coords_point_publisher: Publisher = self.create_publisher(

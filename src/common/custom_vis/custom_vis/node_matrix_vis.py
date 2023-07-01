@@ -12,6 +12,8 @@ from rclpy.node import Node
 
 from driverless_msgs.msg import DoubleMatrix
 
+from driverless_common.common import QOS_ALL
+
 
 def mypause(interval):
     backend = plt.rcParams["backend"]
@@ -33,7 +35,7 @@ class NodeMatrixVisualisation(Node):
     def __init__(self):
         super().__init__("matrix_visualisation")
 
-        self.create_subscription(DoubleMatrix, "matrix", self.matrix_callback, 10)
+        self.create_subscription(DoubleMatrix, "matrix", self.matrix_callback, QOS_ALL)
 
         self.fig, (self.heatmap_ax, self.cbar_ax) = plt.subplots(1, 2, gridspec_kw=dict(width_ratios=[0.9, 0.1]))
         plt.show(block=False)

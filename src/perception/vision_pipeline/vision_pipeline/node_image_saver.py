@@ -6,6 +6,8 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import Image
 
+from driverless_common.common import QOS_ALL
+
 
 class BagToImageFile(Node):
     bridge = CvBridge()
@@ -15,7 +17,7 @@ class BagToImageFile(Node):
     def __init__(self):
         super().__init__("bag_to_image_file_node")
         self.subscription = self.create_subscription(
-            Image, "/zed2i/zed_node/rgb/image_rect_color", self.listener_callback, 10
+            Image, "/zed2i/zed_node/rgb/image_rect_color", self.listener_callback, QOS_ALL
         )
 
         # create a folder for the images

@@ -16,6 +16,7 @@ from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset,
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
 from sbg_driver.msg import SbgEkfEuler, SbgEkfNav, SbgGpsPos
 
+from driverless_common.common import QOS_ALL, QOS_LATEST
 from py_slam.cone_props import ConeProps
 
 from typing import Optional, Tuple
@@ -53,9 +54,9 @@ class SBGSlam(Node):
         ins_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[pos_sub, ang_sub], queue_size=20, slop=0.2)
         ins_synchronizer.registerCallback(self.ins_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_ALL)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, QOS_LATEST)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/slam/global_map", 1)

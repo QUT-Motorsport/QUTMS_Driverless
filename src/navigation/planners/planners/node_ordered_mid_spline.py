@@ -14,7 +14,7 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
 
-from driverless_common.common import angle, midpoint
+from driverless_common.common import QOS_LATEST, angle, midpoint
 
 from typing import List, Tuple
 
@@ -128,8 +128,8 @@ class OrderedMapSpline(Node):
         super().__init__("ordered_map_spline_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
-        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
+        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, QOS_LATEST)
         self.create_timer(0.1, self.planning_callback)
 
         # publishers

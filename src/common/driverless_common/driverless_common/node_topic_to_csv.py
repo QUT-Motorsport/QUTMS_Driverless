@@ -12,6 +12,8 @@ from driverless_msgs.msg import ConeDetectionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 
+from driverless_common.common import QOS_ALL
+
 from typing import Any, Dict, List, Tuple
 
 # List of (type, topic)
@@ -49,7 +51,7 @@ class NodeTopicToCSV(Node):
         for type_, topic in SUBSCRIPTIONS:
             self.get_logger().info(f"Subscribing to {topic}")
             callback = lambda x, y=topic: self.msg_callback(x, y)
-            self.create_subscription(type_, topic, callback, 10)
+            self.create_subscription(type_, topic, callback, QOS_ALL)
 
         self.run_begin = dt.datetime.now()
         self.get_logger().info("---Topic to CSV node initalised---")

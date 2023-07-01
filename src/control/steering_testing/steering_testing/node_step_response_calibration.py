@@ -15,7 +15,7 @@ from driverless_msgs.msg import SteeringReading
 from sensor_msgs.msg import Image
 from std_msgs.msg import Int32
 
-from driverless_common.shutdown_node import ShutdownNode
+from driverless_common.common import QOS_LATEST
 
 
 class StepController(Node):
@@ -40,8 +40,8 @@ class StepController(Node):
         self.create_timer(self.change_interval, self.change_callback)
         self.create_timer(self.pub_interval, self.pub_callback)
 
-        self.create_subscription(SteeringReading, "/vehicle/steering_reading", self.sub_callback_st, 1)
-        self.create_subscription(Int32, "/vehicle/encoder_reading", self.sub_callback_en, 1)
+        self.create_subscription(SteeringReading, "/vehicle/steering_reading", self.sub_callback_st, QOS_LATEST)
+        self.create_subscription(Int32, "/vehicle/encoder_reading", self.sub_callback_en, QOS_LATEST)
 
         self.drive_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
         self.model_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/model_calibration_image", 1)

@@ -1,7 +1,5 @@
 import time
 
-import numpy as np
-
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -10,6 +8,8 @@ from rclpy.subscription import Subscription
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud2, PointField
+
+from driverless_common.common import QOS_ALL
 
 from .process import *
 
@@ -97,8 +97,8 @@ class LiDARDetectorNode(Node):
         self.average_runtime: float = 0
 
         # Create subscribers and publishers
-        self.pointcloud_sub: Subscription = self.create_subscription(PointCloud2, "/velodyne_points", self.callback, 1)
-        self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
+        self.pointcloud_sub = self.create_subscription(PointCloud2, "/velodyne_points", self.callback, QOS_ALL)
+        self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
 
         # Log info
         self.get_logger().info("---LiDAR detector node initialised---")
