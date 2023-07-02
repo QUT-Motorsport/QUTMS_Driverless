@@ -9,8 +9,6 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include "driverless_msgs/msg/can.hpp"
-
 using std::placeholders::_1;
 
 // create array of CAN IDs we care about
