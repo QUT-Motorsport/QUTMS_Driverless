@@ -84,7 +84,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->run_fsm();
     }
 
-    // Called when a new can message is recieved
     void can_heartbeat_callback(const driverless_msgs::msg::Can msg) {
         uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
         uint8_t vesc_id = msg.id & 0xFF;
@@ -173,13 +172,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // accel is negative -> braking (0.0 -> -1.0)
             this->last_torque = 40 + 40 * msg.drive.acceleration;
         }
-
-        this->DVL_drivingDynamics1._fields.steering_angle_target = (int8_t)msg.drive.steering_angle;
-        this->DVL_drivingDynamics1._fields.speed_target = (int8_t)msg.drive.speed;
-
         // convert requested accel to estimated motor torque
         float torqueValue = msg.drive.acceleration * 9 * 4.5 * 4;
 
+        this->DVL_drivingDynamics1._fields.steering_angle_target = (int8_t)msg.drive.steering_angle;
+        this->DVL_drivingDynamics1._fields.speed_target = (int8_t)msg.drive.speed;
         this->DVL_drivingDynamics1._fields.motor_moment_target = (int8_t)torqueValue;
         this->DVL_drivingDynamics1._fields.motor_moment_actual = (int8_t)torqueValue;
 
