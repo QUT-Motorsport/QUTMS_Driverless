@@ -159,7 +159,7 @@ class VectorReactiveController(Node):
 
         self.vector_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vector_reactive_img", 1)
 
-        self.get_logger().info("---Reactive Controller Node Initalised---")
+        self.get_logger().info("---Vector spline controller node initalised---")
 
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")

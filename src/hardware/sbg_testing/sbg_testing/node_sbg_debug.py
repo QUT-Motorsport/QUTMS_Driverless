@@ -174,7 +174,7 @@ class SBGDebug(Node):
             PointStamped, "/debug/sbg_imu_delta_angle_z_time_point", 1
         )
 
-        self.get_logger().info("---SLAM node initialised---")
+        self.get_logger().info("---SBG testing node initialised---")
 
     def sbg_gps_pos_callback(self, sbg_gps_pos_msg: SbgGpsPos):
         coords: UTMPoint = fromLatLong(sbg_gps_pos_msg.latitude, sbg_gps_pos_msg.longitude, sbg_gps_pos_msg.altitude)

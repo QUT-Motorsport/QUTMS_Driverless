@@ -23,7 +23,7 @@ class SineController(Node):
         self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
         self.driving_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
-        self.get_logger().info("---Sine Controller Node Initalised---")
+        self.get_logger().info("---Sine controller node initalised---")
 
     def timer_callback(self):
         self.count += self.interval

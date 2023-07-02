@@ -52,7 +52,7 @@ class NodeTopicToCSV(Node):
             self.create_subscription(type_, topic, callback, 10)
 
         self.run_begin = dt.datetime.now()
-        self.get_logger().info("Node topic_to_csv initalised")
+        self.get_logger().info("---Topic to CSV node initalised---")
 
     def msg_callback(self, msg: Any, topic: str):
         msg_dict = flatten_msg_dict(message_to_ordereddict(msg))

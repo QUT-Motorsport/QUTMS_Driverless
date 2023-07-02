@@ -6,6 +6,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
+from std_msgs.msg import Bool, UInt8
 
 from driverless_common.point import Point, cone_to_point, dist
 from driverless_common.shutdown_node import ShutdownNode
@@ -28,12 +29,17 @@ class ReactiveController(Node):
     target_cone_count: int
     pub_accel: bool
     ebs_test: bool
+    discovering: bool = True
+    r2d: bool = False
 
     def __init__(self):
         super().__init__("reactive_controller_node")
 
         self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
+
+        self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
+        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, 10)
 
         if self.ebs_test:
             self.Kp_ang = 2.0
@@ -44,15 +50,31 @@ class ReactiveController(Node):
             self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
         else:
             self.Kp_ang = 2.0
-            self.target_vel = 2.0  # m/s
+            self.target_vel = 1.5  # m/s
             self.target_accel = 0.0
-            self.target_cone_count = 3
+            self.target_cone_count = 2
             self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, 1)
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
-        self.get_logger().info("---Reactive Controller Node Initalised---")
+        self.get_logger().info("---Reactive controller node initalised---")
+
+    def r2d_callback(self, msg: Bool):
+        if msg.data:
+            self.r2d = True
+            self.get_logger().info("Ready to drive, discovery started")
+        else:
+            self.r2d = False
+            self.get_logger().info("Driving disabled")
+
+    def lap_callback(self, msg: UInt8):
+        # lap has been completed, stop this controller
+        if msg.data > 0:
+            self.discovering = False
+            self.get_logger().info("Lap completed, discovery stopped")
+        else:
+            self.discovering = True
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
@@ -60,6 +82,9 @@ class ReactiveController(Node):
         # safety critical, set to 0 if not good detection
         speed = 0.0
         steering_angle = 0.0
+
+        if not self.discovering or not self.r2d:
+            return
 
         cones: List[Cone] = msg.cones
 
@@ -133,10 +158,7 @@ class ReactiveController(Node):
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
         control_msg.drive.acceleration = self.target_accel
-
         self.control_publisher.publish(control_msg)
-        if self.pub_accel:
-            self.accel_publisher.publish(control_msg)
 
 
 def main(args=None):

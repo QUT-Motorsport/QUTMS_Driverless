@@ -54,7 +54,7 @@ class DisplayDetections(Node):
         # path marker pubs
         self.path_marker_publisher: Publisher = self.create_publisher(Marker, "/markers/path_line", 1)
 
-        self.get_logger().info("---Cone display node initialised---")
+        self.get_logger().info("---Common visualisation node initialised---")
 
     def steering_callback(self, msg: AckermannDriveStamped):
         # get most recent driving command msg from a controller

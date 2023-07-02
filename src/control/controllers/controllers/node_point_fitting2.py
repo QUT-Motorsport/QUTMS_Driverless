@@ -66,7 +66,7 @@ class PointFitController(Node):
 
         self.initialize_splines()  # initialize steering curves to take
 
-        self.get_logger().info("---Point Fitting Controller Node Initalised---")
+        self.get_logger().info("---Trajectory fitting controller initalised---")
 
     def initialize_splines(self):
         # cicle will pass through 0,0 and and additional point:

@@ -69,7 +69,7 @@ class BetterReactiveController(Node):
 
         self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
 
-        self.get_logger().info("---Better Reactive Controller Node Initalised---")
+        self.get_logger().info("---Trajectory fitting controller initalised---")
 
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")

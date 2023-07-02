@@ -10,8 +10,9 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
+from std_msgs.msg import UInt8
 
 from driverless_common.common import angle, midpoint
 
@@ -118,25 +119,40 @@ def sort_cones(cones, start_index=None, end_index=None):
 
 
 class OrderedMapSpline(Node):
-    spline_const: int = 10  # number of points per cone
+    spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
+    planning = False
+    current_track = None
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, 10)
+        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, 10)
+        self.create_timer(0.1, self.planning_callback)
 
         # publishers
         self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub: Publisher = self.create_publisher(Path, "/planner/spline_path", 1)
 
-        self.get_logger().info("---Sim Path Planner Node Initalised---")
+        self.get_logger().info("---Ordered path planner node initalised---")
+
+    def lap_callback(self, msg: UInt8):
+        if msg.data > 0:
+            self.planning = True
+            self.get_logger().info("Lap completed, planning commencing")
 
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
+        self.current_track = track_msg
 
-        cones = [cone_with_cov.cone for cone_with_cov in track_msg.cones_with_cov]
+    def planning_callback(self):
+        # skip if we haven't completed a lap yet
+        if not self.planning:
+            return
+
+        cones = self.current_track.cones
 
         yellows: List[List[float]] = []
         blues: List[List[float]] = []
@@ -208,7 +224,8 @@ class OrderedMapSpline(Node):
             pose.pose.orientation.z = quat[3]
             poses.append(pose)
 
-        # publish spline path
+        # Add the first path point to the end of the list to complete the loop
+        poses.append(poses[0])
         spline_path_msg = Path()
         spline_path_msg.header.frame_id = "track"
         spline_path_msg.poses = poses

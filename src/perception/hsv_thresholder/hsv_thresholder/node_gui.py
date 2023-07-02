@@ -16,7 +16,7 @@ class GUINode(Node):
 
         self.threshold_publisher: Publisher = self.create_publisher(String, "hsv_thresholder/threshold", 1)
 
-        self.get_logger().info("GUI Node Initalised")
+        self.get_logger().info("---Thresholder GUI node initalised---")
 
     def publish_threshold(self, threshold: Threshold):
         self.threshold_publisher.publish(String(data=threshold.to_json()))

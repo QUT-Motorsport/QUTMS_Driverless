@@ -162,7 +162,7 @@ class VisionProcessor(Node):
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
-        self.get_logger().info("---Initialised Detector Node---")
+        self.get_logger().info("---Vision detector node initialised---")
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")

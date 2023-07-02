@@ -32,7 +32,7 @@ class ThresholderNode(Node):
             upper=[255, 255, 255],
         )
 
-        self.get_logger().info("Thresholder Node Initalised")
+        self.get_logger().info("---Thresholder node initalised---")
 
     def image_callback(self, msg: Image):
         frame: np.ndarray = cv_bridge.imgmsg_to_cv2(msg)

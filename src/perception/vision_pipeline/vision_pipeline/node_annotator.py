@@ -86,7 +86,7 @@ class AnnotatorNode(Node):
         )
         synchronizer.registerCallback(self.callback)
 
-        self.get_logger().info("Initialised Annotator Node")
+        self.get_logger().info("---Bounding box annotator node initialised---")
 
         self.count: int = 1500  ## START WHERE THE MOST RECENT ANNOTATION SET FINISHED
 

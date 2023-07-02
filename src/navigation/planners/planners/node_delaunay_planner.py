@@ -157,7 +157,7 @@ class TrackPlanner(Node):
         self.marker_publisher: Publisher = self.create_publisher(Marker, "/markers/delaunay_lines", 1)
         self.img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/delaunay_debug_img", 1)
 
-        self.get_logger().info("---Delaunay Planner Node Initalised---")
+        self.get_logger().info("---Delaunay planner node initalised---")
 
     def callback(self, track_msg: TrackDetectionStamped):
         self.get_logger().debug("Received track")
