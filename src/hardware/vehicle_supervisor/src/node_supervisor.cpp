@@ -17,6 +17,7 @@
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/u_int8.hpp"
@@ -52,6 +53,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub;
     rclcpp::Publisher<driverless_msgs::msg::MotorRPM>::SharedPtr motorRPM_pub;
     rclcpp::Publisher<driverless_msgs::msg::WSSVelocity>::SharedPtr wss_vel_pub;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
 
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub;
@@ -62,15 +64,28 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::TimerBase::SharedPtr dataLogger_timer;
 
     driverless_msgs::msg::State ros_state;
+    nav_msgs::msg::Odometry odom_msg;
 
     bool res_alive = 0;
     float last_torque = 0;
+    float last_steering_angle = 0;
+    float last_velocity = 0;
 
     const int NUM_MOTORS = 4;
     // velocity of each wheel in m/s
     float wheel_speeds[4];
     const int MOTOR_COUNT = 4;
     const float WHEEL_DIAMETER = 0.4064;
+    const float AXLE_WIDTH = 1.4;
+
+    void update_odom() {
+        // use last velocity and steering angle to update odom
+        odom_msg.header.stamp = this->now();
+        odom_msg.twist.twist.linear.x = last_velocity;
+        odom_msg.twist.twist.linear.y = 0.0;
+        odom_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
+        odom_pub->publish(odom_msg);
+    }
 
     // Called when a new can message is recieved
     void canbus_callback(const driverless_msgs::msg::Can msg) {
@@ -137,10 +152,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     // extract and publish RPM
                     Parse_VESC_CANPacketStatus(data, &rpm, &current, &duty);
 
-                    driverless_msgs::msg::MotorRPM rpmMsg;
-                    rpmMsg.index = vesc_id;
-                    rpmMsg.rpm = rpm;
-                    this->motorRPM_pub->publish(rpmMsg);
+                    // driverless_msgs::msg::MotorRPM rpmMsg;
+                    // rpmMsg.index = vesc_id;
+                    // rpmMsg.rpm = rpm;
+                    // this->motorRPM_pub->publish(rpmMsg);
                     this->DVL_drivingDynamics1._fields.speed_actual = rpm / (21.0 * 4.50) * M_PI * WHEEL_DIAMETER / 60;
 
                     wheel_speeds[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * this->WHEEL_DIAMETER / 60;
@@ -151,11 +166,15 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                         av_velocity += this->wheel_speeds[i];
                     }
                     av_velocity = av_velocity / MOTOR_COUNT;
+                    last_velocity = av_velocity;
 
                     driverless_msgs::msg::WSSVelocity vel_msg;
                     vel_msg.velocity = av_velocity;
                     vel_msg.header.stamp = this->now();
                     this->wss_vel_pub->publish(vel_msg);
+
+                    // update odom msg with new velocity
+                    update_odom();
                 }
             }
         }
@@ -207,13 +226,16 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                     std_msgs::msg::Float32 angle_msg;
                     angle_msg.data = steering_0;
                     this->steering_angle_pub->publish(angle_msg);
+                    last_steering_angle = steering_0;
+                    this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)steering_0;
+
+                    // update odom msg with new steering angle
+                    update_odom();
                 } else {
                     // go to emergency
                     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
                 }
                 this->run_fsm();
-
-                this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)steering_0;
 
                 break;
             }
@@ -535,6 +557,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Setup inital states
         this->ros_state.state = driverless_msgs::msg::State::START;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
+        odom_msg.header.frame_id = "track";
+        odom_msg.child_frame_id = "base_footprint";
 
         this->reset_dataLogger();
 
@@ -562,6 +586,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Steering
         this->steering_angle_pub = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
+
+        // Odometry
+        this->odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("/vehicle/wheel_odom", 10);
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
