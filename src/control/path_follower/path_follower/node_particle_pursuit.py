@@ -155,7 +155,7 @@ class ParticlePursuit(Node):
 
     # ------------------------------
     # attractive force constants:
-    rvwp_lookahead: float = 10  # how far the lookahead is (no. of indeces) [convert to distance preferably]
+    rvwp_lookahead: float = 20  # how far the lookahead is (no. of indeces) [convert to distance preferably]
     k_attractive: float = 3  # attractive force gain
 
     # ------------------------------
@@ -203,8 +203,10 @@ class ParticlePursuit(Node):
     # 'recieve' the path
     def path_callback(self, spline_path_msg: PathStamped):
         # convert List[PathPoint] to 2D numpy array
+        if self.path.shape != (0,):
+            return
         self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
-        self.get_logger().debug(f"Spline Path Recieved - length: {len(self.path)}")
+        self.get_logger().info(f"Spline Path Recieved - length: {len(self.path)}")
 
     # recieve the cone locations
     def track_callback(self, cone_pos_msg: ConeDetectionStamped):
