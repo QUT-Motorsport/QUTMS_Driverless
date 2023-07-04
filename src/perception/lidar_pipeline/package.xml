@@ -9,7 +9,7 @@
 
     <depend>rclpy</depend>
     <depend>sensor_msgs</depend>
-	<depend>driverless_msgs</depend>
+    <depend>driverless_msgs</depend>
     <depend>driverless_common</depend>
 
     <export>
