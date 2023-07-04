@@ -3,6 +3,7 @@
 
 #include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
 #include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/steering_reading.hpp"
@@ -275,7 +276,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         // Create subscriber to topic "canbus_rosbound"
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1));
 
         // Create state request and config timers
         this->c5e_state_request_timer = this->create_wall_timer(

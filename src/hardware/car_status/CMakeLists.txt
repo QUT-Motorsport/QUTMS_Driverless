@@ -28,7 +28,7 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(car_status_node src/node_car_status.cpp ${SOURCES})
 ament_target_dependencies(car_status_node rclcpp driverless_msgs)
-
+target_include_directories(car_status_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(car_status_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

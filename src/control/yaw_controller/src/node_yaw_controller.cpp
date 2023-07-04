@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -123,11 +124,11 @@ class YawController : public rclcpp::Node {
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", 10, std::bind(&YawController::shutdown_callback, this, _1));
+            "/system/as_status", QOS_LATEST, std::bind(&YawController::shutdown_callback, this, _1));
         this->velocity_sub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-            "imu/velocity", 10, std::bind(&YawController::velocity_callback, this, _1));
+            "imu/velocity", QOS_LATEST, std::bind(&YawController::velocity_callback, this, _1));
         this->imu_sub = this->create_subscription<sensor_msgs::msg::Imu>(
-            "imu/data", 10, std::bind(&YawController::imu_callback, this, _1));
+            "imu/data", QOS_LATEST, std::bind(&YawController::imu_callback, this, _1));
         this->yaw_timer =
             this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&YawController::yaw_callback, this));
         this->yaw_rate_timer =

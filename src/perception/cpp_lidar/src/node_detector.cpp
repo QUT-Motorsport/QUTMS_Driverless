@@ -15,6 +15,7 @@
 #include <rclcpp/time.hpp>
 
 #include "dbscan.h"
+#include "driverless_common/common.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -50,7 +51,7 @@ class LiDARProcessor : public rclcpp::Node {
     LiDARProcessor() : Node("lidar_processor") {
         // Create a ROS subscriber for the input point cloud
         cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/velodyne_points", 10, std::bind(&LiDARProcessor::cloud_callback, this, _1));
+            "/velodyne_points", QOS_ALL, std::bind(&LiDARProcessor::cloud_callback, this, _1));
 
         // Create a ROS publisher for the output point cloud
         ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne/ground", 1);

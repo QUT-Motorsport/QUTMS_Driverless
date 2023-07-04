@@ -19,7 +19,7 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(velocity_controller_node src/node_velocity_controller.cpp ${SOURCES})
 ament_target_dependencies(velocity_controller_node rclcpp driverless_msgs ackermann_msgs)
-
+target_include_directories(velocity_controller_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(velocity_controller_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

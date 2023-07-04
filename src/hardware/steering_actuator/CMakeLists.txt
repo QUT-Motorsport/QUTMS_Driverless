@@ -16,6 +16,7 @@ find_package(rclcpp REQUIRED)
 
 include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
+include_directories(${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 
 set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/canopen.cpp
@@ -28,7 +29,6 @@ add_executable(steering_can_pulse_node src/node_steering_CAN_pulse.cpp ${SOURCES
 ament_target_dependencies(steering_actuator_node rclcpp ackermann_msgs driverless_msgs std_msgs)
 ament_target_dependencies(steering_actuator_node_old rclcpp ackermann_msgs driverless_msgs std_msgs)
 ament_target_dependencies(steering_can_pulse_node rclcpp ackermann_msgs driverless_msgs std_msgs)
-
 target_include_directories(steering_actuator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

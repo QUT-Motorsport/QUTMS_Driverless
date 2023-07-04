@@ -12,8 +12,6 @@ find_package(ament_cmake REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-include_directories(include)
-
 set (SOURCES
   src/can2ethernet_adapter.cpp
   src/tcp_client.cpp
@@ -23,7 +21,7 @@ set (SOURCES
 
 add_executable(canbus_translator_node src/node_canbus.cpp ${SOURCES})
 ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs)
-
+target_include_directories(canbus_translator_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(canbus_translator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

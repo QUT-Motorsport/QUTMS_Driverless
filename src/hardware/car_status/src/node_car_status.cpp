@@ -2,6 +2,7 @@
 
 #include "CAN_BMU.h"
 #include "can_interface.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/car_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -49,7 +50,7 @@ class CarStatusNode : public rclcpp::Node, public CanInterface {
    public:
     CarStatusNode() : Node("bmu_status_node") {
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", 10, std::bind(&CarStatusNode::canbus_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&CarStatusNode::canbus_callback, this, _1));
         this->car_status_pub = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
 
         this->car_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);

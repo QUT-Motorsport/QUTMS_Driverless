@@ -13,11 +13,12 @@ find_package(driverless_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 
-include_directories(include)
-
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 add_executable(yaw_controller src/node_yaw_controller.cpp ${SOURCES})
+target_include_directories(yaw_controller
+        PUBLIC include
+        PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 ament_target_dependencies(yaw_controller
     rclcpp
     driverless_msgs
