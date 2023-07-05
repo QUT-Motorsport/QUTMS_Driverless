@@ -4,7 +4,6 @@
 #include "CAN_RES.h"
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
-#include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
@@ -85,8 +84,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void can_heartbeat_callback(const driverless_msgs::msg::Can msg) {
-        uint32_t vesc_masked_id = (msg.id & ~0xFF) >> 8;
-        uint8_t vesc_id = msg.id & 0xFF;
         uint32_t qutms_masked_id = msg.id & ~0xF;
 
         // RES boot up
@@ -100,6 +97,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             Byte 0 = state command (start up)
             Byte 1 = Node ID (0x00 = All Nodes)
             */
+            RCLCPP_DEBUG(this->get_logger(), "RES Booted");
             uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             this->res_alive = 1;
@@ -121,11 +119,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             res_msg.radio_quality = this->RES_status.radio_quality;
             res_msg.loss_of_signal_shutdown_notice = this->RES_status.loss_of_signal_shutdown_notice;
             this->res_status_pub_->publish(res_msg);
+            this->res_alive = 1;
+            this->run_fsm();
         }
         // VCU hearbeat
         else if (qutms_masked_id == VCU_Heartbeat_ID) {
             uint8_t VCU_ID = msg.id & 0xF;
-            RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
+            RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
             // data vector to uint8_t array
             uint8_t data[8];
@@ -196,7 +196,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void res_alive_callback() {
         if (!this->res_alive) {
-            this->DVL_heartbeat.stateID = driverless_msgs::msg::State::EMERGENCY;
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             RCLCPP_DEBUG(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
@@ -485,8 +485,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::heartbeat_callback, this));
 
         // RES Alive
-        this->res_alive_timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&ASSupervisor::res_alive_callback, this));
+        this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),
+                                                         std::bind(&ASSupervisor::res_alive_callback, this));
 
         // Data Logger
         this->dataLogger_timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
