@@ -11,13 +11,14 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_compile_definitions(QUTMS_CAN_VESC)
 add_compile_definitions(QUTMS_CAN_VCU)
-add_compile_definitions(QUTMS_CAN_DVL)
+add_compile_definitions(QUTMS_CAN_BMU)
 add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_SW)
-add_compile_definitions(QUTMS_CAN_BMU)
 
 include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
@@ -27,10 +28,15 @@ set (SOURCES
   src/tcp_client.cpp
   src/udp_client.cpp
   src/TritiumCAN.cpp
+  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
+  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
+  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_BMU.c
 )
 
-add_executable(canbus_translator_node src/node_canbus.cpp ${SOURCES})
-ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs)
+SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
+
+add_executable(canbus_translator_node src/node_canbus_translator.cpp ${SOURCES})
+ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs nav_msgs std_msgs)
 target_include_directories(canbus_translator_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(canbus_translator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
