@@ -201,29 +201,14 @@ class ParticlePursuit(Node):
                 continue
 
             # get angle to check if the point is in front of the car
-            ang = wrap_to_pi(angle(car_pos[:2], p))
-
-            # normalize the car's orientation angle
-            car_theta = wrap_to_pi(car_pos[2])
-
-            # calculate the angle error
-            error = wrap_to_pi(car_theta - ang)
-
+            ang = angle(car_pos[:2], p)
+            error = wrap_to_pi(car_pos[2] - ang)
             if (
                 2 * np.pi / 3 > error > -2 * np.pi / 3
             ):  # Checking if the point is in a 240 degree range infront of the vehicle
                 rvwp_dist = distance
                 rvwp_index = i
-
-            # # get angle to check if the point is in front of the car
-            # ang = angle(car_pos[:2], p)
-            # error = wrap_to_pi(car_pos[2] - ang)
-            # if (
-            #     2 * np.pi / 3 > error > -2 * np.pi / 3
-            # ):  # Checking if the point is in a 240 degree range infront of the vehicle
-            #     rvwp_dist = distance
-            #     rvwp_index = i
-            #     # print("CHOSEN HAS DISTANCE: " + str(sqrt(distance)))
+                # print("CHOSEN HAS DISTANCE: " + str(sqrt(distance)))
 
         if rvwp_index is None or rvwp_index == close_index:
             self.get_logger().warn("No valid RVWP found, using fallback point")
