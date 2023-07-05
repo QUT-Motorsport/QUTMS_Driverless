@@ -117,7 +117,7 @@ class ParticlePursuit(Node):
     # repulsive force constants:
     d_min: float = 1.3  # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.0  # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 1  # repulsive force gain
+    k_repulsive: float = 0  # repulsive force gain
 
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
@@ -221,7 +221,16 @@ class ParticlePursuit(Node):
                 rvwp_index = fallback_point
 
         pos_lookahead = self.path[rvwp_index]
-        print("RVWP Index: " + str(rvwp_index) + "\nRVWP Pos: " + str(pos_lookahead[:2]))
+
+        RVWP_distance = get_distance(car_pos[:2], pos_lookahead[:2])
+        print(
+            "RVWP Index: "
+            + str(rvwp_index)
+            + "\nRVWP Pos: "
+            + str(pos_lookahead[:2])
+            + "\nRVWP Dist: "
+            + str(RVWP_distance)
+        )
         return pos_lookahead
 
     def callback(
