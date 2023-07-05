@@ -97,7 +97,7 @@ class ParticlePursuit(Node):
     # common constants:
     path = np.array([])
     cone_pos = []
-    Kp_ang: float = 1
+    Kp_ang: float = 1.2
     Kp_vel: float = 0.08
     target_vel: float = 3.0
     vel_max: float = 4  # m/s
@@ -195,21 +195,35 @@ class ParticlePursuit(Node):
         rvwp_dist = float("inf")
         rvwp_index = None
         for i, p in enumerate(self.path):
+            # ensure distance is greater than lookahead
             distance = fast_dist(p, close)
-            # ensure distance is greater than lookahead distance and isnt infinity
             if distance <= self.lookahead**2 or distance >= rvwp_dist:
-                # print("Distance: " + str(distance) + ", Lookahead: " + str(self.lookahead) + ", RVWP_D: " + str(rvwp_dist))
                 continue
 
-            # get angle to check if the point is in front of the car
-            ang = angle(car_pos[:2], p)
-            error = wrap_to_pi(car_pos[2] - ang)
-            if (
-                2 * np.pi / 3 > error > -2 * np.pi / 3
-            ):  # Checking if the point is in a 240 degree range infront of the vehicle
+            # get the direction vector of the car
+            car_dir = [np.cos(car_pos[2]), np.sin(car_pos[2])]
+
+            # get the vector from the car to the point
+            car_to_point = [p[0] - car_pos[0], p[1] - car_pos[1]]
+
+            # calculate the dot product
+            dot_product = car_dir[0] * car_to_point[0] + car_dir[1] * car_to_point[1]
+
+            # check if the point is in front of the car
+            if dot_product > 0:
+                # the point is in front of the car
                 rvwp_dist = distance
                 rvwp_index = i
-                # print("CHOSEN HAS DISTANCE: " + str(sqrt(distance)))
+
+            # # get angle to check if the point is in front of the car
+            # ang = angle(car_pos[:2], p)
+            # error = wrap_to_pi(car_pos[2] - ang)
+            # if (
+            #     2 * np.pi / 3 > error > -2 * np.pi / 3
+            # ):  # Checking if the point is in a 240 degree range infront of the vehicle
+            #     rvwp_dist = distance
+            #     rvwp_index = i
+            #     # print("CHOSEN HAS DISTANCE: " + str(sqrt(distance)))
 
         if rvwp_index is None or rvwp_index == close_index:
             self.get_logger().warn("No valid RVWP found, using fallback point")
