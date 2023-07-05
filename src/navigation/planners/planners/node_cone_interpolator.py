@@ -88,12 +88,13 @@ class ConeInterpolator(Node):
                 largestYellow = ordered_cones[cone].order
 
         # Interpolate cones between pairs of cones along a straight line
-        for cone in range(ordered_cones_length - 1):
+        interpolated_cones = []
+        for cone in range(ordered_cones_length):
             nextCone = cone + 1
             # Interpolate between last and first cones when at end of cones on one side of the track
             if (ordered_cones[cone].color == Cone.BLUE) & (cone == largestBlue):
                 nextCone = 0
-            elif (ordered_cones[cone].color == Cone.YELLOW) & (cone == largestYellow + largestBlue):
+            elif (ordered_cones[cone].color == Cone.YELLOW) & (cone == ordered_cones_length - 1):
                 nextCone = largestBlue + 1
 
             # get distance between two ordered cones
@@ -119,7 +120,6 @@ class ConeInterpolator(Node):
                 cone_of_origin = iCone_locations[iCone]
 
             # create list of interpolated cones with interpolated locations
-            interpolated_cones = []
             for iCone in range(len(iCone_locations)):
                 # create new cone
                 interpolatedCone = Cone()
@@ -127,13 +127,65 @@ class ConeInterpolator(Node):
                 interpolatedCone.location.y = iCone_locations[iCone][1]
                 interpolatedCone.color = ordered_cones[cone].color
                 interpolatedCone.track_side = ordered_cones[cone].track_side
+                interpolatedCone.order = 0  # A dummy value for now - edited later
 
                 # add cone to list of interpolated cones
                 interpolated_cones.append(interpolatedCone)
 
             # Append each interpolated cone to the list of all cones
-            for cone in range(len(interpolated_cones)):
-                ordered_cones.append(interpolated_cones[cone])
+            # for cone in range(len(interpolated_cones)):
+            #     ordered_cones.append(interpolated_cones[cone])
+
+        # Create a new ordered list of all cones, adding blue then yellow cones
+        newOrderedCones = []
+        newOrder = 0
+
+        print(str(len(interpolated_cones)))
+
+        for cone in range(len(ordered_cones)):
+            if ordered_cones[cone].color == Cone.YELLOW:
+                continue
+
+            # add one real cone
+            print("blue real: " + str(newOrder))
+            ordered_cones[cone].order = newOrder
+            newOrder += 1
+            newOrderedCones.append(ordered_cones[cone])
+
+            # add each following interpolated cone
+            for iCone in range(self.numPoints_interpolated):
+                print("blue interpolated: " + str(newOrder))
+                iConeIndex = cone * self.numPoints_interpolated + iCone
+                print("iConeIndex: " + str(iConeIndex))
+                interpolated_cones[iConeIndex].order = newOrder
+                newOrder += 1
+                newOrderedCones.append(interpolated_cones[iConeIndex])
+
+            if ordered_cones[cone].order == largestBlue:
+                continue
+
+        newOrder = 0
+        for cone in range(len(ordered_cones)):
+            if ordered_cones[cone].color == Cone.BLUE:
+                continue
+
+            # add one real cone
+            print("yellow real: " + str(newOrder))
+            ordered_cones[cone].order = newOrder
+            newOrder += 1
+            newOrderedCones.append(ordered_cones[cone])
+
+            # add each following interpolated cone
+            for iCone in range(self.numPoints_interpolated):
+                print("yellow interpolated: " + str(newOrder))
+                iConeIndex = cone * self.numPoints_interpolated + iCone
+                print("iConeIndex: " + str(iConeIndex))
+                interpolated_cones[iConeIndex].order = newOrder
+                newOrder += 1
+                newOrderedCones.append(interpolated_cones[iConeIndex])
+
+            if ordered_cones[cone].order == largestYellow:
+                continue
 
         # Publish list of ordered and interpolated cones
         interpolatedCones_msg = ConeDetectionStamped(cones=ordered_cones)
@@ -144,22 +196,22 @@ class ConeInterpolator(Node):
         # ======================================================
 
         # Graphing:
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
-        # # Separate the x and y coordinates
-        # x = [cone.location.x for cone in ordered_cones]
-        # y = [cone.location.y for cone in ordered_cones]
+        # Separate the x and y coordinates
+        x = [cone.location.x for cone in ordered_cones]
+        y = [cone.location.y for cone in ordered_cones]
 
-        # # Plot the points
-        # plt.scatter(x, y)
+        # Plot the points
+        plt.scatter(x, y)
 
-        # # Add labels and a title
-        # plt.xlabel("x - axis")
-        # plt.ylabel("y - axis")
-        # plt.title("2D Plane Plot of Ordered Cones")
+        # Add labels and a title
+        plt.xlabel("x - axis")
+        plt.ylabel("y - axis")
+        plt.title("2D Plane Plot of Ordered Cones")
 
-        # # Display the plot
-        # plt.show()
+        # Display the plot
+        plt.show()
 
 
 def main(args=None):
