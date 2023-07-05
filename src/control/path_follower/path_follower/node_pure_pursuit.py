@@ -114,7 +114,7 @@ class PurePursuit(Node):
         rvwp_index = None
         for i, p in enumerate(self.path):
             distance = fast_dist(p, close)
-            if distance <= self.lookahead or distance >= rvwp_dist:
+            if distance <= self.lookahead**2 or distance >= rvwp_dist:
                 continue
 
             # get angle to check if the point is in front of the car

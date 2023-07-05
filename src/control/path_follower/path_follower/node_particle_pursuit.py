@@ -1,4 +1,4 @@
-from math import atan2, cos, dist, pi, sin
+from math import atan2, cos, dist, pi, sin, sqrt
 
 import numpy as np
 import scipy.spatial
@@ -11,6 +11,8 @@ from rclpy.publisher import Publisher
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathStamped, Reset
 from geometry_msgs.msg import PoseWithCovarianceStamped
+
+from driverless_common.common import angle, fast_dist, wrap_to_pi
 
 from typing import List
 
@@ -30,7 +32,7 @@ def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
     x_axle = pos_cog[0] + cos(heading) * cog2axle
     y_axle = pos_cog[1] + sin(heading) * cog2axle
 
-    return [x_axle, y_axle]
+    return [x_axle, y_axle, heading]
 
 
 def get_distance(pos_target1: List[float], pos_target2: List[float]) -> float:
@@ -70,53 +72,6 @@ def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> float:
     return nearest_cone
 
 
-def get_RVWP(car_pos: List[float], path: np.ndarray, rvwp_lookahead: int) -> List[float]:
-    """
-    Retrieve position of lookahead target
-    * param car_pos: [x,y] coords of point 1
-    * param path: [[x0,y0],[x1,y1],...,[xn-1,yn-1]] path points
-    * param rvwpLookahead: how many indices to look ahead in path array for RVWP
-    * return: RVWP position as [x,y,intensity]
-    """
-    _pos = np.array([[car_pos[0], car_pos[1]]])
-    dists: np.ndarray = scipy.spatial.distance.cdist(
-        path[:, :2],  # search all path points for x,y cols up to 3rd col (intensity)
-        _pos,
-        "euclidean",
-    )
-    min_index: int = np.where(dists == np.amin(dists))[0][0]
-    # print("min_index: ", min_index)
-    if min_index + rvwp_lookahead >= len(path):
-        rvwp_index: int = len(path) - 1
-    else:
-        rvwp_index: int = min_index + rvwp_lookahead  # % len(path)
-    # print("rvwp_index: ", rvwp_index)
-    rvwp: List[float] = path[rvwp_index]
-
-    return rvwp
-
-
-def angle(p1: List[float], p2: List[float]) -> float:
-    """
-    Retrieve angle between two points
-    * param p1: [x,y] coords of point 1
-    * param p2: [x,y] coords of point 2
-    * return: angle in rads
-    """
-    x_disp = p2[0] - p1[0]
-    y_disp = p2[1] - p1[1]
-    return atan2(y_disp, x_disp)
-
-
-def wrap_to_pi(angle: float) -> float:
-    """
-    Wrap an angle between -pi and pi
-    * param angle: angle in rads
-    * return: angle in rads wrapped to -pi and pi
-    """
-    return (angle + np.pi) % (2 * np.pi) - np.pi
-
-
 def angle_between(v1: List[float], v2: List[float]):
     """
     Find the angle between two vectors, both with [0,0] as origin
@@ -152,23 +107,23 @@ class ParticlePursuit(Node):
     Kp_brake: float = 0.0
     vel_RVWP_LAD: int = 15
     r2d: bool = True  # for reset
+    fallback_path_points_offset = 0
 
     # ------------------------------
     # attractive force constants:
-    rvwp_lookahead: float = 20  # how far the lookahead is (no. of indeces) [convert to distance preferably]
     k_attractive: float = 3  # attractive force gain
 
     # ------------------------------
     # repulsive force constants:
     d_min: float = 1.3  # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.0  # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 10  # repulsive force gain
+    k_repulsive: float = 1  # repulsive force gain
 
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
     #      cone_danger < 0: corners taken wider
     #      ** dont set to 1.0 **
-    cone_danger: float = 18
+    cone_danger: float = 0.0
 
     def __init__(self):
         super().__init__("particle_pursuit")
@@ -191,6 +146,9 @@ class ParticlePursuit(Node):
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
 
+        # lookahead distance for the RVWP in meters
+        self.lookahead = self.declare_parameter("lookahead", 6.5).value
+
         self.get_logger().info("---Path Follower Node Initalised---")
         print("The node is initialised!")
 
@@ -212,6 +170,59 @@ class ParticlePursuit(Node):
     def track_callback(self, cone_pos_msg: ConeDetectionStamped):
         self.cone_pos = cone_pos_msg.cones
         self.get_logger().debug("Map received")
+
+    def get_rvwp(self, car_pos: List[float]):
+        """
+        Retrieve angle between two points
+        * param car_pos: [x,y,theta] pose of the car
+        * param path: [[x0,y0,i0],[x1,y1,i1],...,[xn-1,yn-1,in-1]] path points
+        * param rvwp_lookahead: distance to look ahead for the RVWP
+        * return: RVWP position as [x,y,i]
+        """
+        # find the closest point on the path to the car
+        close_dist = float("inf")
+        close_index = None
+        for i, p in enumerate(self.path):
+            distance = fast_dist(p, car_pos)
+            if distance < close_dist:
+                close_dist = distance
+                close_index = i
+        close = self.path[close_index] if close_index is not None else car_pos
+        if close_index is None:
+            self.get_logger().warn("Could not find closest point, have used car's axle pos")
+
+        # find the first point on the path that is further than the lookahead distance
+        rvwp_dist = float("inf")
+        rvwp_index = None
+        for i, p in enumerate(self.path):
+            distance = fast_dist(p, close)
+            # ensure distance is greater than lookahead distance and isnt infinity
+            if distance <= self.lookahead**2 or distance >= rvwp_dist:
+                # print("Distance: " + str(distance) + ", Lookahead: " + str(self.lookahead) + ", RVWP_D: " + str(rvwp_dist))
+                continue
+
+            # get angle to check if the point is in front of the car
+            ang = angle(car_pos[:2], p)
+            error = wrap_to_pi(car_pos[2] - ang)
+            if (
+                2 * np.pi / 3 > error > -2 * np.pi / 3
+            ):  # Checking if the point is in a 240 degree range infront of the vehicle
+                rvwp_dist = distance
+                rvwp_index = i
+                # print("CHOSEN HAS DISTANCE: " + str(sqrt(distance)))
+
+        if rvwp_index is None or rvwp_index == close_index:
+            self.get_logger().warn("No valid RVWP found, using fallback point")
+            path_points_count = len(self.path) - 1
+            fallback_point = close_index + self.fallback_path_points_offset
+            if fallback_point > path_points_count:
+                rvwp_index = abs(path_points_count - fallback_point)
+            else:
+                rvwp_index = fallback_point
+
+        pos_lookahead = self.path[rvwp_index]
+        print("RVWP Index: " + str(rvwp_index) + "\nRVWP Pos: " + str(pos_lookahead[:2]))
+        return pos_lookahead
 
     def callback(
         self,
@@ -243,7 +254,7 @@ class ParticlePursuit(Node):
 
         # get the position of the centre of the front steering axle
         position_cog: List[float] = [pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]
-        pos_car: List[float] = get_wheel_position(position_cog, car_heading)  # [x,y] of centre of steering axle
+        car_pose: List[float] = get_wheel_position(position_cog, car_heading)  # [x,y,th] of centre of steering axle
 
         # get left and right cones
         left_cones = [c for c in self.cone_pos if c.color == LEFT_CONE_COLOUR]
@@ -263,10 +274,10 @@ class ParticlePursuit(Node):
         # ----------------
         # Determine steering angle
         # ----------------
-        pos_lookahead: List[float] = get_RVWP(pos_car, self.path, self.rvwp_lookahead)[:2]
+        pos_lookahead: List[float] = self.get_rvwp(car_pose)
 
-        pos_nearestCone: List[float] = get_closest_cone(pos_car, track)
-        d_nearestCone: float = get_distance(pos_car, pos_nearestCone)
+        pos_nearestCone: List[float] = get_closest_cone(car_pose, track)
+        d_nearestCone: float = get_distance(car_pose[:2], pos_nearestCone)
 
         # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
         danger_level: float = np.clip(
@@ -278,13 +289,13 @@ class ParticlePursuit(Node):
 
         # determine attractive and repulsive forces acting on car
         f_attractive: float = self.k_attractive * (
-            get_distance(pos_lookahead, pos_car)
+            get_distance(pos_lookahead[:2], car_pose[:2])
         )  # car is attracted to lookahead
         f_repulsive: float = self.k_repulsive * danger_level  # car is repulsed by nearest cone
 
         # determine angles of forces acting on car (angles in rads)
-        attractive_heading: float = angle(pos_car, pos_lookahead)
-        repulsive_heading: float = angle(pos_car, pos_nearestCone) + pi  # opposite heading of position
+        attractive_heading: float = angle(car_pose[:2], pos_lookahead[:2])
+        repulsive_heading: float = angle(car_pose[:2], pos_nearestCone) + pi  # opposite heading of position
 
         # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
         if repulsive_heading > car_heading and repulsive_heading <= car_heading + pi:
@@ -354,6 +365,28 @@ class ParticlePursuit(Node):
         # control_msg.drive.jerk = calc_brake  # jerk redundant with new sim
 
         self.control_publisher.publish(control_msg)
+
+        # ======================================================
+        #                   Debugging Code
+        # ======================================================
+
+        # Graphing of cones:
+        # import matplotlib.pyplot as plt
+
+        # # Separate the x and y coordinates
+        # x = [cone.location.x for cone in self.cone_pos]
+        # y = [cone.location.y for cone in self.cone_pos]
+
+        # # Plot the points
+        # plt.scatter(x, y)
+
+        # # Add labels and a title
+        # plt.xlabel("x - axis")
+        # plt.ylabel("y - axis")
+        # plt.title("2D Plane Plot of Ordered Cones")
+
+        # # Display the plot
+        # plt.show()
 
 
 def main(args=None):  # begin ros node
