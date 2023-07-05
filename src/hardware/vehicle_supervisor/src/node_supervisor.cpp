@@ -8,6 +8,7 @@
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
@@ -565,14 +566,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // CAN
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", 10, std::bind(&ASSupervisor::canbus_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::canbus_callback, this, _1));
 
         // State
         this->state_pub = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
 
         // Mission select
         this->mission_select_sub = this->create_subscription<std_msgs::msg::UInt8>(
-            "/system/mission_select", 10, std::bind(&ASSupervisor::mission_select_callback, this, _1));
+            "/system/mission_select", QOS_ALL, std::bind(&ASSupervisor::mission_select_callback, this, _1));
 
         // Reset
         this->reset_pub = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
@@ -592,7 +593,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/accel_command", 10, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+            "/control/accel_command", QOS_ALL, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
@@ -612,7 +613,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
-            "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+            "/system/shutdown", QOS_LATEST, std::bind(&ASSupervisor::shutdown_callback, this, _1));
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };

@@ -6,12 +6,13 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathStamped
+from driverless_msgs.msg import ConeDetectionStamped, PathStamped
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 
+from driverless_common.common import QOS_LATEST
 from driverless_common.draw import draw_map, draw_markers, draw_steering
 from driverless_common.marker import path_marker_msg
 
@@ -32,18 +33,18 @@ class DisplayDetections(Node):
         super().__init__("display_node")
 
         # cone detection subscribers
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, QOS_LATEST)
 
         # track subs
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.slam_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.local_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.slam_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.local_callback, QOS_LATEST)
 
         # steering angle target sub
-        self.create_subscription(AckermannDriveStamped, "/control/driving_command", self.steering_callback, 1)
+        self.create_subscription(AckermannDriveStamped, "/control/driving_command", self.steering_callback, QOS_LATEST)
 
         # path spline sub
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, 1)
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
 
         # cv2 rosboard image pubs
         self.vision_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_det_img", 1)

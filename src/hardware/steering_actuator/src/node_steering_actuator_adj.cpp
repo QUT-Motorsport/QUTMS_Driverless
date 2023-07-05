@@ -4,6 +4,7 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
 #include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
 #include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"  // ROS Messages
 #include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
@@ -495,19 +496,19 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         // Create subscriber to topic AS status
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", 10, std::bind(&SteeringActuator::as_state_callback, this, _1));
+            "/system/as_status", QOS_LATEST, std::bind(&SteeringActuator::as_state_callback, this, _1));
 
         // Create subscriber to topic "steering_angle"
         this->steer_ang_sub = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", 10, std::bind(&SteeringActuator::steering_angle_callback, this, _1));
+            "/vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1));
 
         // Create subscriber to topic "driving_command"
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/driving_command", 10, std::bind(&SteeringActuator::driving_command_callback, this, _1));
+            "/control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1));
 
         // Create subscriber to topic "canbus_rosbound"
         this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", 10, std::bind(&SteeringActuator::can_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1));
 
         // Create state request and config timers
         this->steering_update_timer =

@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/path_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -27,19 +28,6 @@ struct Point {
 
     Point(double x, double y, double turn_intensity) : x(x), y(y), turn_intensity(turn_intensity) {}
 };
-
-double angle(double x1, double y1, double x2, double y2) {
-    auto x_disp = x2 - x1;
-    auto y_disp = y2 - y1;
-    return atan2(y_disp, x_disp);
-}
-
-// https://stackoverflow.com/a/29871193
-double wrap_to_pi(double x) {
-    auto min = x - (-M_PI);
-    auto max = M_PI - (-M_PI);
-    return -M_PI + fmod(max + fmod(min, max), max);
-}
 
 class Fast : public rclcpp::Node {
    private:
@@ -167,16 +155,15 @@ class Fast : public rclcpp::Node {
 
    public:
     Fast() : Node("pure_pursuit_cpp_node") {
-        rclcpp::QoS qos_profile(rclcpp::KeepLast(1), rmw_qos_profile_sensor_data);
         this->path_sub = this->create_subscription<driverless_msgs::msg::PathStamped>(
-            "/planner/path", qos_profile, std::bind(&Fast::path_callback, this, _1));
+            "/planner/path", QOS_LATEST, std::bind(&Fast::path_callback, this, _1));
         this->slam_pose_sub = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/slam/car_pose", qos_profile, std::bind(&Fast::pose_callback, this, _1));
+            "/slam/car_pose", QOS_LATEST, std::bind(&Fast::pose_callback, this, _1));
 
         this->driving_command_pub =
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
 
-        this->target_velocity = this->declare_parameter<double>("target_velocity", 7.0);
+        this->target_velocity = this->declare_parameter<double>("target_velocity", 10.0);
         this->kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
         this->lookahead = this->declare_parameter<double>("lookahead", 3.0);
         squared_lookahead = lookahead * lookahead;

@@ -1,10 +1,9 @@
-from math import atan2, cos, hypot, pi, sin, sqrt
-import time
+from math import atan2, cos, hypot, pi, sin
 
 import numpy as np
 from sklearn.neighbors import KDTree
 from tf2_ros import TransformBroadcaster
-from transforms3d.euler import euler2quat, quat2euler
+from transforms3d.euler import euler2quat
 
 import message_filters
 import rclpy
@@ -14,7 +13,7 @@ from rclpy.publisher import Publisher
 from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset, TrackDetectionStamped, WSSVelocity
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, Quaternion, TransformStamped, TwistStamped
 
-from driverless_common.shutdown_node import ShutdownNode
+from driverless_common.common import QOS_ALL, QOS_LATEST
 from py_slam.cone_props import ConeProps
 
 from typing import List, Optional
@@ -55,9 +54,9 @@ class WSSSlam(Node):
         vel_synchronizer = message_filters.ApproximateTimeSynchronizer(fs=[imu_sub, wss_sub], queue_size=10, slop=0.1)
         vel_synchronizer.registerCallback(self.velocity_callback)
 
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, 1)
-        self.create_subscription(Reset, "/system/reset", self.reset_callback, 10)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.vision_callback, QOS_ALL)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.lidar_callback, QOS_LATEST)
+        self.create_subscription(Reset, "/system/reset", self.reset_callback, QOS_LATEST)
 
         # slam publisher
         self.slam_publisher: Publisher = self.create_publisher(TrackDetectionStamped, "/slam/global_map", 1)

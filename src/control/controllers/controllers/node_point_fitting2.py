@@ -13,6 +13,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from sensor_msgs.msg import Image
 
+from driverless_common.common import QOS_ALL, QOS_LATEST
 from driverless_common.draw import *
 from driverless_common.point import Point
 from driverless_common.shutdown_node import ShutdownNode
@@ -55,9 +56,9 @@ class PointFitController(Node):
         super().__init__("point_fit_controller_node")
 
         # debug image
-        self.create_subscription(Image, "/debug_imgs/lidar_det_img", self.img_callback, 1)
+        self.create_subscription(Image, "/debug_imgs/lidar_det_img", self.img_callback, QOS_LATEST)
         # cone detections
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)

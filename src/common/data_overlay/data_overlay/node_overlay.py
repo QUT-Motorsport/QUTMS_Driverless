@@ -11,6 +11,8 @@ from driverless_msgs.msg import WSSVelocity
 from sensor_msgs.msg import Image, Imu
 from std_msgs.msg import Float32
 
+from driverless_common.common import QOS_ALL
+
 from typing import Optional
 
 cv_bridge = CvBridge()
@@ -48,9 +50,9 @@ class DataOverlay(Node):
         super().__init__("data_overlay_node")
 
         # subscribe to velocity
-        self.create_subscription(WSSVelocity, "/vehicle/wheel_speed", self.velocity_callback, 10)
+        self.create_subscription(WSSVelocity, "/vehicle/wheel_speed", self.velocity_callback, QOS_ALL)
         # subscribe to imu
-        self.create_subscription(Imu, "/imu/data", self.imu_callback, 10)
+        self.create_subscription(Imu, "/imu/data", self.imu_callback, QOS_ALL)
 
         # timer to create frames
         self.create_timer(1 / fps, self.timer_callback)

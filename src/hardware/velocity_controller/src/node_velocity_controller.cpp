@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/motor_rpm.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
@@ -152,15 +153,15 @@ class Velocity_Controller : public rclcpp::Node {
 
         // State updates
         this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", 10, std::bind(&Velocity_Controller::as_state_callback, this, _1));
+            "/system/as_status", QOS_LATEST, std::bind(&Velocity_Controller::as_state_callback, this, _1));
 
         // Ackermann
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/driving_command", 10, std::bind(&Velocity_Controller::ackermann_callback, this, _1));
+            "/control/driving_command", QOS_ALL, std::bind(&Velocity_Controller::ackermann_callback, this, _1));
 
         // Velocity updates
         this->motorRPM_sub = this->create_subscription<driverless_msgs::msg::MotorRPM>(
-            "/vehicle/motor_rpm", 10, std::bind(&Velocity_Controller::rpm_callback, this, _1));
+            "/vehicle/motor_rpm", QOS_ALL, std::bind(&Velocity_Controller::rpm_callback, this, _1));
 
         // Control loop -> 10ms so runs at double speed heartbeats are sent at
         this->controller_timer = this->create_wall_timer(std::chrono::milliseconds(10),

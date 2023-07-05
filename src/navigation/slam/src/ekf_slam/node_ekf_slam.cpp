@@ -13,6 +13,7 @@
 #include "../markers.h"
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/cone.hpp"
 #include "driverless_msgs/msg/cone_detection_stamped.hpp"
 #include "driverless_msgs/msg/debug_msg.hpp"
@@ -76,10 +77,10 @@ class EKFSLAMNode : public rclcpp::Node {
    public:
     EKFSLAMNode() : Node("ekf_node") {
         twist_sub = create_subscription<geometry_msgs::msg::TwistStamped>(
-            "velocity", 10, std::bind(&EKFSLAMNode::twist_callback, this, _1));
+            "velocity", QOS_ALL, std::bind(&EKFSLAMNode::twist_callback, this, _1));
 
         detection_sub = create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "cone_detection", 1, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
+            "cone_detection", QOS_LATEST, std::bind(&EKFSLAMNode::cone_detection_callback, this, _1));
 
         pose_pub = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("slam/pose", 10);
         track_pub = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("slam/track", 10);

@@ -4,6 +4,7 @@
 
 #include "TritiumCAN.hpp"
 //#include "can2etherenet_adapter.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -75,7 +76,7 @@ class CanBus : public rclcpp::Node {
         this->declare_parameter<int>("port", 0);
 
         this->subscription_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_carbound", 10, std::bind(&CanBus::canmsg_callback, this, _1));
+            "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1));
 
         this->publisher_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
 

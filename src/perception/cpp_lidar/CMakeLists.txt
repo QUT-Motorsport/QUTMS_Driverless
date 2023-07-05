@@ -21,7 +21,7 @@ set (SOURCES
 )
 
 add_executable(detector src/node_detector.cpp ${SOURCES})
-
+target_include_directories(detector PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(detector PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

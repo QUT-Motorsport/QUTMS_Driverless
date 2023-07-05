@@ -1,24 +1,19 @@
-from collections import OrderedDict
-import csv
-import datetime as dt
-from datetime import datetime
-from math import atan2, cos, hypot, pi, sin, sqrt
-from pathlib import Path
+from math import cos, pi, sin, sqrt
 import time
 
-import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
 import rclpy
 from rclpy.node import Node
-from rosidl_runtime_py.convert import message_to_ordereddict
 
 from geometry_msgs.msg import TwistStamped
 from sbg_driver.msg import SbgEkfNav
-from sensor_msgs.msg import Imu, NavSatFix
+from sensor_msgs.msg import NavSatFix
 
-from typing import Any, Dict, List, Optional, Tuple
+from driverless_common.common import QOS_ALL
+
+from typing import List, Optional
 
 
 class VelocityManager:
@@ -105,13 +100,13 @@ class SbgPerformance(Node):
         super().__init__("sbg_performance")
 
         self.vel_manager = VelocityManager()
-        self.create_subscription(TwistStamped, "imu/velocity", self.vel_manager.velocity_callback, 10)
+        self.create_subscription(TwistStamped, "imu/velocity", self.vel_manager.velocity_callback, QOS_ALL)
 
         self.ekf_nav_manager = EkfNavManager()
-        self.create_subscription(SbgEkfNav, "sbg/ekf_nav", self.ekf_nav_manager.ekf_nav_callback, 10)
+        self.create_subscription(SbgEkfNav, "sbg/ekf_nav", self.ekf_nav_manager.ekf_nav_callback, QOS_ALL)
 
         self.nav_sat_fix_manager = NavSatFixManager()
-        self.create_subscription(NavSatFix, "imu/nav_sat_fix", self.nav_sat_fix_manager.nav_sat_fix_callback, 10)
+        self.create_subscription(NavSatFix, "imu/nav_sat_fix", self.nav_sat_fix_manager.nav_sat_fix_callback, QOS_ALL)
 
         timer_period = 1  # seconds
         self.timer = self.create_timer(timer_period, self.update_graph)
