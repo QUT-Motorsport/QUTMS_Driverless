@@ -270,6 +270,28 @@ class EquidistantMidline(Node):
         path_msg.header.frame_id = "track"
         self.path_publisher.publish(path_msg)
 
+        # ======================================================
+        #                   Debugging Code
+        # ======================================================
+
+        # Graphing:
+        # import matplotlib.pyplot as plt
+
+        # # Separate the x and y coordinates
+        # x = [path_point.location.x for path_point in path]
+        # y = [path_point.location.y for path_point in path]
+
+        # # Plot the points
+        # plt.scatter(x, y)
+
+        # # Add labels and a title
+        # plt.xlabel("x - axis")
+        # plt.ylabel("y - axis")
+        # plt.title("2D Plane Plot of Ordered Cones")
+
+        # # Display the plot
+        # plt.show()
+
 
 def main(args=None):
     # begin ros node
