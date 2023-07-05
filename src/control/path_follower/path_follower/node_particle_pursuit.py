@@ -200,18 +200,18 @@ class ParticlePursuit(Node):
             if distance <= self.lookahead**2 or distance >= rvwp_dist:
                 continue
 
-            # get the direction vector of the car
-            car_dir = [np.cos(car_pos[2]), np.sin(car_pos[2])]
+            # get angle to check if the point is in front of the car
+            ang = wrap_to_pi(angle(car_pos[:2], p))
 
-            # get the vector from the car to the point
-            car_to_point = [p[0] - car_pos[0], p[1] - car_pos[1]]
+            # normalize the car's orientation angle
+            car_theta = wrap_to_pi(car_pos[2])
 
-            # calculate the dot product
-            dot_product = car_dir[0] * car_to_point[0] + car_dir[1] * car_to_point[1]
+            # calculate the angle error
+            error = wrap_to_pi(car_theta - ang)
 
-            # check if the point is in front of the car
-            if dot_product > 0:
-                # the point is in front of the car
+            if (
+                2 * np.pi / 3 > error > -2 * np.pi / 3
+            ):  # Checking if the point is in a 240 degree range infront of the vehicle
                 rvwp_dist = distance
                 rvwp_index = i
 
