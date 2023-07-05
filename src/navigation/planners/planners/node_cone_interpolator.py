@@ -140,23 +140,18 @@ class ConeInterpolator(Node):
         newOrderedCones = []
         newOrder = 0
 
-        print(str(len(interpolated_cones)))
-
         for cone in range(len(ordered_cones)):
             if ordered_cones[cone].color == Cone.YELLOW:
                 continue
 
             # add one real cone
-            print("blue real: " + str(newOrder))
             ordered_cones[cone].order = newOrder
             newOrder += 1
             newOrderedCones.append(ordered_cones[cone])
 
             # add each following interpolated cone
             for iCone in range(self.numPoints_interpolated):
-                print("blue interpolated: " + str(newOrder))
                 iConeIndex = cone * self.numPoints_interpolated + iCone
-                print("iConeIndex: " + str(iConeIndex))
                 interpolated_cones[iConeIndex].order = newOrder
                 newOrder += 1
                 newOrderedCones.append(interpolated_cones[iConeIndex])
@@ -170,16 +165,13 @@ class ConeInterpolator(Node):
                 continue
 
             # add one real cone
-            print("yellow real: " + str(newOrder))
             ordered_cones[cone].order = newOrder
             newOrder += 1
             newOrderedCones.append(ordered_cones[cone])
 
             # add each following interpolated cone
             for iCone in range(self.numPoints_interpolated):
-                print("yellow interpolated: " + str(newOrder))
                 iConeIndex = cone * self.numPoints_interpolated + iCone
-                print("iConeIndex: " + str(iConeIndex))
                 interpolated_cones[iConeIndex].order = newOrder
                 newOrder += 1
                 newOrderedCones.append(interpolated_cones[iConeIndex])
@@ -188,7 +180,7 @@ class ConeInterpolator(Node):
                 continue
 
         # Publish list of ordered and interpolated cones
-        interpolatedCones_msg = ConeDetectionStamped(cones=ordered_cones)
+        interpolatedCones_msg = ConeDetectionStamped(cones=newOrderedCones)
         self.interpolatedCones_publisher.publish(interpolatedCones_msg)
 
         # ======================================================
@@ -196,22 +188,22 @@ class ConeInterpolator(Node):
         # ======================================================
 
         # Graphing:
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
 
-        # Separate the x and y coordinates
-        x = [cone.location.x for cone in ordered_cones]
-        y = [cone.location.y for cone in ordered_cones]
+        # # Separate the x and y coordinates
+        # x = [cone.location.x for cone in newOrderedCones]
+        # y = [cone.location.y for cone in newOrderedCones]
 
-        # Plot the points
-        plt.scatter(x, y)
+        # # Plot the points
+        # plt.scatter(x, y)
 
-        # Add labels and a title
-        plt.xlabel("x - axis")
-        plt.ylabel("y - axis")
-        plt.title("2D Plane Plot of Ordered Cones")
+        # # Add labels and a title
+        # plt.xlabel("x - axis")
+        # plt.ylabel("y - axis")
+        # plt.title("2D Plane Plot of Ordered Cones")
 
-        # Display the plot
-        plt.show()
+        # # Display the plot
+        # plt.show()
 
 
 def main(args=None):
