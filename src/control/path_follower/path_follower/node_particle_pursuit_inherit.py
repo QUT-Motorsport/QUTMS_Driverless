@@ -36,20 +36,30 @@ def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> List[float
     * return: [x,y] of nearest cone to the car
     """
 
-    # get arrays of only coords for more efficient compute
-    _pos = np.array([[pos_car[0], pos_car[1]]])
-    boundaries_coords = np.array(boundaries[:, :2])
+    # # get arrays of only coords for more efficient compute
+    # _pos = np.array([[pos_car[0], pos_car[1]]])
+    # boundaries_coords = np.array(boundaries[:, :2])
 
-    # find distances of all cones and index of closest cone (improve by finding distances of close cones only?)
-    dists: np.ndarray = scipy.spatial.distance.cdist(
-        boundaries_coords,
-        _pos,
-        "euclidean",
-    )
-    # not certain np.where is returning the index - it should though
-    nearest_cone_index: int = np.where(dists == np.amin(dists))[0][0]
+    # # find distances of all cones and index of closest cone (improve by finding distances of close cones only?)
+    # dists: np.ndarray = scipy.spatial.distance.cdist(
+    #     boundaries_coords,
+    #     _pos,
+    #     "euclidean",
+    # )
+    # # not certain np.where is returning the index - it should though
+    # nearest_cone_index: int = np.where(dists == np.amin(dists))[0][0]
 
-    nearest_cone = boundaries_coords[nearest_cone_index]
+    # nearest_cone = boundaries_coords[nearest_cone_index]
+
+    # iterate through all cones and find the closest one
+    nearest_cone = boundaries[0]
+    last_dist = float("inf")
+    for cone in boundaries:
+        current_dist = fast_dist(pos_car, cone)
+        if current_dist < last_dist:
+            nearest_cone = cone
+            last_dist = current_dist
+
     return nearest_cone
 
 
@@ -91,21 +101,7 @@ class ParticlePursuit(PurePursuit):
     def interp_track_callback(self, cone_pos_msg: ConeDetectionStamped):
         self.get_logger().debug("Map received")
 
-        ## MOVED FROM CALLBACK AS THIS ONLY HAS TO HAPPEN ONCE
-        # get left and right cones
-        left_cones = [c for c in cone_pos_msg.cones if c.color == LEFT_CONE_COLOUR]
-        right_cones = [c for c in cone_pos_msg.cones if c.color == RIGHT_CONE_COLOUR]
-
-        if len(left_cones) == 0 or len(right_cones) == 0:  # no cones
-            return
-
-        # order cones by distance from car
-        left_cones.sort(key=lambda c: c.location.x)
-        right_cones.sort(key=lambda c: c.location.x)
-
-        # make one array with alternating left and right cones
-        cones = left_cones + right_cones
-        self.track = np.array([[c.location.x, c.location.y] for c in cones])
+        self.track = np.array([[c.location.x, c.location.y] for c in cone_pos_msg.cones])
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path and map has been recieved,
@@ -123,13 +119,13 @@ class ParticlePursuit(PurePursuit):
 
         # avoidance from potential field
         # get position of nearest cone
-        closest_cone = get_closest_cone(pose, self.track)
+        pos_nearestCone = get_closest_cone(pose, self.track)
         # maybe use fast_dist instead of dist later
-        closest_dist = dist(pose[:2], closest_cone)
+        d_nearestCone = dist(pose[:2], pos_nearestCone)
 
         # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
         danger_level: float = np.clip(
-            (closest_dist ** (1 - self.cone_danger) - self.d_max ** (1 - self.cone_danger))
+            (d_nearestCone ** (1 - self.cone_danger) - self.d_max ** (1 - self.cone_danger))
             / (self.d_min ** (1 - self.cone_danger) - self.d_max ** (1 - self.cone_danger)),
             0,
             1,
@@ -141,7 +137,7 @@ class ParticlePursuit(PurePursuit):
 
         # determine angles of forces acting on car (angles in rads)
         attractive_heading: float = angle(pose[:2], rvwp[:2])
-        repulsive_heading: float = angle(pose[:2], closest_cone) + pi  # opposite heading of position
+        repulsive_heading: float = angle(pose[:2], pos_nearestCone) + pi  # opposite heading of position
 
         # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
         if repulsive_heading > pose[2] and repulsive_heading <= pose[2] + pi:
@@ -163,16 +159,19 @@ class ParticlePursuit(PurePursuit):
         ]
 
         # get angle of resultant vector as desired heading of the car in degrees
-        des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
-        steering_angle: float = ((pose[2] * 180 / pi) - des_heading_ang) * self.Kp_ang * -1
+        # des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
+        # steering_angle: float = ((pose[2] * 180 / pi) - des_heading_ang) * self.Kp_ang
+        des_heading_ang = angle([0, 0], pos_resultant_relCar)
+        error = wrap_to_pi(pose[2] - des_heading_ang)
+        steering_angle: float = np.rad2deg(error) * self.Kp_ang
+
         target_vel: float = self.vel_max
 
-        # des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        # error = wrap_to_pi(theta - des_heading_ang)
-        # steering_angle = np.rad2deg(error) * self.Kp_ang
-
         if self.DEBUG_IMG:
-            debug_img = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
+            img_data = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
+            debug_img = self.draw_forces(
+                img_data, pose[:2], pos_nearestCone, pos_attractive_relCar, pos_repulsive_relcar
+            )
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
@@ -182,9 +181,56 @@ class ParticlePursuit(PurePursuit):
         self.control_publisher.publish(control_msg)
 
         self.count += 1
-        if self.count == 50:
+        if self.count == 30:
             self.count = 0
-            self.get_logger().info(f"{(time.time() - start_time) * 1000}")
+            self.get_logger().debug(f"{(time.time() - start_time) * 1000}")
+
+            # format to 2 decimal places the desired heading and steering angle
+            self.get_logger().info(f"Desired: {des_heading_ang:.2f}, Steering: {steering_angle:.2f}")
+
+    def draw_forces(self, img_data, position, pos_nearestCone, pos_attractive_relCar, pos_repulsive_relcar):
+        debug_img = img_data[0]
+        scale = img_data[1]
+        x_offset = img_data[2]
+        y_offset = img_data[3]
+
+        # this is flipped on output, so unflip it
+        cv2.flip(debug_img, 1, debug_img)
+        # draw the nearest cone
+        cv2.drawMarker(
+            debug_img,
+            (int(pos_nearestCone[0] * scale + x_offset), int(pos_nearestCone[1] * scale + y_offset)),
+            (255, 255, 0),
+            markerType=cv2.MARKER_TRIANGLE_UP,
+            markerSize=10,
+            thickness=4,
+        )
+        # draw the attractive force
+        cv2.arrowedLine(
+            debug_img,
+            (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
+            (
+                int((position[0] + pos_attractive_relCar[0]) * scale + x_offset),
+                int((position[1] + pos_attractive_relCar[1]) * scale + y_offset),
+            ),
+            (0, 255, 0),
+            3,
+        )
+        # draw the repulsive force
+        cv2.arrowedLine(
+            debug_img,
+            (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
+            (
+                int((position[0] + pos_repulsive_relcar[0]) * scale + x_offset),
+                int((position[1] + pos_repulsive_relcar[1]) * scale + y_offset),
+            ),
+            (0, 0, 255),
+            3,
+        )
+        # re-flip the image
+        cv2.flip(debug_img, 1, debug_img)
+
+        return debug_img
 
 
 def main(args=None):  # begin ros node
