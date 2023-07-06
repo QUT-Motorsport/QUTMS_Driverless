@@ -34,6 +34,7 @@ class PurePursuit(Node):
     following = False
     driving = False
     fallback_path_points_offset = 0
+    cog2axle = 0.5  # could be a declared parameter
 
     def __init__(self, node_name="pure_pursuit_node"):
         super().__init__(node_name)
@@ -71,17 +72,24 @@ class PurePursuit(Node):
             self.following = True
             self.get_logger().info("Lap completed, following commencing")
 
-    def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
+    def get_wheel_position(self, pose: Pose) -> List[float]:
         """
         Gets the position of the steering axle from the car's center of gravity and heading
-        * param pos_cog: [x,y] coords of the car's center of gravity
-        * param heading: car's heading in rads
-        * return: [x,y] position of steering axle
+        * param pose: Pose msg of the car's center of gravity
+        * return: [x,y,th] position of steering axle
         """
-        cog2axle = 0.5  # m
-        x_axle = pos_cog[0] + cos(heading) * cog2axle
-        y_axle = pos_cog[1] + sin(heading) * cog2axle
+        # i, j, k angles in rad
+        heading = quat2euler(
+            [
+                pose.orientation.w,
+                pose.orientation.x,
+                pose.orientation.y,
+                pose.orientation.z,
+            ]
+        )[2]
 
+        x_axle = pose.position.x + cos(heading) * self.cog2axle
+        y_axle = pose.position.y + sin(heading) * self.cog2axle
         return [x_axle, y_axle, heading]
 
     def get_rvwp(self, car_pos: List[float]):
@@ -218,11 +226,12 @@ class PurePursuit(Node):
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = self.get_rvwp(position)
+        rvwp: List[float] = self.get_rvwp(pose)
 
-        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        error = wrap_to_pi(theta - des_heading_ang)
+        des_heading_ang = angle(pose[:2], [rvwp[0], rvwp[1]])
+        error = wrap_to_pi(pose[2] - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
+        target_vel = self.vel_max
 
         # velocity control based on steering angle
         desired_vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)
