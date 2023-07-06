@@ -21,7 +21,7 @@ def generate_launch_description():
             ),
             Node(
                 package="path_follower",
-                executable="pure_pursuit",
+                executable="particle_pursuit_inherit",
             ),
             Node(
                 package="planners",
