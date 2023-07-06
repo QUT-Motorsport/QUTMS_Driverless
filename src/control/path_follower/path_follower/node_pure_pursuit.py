@@ -348,7 +348,7 @@ class PurePursuit(Node):
         text_vel = "Velocity: " + str(round(velocity, 2))
         cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
 
-        return debug_img
+        return debug_img, scale, x_offset, y_offset
 
 
 def main(args=None):  # begin ros node
