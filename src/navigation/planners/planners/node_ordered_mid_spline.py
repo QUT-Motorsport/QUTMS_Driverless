@@ -1,4 +1,4 @@
-from math import atan2, pi, sqrt
+from math import atan2, cos, pi, sin, sqrt
 
 import numpy as np
 import scipy.interpolate as scipy_interpolate
@@ -6,7 +6,6 @@ from transforms3d.euler import euler2quat
 
 import rclpy
 from rclpy.node import Node
-from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
@@ -14,7 +13,7 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
 
-from driverless_common.common import angle, midpoint
+from driverless_common.common import angle, dist, midpoint
 
 from typing import List, Tuple
 
@@ -118,11 +117,27 @@ def sort_cones(cones, start_index=None, end_index=None):
     return [cones[order[i]] for i in range(len(order))]
 
 
+def new_coordinates(x, y, angle_rads, distance):
+    """
+    Calculate new coordinates after moving from an initial point in a specified direction and distance.
+
+    * param x: float, x-coordinate of the initial point
+    * param y: float, y-coordinate of the initial point
+    * param angle_rads: float, angle in radians to move from initial point
+    * param distance: float, distance to move from the initial point
+    * return: tuple (x_new, y_new, 0), new coordinates after moving
+    """
+    x_new = x + distance * cos(angle_rads)
+    y_new = y + distance * sin(angle_rads)
+    return (x_new, y_new, 0)
+
+
 class OrderedMapSpline(Node):
     spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
     planning = False
     current_track = None
+    interp_cone_num = 3  # number of points interpolated between each pair of cones
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
@@ -133,8 +148,9 @@ class OrderedMapSpline(Node):
         self.create_timer(0.1, self.planning_callback)
 
         # publishers
-        self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
-        self.spline_path_pub: Publisher = self.create_publisher(Path, "/planner/spline_path", 1)
+        self.qutms_path_pub = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
+        self.spline_path_pub = self.create_publisher(Path, "/planner/spline_path", 1)
+        self.interpolated_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
 
         self.get_logger().info("---Ordered path planner node initalised---")
 
@@ -152,6 +168,7 @@ class OrderedMapSpline(Node):
         if not self.planning:
             return
 
+        # extract data out of message
         cones = self.current_track.cones
 
         yellows: List[List[float]] = []
@@ -166,6 +183,7 @@ class OrderedMapSpline(Node):
             elif cone.color == Cone.ORANGE_BIG:
                 oranges.append([cone.location.x, cone.location.y])
 
+        # place orange cones on their respective sides of the track
         parsed_orange_cones = self.parse_orange_cones(oranges)
         if len(parsed_orange_cones) == 0:
             return
@@ -257,6 +275,58 @@ class OrderedMapSpline(Node):
         qutms_path_msg = QUTMSPathStamped(path=qutms_path)
         qutms_path_msg.header.frame_id = "track"
         self.qutms_path_pub.publish(qutms_path_msg)
+
+        # interpolate boundary points between cones
+        interpolated_blues = self.interpolate_boundary(ordered_blues, Cone.BLUE)
+        interpolated_yellows = self.interpolate_boundary(ordered_yellows, Cone.YELLOW)
+        # Publish list of ordered and interpolated cones
+        interpolated_cones = interpolated_blues + interpolated_yellows
+        interpolated_cones_msg = ConeDetectionStamped(cones=interpolated_cones)
+        interpolated_cones_msg.header = self.current_track.header
+        self.interpolated_cones_pub.publish(interpolated_cones_msg)
+
+    def interpolate_boundary(self, cones, colour):
+        """
+        Interpolate boundary points between cones at a given distance
+        """
+
+        # interpolate between each pair of cones to create a list of Cones
+        # use new coordinates function to calculate new points between cones
+        interpolated_cones: List[Cone] = []
+        for i in range(len(cones)):
+            current_cone = cones[i]
+            next_cone = cones[(i + 1) % len(cones)]  # wrap around to first cone
+
+            # get angle between current cone and next cone
+            angle_rads = angle(current_cone, next_cone)
+
+            # keep between 360
+            if angle_rads > pi:
+                angle_rads = angle_rads - 2 * pi
+            elif angle_rads < -pi:
+                angle_rads = angle_rads + 2 * pi
+
+            # calculate distance between cones
+            interp_sub_dist = dist(current_cone, next_cone) / self.interp_cone_num
+
+            # interpolate between cones
+            for j in range(self.interp_cone_num):
+                # distance increases by the sub distance each time
+                cone_location = new_coordinates(
+                    current_cone[0],
+                    current_cone[1],
+                    angle_rads,
+                    interp_sub_dist * (j + 1),
+                )
+                # create new cone msg
+                cone = Cone()
+                cone.location.x = cone_location[0]
+                cone.location.y = cone_location[1]
+                cone.location.z = 0.0
+                cone.color = colour
+                interpolated_cones.append(cone)
+
+        return interpolated_cones
 
     def parse_orange_cones(self, orange_cones: List[List[float]]) -> List[List[float]]:
         """
