@@ -20,8 +20,9 @@ setup(
     entry_points={
         "console_scripts": [
             "pure_pursuit = path_follower.node_pure_pursuit:main",
-            "particle_pursuit = path_follower.node_particle_pursuit:main",
             "pure_pursuit_kdtree = path_follower.node_pure_pursuit_kdtree:main",
+            "particle_pursuit = path_follower.node_particle_pursuit:main",
+            "particle_pursuit_inherit = path_follower.node_particle_pursuit_inherit:main",
         ],
     },
 )

@@ -27,33 +27,15 @@ WIDTH = 1000
 HEIGHT = 1000
 
 
-def get_wheel_position(pos_cog: List[float], heading: float) -> List[float]:
-    """
-    Gets the position of the steering axle from the car's center of gravity and heading
-    * param pos_cog: [x,y] coords of the car's center of gravity
-    * param heading: car's heading in rads
-    * return: [x,y] position of steering axle
-    """
-    cog2axle = 0.5  # m
-    x_axle = pos_cog[0] + cos(heading) * cog2axle
-    y_axle = pos_cog[1] + sin(heading) * cog2axle
-
-    return [x_axle, y_axle, heading]
-
-
 class PurePursuit(Node):
     path = np.array([])
     count = 0
-    img_initialised = False
-    scale = 1
-    x_offset = 0
-    y_offset = 0
     following = False
     r2d = False
     fallback_path_points_offset = 0
 
-    def __init__(self):
-        super().__init__("pure_pursuit_node")
+    def __init__(self, node_name: str = "pure_pursuit_node"):
+        super().__init__(node_name)
 
         # subscribers
         self.create_subscription(Bool, "/system/r2d", self.r2d_callback, 10)
@@ -72,7 +54,8 @@ class PurePursuit(Node):
         self.vel_max = self.declare_parameter("vel_max", 5.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
-        self.get_logger().info("---Pure pursuit follower initalised---")
+        if node_name == "pure_pursuit_node":
+            self.get_logger().info("---Pure pursuit follower initalised---")
 
     def r2d_callback(self, msg: Bool):
         if msg.data:
@@ -88,6 +71,19 @@ class PurePursuit(Node):
             self.get_logger().info("Lap completed, following commencing")
         else:
             self.following = False
+
+    def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
+        """
+        Gets the position of the steering axle from the car's center of gravity and heading
+        * param pos_cog: [x,y] coords of the car's center of gravity
+        * param heading: car's heading in rads
+        * return: [x,y] position of steering axle
+        """
+        cog2axle = 0.5  # m
+        x_axle = pos_cog[0] + cos(heading) * cog2axle
+        y_axle = pos_cog[1] + sin(heading) * cog2axle
+
+        return [x_axle, y_axle, heading]
 
     def get_rvwp(self, car_pos: List[float]):
         """
@@ -150,27 +146,6 @@ class PurePursuit(Node):
         # path points that should be skipped.
         self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
 
-        if not self.img_initialised:
-            # get dimensions of the path
-            path_x_min = np.min(self.path[:, 0])
-            path_x_max = np.max(self.path[:, 0])
-            path_y_min = np.min(self.path[:, 1])
-            path_y_max = np.max(self.path[:, 1])
-
-            # scale the path to fit in a 1000x1000 image, pixels per meter
-            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
-
-            # add a border around the path for all elements
-            self.scale *= 0.90
-
-            # set offsets to the corner of the image
-            self.x_offset = -path_x_min * self.scale
-            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
-            self.y_offset = -path_y_min * self.scale
-            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
-
-            self.img_initialised = True
-
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved, it's a following lap, and we are ready to drive
         if not self.following or not self.r2d or self.path.size == 0:
@@ -189,7 +164,7 @@ class PurePursuit(Node):
         )[2]
         # get the position of the center of gravity
         position_cog: List[float] = [msg.pose.pose.position.x, msg.pose.pose.position.y]
-        position: List[float] = get_wheel_position(position_cog, theta)
+        position: List[float] = self.get_wheel_position(position_cog, theta)
 
         # rvwp control
         rvwp: List[float] = self.get_rvwp(position)
@@ -199,45 +174,7 @@ class PurePursuit(Node):
         steering_angle = np.rad2deg(error) * self.Kp_ang
 
         if self.DEBUG_IMG:
-            debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
-            for i in range(0, len(self.path) - 1):
-                cv2.line(
-                    debug_img,
-                    (
-                        int(self.path[i, 0] * self.scale + self.x_offset),
-                        int(self.path[i, 1] * self.scale + self.y_offset),
-                    ),
-                    (
-                        int(self.path[i + 1, 0] * self.scale + self.x_offset),
-                        int(self.path[i + 1, 1] * self.scale + self.y_offset),
-                    ),
-                    (255, 0, 0),
-                    thickness=5,
-                )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(rvwp[0] * self.scale + self.x_offset), int(rvwp[1] * self.scale + self.y_offset)),
-                (0, 255, 0),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(position[0] * self.scale + self.x_offset), int(position[1] * self.scale + self.y_offset)),
-                (0, 0, 255),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-            cv2.flip(debug_img, 1, debug_img)
-
-            text_angle = "Steering: " + str(round(steering_angle, 2))
-            cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            text_vel = "Velocity: " + str(round(self.vel_max, 2))
-            cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
+            debug_img = self.draw_rvwp(self.path, rvwp, position, steering_angle, self.vel_max)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
@@ -250,6 +187,67 @@ class PurePursuit(Node):
         if self.count == 50:
             self.count = 0
             self.get_logger().info(f"{(time.time() - start_time) * 1000}")
+
+    def draw_rvwp(self, rvwp: List[float], position: List[float], steering_angle: float, velocity: float):
+        # get dimensions of the path
+        path_x_min = np.min(self.path[:, 0])
+        path_x_max = np.max(self.path[:, 0])
+        path_y_min = np.min(self.path[:, 1])
+        path_y_max = np.max(self.path[:, 1])
+
+        # scale the path to fit in a 1000x1000 image, pixels per meter
+        scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
+
+        # add a border around the path for all elements
+        scale *= 0.90
+
+        # set offsets to the corner of the image
+        x_offset = -path_x_min * scale
+        x_offset += (WIDTH - (path_x_max - path_x_min) * scale) / 2
+        y_offset = -path_y_min * scale
+        y_offset += (HEIGHT - (path_y_max - path_y_min) * scale) / 2
+
+        debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
+        for i in range(0, len(self.path) - 1):
+            cv2.line(
+                debug_img,
+                (
+                    int(self.path[i, 0] * scale + x_offset),
+                    int(self.path[i, 1] * scale + y_offset),
+                ),
+                (
+                    int(self.path[i + 1, 0] * scale + x_offset),
+                    int(self.path[i + 1, 1] * scale + y_offset),
+                ),
+                (255, 0, 0),
+                thickness=5,
+            )
+
+        cv2.drawMarker(
+            debug_img,
+            (int(rvwp[0] * scale + x_offset), int(rvwp[1] * scale + y_offset)),
+            (0, 255, 0),
+            markerType=cv2.MARKER_TRIANGLE_UP,
+            markerSize=10,
+            thickness=4,
+        )
+
+        cv2.drawMarker(
+            debug_img,
+            (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
+            (0, 0, 255),
+            markerType=cv2.MARKER_TRIANGLE_UP,
+            markerSize=10,
+            thickness=4,
+        )
+        cv2.flip(debug_img, 1, debug_img)
+
+        text_angle = "Steering: " + str(round(steering_angle, 2))
+        cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
+        text_vel = "Velocity: " + str(round(velocity, 2))
+        cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
+
+        return debug_img
 
 
 def main(args=None):  # begin ros node
