@@ -173,7 +173,7 @@ class PurePursuit(Node):
         target_vel = self.vel_max
 
         if self.DEBUG_IMG:
-            debug_img = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
+            debug_img = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)[0]
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
@@ -246,7 +246,7 @@ class PurePursuit(Node):
         text_vel = "Velocity: " + str(round(velocity, 2))
         cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
 
-        return debug_img
+        return debug_img, scale, x_offset, y_offset
 
 
 def main(args=None):  # begin ros node
