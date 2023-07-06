@@ -12,7 +12,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool, UInt8
 
@@ -33,6 +33,7 @@ class PurePursuit(Node):
     following = False
     r2d = False
     fallback_path_points_offset = 0
+    cog2axle = 0.5  # could be a declared parameter
 
     def __init__(self, node_name: str = "pure_pursuit_node"):
         super().__init__(node_name)
@@ -72,17 +73,24 @@ class PurePursuit(Node):
         else:
             self.following = False
 
-    def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
+    def get_wheel_position(self, pose: Pose) -> List[float]:
         """
         Gets the position of the steering axle from the car's center of gravity and heading
-        * param pos_cog: [x,y] coords of the car's center of gravity
-        * param heading: car's heading in rads
-        * return: [x,y] position of steering axle
+        * param pose: Pose msg of the car's center of gravity
+        * return: [x,y,th] position of steering axle
         """
-        cog2axle = 0.5  # m
-        x_axle = pos_cog[0] + cos(heading) * cog2axle
-        y_axle = pos_cog[1] + sin(heading) * cog2axle
+        # i, j, k angles in rad
+        heading = quat2euler(
+            [
+                pose.orientation.w,
+                pose.orientation.x,
+                pose.orientation.y,
+                pose.orientation.z,
+            ]
+        )[2]
 
+        x_axle = pose.position.x + cos(heading) * self.cog2axle
+        y_axle = pose.position.y + sin(heading) * self.cog2axle
         return [x_axle, y_axle, heading]
 
     def get_rvwp(self, car_pos: List[float]):
@@ -153,34 +161,25 @@ class PurePursuit(Node):
 
         start_time = time.time()
 
-        # i, j, k angles in rad
-        theta = quat2euler(
-            [
-                msg.pose.pose.orientation.w,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-            ]
-        )[2]
         # get the position of the center of gravity
-        position_cog: List[float] = [msg.pose.pose.position.x, msg.pose.pose.position.y]
-        position: List[float] = self.get_wheel_position(position_cog, theta)
+        pose: List[float] = self.get_wheel_position(msg.pose.pose)
 
         # rvwp control
-        rvwp: List[float] = self.get_rvwp(position)
+        rvwp: List[float] = self.get_rvwp(pose)
 
-        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        error = wrap_to_pi(theta - des_heading_ang)
+        des_heading_ang = angle(pose[:2], [rvwp[0], rvwp[1]])
+        error = wrap_to_pi(pose[2] - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
+        target_vel = self.vel_max
 
         if self.DEBUG_IMG:
-            debug_img = self.draw_rvwp(self.path, rvwp, position, steering_angle, self.vel_max)
+            debug_img = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = self.vel_max
+        control_msg.drive.speed = target_vel
         self.control_publisher.publish(control_msg)
 
         self.count += 1

@@ -28,7 +28,7 @@ WIDTH = 1000
 HEIGHT = 1000
 
 
-def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> float:
+def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> List[float]:
     """
     Gets the position of the nearest cone to the car.
     * param pos_car: [x,y] coords of car position
@@ -110,39 +110,75 @@ class ParticlePursuit(PurePursuit):
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path and map has been recieved,
         # it's a following lap, and we are ready to drive
-        if not self.following or not self.r2d or self.path.size == 0:  # or self.track.size == 0:
+        if not self.following or not self.r2d or self.path.size == 0 or self.track.size == 0:
             return
 
         start_time = time.time()
 
-        # i, j, k angles in rad
-        theta = quat2euler(
-            [
-                msg.pose.pose.orientation.w,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-            ]
-        )[2]
         # get the position of the center of gravity
-        position_cog: List[float] = [msg.pose.pose.position.x, msg.pose.pose.position.y]
-        position: List[float] = self.get_wheel_position(position_cog, theta)
+        pose: List[float] = self.get_wheel_position(msg.pose.pose)
 
         # rvwp control
-        rvwp: List[float] = self.get_rvwp(position)
+        rvwp: List[float] = self.get_rvwp(pose)
 
-        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        error = wrap_to_pi(theta - des_heading_ang)
-        steering_angle = np.rad2deg(error) * self.Kp_ang
+        # avoidance from potential field
+        # get position of nearest cone
+        closest_cone = get_closest_cone(pose, self.track)
+        # maybe use fast_dist instead of dist later
+        closest_dist = dist(pose[:2], closest_cone)
+
+        # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
+        danger_level: float = np.clip(
+            (closest_dist ** (1 - self.cone_danger) - self.d_max ** (1 - self.cone_danger))
+            / (self.d_min ** (1 - self.cone_danger) - self.d_max ** (1 - self.cone_danger)),
+            0,
+            1,
+        )
+
+        # determine attractive and repulsive forces acting on car
+        f_attractive: float = self.k_attractive * (dist(rvwp[:2], pose[:2]))  # car is attracted to lookahead
+        f_repulsive: float = self.k_repulsive * danger_level  # car is repulsed by nearest cone
+
+        # determine angles of forces acting on car (angles in rads)
+        attractive_heading: float = angle(pose[:2], rvwp[:2])
+        repulsive_heading: float = angle(pose[:2], closest_cone) + pi  # opposite heading of position
+
+        # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
+        if repulsive_heading > pose[2] and repulsive_heading <= pose[2] + pi:
+            repulsive_heading = pose[2] + 0.5 * pi
+        else:
+            repulsive_heading = pose[2] - 0.5 * pi
+
+        # get coords of vectors (forces) acting on car, relative to the car as origin
+        pos_attractive_relCar: List[float] = [
+            f_attractive * cos(attractive_heading),
+            f_attractive * sin(attractive_heading),
+        ]
+        pos_repulsive_relcar: List[float] = [f_repulsive * cos(repulsive_heading), f_repulsive * sin(repulsive_heading)]
+
+        # get coords of resultant vector (force) acting on car, relative to the car as origin
+        pos_resultant_relCar: List[float] = [
+            pos_attractive_relCar[0] + pos_repulsive_relcar[0],
+            pos_attractive_relCar[1] + pos_repulsive_relcar[1],
+        ]
+
+        # get angle of resultant vector as desired heading of the car in degrees
+        des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
+        steering_angle: float = ((pose[2] * 180 / pi) - des_heading_ang) * self.Kp_ang * -1
+        target_vel: float = self.vel_max
+
+        # des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
+        # error = wrap_to_pi(theta - des_heading_ang)
+        # steering_angle = np.rad2deg(error) * self.Kp_ang
 
         if self.DEBUG_IMG:
-            debug_img = self.draw_rvwp(self.path, rvwp, position, steering_angle, self.vel_max)
+            debug_img = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = self.vel_max
+        control_msg.drive.speed = target_vel
         self.control_publisher.publish(control_msg)
 
         self.count += 1
