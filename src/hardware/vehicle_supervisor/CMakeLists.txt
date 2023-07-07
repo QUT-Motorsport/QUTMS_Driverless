@@ -15,13 +15,13 @@ find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-include_directories(include)
-
 add_compile_definitions(QUTMS_CAN_VESC)
 add_compile_definitions(QUTMS_CAN_VCU)
 add_compile_definitions(QUTMS_CAN_DVL)
 add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_SW)
+
+include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
 
@@ -40,8 +40,9 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 add_executable(vehicle_supervisor_node src/node_supervisor.cpp ${SOURCES})
 add_executable(vehicle_supervisor_slim_node src/node_supervisor_slim.cpp ${SOURCES})
 ament_target_dependencies(vehicle_supervisor_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
-target_include_directories(vehicle_supervisor_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 ament_target_dependencies(vehicle_supervisor_slim_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
+target_include_directories(vehicle_supervisor_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(vehicle_supervisor_slim_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 
 target_include_directories(vehicle_supervisor_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

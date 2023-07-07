@@ -588,7 +588,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Ackermann -> sub to acceleration command
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/accel_command", QOS_ALL, std::bind(&ASSupervisor::ackermann_callback, this, _1));
+            "/control/accel_command", QOS_LATEST, std::bind(&ASSupervisor::ackermann_callback, this, _1));
 
         // Heartbeat
         this->heartbeat_timer =
@@ -609,6 +609,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Shutdown emergency
         this->shutdown_sub = this->create_subscription<driverless_msgs::msg::Shutdown>(
             "/system/shutdown", QOS_LATEST, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };

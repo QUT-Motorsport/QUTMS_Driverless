@@ -7,6 +7,7 @@
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/res.hpp"
@@ -125,7 +126,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // VCU hearbeat
         else if (qutms_masked_id == VCU_Heartbeat_ID) {
             uint8_t VCU_ID = msg.id & 0xF;
-            RCLCPP_INFO(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
+            RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
             // data vector to uint8_t array
             uint8_t data[8];
@@ -457,7 +458,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // CAN
         this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", 10, std::bind(&ASSupervisor::can_heartbeat_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_heartbeat_callback, this, _1));
 
         // State pub
         this->state_pub_ = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
@@ -468,17 +469,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Reset pub
         this->reset_pub_ = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
-        // Steering
+        // Steering sub
         this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", 10, std::bind(&ASSupervisor::steering_angle_callback, this, _1));
+            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1));
 
-        // Velocity
+        // Velocity sub
         this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/velocity", 10, std::bind(&ASSupervisor::velocity_callback, this, _1));
+            "/vehicle/velocity", QOS_LATEST, std::bind(&ASSupervisor::velocity_callback, this, _1));
 
         // Control -> sub to acceleration command
         this->control_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/accel_command", 10, std::bind(&ASSupervisor::control_callback, this, _1));
+            "/control/accel_command", QOS_LATEST, std::bind(&ASSupervisor::control_callback, this, _1));
 
         // AS Heartbeat
         this->heartbeat_timer_ =
@@ -499,6 +500,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Shutdown emergency
         this->shutdown_sub_ = this->create_subscription<driverless_msgs::msg::Shutdown>(
             "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };
