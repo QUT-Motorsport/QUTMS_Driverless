@@ -8,11 +8,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint, State
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from std_msgs.msg import UInt8
 
 from driverless_common.common import QOS_LATEST, angle, midpoint
 
@@ -129,7 +128,7 @@ class OrderedMapSpline(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, QOS_LATEST)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_timer(0.1, self.planning_callback)
 
         # publishers
@@ -138,8 +137,8 @@ class OrderedMapSpline(Node):
 
         self.get_logger().info("---Ordered path planner node initalised---")
 
-    def lap_callback(self, msg: UInt8):
-        if msg.data > 0:
+    def state_callback(self, msg: State):
+        if msg.state == State.DRIVING and msg.lap_count > 0 and not self.planning:
             self.planning = True
             self.get_logger().info("Lap completed, planning commencing")
 
