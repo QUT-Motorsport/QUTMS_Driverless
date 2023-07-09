@@ -21,7 +21,7 @@ class MissionControl(Node):
         self.get_logger().info("---Mission control node initialised---")
 
     def callback(self, status: State):
-        if status.mission != State.MISSION_NONE and not self.mission_launched:
+        if status.mission != State.MISSION_NONE and status.state != State.EMERGENCY and not self.mission_launched:
             target_mission = INT_MISSION_TYPE[status.mission].value
             launch_file = target_mission + ".launch.py"
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", launch_file]
