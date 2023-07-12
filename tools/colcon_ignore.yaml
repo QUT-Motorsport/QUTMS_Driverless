@@ -5,9 +5,7 @@ colcon_ignore:
 - jetson_machine
 - roscube_machine
 - sensors
-- vehicle_supervisor
 - velocity_controller
-- canbus
 - car_status
 - steering_actuator
 - yaw_controller
