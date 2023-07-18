@@ -14,7 +14,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, Reset
+from driverless_msgs.msg import ConeDetectionStamped, ConeWithCovariance, State
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped, Quaternion, TransformStamped
 
 from driverless_common.common import QOS_ALL, QOS_LATEST, wrap_to_pi
@@ -40,15 +40,17 @@ class OdomSlam(Node):
     properties = np.array([])
     prev_pos: Optional[Tuple[float, float]] = None
     initial_ang: Optional[float] = None
+    mapping = False
+    discovered = False
 
     def __init__(self):
         super().__init__("sbg_slam_node")
 
         self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
-        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_ALL)
-        self.create_subscription(Reset, "/system/reset", self.reset_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, QOS_LATEST)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -63,11 +65,16 @@ class OdomSlam(Node):
 
         self.get_logger().info("---Odom SLAM node initialised---")
 
-    def reset_callback(self, msg):
-        self.get_logger().info("Resetting Map")
-        self.state = np.array([0.0, 0.0, 0.0])
-        self.sigma = np.diag([0.0, 0.0, 0.0])
-        self.properties = np.array([])
+    def state_callback(self, msg: State):
+        # we haven't started driving yet
+        if msg.state == State.DRIVING and msg.lap_count == 0:
+            self.mapping = True
+
+        # we have finished mapping
+        if msg.lap_count > 0 and self.mapping:
+            self.get_logger().info("Lap completed, mapping completed")
+            self.discovered = True
+            self.mapping = False
 
     def timer_callback(self):
         """
@@ -126,6 +133,9 @@ class OdomSlam(Node):
         if self.last_odom_pose is None:
             return
 
+        if not self.mapping:
+            return
+
         start: float = time.perf_counter()
 
         # process detected cones
@@ -173,7 +183,7 @@ class OdomSlam(Node):
                     updated_detection.update(state, cov, detection.colour, FRAME_COUNT)
                     detection = updated_detection
 
-            if not detection.tracked and msg.header.frame_id == "velodyne":
+            if not detection.tracked and msg.header.frame_id == "velodyne" and not self.discovered:
                 detection.set_world_coords(map_coords)
                 self.properties = np.append(self.properties, detection)
                 # initialise new landmark

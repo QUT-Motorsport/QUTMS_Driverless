@@ -27,14 +27,14 @@ def generate_launch_description():
                 package="planners",
                 executable="ordered_mid_spline",
             ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         os.path.join(nav_package_share, "launch", "cone_association_slam.launch.py")
+            #     )
+            # ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(nav_package_share, "launch", "cone_association_slam.launch.py")
-                ),
-                launch_arguments={
-                    "slam_params_file": os.path.join(nav_package_share, "config/slam_params.yaml")
-                }.items(),
-            )
+                PythonLaunchDescriptionSource(os.path.join(nav_package_share, "launch", "odom_slam.launch.py"))
+            ),
             # Node(
             #     package="steering_actuator",
             #     executable="steering_actuator_node",

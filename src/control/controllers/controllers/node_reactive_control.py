@@ -69,7 +69,7 @@ class ReactiveController(Node):
             self.driving = True
             self.get_logger().info("Ready to drive, discovery started")
         # lap has been completed, stop this controller
-        if msg.lap_count > 0 and not self.discovering:
+        if msg.lap_count > 0 and self.discovering:
             self.discovering = False
             self.get_logger().debug("Lap completed, discovery stopped")
 

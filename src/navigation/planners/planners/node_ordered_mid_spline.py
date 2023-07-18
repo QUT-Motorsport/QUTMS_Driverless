@@ -1,6 +1,6 @@
 from math import atan2, pi, sqrt
-from colour import Color
 
+from colour import Color
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 from transforms3d.euler import euler2quat
@@ -14,8 +14,8 @@ from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from visualization_msgs.msg import MarkerArray, Marker
 from std_msgs.msg import ColorRGBA
+from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.common import QOS_LATEST, angle, midpoint
 
@@ -142,7 +142,7 @@ def parse_orange_cones(node_logger, orange_cones: List[List[float]]) -> List[Lis
     return [blue_cones[0], blue_cones[1], yellow_cones[0], yellow_cones[1]]
 
 
-def create_marker_array(ordered_cones: List[List[float]], marker_array: MarkerArray, init: int=0) -> MarkerArray:
+def create_marker_array(ordered_cones: List[List[float]], marker_array: MarkerArray, init: int = 0) -> MarkerArray:
     red = Color("red")
     blue = Color("blue")
     col_range = list(blue.range_to(red, len(ordered_cones)))
@@ -150,7 +150,7 @@ def create_marker_array(ordered_cones: List[List[float]], marker_array: MarkerAr
     for i, cone in enumerate(ordered_cones):
         marker = Marker()
         marker.header.frame_id = "track"
-        marker.id = i+init
+        marker.id = i + init
         marker.type = Marker.CYLINDER
         marker.action = Marker.ADD
         marker.pose.position.x = cone[0]
@@ -163,6 +163,7 @@ def create_marker_array(ordered_cones: List[List[float]], marker_array: MarkerAr
         marker_array.markers.append(marker)
 
     return marker_array
+
 
 class OrderedMapSpline(Node):
     spline_const = 10  # number of points per cone
@@ -310,6 +311,7 @@ class OrderedMapSpline(Node):
         qutms_path_msg = QUTMSPathStamped(path=qutms_path)
         qutms_path_msg.header.frame_id = "track"
         self.qutms_path_pub.publish(qutms_path_msg)
+
 
 def main(args=None):
     # begin ros node
