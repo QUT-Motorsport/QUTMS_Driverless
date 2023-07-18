@@ -5,8 +5,8 @@ from rclpy.node import Node
 
 from driverless_msgs.msg import State
 
-from driverless_common.status_constants import INT_MISSION_TYPE
 from driverless_common.common import QOS_LATEST
+from driverless_common.status_constants import INT_MISSION_TYPE
 
 
 class MissionControl(Node):

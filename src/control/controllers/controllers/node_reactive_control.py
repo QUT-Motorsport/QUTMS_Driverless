@@ -1,5 +1,6 @@
-import numpy as np
 import time
+
+import numpy as np
 
 import rclpy
 from rclpy.node import Node

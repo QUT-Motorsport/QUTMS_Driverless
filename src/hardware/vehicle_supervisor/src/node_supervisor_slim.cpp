@@ -488,8 +488,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             "/system/laps_completed", QOS_LATEST, std::bind(&ASSupervisor::lap_counter_callback, this, _1));
 
         // AS Heartbeat
-        this->heartbeat_timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::dvl_heartbeat_callback, this));
+        this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
+                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this));
 
         // RES Alive
         this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),

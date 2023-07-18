@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import State, Shutdown
+from driverless_msgs.msg import Shutdown, State
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_msgs.msg import UInt8
 
@@ -38,7 +38,11 @@ class TrackdriveHandler(ShutdownNode):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
-        if self.mission_started and (self.last_x <= 0 and msg.pose.pose.position.x > 0) and abs(msg.pose.pose.position.y) < 2:
+        if (
+            self.mission_started
+            and (self.last_x <= 0 and msg.pose.pose.position.x > 0)
+            and abs(msg.pose.pose.position.y) < 2
+        ):
             if time.time() - self.last_lap_time > 20:  # 20 seconds at least between laps
                 self.laps += 1
                 self.last_lap_time = time.time()
