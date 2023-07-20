@@ -44,7 +44,7 @@ class OdomSlam(Node):
     discovered = False
 
     def __init__(self):
-        super().__init__("sbg_slam_node")
+        super().__init__("odom_slam_node")
 
         self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
@@ -133,7 +133,7 @@ class OdomSlam(Node):
         if self.last_odom_pose is None:
             return
 
-        if not self.mapping:
+        if not self.discovered and not self.mapping:
             return
 
         start: float = time.perf_counter()
