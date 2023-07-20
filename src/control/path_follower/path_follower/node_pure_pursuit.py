@@ -3,6 +3,8 @@ import time
 
 import cv2
 import numpy as np
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
 
@@ -57,7 +59,11 @@ class PurePursuit(Node):
         self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
         # sync subscribers pose + velocity
-        self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, QOS_LATEST)
+        # self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, QOS_LATEST)
+        self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
@@ -176,9 +182,22 @@ class PurePursuit(Node):
 
             self.img_initialised = True
 
-    def callback(self, msg: PoseWithCovarianceStamped):
+    # def callback(self, msg: PoseWithCovarianceStamped):
+    def timer_callback(self):
+        """
+        Listens to odom->base_footprint transform and updates the state.
+        Solution is to get the delta and add it to the previous state
+        and subtract the delta from the previous map->odom transform.
+        """
         # Only start once the path has been recieved, it's a following lap, and we are ready to drive
         if not self.following or not self.driving or self.path.size == 0:
+            return
+
+        try:
+            odom_to_base = self.tf_buffer.lookup_transform("odom", "base_footprint", rclpy.time.Time())
+            # map_to_odom = self.tf_buffer.lookup_transform("track", "odom", rclpy.time.Time())
+        except TransformException as e:
+            self.get_logger().warn("Transform exception: " + str(e))
             return
 
         start_time = time.time()
@@ -186,14 +205,14 @@ class PurePursuit(Node):
         # i, j, k angles in rad
         theta = quat2euler(
             [
-                msg.pose.pose.orientation.w,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
+                odom_to_base.transform.rotation.w,
+                odom_to_base.transform.rotation.x,
+                odom_to_base.transform.rotation.y,
+                odom_to_base.transform.rotation.z,
             ]
         )[2]
         # get the position of the center of gravity
-        position_cog: List[float] = [msg.pose.pose.position.x, msg.pose.pose.position.y]
+        position_cog: List[float] = [odom_to_base.transform.translation.x, odom_to_base.transform.translation.y]
         position: List[float] = get_wheel_position(position_cog, theta)
 
         # rvwp control
