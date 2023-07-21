@@ -20,3 +20,5 @@ uint8 MANUAL_DRIVING=1
 uint8 INSPECTION=2
 uint8 EBS_TEST=3
 uint8 TRACKDRIVE=4
+
+uint8 lap_count

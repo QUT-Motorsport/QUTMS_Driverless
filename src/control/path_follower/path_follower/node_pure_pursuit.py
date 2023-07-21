@@ -11,10 +11,9 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import PathStamped
+from driverless_msgs.msg import PathStamped, State
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
-from std_msgs.msg import Bool, UInt8
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
 
@@ -47,15 +46,14 @@ class PurePursuit(Node):
     x_offset = 0
     y_offset = 0
     following = False
-    r2d = False
+    driving = False
     fallback_path_points_offset = 0
 
     def __init__(self):
         super().__init__("pure_pursuit_node")
 
         # subscribers
-        self.create_subscription(Bool, "/system/r2d", self.r2d_callback, QOS_LATEST)
-        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, QOS_LATEST)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
         # sync subscribers pose + velocity
         self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, QOS_LATEST)
@@ -72,20 +70,14 @@ class PurePursuit(Node):
 
         self.get_logger().info("---Pure pursuit follower initalised---")
 
-    def r2d_callback(self, msg: Bool):
-        if msg.data:
-            self.r2d = True
+    def state_callback(self, msg: State):
+        # change to driving state
+        if msg.state == State.DRIVING and not self.driving:
+            self.driving = True
             self.get_logger().info("Ready to drive")
-        else:
-            self.r2d = False
-            self.get_logger().info("Driving disabled")
-
-    def lap_callback(self, msg: UInt8):
-        if msg.data > 0:
+        if msg.lap_count > 0 and not self.following:
             self.following = True
             self.get_logger().info("Lap completed, following commencing")
-        else:
-            self.following = False
 
     def get_rvwp(self, car_pos: List[float]):
         """
@@ -171,7 +163,7 @@ class PurePursuit(Node):
 
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path has been recieved, it's a following lap, and we are ready to drive
-        if not self.following or not self.r2d or self.path.size == 0:
+        if not self.following or not self.driving or self.path.size == 0:
             return
 
         start_time = time.time()

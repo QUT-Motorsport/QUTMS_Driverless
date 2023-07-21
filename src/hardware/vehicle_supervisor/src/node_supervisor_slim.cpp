@@ -52,6 +52,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steering_angle_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr velocity_sub_;
+    rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr lap_sub_;
 
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
@@ -66,25 +67,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     float last_steering_angle = 0;
     float last_velocity = 0;
 
-    void velocity_callback(const std_msgs::msg::Float32 msg) {
-        this->last_velocity = msg.data;
-        this->DVL_drivingDynamics1._fields.speed_actual = (int8_t)msg.data;
-        this->run_fsm();
-    }
-
-    void steering_angle_callback(const std_msgs::msg::Float32 msg) {
-        if (msg.data > 1000) {
-            // error in redundant steering angle
-            // go to emergency
-            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-        } else {
-            this->last_steering_angle = msg.data;
-            this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)msg.data;
-        }
-        this->run_fsm();
-    }
-
-    void can_heartbeat_callback(const driverless_msgs::msg::Can msg) {
+    void can_callback(const driverless_msgs::msg::Can msg) {
         uint32_t qutms_masked_id = msg.id & ~0xF;
 
         // RES boot up
@@ -102,7 +85,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             this->res_alive = 1;
-            this->run_fsm();
         }
         // RES heartbeat
         else if (msg.id == (0x180 + RES_NODE_ID)) {
@@ -121,7 +103,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             res_msg.loss_of_signal_shutdown_notice = this->RES_status.loss_of_signal_shutdown_notice;
             this->res_status_pub_->publish(res_msg);
             this->res_alive = 1;
-            this->run_fsm();
         }
         // VCU hearbeat
         else if (qutms_masked_id == VCU_Heartbeat_ID) {
@@ -144,8 +125,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 } else {
                     this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ACTIVATED;
                 }
-
-                this->run_fsm();
             }
         }
         // Steering wheel heartbeat
@@ -157,8 +136,26 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             Parse_SW_Heartbeat(data, &this->SW_heartbeat);
             RCLCPP_DEBUG(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
                          this->SW_heartbeat.missionID);
-            this->run_fsm();
         }
+        // update state machine following any changes
+        this->run_fsm();
+    }
+
+    void velocity_callback(const std_msgs::msg::Float32 msg) {
+        this->last_velocity = msg.data;
+        this->DVL_drivingDynamics1._fields.speed_actual = (int8_t)msg.data;
+    }
+
+    void steering_angle_callback(const std_msgs::msg::Float32 msg) {
+        if (msg.data > 1000) {
+            // error in redundant steering angle
+            // go to emergency
+            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
+        } else {
+            this->last_steering_angle = msg.data;
+            this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)msg.data;
+        }
+        this->run_fsm();
     }
 
     void control_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
@@ -180,11 +177,14 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->DVL_drivingDynamics1._fields.speed_target = (int8_t)msg.drive.speed;
         this->DVL_drivingDynamics1._fields.motor_moment_target = (int8_t)torqueValue;
         this->DVL_drivingDynamics1._fields.motor_moment_actual = (int8_t)torqueValue;
-
-        this->run_fsm();
     }
 
-    void heartbeat_callback() {
+    void lap_counter_callback(const std_msgs::msg::UInt8 msg) {
+        this->ros_state.lap_count = msg.data;
+        this->DVL_systemStatus._fields.lap_counter = msg.data;
+    }
+
+    void dvl_heartbeat_callback() {
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub_->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
@@ -270,7 +270,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
 
             // reset mission selections
-            this->ros_state.mission = driverless_msgs::msg::State::MISSION_NONE;
+            this->ros_state.mission = DVL_MISSION::DVL_MISSION_NONE;
             this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_NONE;
 
             // transition to select mission when res switch is backwards
@@ -294,29 +294,29 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->ros_state.mission = this->SW_heartbeat.missionID;
             }
 
-            if (this->ros_state.mission != driverless_msgs::msg::State::MISSION_NONE) {
+            if (this->ros_state.mission != DVL_MISSION::DVL_MISSION_NONE) {
+                std::string mission_string;
                 // set mission for logging
-                switch (this->ros_state.mission) {
-                    case DRIVERLESS_MISSIONS::MISSION_INSPECTION:
-                        this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_INSPECTION;
-                        break;
-                    case DRIVERLESS_MISSIONS::MISSION_EBS:
-                        this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_BRAKETEST;
-                        break;
-                    case DRIVERLESS_MISSIONS::MISSION_TRACK:
-                        this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_TRACKDRIVE;
-                        break;
-                    default:
-                        this->DVL_systemStatus._fields.AMI_state = 0;
-                        break;
+                if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_INSPECTION) {
+                    this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_INSPECTION;
+                    mission_string = "inspection";
+                } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_EBS) {
+                    this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_BRAKETEST;
+                    mission_string = "ebs_test";
+                } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_TRACK) {
+                    this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_TRACKDRIVE;
+                    mission_string = "trackdrive";
+                } else {
+                    this->DVL_systemStatus._fields.AMI_state = 0;
                 }
 
                 // transition to Check EBS state when mission is selected
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_CHECK_EBS;
 
                 // set the DVL mission IDs according to selection
-                if (this->ros_state.mission == driverless_msgs::msg::State::MANUAL_DRIVING) {
+                if (this->ros_state.mission == DVL_MISSION::DVL_MISSION_MANUAL) {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
+                    mission_string = "manual_driving";
                 } else {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
                 }
@@ -450,7 +450,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
    public:
     ASSupervisor() : Node("vehicle_supervisor_node") {
         // Setup inital states
-        this->ros_state.state = driverless_msgs::msg::State::START;
+        this->ros_state.state = DVL_STATES::DVL_STATE_START;
+        this->ros_state.mission = DVL_MISSION::DVL_MISSION_NONE;
+        this->ros_state.lap_count = 0;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
 
         this->reset_dataLogger();
@@ -458,7 +460,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // CAN
         this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_heartbeat_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_callback, this, _1));
 
         // State pub
         this->state_pub_ = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
@@ -481,9 +483,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->control_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
             "/control/accel_command", QOS_LATEST, std::bind(&ASSupervisor::control_callback, this, _1));
 
+        // Lap counter sub
+        this->lap_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
+            "/system/laps_completed", QOS_LATEST, std::bind(&ASSupervisor::lap_counter_callback, this, _1));
+
         // AS Heartbeat
-        this->heartbeat_timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisor::heartbeat_callback, this));
+        this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
+                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this));
 
         // RES Alive
         this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),

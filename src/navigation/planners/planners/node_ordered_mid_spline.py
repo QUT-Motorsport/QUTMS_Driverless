@@ -1,5 +1,6 @@
 from math import atan2, pi, sqrt
 
+from colour import Color
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 from transforms3d.euler import euler2quat
@@ -10,9 +11,11 @@ from rclpy.publisher import Publisher
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
+from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from std_msgs.msg import UInt8
+from std_msgs.msg import ColorRGBA
+from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.common import QOS_LATEST, angle, midpoint
 
@@ -118,6 +121,50 @@ def sort_cones(cones, start_index=None, end_index=None):
     return [cones[order[i]] for i in range(len(order))]
 
 
+def parse_orange_cones(node_logger, orange_cones: List[List[float]]) -> List[List[float]]:
+    """
+    Breaks the big orange starting cones into their position relative to the other blue/yellow cones.
+    Returns format close_blue, far_blue, close_yellow, far_yellow.
+    """
+    if len(orange_cones) < 4:
+        node_logger.fatal("parse_orange_cones called with less than 4 visible cones. Requires 4 cones.")
+        return []
+
+    blue_cones = [cone for cone in orange_cones if cone[1] > 0]
+    yellow_cones = [cone for cone in orange_cones if cone[1] < 0]
+
+    if blue_cones[0][0] > blue_cones[1][0]:
+        blue_cones[0], blue_cones[1] = blue_cones[1], blue_cones[0]
+
+    if yellow_cones[0][0] > yellow_cones[1][0]:
+        yellow_cones[0], yellow_cones[1] = yellow_cones[1], yellow_cones[0]
+
+    return [blue_cones[0], blue_cones[1], yellow_cones[0], yellow_cones[1]]
+
+
+def create_marker_array(ordered_cones: List[List[float]], marker_array: MarkerArray, init: int = 0) -> MarkerArray:
+    red = Color("red")
+    blue = Color("blue")
+    col_range = list(blue.range_to(red, len(ordered_cones)))
+
+    for i, cone in enumerate(ordered_cones):
+        marker = Marker()
+        marker.header.frame_id = "track"
+        marker.id = i + init
+        marker.type = Marker.CYLINDER
+        marker.action = Marker.ADD
+        marker.pose.position.x = cone[0]
+        marker.pose.position.y = cone[1]
+        marker.pose.position.z = 0.0
+        marker.scale.x = 0.5
+        marker.scale.y = 0.5
+        marker.scale.z = 1.0
+        marker.color = ColorRGBA(r=col_range[i].rgb[0], g=col_range[i].rgb[1], b=col_range[i].rgb[2], a=1.0)
+        marker_array.markers.append(marker)
+
+    return marker_array
+
+
 class OrderedMapSpline(Node):
     spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
@@ -129,17 +176,18 @@ class OrderedMapSpline(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_subscription(UInt8, "/system/laps_completed", self.lap_callback, QOS_LATEST)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_timer(0.1, self.planning_callback)
 
         # publishers
         self.qutms_path_pub: Publisher = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub: Publisher = self.create_publisher(Path, "/planner/spline_path", 1)
+        self.marker_pub: Publisher = self.create_publisher(MarkerArray, "/markers/ordered_cones", 1)
 
         self.get_logger().info("---Ordered path planner node initalised---")
 
-    def lap_callback(self, msg: UInt8):
-        if msg.data > 0:
+    def state_callback(self, msg: State):
+        if msg.state == State.DRIVING and msg.lap_count > 0 and not self.planning:
             self.planning = True
             self.get_logger().info("Lap completed, planning commencing")
 
@@ -166,7 +214,7 @@ class OrderedMapSpline(Node):
             elif cone.color == Cone.ORANGE_BIG:
                 oranges.append([cone.location.x, cone.location.y])
 
-        parsed_orange_cones = self.parse_orange_cones(oranges)
+        parsed_orange_cones = parse_orange_cones(self.get_logger(), oranges)
         if len(parsed_orange_cones) == 0:
             return
         blues.insert(0, parsed_orange_cones[1])
@@ -177,6 +225,12 @@ class OrderedMapSpline(Node):
         # Sort the blue and yellow cones starting from the far orange cone, and ending at the close orange cone.
         ordered_blues = sort_cones(blues)
         ordered_yellows = sort_cones(yellows)
+
+        # create marker array for rviz with colours in order
+        marker_array = MarkerArray()
+        marker_array = create_marker_array(ordered_blues, marker_array)
+        marker_array = create_marker_array(ordered_yellows, marker_array, len(ordered_blues))
+        self.marker_pub.publish(marker_array)
 
         ## Spline smoothing
         # make number of pts based on length of path
@@ -257,26 +311,6 @@ class OrderedMapSpline(Node):
         qutms_path_msg = QUTMSPathStamped(path=qutms_path)
         qutms_path_msg.header.frame_id = "track"
         self.qutms_path_pub.publish(qutms_path_msg)
-
-    def parse_orange_cones(self, orange_cones: List[List[float]]) -> List[List[float]]:
-        """
-        Breaks the big orange starting cones into their position relative to the other blue/yellow cones.
-        Returns format close_blue, far_blue, close_yellow, far_yellow.
-        """
-        if len(orange_cones) != 4:
-            self.get_logger().fatal("parse_orange_cones called with less than 4 visible cones. Requires 4 cones.")
-            return []
-
-        blue_cones = [cone for cone in orange_cones if cone[1] > 0]
-        yellow_cones = [cone for cone in orange_cones if cone[1] < 0]
-
-        if blue_cones[0][0] > blue_cones[1][0]:
-            blue_cones[0], blue_cones[1] = blue_cones[1], blue_cones[0]
-
-        if yellow_cones[0][0] > yellow_cones[1][0]:
-            yellow_cones[0], yellow_cones[1] = yellow_cones[1], yellow_cones[0]
-
-        return [blue_cones[0], blue_cones[1], yellow_cones[0], yellow_cones[1]]
 
 
 def main(args=None):

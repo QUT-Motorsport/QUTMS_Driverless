@@ -30,11 +30,11 @@ def generate_launch_description():
             # IncludeLaunchDescription(
             #     PythonLaunchDescriptionSource(
             #         os.path.join(nav_package_share, "launch", "cone_association_slam.launch.py")
-            #     ),
-            #     launch_arguments={
-            #         "slam_params_file": os.path.join(nav_package_share, "config/slam_params.yaml")
-            #     }.items(),
-            # )
+            #     )
+            # ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(nav_package_share, "launch", "odom_slam.launch.py"))
+            ),
             # Node(
             #     package="steering_actuator",
             #     executable="steering_actuator_node",
