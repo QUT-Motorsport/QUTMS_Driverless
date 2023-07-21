@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from sklearn.neighbors import KDTree
@@ -71,8 +72,9 @@ class PurePursuit(Node):
 
         # parameters
         self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
-        self.lookahead = self.declare_parameter("lookahead", 3.0).value
-        self.vel_max = self.declare_parameter("vel_max", 5.0).value
+        self.lookahead = self.declare_parameter("lookahead", 6.0).value
+        self.vel_max = self.declare_parameter("vel_max", 10.0).value
+        self.vel_min = self.declare_parameter("vel_min", 4.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
 
         self.get_logger().info("---Pure pursuit follower initalised---")
@@ -191,7 +193,12 @@ class PurePursuit(Node):
         """
         # Only start once the path has been recieved, it's a following lap, and we are ready to drive
         if not self.following or not self.driving or self.path.size == 0:
+            self.started = False
             return
+
+        if not self.started:
+            self.started = True
+            self.get_logger().info("Starting pure pursuit")
 
         try:
             odom_to_base = self.tf_buffer.lookup_transform("odom", "base_footprint", rclpy.time.Time())
@@ -221,6 +228,9 @@ class PurePursuit(Node):
         des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
         error = wrap_to_pi(theta - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
+
+        # velocity control based on steering angle
+        des_vel2 = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)
 
         if self.DEBUG_IMG:
             debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
@@ -260,14 +270,14 @@ class PurePursuit(Node):
 
             text_angle = "Steering: " + str(round(steering_angle, 2))
             cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            text_vel = "Velocity: " + str(round(self.vel_max, 2))
+            text_vel = "Velocity: " + str(round(des_vel2, 2))
             cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = self.vel_max
+        control_msg.drive.speed = des_vel2
         self.control_publisher.publish(control_msg)
 
         self.count += 1
