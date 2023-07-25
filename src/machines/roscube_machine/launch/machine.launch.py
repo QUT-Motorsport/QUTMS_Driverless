@@ -10,7 +10,7 @@ def generate_launch_description():
         [
             Node(
                 package="mission_controller",
-                executable="mission_control",
+                executable="mission_launcher",
             ),
             Node(
                 package="canbus",
@@ -21,7 +21,7 @@ def generate_launch_description():
             ),
             Node(
                 package="vehicle_supervisor",
-                executable="vehicle_supervisor_node",
+                executable="vehicle_supervisor_slim_node",
             ),
             Node(
                 package="rosboard",
