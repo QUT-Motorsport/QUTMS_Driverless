@@ -201,7 +201,7 @@ class PurePursuit(Node):
             self.get_logger().info("Starting pure pursuit")
 
         try:
-            odom_to_base = self.tf_buffer.lookup_transform("odom", "base_footprint", rclpy.time.Time())
+            odom_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time())
             # map_to_odom = self.tf_buffer.lookup_transform("track", "odom", rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e))
