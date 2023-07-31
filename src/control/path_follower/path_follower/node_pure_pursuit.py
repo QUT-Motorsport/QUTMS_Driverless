@@ -202,12 +202,11 @@ class PurePursuit(Node):
 
         try:
             odom_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time())
-            # map_to_odom = self.tf_buffer.lookup_transform("track", "odom", rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e))
             return
 
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         # i, j, k angles in rad
         theta = quat2euler(
@@ -283,7 +282,7 @@ class PurePursuit(Node):
         self.count += 1
         if self.count == 50:
             self.count = 0
-            self.get_logger().info(f"{(time.time() - start_time) * 1000}")
+            self.get_logger().debug(f"{(time.perf_counter() - start_time) * 1000}")
 
 
 def main(args=None):  # begin ros node
