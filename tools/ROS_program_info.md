@@ -35,3 +35,40 @@
 | `steering_testing` | `random` | Generates steering commands randomly between full lock. | n/a | `/control/driving_command` |
 | `steering_testing` | `step_response` | Generates a steering command to one specified angle and then its opposite. | n/a | `/control/driving_command` |
 | `steering_testing` | `step_response_calibration` | Records and graphs stepper motor encoder increments as steering commands are generated from lock to lock and back again. | `/vehicle/steering_reading`, `/vehicle/encoder_reading` | `/control/driving_command`, `/debug_imgs/model_calibration_image` |
+`yaw_controller` | `yaw_controller` | Controls the yaw of the vehicle to a specified angle. | `/imu/velocity`, `/imu/data` `/system/as_status` | `/control/driving_command` |
+
+## Group: Hardware
+
+### Nodes with packages
+
+| Package | Node | Description | Topics Subscribed | Topics Published |
+| --- | --- | --- | --- | --- |
+| `canbus` | `canbus_translator_node` | Reads CAN messages from the vehicle and publishes them as various sensor topics. | n/a | `/vehicle/steering_angle`, `/vehicle/velocity`, `/vehicle/wheel_odom`, `/vehicle/bmu_status` |
+| `sbg_testing` | `sbg_performance` | Plots SBG position tracking data for analysis. | `/imu/nav_sat_fix`, `/imu/velocity`, `/sbg/ekf_nav` | n/a |
+| `sbg_testing` | `sbg_debug` | Publishes all SBG data as plots. | Too many | Too many |
+| `steering_actuator` | `steering_actuator_node` | Relates a target steering angle to a number of rotations. | `/control/driving_command`, `/vehicle/steering_angle`, `/can/canbus_rosbound` | `/can/canbus_carbound`, `/vehicle/encoder_reading` |
+| `steering_actuator` | `steering_actuator_node_old` | Controls the steering actuator to a specified angle based on the steering angle. | `/control/driving_command`, `/vehicle/steering_angle`, `/can/canbus_rosbound` | `/can/canbus_carbound`, `/vehicle/encoder_reading` |
+| `vehicle_supervisor` | `vehicle_supervisor_node` | Supervises the vehicle state. Reads CAN messages and converts them to specific datatypes. | `/can/canbus_rosbound`, `/vehicle/accel_command`, `/system/shutdown` | `/can/canbus_carbound`, `/system/as_status`, `/system/reset`, `/data_logger/drivingDynamics1`, `/data_logger/systemStatus`, `/vehicle/res_status`, `/vehicle/motor_rpm`, `/vehicle/wheel_speed`, `/vehicle/steering_angle`, `/vehicle/wheel_odom`  |
+| `vehicle_supervisor` | `vehicle_supervisor_node` | Supervises the vehicle and publishes the vehicle status. | `/can/canbus_rosbound`, `/vehicle/steering_angle`, `/vehicle/velocity`, `/vehicle/wheel_odom`, `/vehicle/accel_command`, `/system/laps_completed`, `/system/shutdown` | `/can/canbus_carbound`, `/system/as_status`, `/system/res_status`, `/system/reset`, `/data_logger/drivingDynamics1`, `/data_logger/systemStatus` |
+| `velocity_controller` | `velocity_controller_node` | Controls the velocity of the vehicle to a specified velocity. | `/vehicle/motor_rpm`, `/vehicle/driving_command`, `/system/as_status` | `/control/accel_command` |
+
+### Launch Files with packages
+
+| Package | Launch File | Description |
+| --- | --- | --- |
+| `steering_actuator` | `machine.launch.py` | Launches the `steering_actuator_node` with `steering.yaml` parameters. |
+
+## Group: Machines
+
+### Launch Files with packages
+| Package | Launch File | Description |
+| --- | --- | --- |
+| `jetson_machine` | `machine.launch.py` | Launches the camera driver and `vision_pipeline` detector node |
+| `roscube_machine` | `machine.launch.py` | Launches sensor drivers, vehicle supervisor, can translator, and vehicle operations nodes |
+
+## Group: Navigation
+
+### Nodes with packages
+
+| Package | Node | Description | Topics Subscribed | Topics Published |
+| --- | --- | --- | --- | --- |
