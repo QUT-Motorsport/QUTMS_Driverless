@@ -16,7 +16,7 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped, State
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi

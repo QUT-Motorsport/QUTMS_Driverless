@@ -106,7 +106,7 @@ class ParticlePursuit(PurePursuit):
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path and map has been recieved,
         # it's a following lap, and we are ready to drive
-        if not self.following or not self.r2d or self.path.size == 0 or self.track.size == 0:
+        if not self.following or not self.driving or self.path.size == 0 or self.track.size == 0:
             return
 
         start_time = time.time()

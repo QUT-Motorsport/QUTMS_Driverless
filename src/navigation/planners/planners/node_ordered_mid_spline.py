@@ -208,7 +208,7 @@ class OrderedMapSpline(Node):
                 oranges.append([cone.location.x, cone.location.y])
 
         # place orange cones on their respective sides of the track
-        parsed_orange_cones = self.parse_orange_cones(oranges)
+        parsed_orange_cones = parse_orange_cones(self.get_logger(), oranges)
         if len(parsed_orange_cones) == 0:
             return
         blues.insert(0, parsed_orange_cones[1])
