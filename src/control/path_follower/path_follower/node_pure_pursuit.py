@@ -229,7 +229,7 @@ class PurePursuit(Node):
         steering_angle = np.rad2deg(error) * self.Kp_ang
 
         # velocity control based on steering angle
-        des_vel2 = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)
+        desired_vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)
 
         if self.DEBUG_IMG:
             debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
@@ -269,14 +269,14 @@ class PurePursuit(Node):
 
             text_angle = "Steering: " + str(round(steering_angle, 2))
             cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            text_vel = "Velocity: " + str(round(des_vel2, 2))
+            text_vel = "Velocity: " + str(round(desired_vel, 2))
             cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
             self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
         # publish message
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = des_vel2
+        control_msg.drive.speed = desired_vel
         self.control_publisher.publish(control_msg)
 
         self.count += 1
