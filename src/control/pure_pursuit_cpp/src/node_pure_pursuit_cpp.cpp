@@ -46,7 +46,8 @@ class PurePursuit : public rclcpp::Node {
     double lookahead;
     double squared_lookahead;  // allows us to skip performing sqrts in get_rvwp()
     double kp_ang;
-    double target_velocity;
+    double vel_max;
+    double vel_min;
     int fallback_path_points_offset;  // The number of path points to be skipped for an approximate rvwp
 
     // Internal states
@@ -182,9 +183,12 @@ class PurePursuit : public rclcpp::Node {
         double error = wrap_to_pi(yaw - desired_heading_angle);
         double steering_angle = (error * (180 / M_PI)) * kp_ang;
 
+        double velocity =
+            vel_min + std::max((vel_max - vel_min) * (1 - std::pow((std::abs(steering_angle) / 90), 2)), 0.0);
+
         ackermann_msgs::msg::AckermannDriveStamped driving_command;
         driving_command.header.stamp = now();
-        driving_command.drive.speed = target_velocity;
+        driving_command.drive.speed = velocity;
         driving_command.drive.steering_angle = steering_angle;
         this->driving_command_pub->publish(driving_command);
 
