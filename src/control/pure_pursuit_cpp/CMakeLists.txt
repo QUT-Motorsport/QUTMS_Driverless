@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX)
 
@@ -22,7 +23,8 @@ ament_target_dependencies(pure_pursuit_cpp
         rclcpp
         driverless_msgs
         ackermann_msgs
-        tf2)
+        tf2
+        tf2_ros)
 
 target_include_directories(pure_pursuit_cpp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
