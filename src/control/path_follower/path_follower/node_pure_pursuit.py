@@ -49,8 +49,8 @@ class PurePursuit(Node):
     driving = False
     fallback_path_points_offset = 0
 
-    def __init__(self):
-        super().__init__("pure_pursuit_node")
+    def __init__(self, node_name="pure_pursuit_node"):
+        super().__init__(node_name)
 
         # subscribers
         self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
