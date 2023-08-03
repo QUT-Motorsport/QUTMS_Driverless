@@ -6,6 +6,7 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/path_stamped.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -29,9 +30,10 @@ struct Point {
     Point(double x, double y, double turn_intensity) : x(x), y(y), turn_intensity(turn_intensity) {}
 };
 
-class Fast : public rclcpp::Node {
+class PurePursuit : public rclcpp::Node {
    private:
     rclcpp::Subscription<driverless_msgs::msg::PathStamped>::SharedPtr path_sub;
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr slam_pose_sub;
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr driving_command_pub;
     std::vector<Point> path{};
@@ -40,6 +42,11 @@ class Fast : public rclcpp::Node {
     double kp_ang;
     double target_velocity;
     int fallback_path_points_offset;  // The number of path points to be skipped for an approximate rvwp
+
+    // Internal states
+    bool driving{false};
+    bool following{false};
+    bool started{false};
     size_t count{0};
 
     static Pose calc_car_axle_pos(double car_pos_x, double car_pos_y, double heading) {
@@ -100,6 +107,17 @@ class Fast : public rclcpp::Node {
         return path.at(rvwp_index);
     }
 
+    void state_callback(driverless_msgs::msg::State const& msg) {
+        if (msg.state == driverless_msgs::msg::State::DRIVING && !driving) {
+            driving = true;
+            RCLCPP_INFO(get_logger(), "Ready to drive");
+        }
+        if (msg.lap_count > 0 && !following) {
+            following = true;
+            RCLCPP_INFO(get_logger(), "Discovery lap completed, commencing following");
+        }
+    }
+
     void path_callback(driverless_msgs::msg::PathStamped const& spline_path_msg) {
         double distance = 0.0;
         path.clear();
@@ -154,11 +172,11 @@ class Fast : public rclcpp::Node {
     }
 
    public:
-    Fast() : Node("pure_pursuit_cpp_node") {
+    PurePursuit() : Node("pure_pursuit_cpp_node"), buffer(this->get_clock()), listener(buffer) {
         this->path_sub = this->create_subscription<driverless_msgs::msg::PathStamped>(
-            "/planner/path", QOS_LATEST, std::bind(&Fast::path_callback, this, _1));
-        this->slam_pose_sub = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/slam/car_pose", QOS_LATEST, std::bind(&Fast::pose_callback, this, _1));
+            "/planner/path", QOS_LATEST, std::bind(&PurePursuit::path_callback, this, _1));
+        this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
+            "/system/as_status", QOS_LATEST, std::bind(&PurePursuit::state_callback, this, _1));
 
         this->driving_command_pub =
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
@@ -167,13 +185,13 @@ class Fast : public rclcpp::Node {
         this->kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
         this->lookahead = this->declare_parameter<double>("lookahead", 3.0);
         squared_lookahead = lookahead * lookahead;
-        RCLCPP_INFO(get_logger(), "---Fast Node Initialised---");
+        RCLCPP_INFO(get_logger(), "---Pure Pursuit (C++) Node Initialised---");
     }
 };
 
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<Fast>());
+    rclcpp::spin(std::make_shared<PurePursuit>());
     rclcpp::shutdown();
     return 0;
 }
