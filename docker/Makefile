@@ -45,10 +45,10 @@ build_docker_base_roscube:
 	..
 
 build_docker_base_jetson:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.2.1 \
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-jetpack-r35.3.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.3.1 \
 	..
 
 # use make build target=<value>
