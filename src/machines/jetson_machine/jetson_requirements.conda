@@ -3,3 +3,4 @@ ros-humble-diagnostic-updater
 ros-humble-joint-state-publisher
 ros-humble-xacro
 ros-humble-robot-state-publisher
+requests
