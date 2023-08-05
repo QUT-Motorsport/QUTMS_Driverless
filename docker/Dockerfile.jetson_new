@@ -94,7 +94,8 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 # delete source
 RUN rm -rf ./src
 
-RUN chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
+RUN chmod -R go=rwx /home/${USERNAME}
+RUN chmod -R go=rwx /usr/local/zed
 
 # tell ROS to use Cyclone DDS
 ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"

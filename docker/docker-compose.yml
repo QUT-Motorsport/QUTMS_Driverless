@@ -58,7 +58,7 @@ services:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
         <<: *volumes-jetson
-        # <<: *user
+        <<: *user
         <<: *devices
         <<: *network
         <<: *interactive
@@ -87,7 +87,7 @@ services:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
         <<: *volumes-jetson
-        # <<: *user
+        <<: *user
         <<: *devices
         <<: *network
         <<: *interactive
