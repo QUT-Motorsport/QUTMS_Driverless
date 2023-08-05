@@ -23,13 +23,11 @@ import yaml
 
 # URDF/xacro file to be loaded by the Robot State Publisher node
 default_xacro_path = os.path.join(get_package_share_directory("zed_wrapper"), "urdf", "zed_descr.urdf.xacro")
-
-config_common_path = os.path.join(get_package_share_directory("sensors"), "config", "zed_common.yaml")
-config_camera_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
+camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
 
 
 def launch_setup(context, *args, **kwargs):
-    common_params = yaml.safe_load(open(config_common_path))
+    common_params = yaml.safe_load(open(camera_config_path))
 
     # Get parameters from yaml
     base_frame = common_params["/**"]["ros__parameters"]["pos_tracking"]["base_frame"]
@@ -47,31 +45,23 @@ def launch_setup(context, *args, **kwargs):
             {
                 "robot_description": Command(
                     [
-                        "xacro",
-                        " ",
+                        "xacro ",
                         default_xacro_path,
-                        " ",
-                        "camera_name:=zed2i ",
-                        "camera_model:=zed2i ",
-                        "base_frame:=",
+                        " camera_name:=zed2i",
+                        " camera_model:=zed2i",
+                        " base_frame:=",
                         base_frame,
-                        " ",
-                        "cam_pos_x:=",
+                        " cam_pos_x:=",
                         str(cam_pose[0]),
-                        " ",
-                        "cam_pos_y:=",
+                        " cam_pos_y:=",
                         str(cam_pose[1]),
-                        " ",
-                        "cam_pos_z:=",
+                        " cam_pos_z:=",
                         str(cam_pose[2]),
-                        " ",
-                        "cam_roll:=",
+                        " cam_roll:=",
                         str(cam_pose[3]),
-                        " ",
-                        "cam_pitch:=",
+                        " cam_pitch:=",
                         str(cam_pose[4]),
-                        " ",
-                        "cam_yaw:=",
+                        " cam_yaw:=",
                         str(cam_pose[5]),
                     ]
                 )
@@ -89,9 +79,7 @@ def launch_setup(context, *args, **kwargs):
         # prefix=['xterm -e valgrind --tools=callgrind'],
         # prefix=['xterm -e gdb -ex run --args'],
         parameters=[
-            # YAML files
-            config_common_path,  # Common parameters
-            config_camera_path,  # Camera related parameters
+            camera_config_path,  # Camera related parameters
         ],
     )
 
