@@ -12,7 +12,7 @@ x-volumes-roscube: &volumes-roscube
     volumes:
         - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
         - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../datasets:/home/${USERNAME}/datasets
+        - ../../datasets:/home/${USERNAME}/driverless_ws/datasets
         # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
 
@@ -23,7 +23,7 @@ x-volumes-jetson: &volumes-jetson
         # mount in X11 stuff for display
         - /tmp/.X11-unix:/tmp/.X11-unix
         - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../datasets:/home/${USERNAME}/datasets
+        - ../../datasets:/home/${USERNAME}/driverless_ws/datasets
 
 x-devices: &devices
     devices:
@@ -65,20 +65,6 @@ services:
         <<: *jetson-extras
         command: ros2 launch jetson_machine machine.launch.py
 
-    roscube:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.roscube
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-roscube
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: ros2 launch roscube_machine machine.launch.py
-
     jetson_terminal:
         build:
             context: ../
@@ -93,6 +79,20 @@ services:
         <<: *interactive
         <<: *jetson-extras
         command: bash
+
+    roscube:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.roscube
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *volumes-roscube
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: ros2 launch roscube_machine machine.launch.py
 
     roscube_terminal:
         build:
