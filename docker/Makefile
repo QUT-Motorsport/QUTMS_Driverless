@@ -61,6 +61,10 @@ build_docker_base_jetson:
 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.3.1 \
 	..
 
+build_docker_base_jetson_new:
+	@echo "ensure 'jetson-containers' has been cloned into the 'repos' directory"
+	~/dev/repos/jetson-containers/build.sh --name=qutms_driverless_base ros:humble-base pytorch zed
+
 # use make build target=<value>
 build:
 	@echo "ensure a 'make build_docker_base_XXX' is run before running a build"
