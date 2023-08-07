@@ -16,7 +16,6 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import OpaqueFunction, SetEnvironmentVariable
 from launch.substitutions import Command
 from launch_ros.actions import Node
 import yaml
@@ -25,8 +24,7 @@ import yaml
 default_xacro_path = os.path.join(get_package_share_directory("zed_wrapper"), "urdf", "zed_descr.urdf.xacro")
 camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
 
-
-def launch_setup(context, *args, **kwargs):
+def generate_launch_description():
     common_params = yaml.safe_load(open(camera_config_path))
 
     # Get parameters from yaml
@@ -82,11 +80,8 @@ def launch_setup(context, *args, **kwargs):
             camera_config_path,  # Camera related parameters
         ],
     )
-
-    return [rsp_node, zed_wrapper_node]
-
-
-def generate_launch_description():
-    return LaunchDescription(
-        [SetEnvironmentVariable(name="RCUTILS_COLORIZED_OUTPUT", value="1"), OpaqueFunction(function=launch_setup)]
-    )
+    
+    return LaunchDescription([
+        zed_wrapper_node, 
+        rsp_node
+    ])
