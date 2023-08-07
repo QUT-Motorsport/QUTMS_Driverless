@@ -206,19 +206,18 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-up-to jetson_machine --cmake-args \
     ' -DCMAKE_BUILD_TYPE=Release' ' -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64' \
     ' -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64' ' -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined' \
-    ' --no-warn-unused-cli'
-
-# delete source
-RUN rm -rf ./src
+    ' --no-warn-unused-cli' && \
+    rm -rf ./src
 
 RUN echo "source /opt/ros/$ROS_DISTRO/install/setup.bash" >> /home/${USERNAME}/.bashrc
 RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /home/${USERNAME}/driverless_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
 
-RUN chmod -R go=rwx /home/${USERNAME}
-RUN chmod -R go=rwx /usr/local/zed
-RUN chmod -R go=rwx /usr/local/lib/python3.8/
+RUN chmod -R go=rwx /home/${USERNAME} && \
+    chmod -R go=rwx /opt/ros/$ROS_DISTRO && \
+    chmod -R go=rwx /usr/local/zed && \
+    chmod -R go=rwx /usr/local/lib/python3.8/
 
 # tell ROS to use Cyclone DDS
 ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
