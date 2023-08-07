@@ -53,7 +53,7 @@ services:
     jetson:
         build:
             context: ../
-            dockerfile: ./docker/Dockerfile.jetson_new
+            dockerfile: ./docker/Dockerfile.jetson_newer
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
@@ -68,7 +68,7 @@ services:
     jetson_terminal:
         build:
             context: ../
-            dockerfile: ./docker/Dockerfile.jetson_new
+            dockerfile: ./docker/Dockerfile.jetson_newer
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}

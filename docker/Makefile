@@ -63,7 +63,7 @@ build_docker_base_jetson:
 
 build_docker_base_jetson_new:
 	@echo "ensure 'jetson-containers' has been cloned into the 'repos' directory"
-	~/dev/repos/jetson-containers/build.sh --name=qutms_driverless_base ros:humble-base pytorch zed
+	~/dev/repos/jetson-containers/build.sh --name=qutms_driverless_base pytorch torchvision zed ros:humble-ros-base --skip-tests=all
 
 # use make build target=<value>
 build:
