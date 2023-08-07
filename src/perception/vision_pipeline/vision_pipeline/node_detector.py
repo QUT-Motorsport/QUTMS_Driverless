@@ -133,7 +133,7 @@ def cone_msg(
 
 
 class VisionProcessor(Node):
-    start: float = 0.0
+    end: float = 0.0
 
     def __init__(
         self,
@@ -141,6 +141,9 @@ class VisionProcessor(Node):
         enable_cv_filters: bool = False,
     ):
         super().__init__("vision_processor_node")
+
+        # declare ros param for debug images
+        self.debug_imgs: bool = self.declare_parameter("debug_imgs", False).value
 
         # subscribers
         colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")
@@ -156,29 +159,33 @@ class VisionProcessor(Node):
 
         # publishers
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbs_img", 1)
-        self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_depth_img", 1)
+        if self.debug_imgs:
+            self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbs_img", 1)
+            self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_depth_img", 1)
 
         # set which cone detection this will be using
         self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
+
+        self.end = time.perf_counter()
         self.get_logger().info("---Vision detector node initialised---")
 
     def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
         self.get_logger().debug("Received image")
 
-        self.get_logger().debug(f"Wait time: {str(time.perf_counter()-self.start)}")  # log time
+        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.end)}")  # log time
         start: float = time.perf_counter()  # begin a timer
 
         colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
         depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
 
-        # colour depth map for debugging
-        disp_depth_frame = np.nan_to_num(depth_frame, nan=0, posinf=0, neginf=0)
-        disp_depth_frame = cv2.resize(disp_depth_frame, (0, 0), fx=2, fy=2)
-        disp_depth_frame[disp_depth_frame > 20] = 0
-        disp_depth_frame = cv2.normalize(disp_depth_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
-        disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
+        if self.debug_imgs:
+            # colour depth map for debugging
+            disp_depth_frame = np.nan_to_num(depth_frame, nan=0, posinf=0, neginf=0)
+            disp_depth_frame = cv2.resize(disp_depth_frame, (0, 0), fx=2, fy=2)
+            disp_depth_frame[disp_depth_frame > 20] = 0
+            disp_depth_frame = cv2.normalize(disp_depth_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+            disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
 
         detected_cones: List[Cone] = []
         i = 0
@@ -203,7 +210,8 @@ class VisionProcessor(Node):
                 continue
 
             detected_cones.append(cone_msg(distance, bearing, cone_colour))
-            draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
+            if self.debug_imgs:
+                draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
             self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
 
@@ -212,18 +220,19 @@ class VisionProcessor(Node):
             cones=detected_cones,
         )
         self.detection_publisher.publish(detection_msg)
-        debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
-        debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
-        self.debug_img_publisher.publish(debug_msg)
 
-        depth_msg = cv_bridge.cv2_to_imgmsg(disp_depth_frame, encoding="bgr8")
-        depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
-        self.depth_debug_img_publisher.publish(depth_msg)
+        if self.debug_imgs:
+            debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
+            debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
+            self.debug_img_publisher.publish(debug_msg)
+            depth_msg = cv_bridge.cv2_to_imgmsg(disp_depth_frame, encoding="bgr8")
+            depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
+            self.depth_debug_img_publisher.publish(depth_msg)
 
-        self.get_logger().debug(
-            f"Total Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(1/(time.perf_counter() - start), 2)}"
+        self.get_logger().info(
+            f"Process Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(1/(time.perf_counter() - start), 2)}"
         )
-        self.start = time.perf_counter()
+        self.end = time.perf_counter()
 
 
 ## OpenCV thresholding
