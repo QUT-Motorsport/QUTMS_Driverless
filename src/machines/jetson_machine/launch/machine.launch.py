@@ -10,7 +10,7 @@ def generate_launch_description():
         [
             Node(
                 package="vision_pipeline",
-                executable="trt_detector",
+                executable="torch_detector",
             ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
