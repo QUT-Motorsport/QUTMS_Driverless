@@ -20,7 +20,9 @@ def generate_launch_description():
         ),
     )
 
-    return LaunchDescription([
-        vision_detector_node,
-        zed_camera_driver,
-    ])
+    return LaunchDescription(
+        [
+            vision_detector_node,
+            zed_camera_driver,
+        ]
+    )

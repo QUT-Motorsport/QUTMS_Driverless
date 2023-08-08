@@ -15,7 +15,7 @@
             camera_model: "zed2i"
             camera_name: "zed2i"
             zed_id: 0
-            serial_number: 0 
+            serial_number: 0
             grab_resolution: 'HD720' # The native camera grab resolution. 'HD2K', 'HD1080', 'HD720', 'VGA'
             pub_resolution: 'HD720' # The resolution used for output. 'HD2K', 'HD1080', 'HD720', 'MEDIUM', 'VGA', 'LOW'
             pub_downscale_factor: 2.0 # rescale factor used to rescale image before publishing when 'pub_resolution' is 'CUSTOM'
@@ -87,7 +87,7 @@
             qos_reliability: 1 # '1': RELIABLE - '2': BEST_EFFORT
             qos_durability: 2 # '1': TRANSIENT_LOCAL - '2': VOLATILE
             transform_time_offset: 0.0 # The value added to the timestamp of `map->odom` and `odom->base_link`` transform being generated
-        
+
         gnss_fusion:
             gnss_fusion_enabled: false # fuse 'sensor_msg/NavSatFix' message information into pose data
             gnss_fix_topic: "/imu/nav_sat_fix" # Name of the GNSS topic of type NavSatFix to subscribe [Default: "/gps/fix"]
@@ -122,7 +122,7 @@
             allow_reduced_precision_inference: true # Allow inference to run at a lower precision to improve runtime and memory usage
             max_range: 20.0 # [m] Defines a upper depth range for detections
             confidence_threshold: 50.0 # [DYNAMIC] - Minimum value of the detection confidence of an object [0,99]
-            prediction_timeout: 0.5 # During this time [sec], the object will have OK state even if it is not detected. Set this parameter to 0 to disable SDK predictions            
+            prediction_timeout: 0.5 # During this time [sec], the object will have OK state even if it is not detected. Set this parameter to 0 to disable SDK predictions
             filtering_mode: 1 # '0': NONE - '1': NMS3D - '2': NMS3D_PER_CLASS
             mc_people: true # [DYNAMIC] - Enable/disable the detection of persons for 'MULTI_CLASS_X' models
             mc_vehicle: true # [DYNAMIC] - Enable/disable the detection of vehicles for 'MULTI_CLASS_X' models
@@ -130,12 +130,12 @@
             mc_animal: true # [DYNAMIC] - Enable/disable the detection of animals for 'MULTI_CLASS_X' models
             mc_electronics: true # [DYNAMIC] - Enable/disable the detection of electronic devices for 'MULTI_CLASS_X' models
             mc_fruit_vegetable: true # [DYNAMIC] - Enable/disable the detection of fruits and vegetables for 'MULTI_CLASS_X' models
-            mc_sport: true # [DYNAMIC] - Enable/disable the detection of sport-related objects for 'MULTI_CLASS_X' models            
+            mc_sport: true # [DYNAMIC] - Enable/disable the detection of sport-related objects for 'MULTI_CLASS_X' models
             qos_history: 1 # '1': KEEP_LAST - '2': KEEP_ALL
             qos_depth: 1 # Queue size if using KEEP_LAST
             qos_reliability: 1 # '1': RELIABLE - '2': BEST_EFFORT
             qos_durability: 2 # '1': TRANSIENT_LOCAL - '2': VOLATILE
-        
+
         body_tracking:
             bt_enabled: false # True to enable Body Tracking
             model: 'HUMAN_BODY_MEDIUM' # 'HUMAN_BODY_FAST', 'HUMAN_BODY_MEDIUM', 'HUMAN_BODY_ACCURATE'
@@ -153,7 +153,7 @@
             qos_reliability: 1 # '1': RELIABLE - '2': BEST_EFFORT
             qos_durability: 2 # '1': TRANSIENT_LOCAL - '2': VOLATILE
 
-        use_sim_time: false # EXPERIMENTAL (only for development) - Set to true to enable SIMULATION mode # 
+        use_sim_time: false # EXPERIMENTAL (only for development) - Set to true to enable SIMULATION mode #
         sim_address: '192.168.1.90' # EXPERIMENTAL (only for development) - The local address of the machine running the simulator
 
         debug:
