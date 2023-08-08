@@ -18,7 +18,7 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("sensors") / "launch" / "zed_camera.launch.py")
         ),
-    ),
+    )
 
     return LaunchDescription([
         vision_detector_node,

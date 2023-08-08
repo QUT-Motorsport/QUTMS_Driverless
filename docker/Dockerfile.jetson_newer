@@ -191,8 +191,10 @@ WORKDIR /home/${USERNAME}/driverless_ws
 # remove driverless repo as deps have now been installed
 RUN rm -rf QUTMS_Driverless
 
+# copy zed depth model
+COPY ./src/hardware/sensors/camera_files/* /usr/local/zed/resources/
 # copy zed cam calibration file
-COPY ./src/machines/jetson_machine/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
+COPY ./src/hardware/sensors/camera_files/SN33580719.conf /usr/local/zed/settings/SN33580719.conf
 
 # install pip requirements
 COPY ./src/machines/jetson_machine/requirements.txt /tmp/requirements.txt
@@ -206,13 +208,14 @@ RUN source ${ROS_ROOT}/install/setup.bash; \
     colcon build --symlink-install --packages-up-to jetson_machine --cmake-args \
     ' -DCMAKE_BUILD_TYPE=Release' ' -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64' \
     ' -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64' ' -DCMAKE_CXX_FLAGS=-Wl,--allow-shlib-undefined' \
-    ' --no-warn-unused-cli' && \
-    rm -rf ./src
+    ' --no-warn-unused-cli'
 
 RUN echo "source /opt/ros/$ROS_DISTRO/install/setup.bash" >> /home/${USERNAME}/.bashrc
 RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /home/${USERNAME}/driverless_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
+
+RUN rm -rf ./src
 
 RUN chmod -R go=rwx /home/${USERNAME} && \
     chmod -R go=rwx /opt/ros/$ROS_DISTRO && \
