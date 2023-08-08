@@ -2,13 +2,7 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-import colorama
-
-G = colorama.Fore.GREEN
-R = colorama.Fore.RED
-Y = colorama.Fore.YELLOW
-B = colorama.Fore.BLUE
-RESET = colorama.Fore.RESET
+from qutms_cli_tools.common import Print
 
 
 def main():
@@ -36,21 +30,10 @@ def main():
         args.repo = ["QUTMS_Driverless", "eufs_sim", "eufs_rviz_plugins"]
 
     if not args.repo:
-        print(
-            R,
-            "Please specify a repo, use --help or -h for more info",
-            RESET,
-            flush=True,
-        )
+        Print.red("Please specify a repo, use --help or -h for more info")
         return
 
-    print(
-        G,
-        "Pulling repos...",
-        RESET,
-        flush=True,
-    )
-
+    Print.green("Pulling repos...")
     for repo in args.repo:
         print(repo)
         repo = os.path.join(ws_path, repo)

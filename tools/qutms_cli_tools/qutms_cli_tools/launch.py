@@ -1,13 +1,7 @@
 from argparse import ArgumentParser
 import subprocess
 
-import colorama
-
-G = colorama.Fore.GREEN
-R = colorama.Fore.RED
-Y = colorama.Fore.YELLOW
-B = colorama.Fore.BLUE
-RESET = colorama.Fore.RESET
+from qutms_cli_tools.common import Print
 
 
 def main():
@@ -25,15 +19,10 @@ def main():
         command = ["ros2", "launch", "eufs_launcher", "eufs_launcher.launch.py"]
 
     else:
-        print(
-            R,
-            "Please specify a launch group, use --help or -h for more info",
-            RESET,
-            flush=True,
-        )
+        Print.red("Please specify a launch group, use --help or -h for more info")
         return
 
-    print(G, "Launching...", RESET, flush=True)
+    Print.green("Launching...")
     process = subprocess.Popen(command, text=True)
     try:
         process.wait()
