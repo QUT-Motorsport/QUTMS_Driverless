@@ -1,17 +1,12 @@
 from math import atan2, cos, dist, pi, sin, sqrt
-import time
 
 import cv2
 import numpy as np
-import scipy.spatial
-from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
 import rclpy
 
-from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 
 from driverless_common.common import angle, fast_dist, wrap_to_pi
 from path_follower.node_pure_pursuit import PurePursuit
@@ -89,6 +84,11 @@ class ParticlePursuit(PurePursuit):
     #      ** dont set to 1.0 **
     cone_danger: float = -0.5
 
+    last_pos_nearestCone = [0, 0]
+    last_pos_attractive_relCar = [0, 0]
+    last_pos_repulsive_relCar = [0, 0]
+    last_pos_resultant_relCar = [0, 0]
+
     def __init__(self):
         super().__init__("particle_pursuit")
 
@@ -103,26 +103,31 @@ class ParticlePursuit(PurePursuit):
 
         self.track = np.array([[c.location.x, c.location.y] for c in cone_pos_msg.cones])
 
-    def callback(self, msg: PoseWithCovarianceStamped):
-        # Only start once the path and map has been recieved,
-        # it's a following lap, and we are ready to drive
-        # if not self.following or not self.driving or self.path.size == 0 or self.track.size == 0:
-        #     return
+    def state_callback(self, msg: State):
+        """
+        Overrides the calc_steering method in PurePursuit. 
+        Sets the driving and following flags to True when the state changes to
+        DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
+        vehicle is ready to drive before following commences.
+        """
 
-        if self.path.size == 0 or self.track.size == 0:
-            return
+        # change to driving state
+        if msg.state == State.DRIVING and not self.driving:
+            self.driving = True
+            self.get_logger().info("Ready to drive")
+        if msg.lap_count > 0 and not self.following and self.path.size != 0 and self.track.size != 0:
+            self.following = True
+            self.get_logger().info("Lap completed, following commencing")
 
-        start_time = time.time()
-
-        # get the position of the center of gravity
-        pose: List[float] = self.get_wheel_position(msg.pose.pose)
-
-        # rvwp control
-        rvwp: List[float] = self.get_rvwp(pose)
+    def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
+        """
+        Overrides the calc_steering method in PurePursuit.
+        Calculates the steering angle to follow the path.
+        """
 
         # avoidance from potential field
         # get position of nearest cone
-        pos_nearestCone = get_closest_cone(pose, self.track)
+        pos_nearestCone = get_closest_cone(pose[:2], self.track)
         # maybe use fast_dist instead of dist later
         d_nearestCone = dist(pose[:2], pos_nearestCone)
 
@@ -164,48 +169,28 @@ class ParticlePursuit(PurePursuit):
             pos_attractive_relCar[1] + pos_repulsive_relcar[1],
         ]
 
+        self.last_pos_attractive_relCar = pos_attractive_relCar
+        self.last_pos_repulsive_relCar = pos_repulsive_relcar
+        self.last_pos_resultant_relCar = pos_resultant_relCar
+        self.last_pos_nearestCone = pos_nearestCone
+
         # get angle of resultant vector as desired heading of the car in degrees
         # des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
         # steering_angle: float = ((pose[2] * 180 / pi) - des_heading_ang) * self.Kp_ang
         des_heading_ang = angle([0, 0], pos_resultant_relCar)
         error = wrap_to_pi(pose[2] - des_heading_ang)
-        steering_angle: float = np.rad2deg(error) * self.Kp_ang
+        steering = np.rad2deg(error) * self.Kp_ang
+        return steering
 
-        target_vel: float = self.vel_max
+    def draw_forces(self, debug_img, img_params, position):
+        scale = img_params[0]
+        x_offset = img_params[1]
+        y_offset = img_params[2]
 
-        if self.DEBUG_IMG:
-            img_data = self.draw_rvwp(rvwp, pose[:2], steering_angle, target_vel)
-            debug_img = self.draw_forces(
-                img_data, pose[:2], pos_nearestCone, pos_attractive_relCar, pos_repulsive_relcar
-            )
-            self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
-        # publish message
-        control_msg = AckermannDriveStamped()
-        control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = target_vel
-        self.control_publisher.publish(control_msg)
-
-        self.count += 1
-        if self.count == 30:
-            self.count = 0
-            self.get_logger().debug(f"{(time.time() - start_time) * 1000}")
-
-            # format to 2 decimal places the desired heading and steering angle
-            self.get_logger().info(f"Desired: {des_heading_ang:.2f}, Steering: {steering_angle:.2f}")
-
-    def draw_forces(self, img_data, position, pos_nearestCone, pos_attractive_relCar, pos_repulsive_relcar):
-        debug_img = img_data[0]
-        scale = img_data[1]
-        x_offset = img_data[2]
-        y_offset = img_data[3]
-
-        # this is flipped on output, so unflip it
-        cv2.flip(debug_img, 1, debug_img)
         # draw the nearest cone
         cv2.drawMarker(
             debug_img,
-            (int(pos_nearestCone[0] * scale + x_offset), int(pos_nearestCone[1] * scale + y_offset)),
+            (int(self.last_pos_nearestCone[0] * scale + x_offset), int(self.last_pos_nearestCone[1] * scale + y_offset)),
             (255, 255, 0),
             markerType=cv2.MARKER_TRIANGLE_UP,
             markerSize=10,
@@ -216,8 +201,8 @@ class ParticlePursuit(PurePursuit):
             debug_img,
             (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
             (
-                int((position[0] + pos_attractive_relCar[0]) * scale + x_offset),
-                int((position[1] + pos_attractive_relCar[1]) * scale + y_offset),
+                int((position[0] + self.last_pos_attractive_relCar[0]) * scale + x_offset),
+                int((position[1] + self.last_pos_attractive_relCar[1]) * scale + y_offset),
             ),
             (0, 255, 0),
             3,
@@ -227,17 +212,22 @@ class ParticlePursuit(PurePursuit):
             debug_img,
             (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
             (
-                int((position[0] + pos_repulsive_relcar[0]) * scale + x_offset),
-                int((position[1] + pos_repulsive_relcar[1]) * scale + y_offset),
+                int((position[0] + self.last_pos_repulsive_relCar[0]) * scale + x_offset),
+                int((position[1] + self.last_pos_repulsive_relCar[1]) * scale + y_offset),
             ),
             (0, 0, 255),
             3,
         )
-        # re-flip the image
-        cv2.flip(debug_img, 1, debug_img)
 
         return debug_img
 
+    def publish_debug_image(self, steering_angle: float, velocity: float, rvwp: List[float], position: List[float]):
+        img_params = self.get_img_params()
+        debug_img = self.draw_rvwp(img_params, rvwp, position)
+        debug_img = self.draw_forces(debug_img, img_params, position)
+        debug_img = self.add_data_text(debug_img, steering_angle, velocity)
+
+        self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 def main(args=None):  # begin ros node
     rclpy.init(args=args)

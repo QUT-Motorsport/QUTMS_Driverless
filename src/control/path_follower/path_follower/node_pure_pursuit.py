@@ -20,7 +20,7 @@ from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
 
-from typing import List
+from typing import List, Tuple
 
 cv_bridge = CvBridge()
 WIDTH = 1000
@@ -45,10 +45,9 @@ class PurePursuit(Node):
         # subscribers
         self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
-        # sync subscribers pose + velocity
-        # self.create_subscription(PoseWithCovarianceStamped, "/slam/car_pose", self.callback, QOS_LATEST)
-        self.create_timer((1 / 50), self.timer_callback)  # 50hz state 'prediction'
 
+        # transform listening
+        self.create_timer((1 / 50), self.timer_callback)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -67,13 +66,141 @@ class PurePursuit(Node):
             self.get_logger().info("---Pure pursuit follower initalised---")
 
     def state_callback(self, msg: State):
+        """
+        Callback for the state subscriber. Sets the driving and following flags to True when the state changes to
+        DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
+        vehicle is ready to drive before following commences.
+        """
+
         # change to driving state
         if msg.state == State.DRIVING and not self.driving:
             self.driving = True
             self.get_logger().info("Ready to drive")
-        if msg.lap_count > 0 and not self.following:
+        if msg.lap_count > 0 and not self.following and self.path.size != 0:
             self.following = True
             self.get_logger().info("Lap completed, following commencing")
+
+    def path_callback(self, spline_path_msg: PathStamped):
+        """
+        Callback for the path subscriber. Stores the path and calculates the number of path points to skip when
+        finding a fallback RVWP. Also initialises the image scaling and offset values.
+        """
+
+        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
+        self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
+        distance = 0
+        for i in range(len(self.path) - 1):
+            prev = self.path[i]
+            curr = self.path[i + 1]
+            distance += dist(prev, curr)
+        # Calculate the number of path points to skip when finding a fallback RVWP.
+        # Formula is the number of path points divided by the calculated distance in metres, giving the number of
+        # points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
+        # path points that should be skipped.
+        self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
+
+        if not self.img_initialised:
+            # get dimensions of the path
+            path_x_min = np.min(self.path[:, 0])
+            path_x_max = np.max(self.path[:, 0])
+            path_y_min = np.min(self.path[:, 1])
+            path_y_max = np.max(self.path[:, 1])
+
+            # scale the path to fit in a 1000x1000 image, pixels per meter
+            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
+
+            # add a border around the path for all elements
+            self.scale *= 0.90
+
+            # set offsets to the corner of the image
+            self.x_offset = -path_x_min * self.scale
+            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
+            self.y_offset = -path_y_min * self.scale
+            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
+
+            self.img_initialised = True
+
+    def timer_callback(self):
+        """
+        Listens to odom->base_footprint transform and updates the state.
+        Solution is to get the delta and add it to the previous state
+        and subtract the delta from the previous map->odom transform.
+        """
+
+        # Only start once the path has been recieved, it's a following lap, and we are ready to drive
+        if not self.following or not self.driving:
+            self.started = False
+            return
+
+        if not self.started:
+            self.started = True
+            self.get_logger().info("Starting pure pursuit")
+
+        try:
+            # TODO: parameterise these frames?
+            map_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time())
+        except TransformException as e:
+            self.get_logger().warn("Transform exception: " + str(e))
+            return
+
+        start_time = time.perf_counter()
+
+        # i, j, k angles in rad
+        theta = quat2euler(
+            [
+                map_to_base.transform.rotation.w,
+                map_to_base.transform.rotation.x,
+                map_to_base.transform.rotation.y,
+                map_to_base.transform.rotation.z,
+            ]
+        )[2]
+        # get the position of the center of gravity
+        position_cog: List[float] = [map_to_base.transform.translation.x, map_to_base.transform.translation.y]
+        position: List[float] = self.get_wheel_position(position_cog, theta)
+
+        # rvwp lookup
+        rvwp: List[float] = self.get_rvwp(position)
+
+        # steering control
+        desired_steering = self.calc_steering(position, rvwp)
+
+        # velocity control based on steering angle
+        desired_velocity = self.calc_velocity(desired_steering)
+
+        if self.DEBUG_IMG:
+            self.publish_debug_image(desired_steering, desired_velocity, position, rvwp)
+
+        # publish message
+        control_msg = AckermannDriveStamped()
+        control_msg.drive.steering_angle = desired_steering
+        control_msg.drive.speed = desired_velocity
+        self.control_publisher.publish(control_msg)
+
+        self.count += 1
+        if self.count == 50:
+            self.count = 0
+            self.get_logger().debug(f"{(time.perf_counter() - start_time) * 1000}")
+
+    def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
+        """
+        Calculates the steering angle based on the pose of the car and the RVWP.
+        """
+
+        # get the angle between the car and the rvwp
+        des_heading_ang = angle(pose[:2], [rvwp[0], rvwp[1]])
+        # calculate the error between the desired heading and the current heading
+        error = wrap_to_pi(pose[2] - des_heading_ang)
+        # calculate the steering angle
+        steering = np.rad2deg(error) * self.Kp_ang
+        return steering
+
+    def calc_velocity(self, desired_steering: float) -> float:
+        """
+        Calculates the velocity based on the steering angle.
+        """
+        vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(desired_steering) / 90) ** 2), 0)
+        return vel
+
 
     def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
         """
@@ -147,143 +274,7 @@ class PurePursuit(Node):
 
         return self.path[rvwp_index]
 
-    def path_callback(self, spline_path_msg: PathStamped):
-        # convert List[PathPoint] to 2D numpy array
-        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
-        self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
-        distance = 0
-        for i in range(len(self.path) - 1):
-            prev = self.path[i]
-            curr = self.path[i + 1]
-            distance += dist(prev, curr)
-        # Calculate the number of path points to skip when finding a fallback RVWP.
-        # Formula is the number of path points divided by the calculated distance in metres, giving the number of
-        # points per metre, which is then multiplied by the lookahead value (also in metres) giving the number of
-        # path points that should be skipped.
-        self.fallback_path_points_offset = int(round(len(self.path) / distance * self.lookahead))
-
-        if not self.img_initialised:
-            # get dimensions of the path
-            path_x_min = np.min(self.path[:, 0])
-            path_x_max = np.max(self.path[:, 0])
-            path_y_min = np.min(self.path[:, 1])
-            path_y_max = np.max(self.path[:, 1])
-
-            # scale the path to fit in a 1000x1000 image, pixels per meter
-            self.scale = WIDTH / max(path_x_max - path_x_min, path_y_max - path_y_min)
-
-            # add a border around the path for all elements
-            self.scale *= 0.90
-
-            # set offsets to the corner of the image
-            self.x_offset = -path_x_min * self.scale
-            self.x_offset += (WIDTH - (path_x_max - path_x_min) * self.scale) / 2
-            self.y_offset = -path_y_min * self.scale
-            self.y_offset += (HEIGHT - (path_y_max - path_y_min) * self.scale) / 2
-
-            self.img_initialised = True
-
-    # def callback(self, msg: PoseWithCovarianceStamped):
-    def timer_callback(self):
-        """
-        Listens to odom->base_footprint transform and updates the state.
-        Solution is to get the delta and add it to the previous state
-        and subtract the delta from the previous map->odom transform.
-        """
-        # Only start once the path has been recieved, it's a following lap, and we are ready to drive
-        if not self.following or not self.driving or self.path.size == 0:
-            self.started = False
-            return
-
-        if not self.started:
-            self.started = True
-            self.get_logger().info("Starting pure pursuit")
-
-        try:
-            odom_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time())
-        except TransformException as e:
-            self.get_logger().warn("Transform exception: " + str(e))
-            return
-
-        start_time = time.perf_counter()
-
-        # i, j, k angles in rad
-        theta = quat2euler(
-            [
-                odom_to_base.transform.rotation.w,
-                odom_to_base.transform.rotation.x,
-                odom_to_base.transform.rotation.y,
-                odom_to_base.transform.rotation.z,
-            ]
-        )[2]
-        # get the position of the center of gravity
-        position_cog: List[float] = [odom_to_base.transform.translation.x, odom_to_base.transform.translation.y]
-        position: List[float] = self.get_wheel_position(position_cog, theta)
-
-        # rvwp control
-        rvwp: List[float] = self.get_rvwp(position)
-
-        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
-        error = wrap_to_pi(theta - des_heading_ang)
-        steering_angle = np.rad2deg(error) * self.Kp_ang
-
-        # velocity control based on steering angle
-        desired_vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)
-
-        if self.DEBUG_IMG:
-            debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
-            for i in range(0, len(self.path) - 1):
-                cv2.line(
-                    debug_img,
-                    (
-                        int(self.path[i, 0] * self.scale + self.x_offset),
-                        int(self.path[i, 1] * self.scale + self.y_offset),
-                    ),
-                    (
-                        int(self.path[i + 1, 0] * self.scale + self.x_offset),
-                        int(self.path[i + 1, 1] * self.scale + self.y_offset),
-                    ),
-                    (255, 0, 0),
-                    thickness=5,
-                )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(rvwp[0] * self.scale + self.x_offset), int(rvwp[1] * self.scale + self.y_offset)),
-                (0, 255, 0),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-
-            cv2.drawMarker(
-                debug_img,
-                (int(position[0] * self.scale + self.x_offset), int(position[1] * self.scale + self.y_offset)),
-                (0, 0, 255),
-                markerType=cv2.MARKER_TRIANGLE_UP,
-                markerSize=10,
-                thickness=4,
-            )
-            cv2.flip(debug_img, 1, debug_img)
-
-            text_angle = "Steering: " + str(round(steering_angle, 2))
-            cv2.putText(debug_img, text_angle, (10, HEIGHT - 75), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            text_vel = "Velocity: " + str(round(desired_vel, 2))
-            cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
-            self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
-        # publish message
-        control_msg = AckermannDriveStamped()
-        control_msg.drive.steering_angle = steering_angle
-        control_msg.drive.speed = desired_vel
-        self.control_publisher.publish(control_msg)
-
-        self.count += 1
-        if self.count == 50:
-            self.count = 0
-            self.get_logger().debug(f"{(time.perf_counter() - start_time) * 1000}")
-
-    def draw_rvwp(self, rvwp: List[float], position: List[float], steering_angle: float, velocity: float):
+    def get_img_params(self) -> Tuple[float, float, float]:
         # get dimensions of the path
         path_x_min = np.min(self.path[:, 0])
         path_x_max = np.max(self.path[:, 0])
@@ -301,6 +292,13 @@ class PurePursuit(Node):
         x_offset += (WIDTH - (path_x_max - path_x_min) * scale) / 2
         y_offset = -path_y_min * scale
         y_offset += (HEIGHT - (path_y_max - path_y_min) * scale) / 2
+
+        return scale, x_offset, y_offset
+
+    def draw_rvwp(self, img_params, rvwp: List[float], position: List[float]) -> np.ndarray:
+        scale = img_params[0]
+        x_offset = img_params[1]
+        y_offset = img_params[2]
 
         debug_img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
         for i in range(0, len(self.path) - 1):
@@ -335,6 +333,10 @@ class PurePursuit(Node):
             markerSize=10,
             thickness=4,
         )
+
+        return debug_img
+
+    def add_data_text(self, debug_img, steering_angle: float, velocity: float) -> np.ndarray:
         cv2.flip(debug_img, 1, debug_img)
 
         text_angle = "Steering: " + str(round(steering_angle, 2))
@@ -342,8 +344,14 @@ class PurePursuit(Node):
         text_vel = "Velocity: " + str(round(velocity, 2))
         cv2.putText(debug_img, text_vel, (10, HEIGHT - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 4)
 
-        return debug_img, scale, x_offset, y_offset
+        return debug_img
 
+    def publish_debug_image(self, steering_angle: float, velocity: float, rvwp: List[float], position: List[float]):
+        img_params = self.get_img_params()
+        debug_img = self.draw_rvwp(img_params, rvwp, position)
+        debug_img = self.add_data_text(debug_img, steering_angle, velocity)
+
+        self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
 def main(args=None):  # begin ros node
     rclpy.init(args=args)
