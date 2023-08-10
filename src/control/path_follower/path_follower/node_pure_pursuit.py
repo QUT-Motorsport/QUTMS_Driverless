@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
@@ -49,8 +50,8 @@ class PurePursuit(Node):
     driving = False
     fallback_path_points_offset = 0
 
-    def __init__(self):
-        super().__init__("pure_pursuit_node")
+    def __init__(self, node_name="pure_pursuit_node"):
+        super().__init__(node_name)
 
         # subscribers
         self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
@@ -87,32 +88,46 @@ class PurePursuit(Node):
         * param rvwp_lookahead: distance to look ahead for the RVWP
         * return: RVWP position as [x,y,i]
         """
+        path_xy = [[p[0], p[1]] for p in self.path]
+
         # find the closest point on the path to the car
-        close_dist = float("inf")
-        close_index = None
-        for i, p in enumerate(self.path):
-            distance = fast_dist(p, car_pos)
-            if distance < close_dist:
-                close_dist = distance
-                close_index = i
-        close = self.path[close_index] if close_index is not None else car_pos
+        kdtree = KDTree(path_xy)
+        close_index = kdtree.query([[car_pos[0], car_pos[1]]], return_distance=False)[0][0]
+        close = path_xy[close_index] if close_index is not None else car_pos
         if close_index is None:
             self.get_logger().warn("Could not find closest point, have used car's axle pos")
 
         # find the first point on the path that is further than the lookahead distance
+        # Tragically, there is no way to set a minimum search distance, so I'm giving it the lookahead doubled, we'll
+        # receive everything under that distance and filter out the items under the lookahead distance below.
+        # Problem there is if there are no points under the double lookahead distance, we're in trouble.
+        indexes_raw, distances_raw = kdtree.query_radius(
+            [close], r=self.lookahead * 2, return_distance=True, sort_results=True
+        )
+        indexes_raw, distances_raw = indexes_raw[0], distances_raw[0]
+
+        indexes, distances = [], []
+        for i in range(len(indexes_raw)):
+            if distances_raw[i] < self.lookahead:
+                continue
+            # Distances are sorted, so once we get here just grab everything.
+            indexes = indexes_raw[i:]
+            distances = distances_raw[i:]
+            break
+
         rvwp_dist = float("inf")
         rvwp_index = None
-        for i, p in enumerate(self.path):
-            distance = fast_dist(p, close)
-            if distance <= self.lookahead or distance >= rvwp_dist:
-                continue
+        for i in range(len(indexes)):
+            index = indexes[i]
+            p = path_xy[index]
+            d = distances[i]
 
             # get angle to check if the point is in front of the car
             ang = angle(close, p)
             error = wrap_to_pi(car_pos[2] - ang)
-            if np.pi / 2 > error > -np.pi / 2:
-                rvwp_dist = distance
-                rvwp_index = i
+            if np.pi / 2 > error > -np.pi / 2 and d < rvwp_dist:
+                rvwp_dist = d
+                rvwp_index = index
 
         if rvwp_index is None or rvwp_index == close_index:
             self.get_logger().warn("No valid RVWP found, using fallback point")
