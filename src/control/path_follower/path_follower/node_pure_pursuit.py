@@ -3,10 +3,10 @@ import time
 
 import cv2
 import numpy as np
+from sklearn.neighbors import KDTree
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from sklearn.neighbors import KDTree
 from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
