@@ -16,7 +16,6 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped, State
-from geometry_msgs.msg import Pose, PoseWithCovarianceStamped
 from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
@@ -31,6 +30,10 @@ HEIGHT = 1000
 class PurePursuit(Node):
     path = np.array([])
     count = 0
+    img_initialised = False
+    scale = 1
+    x_offset = 0
+    y_offset = 0
     following = False
     driving = False
     fallback_path_points_offset = 0
@@ -55,7 +58,7 @@ class PurePursuit(Node):
 
         # parameters
         self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
-        self.lookahead = self.declare_parameter("lookahead", 6.0).value
+        self.lookahead = self.declare_parameter("lookahead", 3.0).value
         self.vel_max = self.declare_parameter("vel_max", 10.0).value
         self.vel_min = self.declare_parameter("vel_min", 4.0).value
         self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
@@ -72,24 +75,16 @@ class PurePursuit(Node):
             self.following = True
             self.get_logger().info("Lap completed, following commencing")
 
-    def get_wheel_position(self, pose: Pose) -> List[float]:
+    def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
         """
         Gets the position of the steering axle from the car's center of gravity and heading
-        * param pose: Pose msg of the car's center of gravity
-        * return: [x,y,th] position of steering axle
+        * param pos_cog: [x,y] coords of the car's center of gravity
+        * param heading: car's heading in rads
+        * return: [x,y] position of steering axle
         """
-        # i, j, k angles in rad
-        heading = quat2euler(
-            [
-                pose.orientation.w,
-                pose.orientation.x,
-                pose.orientation.y,
-                pose.orientation.z,
-            ]
-        )[2]
+        x_axle = pos_cog[0] + cos(heading) * self.cog2axle
+        y_axle = pos_cog[1] + sin(heading) * self.cog2axle
 
-        x_axle = pose.position.x + cos(heading) * self.cog2axle
-        y_axle = pose.position.y + sin(heading) * self.cog2axle
         return [x_axle, y_axle, heading]
 
     def get_rvwp(self, car_pos: List[float]):
@@ -223,15 +218,14 @@ class PurePursuit(Node):
         )[2]
         # get the position of the center of gravity
         position_cog: List[float] = [odom_to_base.transform.translation.x, odom_to_base.transform.translation.y]
-        position: List[float] = get_wheel_position(position_cog, theta)
+        position: List[float] = self.get_wheel_position(position_cog, theta)
 
         # rvwp control
-        rvwp: List[float] = self.get_rvwp(pose)
+        rvwp: List[float] = self.get_rvwp(position)
 
-        des_heading_ang = angle(pose[:2], [rvwp[0], rvwp[1]])
-        error = wrap_to_pi(pose[2] - des_heading_ang)
+        des_heading_ang = angle(position, [rvwp[0], rvwp[1]])
+        error = wrap_to_pi(theta - des_heading_ang)
         steering_angle = np.rad2deg(error) * self.Kp_ang
-        target_vel = self.vel_max
 
         # velocity control based on steering angle
         desired_vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(steering_angle) / 90) ** 2), 0)

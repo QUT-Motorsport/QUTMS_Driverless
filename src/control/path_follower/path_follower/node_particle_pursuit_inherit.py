@@ -76,18 +76,18 @@ class ParticlePursuit(PurePursuit):
     track = np.array([])
 
     # attractive force constants:
-    k_attractive: float = 3  # attractive force gain
+    k_attractive: float = 1  # attractive force gain
 
     # repulsive force constants:
-    d_min: float = 1.3  # min repulsive force distance (max. repulsion at or below)
+    d_min: float = 1.5  # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.0  # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 0  # repulsive force gain
+    k_repulsive: float = 1.1  # repulsive force gain
 
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
     #      cone_danger < 0: corners taken wider
     #      ** dont set to 1.0 **
-    cone_danger: float = 0.0
+    cone_danger: float = -0.5
 
     def __init__(self):
         super().__init__("particle_pursuit")
@@ -106,7 +106,10 @@ class ParticlePursuit(PurePursuit):
     def callback(self, msg: PoseWithCovarianceStamped):
         # Only start once the path and map has been recieved,
         # it's a following lap, and we are ready to drive
-        if not self.following or not self.driving or self.path.size == 0 or self.track.size == 0:
+        # if not self.following or not self.driving or self.path.size == 0 or self.track.size == 0:
+        #     return
+
+        if self.path.size == 0 or self.track.size == 0:
             return
 
         start_time = time.time()
@@ -136,14 +139,17 @@ class ParticlePursuit(PurePursuit):
         f_repulsive: float = self.k_repulsive * danger_level  # car is repulsed by nearest cone
 
         # determine angles of forces acting on car (angles in rads)
-        attractive_heading: float = angle(pose[:2], rvwp[:2])
-        repulsive_heading: float = angle(pose[:2], pos_nearestCone) + pi  # opposite heading of position
+        attractive_heading: float = wrap_to_pi(angle(pose[:2], rvwp[:2]))
+        repulsive_heading: float = wrap_to_pi(angle(pose[:2], pos_nearestCone) + pi)  # opposite heading of position
+
+        # angle from car's current heading to nearest cone
+        ang_vehicle_to_cone = wrap_to_pi(angle(pose[:2], pos_nearestCone) - pose[2])
 
         # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
-        if repulsive_heading > pose[2] and repulsive_heading <= pose[2] + pi:
-            repulsive_heading = pose[2] + 0.5 * pi
+        if ang_vehicle_to_cone > 0:
+            repulsive_heading = wrap_to_pi(pose[2] + 0.5 * pi)
         else:
-            repulsive_heading = pose[2] - 0.5 * pi
+            repulsive_heading = wrap_to_pi(pose[2] - 0.5 * pi)
 
         # get coords of vectors (forces) acting on car, relative to the car as origin
         pos_attractive_relCar: List[float] = [

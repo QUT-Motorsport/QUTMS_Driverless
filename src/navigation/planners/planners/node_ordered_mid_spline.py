@@ -189,7 +189,7 @@ class OrderedMapSpline(Node):
 
     def planning_callback(self):
         # skip if we haven't completed a lap yet
-        if not self.planning:
+        if not self.planning and self.current_track is None:
             return
 
         # extract data out of message
