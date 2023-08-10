@@ -162,6 +162,7 @@ class OrderedMapSpline(Node):
     planning = False
     current_track = None
     interp_cone_num = 3  # number of points interpolated between each pair of cones
+    final_path_published = False
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
@@ -184,13 +185,18 @@ class OrderedMapSpline(Node):
             self.get_logger().info("Lap completed, planning commencing")
 
     def map_callback(self, track_msg: ConeDetectionStamped):
+        if self.final_path_published:
+            return
+
         self.get_logger().debug("Received map")
         self.current_track = track_msg
 
     def planning_callback(self):
         # skip if we haven't completed a lap yet
-        if not self.planning and self.current_track is None:
+        if (not self.planning) or (self.current_track is None):
             return
+
+        self.get_logger().debug("Planning")
 
         # extract data out of message
         cones = self.current_track.cones
@@ -308,6 +314,9 @@ class OrderedMapSpline(Node):
         interpolated_cones_msg = ConeDetectionStamped(cones=interpolated_cones)
         interpolated_cones_msg.header = self.current_track.header
         self.interpolated_cones_pub.publish(interpolated_cones_msg)
+
+        # once we have received the track once, we don't need to keep receiving it
+        self.final_path_published = True
 
     def interpolate_boundary(self, cones, colour):
         """
