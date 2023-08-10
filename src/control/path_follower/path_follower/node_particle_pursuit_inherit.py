@@ -76,13 +76,13 @@ class ParticlePursuit(PurePursuit):
     # repulsive force constants:
     d_min: float = 1.5  # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.0  # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 1.1  # repulsive force gain
+    k_repulsive: float = 0.5  # repulsive force gain
 
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
     #      cone_danger < 0: corners taken wider
     #      ** dont set to 1.0 **
-    cone_danger: float = -0.5
+    cone_danger: float = 0.0
 
     last_pos_nearestCone = [0, 0]
     last_pos_attractive_relCar = [0, 0]
@@ -161,7 +161,7 @@ class ParticlePursuit(PurePursuit):
             f_attractive * cos(attractive_heading),
             f_attractive * sin(attractive_heading),
         ]
-        pos_repulsive_relcar: List[float] = [f_repulsive * cos(repulsive_heading), f_repulsive * sin(repulsive_heading)]
+        pos_repulsive_relcar: List[float] = [-f_repulsive * cos(repulsive_heading), -f_repulsive * sin(repulsive_heading)]
 
         # get coords of resultant vector (force) acting on car, relative to the car as origin
         pos_resultant_relCar: List[float] = [
