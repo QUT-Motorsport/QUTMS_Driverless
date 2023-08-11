@@ -201,7 +201,6 @@ class PurePursuit(Node):
         vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(desired_steering) / 90) ** 2), 0)
         return vel
 
-
     def get_wheel_position(self, pos_cog: List[float], heading: float) -> List[float]:
         """
         Gets the position of the steering axle from the car's center of gravity and heading
@@ -352,6 +351,7 @@ class PurePursuit(Node):
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
         self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
 
 def main(args=None):  # begin ros node
     rclpy.init(args=args)

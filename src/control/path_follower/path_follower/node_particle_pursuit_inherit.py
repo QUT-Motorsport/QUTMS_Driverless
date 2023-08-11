@@ -105,7 +105,7 @@ class ParticlePursuit(PurePursuit):
 
     def state_callback(self, msg: State):
         """
-        Overrides the calc_steering method in PurePursuit. 
+        Overrides the calc_steering method in PurePursuit.
         Sets the driving and following flags to True when the state changes to
         DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
         vehicle is ready to drive before following commences.
@@ -161,7 +161,10 @@ class ParticlePursuit(PurePursuit):
             f_attractive * cos(attractive_heading),
             f_attractive * sin(attractive_heading),
         ]
-        pos_repulsive_relcar: List[float] = [-f_repulsive * cos(repulsive_heading), -f_repulsive * sin(repulsive_heading)]
+        pos_repulsive_relcar: List[float] = [
+            -f_repulsive * cos(repulsive_heading),
+            -f_repulsive * sin(repulsive_heading),
+        ]
 
         # get coords of resultant vector (force) acting on car, relative to the car as origin
         pos_resultant_relCar: List[float] = [
@@ -190,7 +193,10 @@ class ParticlePursuit(PurePursuit):
         # draw the nearest cone
         cv2.drawMarker(
             debug_img,
-            (int(self.last_pos_nearestCone[0] * scale + x_offset), int(self.last_pos_nearestCone[1] * scale + y_offset)),
+            (
+                int(self.last_pos_nearestCone[0] * scale + x_offset),
+                int(self.last_pos_nearestCone[1] * scale + y_offset),
+            ),
             (255, 255, 0),
             markerType=cv2.MARKER_TRIANGLE_UP,
             markerSize=10,
@@ -228,6 +234,7 @@ class ParticlePursuit(PurePursuit):
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
         self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
 
 def main(args=None):  # begin ros node
     rclpy.init(args=args)
