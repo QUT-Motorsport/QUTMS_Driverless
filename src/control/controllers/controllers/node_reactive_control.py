@@ -67,6 +67,7 @@ class ReactiveController(Node):
             # delay starting driving for 2 seconds to allow for mapping to start
             time.sleep(2)
             self.driving = True
+            self.discovering = True
             self.get_logger().info("Ready to drive, discovery started")
         # lap has been completed, stop this controller
         if msg.lap_count > 0 and self.discovering:

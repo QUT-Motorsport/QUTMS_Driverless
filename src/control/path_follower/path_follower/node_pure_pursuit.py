@@ -127,7 +127,7 @@ class PurePursuit(Node):
         """
 
         # Only start once the path has been recieved, it's a following lap, and we are ready to drive
-        if not self.following or not self.driving:
+        if not self.following or not self.driving or self.path.size == 0:
             self.started = False
             return
 
