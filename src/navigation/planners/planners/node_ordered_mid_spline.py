@@ -13,8 +13,6 @@ from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.common import QOS_LATEST, angle, dist, midpoint
 
@@ -22,7 +20,6 @@ from typing import List, Tuple
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
-
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int = 3) -> Tuple[list, list]:
     """
