@@ -72,7 +72,6 @@ class PurePursuit(Node):
         vehicle is ready to drive before following commences.
         """
 
-        # change to driving state
         if msg.state == State.DRIVING and not self.driving:
             self.driving = True
             self.get_logger().info("Ready to drive")
@@ -184,20 +183,21 @@ class PurePursuit(Node):
     def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
         """
         Calculates the steering angle based on the pose of the car and the RVWP.
+        Gets the angle between the car and the RVWP and calculates the error between the desired heading and the
+        current heading. The steering angle is then calculated using the error and the proportional gain.
         """
 
-        # get the angle between the car and the rvwp
         des_heading_ang = angle(pose[:2], [rvwp[0], rvwp[1]])
-        # calculate the error between the desired heading and the current heading
         error = wrap_to_pi(pose[2] - des_heading_ang)
-        # calculate the steering angle
         steering = np.rad2deg(error) * self.Kp_ang
         return steering
 
     def calc_velocity(self, desired_steering: float) -> float:
         """
         Calculates the velocity based on the steering angle.
+        Reduces the velocity as the steering angle increases
         """
+
         vel = self.vel_min + max((self.vel_max - self.vel_min) * (1 - (abs(desired_steering) / 90) ** 2), 0)
         return vel
 
@@ -208,6 +208,7 @@ class PurePursuit(Node):
         * param heading: car's heading in rads
         * return: [x,y] position of steering axle
         """
+
         x_axle = pos_cog[0] + cos(heading) * self.cog2axle
         y_axle = pos_cog[1] + sin(heading) * self.cog2axle
 
@@ -221,6 +222,7 @@ class PurePursuit(Node):
         * param rvwp_lookahead: distance to look ahead for the RVWP
         * return: RVWP position as [x,y,i]
         """
+
         path_xy = [[p[0], p[1]] for p in self.path]
 
         # find the closest point on the path to the car

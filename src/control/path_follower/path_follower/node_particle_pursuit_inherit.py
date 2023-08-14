@@ -84,10 +84,10 @@ class ParticlePursuit(PurePursuit):
     #      ** dont set to 1.0 **
     cone_danger: float = 0.0
 
-    last_pos_nearestCone = [0, 0]
-    last_pos_attractive_relCar = [0, 0]
-    last_pos_repulsive_relCar = [0, 0]
-    last_pos_resultant_relCar = [0, 0]
+    last_pos_nearest_cone = [0, 0]
+    last_pos_attractive_rel_car = [0, 0]
+    last_pos_repulsive_rel_car = [0, 0]
+    last_pos_resultant_rel_car = [0, 0]
 
     def __init__(self):
         super().__init__("particle_pursuit")
@@ -105,13 +105,12 @@ class ParticlePursuit(PurePursuit):
 
     def state_callback(self, msg: State):
         """
-        Overrides the calc_steering method in PurePursuit.
+        Overrides the state_callback method in PurePursuit. Adds interpolated track as a condition.
         Sets the driving and following flags to True when the state changes to
         DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
         vehicle is ready to drive before following commences.
         """
 
-        # change to driving state
         if msg.state == State.DRIVING and not self.driving:
             self.driving = True
             self.get_logger().info("Ready to drive")
@@ -122,14 +121,17 @@ class ParticlePursuit(PurePursuit):
     def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
         """
         Overrides the calc_steering method in PurePursuit.
-        Calculates the steering angle to follow the path.
+        Calculates the steering angle to follow the path using a potential field approach.
+        Here, the vehicle is treated as a charged point particle, interacting with two external charged forces.
+        - closest boundary point: repulsive
+        - lookahead rvwp: attractive
         """
 
         # avoidance from potential field
         # get position of nearest cone
-        pos_nearestCone = get_closest_cone(pose[:2], self.track)
+        pos_nearest_cone = get_closest_cone(pose[:2], self.track)
         # maybe use fast_dist instead of dist later
-        d_nearestCone = dist(pose[:2], pos_nearestCone)
+        d_nearestCone = dist(pose[:2], pos_nearest_cone)
 
         # danger_level is a scalar of 0-1 for f_repulsive, determined by distance to nearest cone
         danger_level: float = np.clip(
@@ -145,10 +147,10 @@ class ParticlePursuit(PurePursuit):
 
         # determine angles of forces acting on car (angles in rads)
         attractive_heading: float = wrap_to_pi(angle(pose[:2], rvwp[:2]))
-        repulsive_heading: float = wrap_to_pi(angle(pose[:2], pos_nearestCone) + pi)  # opposite heading of position
+        repulsive_heading: float = wrap_to_pi(angle(pose[:2], pos_nearest_cone) + pi)  # opposite heading of position
 
         # angle from car's current heading to nearest cone
-        ang_vehicle_to_cone = wrap_to_pi(angle(pose[:2], pos_nearestCone) - pose[2])
+        ang_vehicle_to_cone = wrap_to_pi(angle(pose[:2], pos_nearest_cone) - pose[2])
 
         # set repulsive heading perpendicular to current car heading (away from pos_nearestCone)
         if ang_vehicle_to_cone > 0:
@@ -157,30 +159,28 @@ class ParticlePursuit(PurePursuit):
             repulsive_heading = wrap_to_pi(pose[2] - 0.5 * pi)
 
         # get coords of vectors (forces) acting on car, relative to the car as origin
-        pos_attractive_relCar: List[float] = [
+        pos_attractive_rel_car: List[float] = [
             f_attractive * cos(attractive_heading),
             f_attractive * sin(attractive_heading),
         ]
-        pos_repulsive_relcar: List[float] = [
+        pos_repulsive_rel_car: List[float] = [
             -f_repulsive * cos(repulsive_heading),
             -f_repulsive * sin(repulsive_heading),
         ]
 
         # get coords of resultant vector (force) acting on car, relative to the car as origin
-        pos_resultant_relCar: List[float] = [
-            pos_attractive_relCar[0] + pos_repulsive_relcar[0],
-            pos_attractive_relCar[1] + pos_repulsive_relcar[1],
+        pos_resultant_rel_car: List[float] = [
+            pos_attractive_rel_car[0] + pos_repulsive_rel_car[0],
+            pos_attractive_rel_car[1] + pos_repulsive_rel_car[1],
         ]
 
-        self.last_pos_attractive_relCar = pos_attractive_relCar
-        self.last_pos_repulsive_relCar = pos_repulsive_relcar
-        self.last_pos_resultant_relCar = pos_resultant_relCar
-        self.last_pos_nearestCone = pos_nearestCone
+        self.last_pos_attractive_rel_car = pos_attractive_rel_car
+        self.last_pos_repulsive_rel_car = pos_repulsive_rel_car
+        self.last_pos_resultant_rel_car = pos_resultant_rel_car
+        self.last_pos_nearest_cone = pos_nearest_cone
 
         # get angle of resultant vector as desired heading of the car in degrees
-        # des_heading_ang: float = (angle([0, 0], pos_resultant_relCar)) * 180 / pi
-        # steering_angle: float = ((pose[2] * 180 / pi) - des_heading_ang) * self.Kp_ang
-        des_heading_ang = angle([0, 0], pos_resultant_relCar)
+        des_heading_ang = angle([0, 0], pos_resultant_rel_car)
         error = wrap_to_pi(pose[2] - des_heading_ang)
         steering = np.rad2deg(error) * self.Kp_ang
         return steering
@@ -194,8 +194,8 @@ class ParticlePursuit(PurePursuit):
         cv2.drawMarker(
             debug_img,
             (
-                int(self.last_pos_nearestCone[0] * scale + x_offset),
-                int(self.last_pos_nearestCone[1] * scale + y_offset),
+                int(self.last_pos_nearest_cone[0] * scale + x_offset),
+                int(self.last_pos_nearest_cone[1] * scale + y_offset),
             ),
             (255, 255, 0),
             markerType=cv2.MARKER_TRIANGLE_UP,
@@ -207,8 +207,8 @@ class ParticlePursuit(PurePursuit):
             debug_img,
             (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
             (
-                int((position[0] + self.last_pos_attractive_relCar[0]) * scale + x_offset),
-                int((position[1] + self.last_pos_attractive_relCar[1]) * scale + y_offset),
+                int((position[0] + self.last_pos_attractive_rel_car[0]) * scale + x_offset),
+                int((position[1] + self.last_pos_attractive_rel_car[1]) * scale + y_offset),
             ),
             (0, 255, 0),
             3,
@@ -218,8 +218,8 @@ class ParticlePursuit(PurePursuit):
             debug_img,
             (int(position[0] * scale + x_offset), int(position[1] * scale + y_offset)),
             (
-                int((position[0] + self.last_pos_repulsive_relCar[0]) * scale + x_offset),
-                int((position[1] + self.last_pos_repulsive_relCar[1]) * scale + y_offset),
+                int((position[0] + self.last_pos_repulsive_rel_car[0]) * scale + x_offset),
+                int((position[1] + self.last_pos_repulsive_rel_car[1]) * scale + y_offset),
             ),
             (0, 0, 255),
             3,
@@ -228,6 +228,11 @@ class ParticlePursuit(PurePursuit):
         return debug_img
 
     def publish_debug_image(self, steering_angle: float, velocity: float, rvwp: List[float], position: List[float]):
+        """
+        Overrides the publish_debug_image method in PurePursuit.
+        Adds draw_forces as a step in the debug image generation.
+        """
+
         img_params = self.get_img_params()
         debug_img = self.draw_rvwp(img_params, rvwp, position)
         debug_img = self.draw_forces(debug_img, img_params, position)
