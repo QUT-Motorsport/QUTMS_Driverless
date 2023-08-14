@@ -12,15 +12,15 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alistair English",
+    maintainer="Alastair Bradford, Grant van Breda, Damin Guerin, Zac Gillerat",
     maintainer_email="team@qutmotorsport.com",
-    description="Driverless Controllers",
+    description="Driverless Guidance Systems",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "pure_pursuit = path_follower.node_pure_pursuit:main",
-            "pure_pursuit_kdtree = path_follower.node_pure_pursuit_kdtree:main",
+            "particle_pursuit_inherit = path_follower.node_particle_pursuit_inherit:main",
         ],
     },
 )

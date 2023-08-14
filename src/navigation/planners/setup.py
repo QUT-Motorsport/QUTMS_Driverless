@@ -12,14 +12,13 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alastair Bradford, Zac Gillerat",
-    maintainer_email="team@gqutmotorsport.com",
+    maintainer="Alastair Bradford, Zac Gillerat, Damin Guerin",
+    maintainer_email="team@qutmotorsport.com",
     description="Path Planner for mapped tracks",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "delaunay_planner = planners.node_delaunay_planner:main",
             "ordered_mid_spline = planners.node_ordered_mid_spline:main",
         ],
     },
