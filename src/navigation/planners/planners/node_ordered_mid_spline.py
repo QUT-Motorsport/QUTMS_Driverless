@@ -21,6 +21,7 @@ from typing import List, Tuple
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
 
+
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree: int = 3) -> Tuple[list, list]:
     """
     ADAPTED FROM: https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/BSplinePath/bspline_path.py \n
