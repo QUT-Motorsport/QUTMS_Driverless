@@ -20,7 +20,8 @@ setup(
     entry_points={
         "console_scripts": [
             "controller = terminal_control.node_controller:main",
-            "state_controller = terminal_control.node_state_controller:main"
+            "state_controller = terminal_control.node_state_controller:main",
+            "state_gui = terminal_control.node_state_gui:main"
         ],
     },
 )
