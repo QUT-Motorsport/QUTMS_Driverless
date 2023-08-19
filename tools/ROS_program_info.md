@@ -1,6 +1,6 @@
 # ROS 2 Program Info
 
-## Group: Common 
+## Group: Common
 
 ### Nodes with packages
 
@@ -30,8 +30,8 @@
 | `controllers` | `point_fitting2` | Fits a steering curve to minimise the error between the local cone boundaries. | `/lidar/cone_detection` | `/control/driving_command`, `/debug_imgs/control_img` |
 | `controllers` | `vector_spline` | Creates vectors between local cone boundaries and follows a mid spline perpendicular to them. | `/slam/local_map` | `/control/driving_command` |
 | `path_follower` | `pure_pursuit` | Follows a path by approaching a receding waypoint. | `/system/as_status`, `/planner/path`, `/slam/car_pose` | `/control/driving_command`, `debug_imgs/pursuit_img` |
-| `path_follower` | `pure_pursuit_kdtree` | Follows a path by approaching a receding waypoint. Waypoint is searched in a KDTree. | `/planner/path`, `/slam/car_pose` | `/control/driving_command`, `debug_imgs/pursuit_img` | 
-| `pure_pursuit_cpp` | `pure_pursuit_cpp` | Follows a path by approaching a receding waypoint. Written in C++. | `/planner/path`, `/slam/car_pose` | `/control/driving_command` | 
+| `path_follower` | `pure_pursuit_kdtree` | Follows a path by approaching a receding waypoint. Waypoint is searched in a KDTree. | `/planner/path`, `/slam/car_pose` | `/control/driving_command`, `debug_imgs/pursuit_img` |
+| `pure_pursuit_cpp` | `pure_pursuit_cpp` | Follows a path by approaching a receding waypoint. Written in C++. | `/planner/path`, `/slam/car_pose` | `/control/driving_command` |
 | `steering_testing` | `random` | Generates steering commands randomly between full lock. | n/a | `/control/driving_command` |
 | `steering_testing` | `step_response` | Generates a steering command to one specified angle and then its opposite. | n/a | `/control/driving_command` |
 | `steering_testing` | `step_response_calibration` | Records and graphs stepper motor encoder increments as steering commands are generated from lock to lock and back again. | `/vehicle/steering_reading`, `/vehicle/encoder_reading` | `/control/driving_command`, `/debug_imgs/model_calibration_image` |
@@ -57,6 +57,10 @@
 | Package | Launch File | Description |
 | --- | --- | --- |
 | `steering_actuator` | `machine.launch.py` | Launches the `steering_actuator_node` with `steering.yaml` parameters. |
+| `sensors` | `sbg_device_mag_calibration.launch.py` | Launches the SBG magnetometer calibration with our parameters file. |
+| `sensors` | `sbg_device.launch.py` | Launches the SBG driver with our parameters file. |
+| `sensors` | `vlp32.launch.py` | Launches the VLP32 lidar driver, pointcloud, and laserscan converters with our parameters file. |
+| `sensors` | `zed_camera.launch.py` | Launches the ZED 2i camera with our parameters file. |
 
 ## Group: Machines
 
@@ -72,3 +76,42 @@
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
+| `planners` | `ordered_mid_spline` | Orders the track boundaries, interpolates between, and creates a mid spline through the center of the track. | `/slam/global_map`, `/system/as_status` | `/planner/path`, `planner/spline_path`, `/planner/interpolated_map` |
+| `py_slam` | `imu_slam` | EKF SLAM implementation using IMU for localisation. Creates a map of new cones as the car navigates the discovery lap. | `/imu/velocity`, `/lidar/cone_detection`, `/vision/cone_detection`, `/system/reset` | `/slam/global_map`, `/slam/car_pose`, `/slam/local_map` |
+| `py_slam` | `wss_slam` | EKF SLAM implementation using wheel speeds for localisation. | `/imu/velocity`, `/vehicle/wheel_speed`, `/lidar/cone_detection`, `/vision/cone_detection`, `/system/reset` | `/slam/global_map`, `/slam/car_pose`, `/slam/local_map` |
+| `py_slam` | `sbg_slam` | EKF SLAM implementation using SBG GPS for localisation. | `/sbg/gps_pos`, `/sbg/ekf_euler`, `/lidar/cone_detection`, `/vision/cone_detection`, `/system/reset` | `/slam/global_map`, `/slam/car_pose`, `/slam/local_map` |
+| `py_slam` | `odom_slam` | EKF SLAM implementation using a published odom->base transform for localisation. | `/tf`, `/lidar/cone_detection`, `/vision/cone_detection`, `/system/as_status` | `/slam/global_map`, `/slam/car_pose`, `/slam/local_map` |
+| `py_slam` | `track_to_csv` | Converts a discovered global map to a csv file. | `/slam/global_map` | n/a |
+| `slam` | `node_ekf_slam` | EKF SLAM in C++ using IMU for localisation. | `velocity`, `cone_detection` | `/slam/track`, `/slam/pose` |
+
+## Group: Operations
+
+### Nodes with packages
+
+| Package | Node | Description | Topics Subscribed | Topics Published |
+| --- | --- | --- | --- | --- |
+| `mission_controller` | `mission_launcher` | Runs ROS 2 launch script with the specified mission. | `/system/as_status` | n/a |
+| `mission_controller` | `inspection_handler` | Oversees the inspection mission starting and finishing. | `/system/reset` | `/system/shutdown` |
+| `mission_controller` | `trackdrive_handler` | Oversees the trackdrive mission through the 10 laps. | `/system/as_status`, `/slam/car_pose` | `/system/shutdown`, `/system/laps_completed` |
+| `terminal_control` | `controller` | Terminal GUI interface for vehicle control and mission selection. | `/system/as_status` | `/system/mission_select`, `/system/reset`, `system/r2d`, `system/laps_completed` |
+
+### Launch Files with packages
+
+| Package | Launch File | Description |
+| --- | --- | --- |
+| `mission_controller` | `inspection.launch.py` | Launches the inspection mission and handler - simple sine control. |
+| `mission_controller` | `trackdrive.launch.py` | Launches the trackdrive mission and handler - discovery lap control, mapping, planning, following. |
+| `mission_controller` | `ebs_test.launch.py` | Launches the EBS test mission and handler - reactive control. |
+| `mission_controller` | `manual_driving.launch.py` | Launches *nothing* |
+
+## Group: Perception
+
+### Nodes with packages
+
+| Package | Node | Description | Topics Subscribed | Topics Published |
+| --- | --- | --- | --- | --- |
+| `vision_pipeline` | `detector` | Detects cone locations using ZED camera. Has PyTorch, TensorRT, HSV implementations | `/zed2i/zed_node/rgb/image_rect_color`, `/zed2i/zed_node/rgb/camera_info`, `/zed2i/zed_node/depth/depth_registered` | `/vision/cone_detection`, `/debug_imgs/vision_bbs_img`, `/debug_imgs/vision_depth_img` |
+| `lidar_pipeline` | `detector` | Detects cone locations using LiDAR. | `/velodyne_points` | `/lidar/cone_detection` |
+| `cpp_lidar` | `detector` | Experimental node in C++ to detect aspects of a pointcloud. | `/velodyne_points` | `/velodyne/ground`, `/velodyne/non_ground`, `/velodyne/clusters` |
+| `hsv_thresholder` | `gui` | Slider GUI for tuning HSV thresholds. | n/a | `/hsv_thresholder/threshold` |
+| `hsv_thresholder` | `thresholder` | Display for HSV threshold tuning. | `/zed2/zed_node/rgb/image_rect_color`, `/hsv_thresholder/threshold` | n/a |
