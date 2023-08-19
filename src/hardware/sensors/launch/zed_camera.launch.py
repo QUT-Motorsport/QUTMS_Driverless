@@ -20,12 +20,12 @@ from launch.substitutions import Command
 from launch_ros.actions import Node
 import yaml
 
-# URDF/xacro file to be loaded by the Robot State Publisher node
-default_xacro_path = os.path.join(get_package_share_directory("zed_wrapper"), "urdf", "zed_descr.urdf.xacro")
-camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
-
 
 def generate_launch_description():
+    # URDF/xacro file to be loaded by the Robot State Publisher node
+    default_xacro_path = os.path.join(get_package_share_directory("zed_wrapper"), "urdf", "zed_descr.urdf.xacro")
+    camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
+
     common_params = yaml.safe_load(open(camera_config_path))
 
     # Get parameters from yaml
