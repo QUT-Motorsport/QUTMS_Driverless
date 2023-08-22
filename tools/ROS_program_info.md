@@ -4,7 +4,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `custom_viz` | `matrix` | TODO | `TODO` | `TODO` |
 | `data_overlay` | `overlay` | Creates an overlay to display acceleration on a g-force circle and velocity. | `/vehicle/wheel_speed`, `/imu/data` | `/debug_imgs/data_overlay` |
@@ -13,7 +13,7 @@
 
 ### Launch Files
 
-| Package | Launch File | Description |
+| Package | Launch File | <div style="width:30vw">Description</div> |
 | --- | --- | --- |
 | `driverless_common` | `display.launch.py` | Launches the `display` node with `rosboard_node` (submodule package) for web server and visuals. |
 | `vehicle_urdf` | `robot_description.launch.py` | Launches the `robot_state_publisher` node and `joint_state_publisher` node with the URDF file for QEV-3D. |
@@ -22,7 +22,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `controllers` | `sine` | Steers in a sine wave from lock to lock for the inspection. | n/a | `/control/driving_command`, `/control/accel_command` |
 | `controllers` | `reactive_control` | Follows a mid point between the furthest pair of local cones seen. If only one colour cone can be seen, the controller will output full-lock. If no cones are seen, the controller halts. | `/system/as_status`, `/lidar/cone_detection`, `/slam/local_map` | `/control/driving_command` |
@@ -41,7 +41,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `canbus` | `canbus_translator_node` | Reads CAN messages from the vehicle and publishes them as various sensor topics. | n/a | `/vehicle/steering_angle`, `/vehicle/velocity`, `/vehicle/wheel_odom`, `/vehicle/bmu_status` |
 | `sbg_testing` | `sbg_performance` | Plots SBG position tracking data for analysis. | `/imu/nav_sat_fix`, `/imu/velocity`, `/sbg/ekf_nav` | n/a |
@@ -54,7 +54,7 @@
 
 ### Launch Files
 
-| Package | Launch File | Description |
+| Package | Launch File | <div style="width:30vw">Description</div> |
 | --- | --- | --- |
 | `steering_actuator` | `machine.launch.py` | Launches the `steering_actuator_node` with `steering.yaml` parameters. |
 | `sensors` | `sbg_device_mag_calibration.launch.py` | Launches the SBG magnetometer calibration with our parameters file. |
@@ -65,7 +65,7 @@
 ## Group: Machines
 
 ### Launch Files
-| Package | Launch File | Description |
+| Package | Launch File | <div style="width:30vw">Description</div> |
 | --- | --- | --- |
 | `jetson_machine` | `machine.launch.py` | Launches the camera driver and `vision_pipeline` detector node |
 | `roscube_machine` | `machine.launch.py` | Launches sensor drivers, vehicle supervisor, can translator, and vehicle operations nodes |
@@ -74,7 +74,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `planners` | `ordered_mid_spline` | Orders the track boundaries, interpolates between, and creates a mid spline through the center of the track. | `/slam/global_map`, `/system/as_status` | `/planner/path`, `planner/spline_path`, `/planner/interpolated_map` |
 | `py_slam` | `imu_slam` | EKF SLAM implementation using IMU for localisation. Creates a map of new cones as the car navigates the discovery lap. | `/imu/velocity`, `/lidar/cone_detection`, `/vision/cone_detection`, `/system/reset` | `/slam/global_map`, `/slam/car_pose`, `/slam/local_map` |
@@ -88,7 +88,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `mission_controller` | `mission_launcher` | Runs ROS 2 launch script with the specified mission. | `/system/as_status` | n/a |
 | `mission_controller` | `inspection_handler` | Oversees the inspection mission starting and finishing. | `/system/reset` | `/system/shutdown` |
@@ -97,7 +97,7 @@
 
 ### Launch Files
 
-| Package | Launch File | Description |
+| Package | Launch File | <div style="width:30vw">Description</div> |
 | --- | --- | --- |
 | `mission_controller` | `inspection.launch.py` | Launches the inspection mission and handler - simple sine control. |
 | `mission_controller` | `trackdrive.launch.py` | Launches the trackdrive mission and handler - discovery lap control, mapping, planning, following. |
@@ -108,7 +108,7 @@
 
 ### Executable Nodes
 
-| Package | Node | Description | Topics Subscribed | Topics Published |
+| Package | Node | <div style="width:30vw">Description</div> | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
 | `vision_pipeline` | `detector` | Detects cone locations using ZED camera. Has PyTorch, TensorRT, HSV implementations | `/zed2i/zed_node/rgb/image_rect_color`, `/zed2i/zed_node/rgb/camera_info`, `/zed2i/zed_node/depth/depth_registered` | `/vision/cone_detection`, `/debug_imgs/vision_bbs_img`, `/debug_imgs/vision_depth_img` |
 | `lidar_pipeline` | `detector` | Detects cone locations using LiDAR. | `/velodyne_points` | `/lidar/cone_detection` |
