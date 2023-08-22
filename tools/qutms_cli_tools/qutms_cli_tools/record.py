@@ -2,14 +2,8 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-import colorama
+from qutms_cli_tools.common import Print
 import yaml
-
-G = colorama.Fore.GREEN
-R = colorama.Fore.RED
-Y = colorama.Fore.YELLOW
-B = colorama.Fore.BLUE
-RESET = colorama.Fore.RESET
 
 
 def main():
@@ -45,12 +39,7 @@ def main():
     args = parser.parse_args()
 
     if not args.yaml:
-        print(
-            R,
-            "Please specify a YAML config file, use --help or -h for more info",
-            RESET,
-            flush=True,
-        )
+        Print.red("Please specify a YAML config file, use --help or -h for more info")
         return
 
     ws_path = os.path.expanduser(os.environ["QUTMS_WS"])
@@ -63,18 +52,13 @@ def main():
         # Default to ws_path/bags
         args.dir = os.path.join(ws_path, "bags")
 
-    print(
-        G,
-        "Recording bag...",
-        RESET,
-        flush=True,
-    )
+    Print.green("Recording bag...")
 
     config_path = os.path.join(ws_path, "QUTMS_Driverless", "tools", "topics_to_record", str(args.yaml) + ".yaml")
 
     with open(config_path, "r") as f:
         topics = yaml.safe_load(f)
-        print(B, "Recording topics:", topics[args.yaml])
+        Print.blue("Recording topics:")
 
     command = [
         "ros2",
@@ -88,8 +72,7 @@ def main():
     for topic in topics[args.yaml]:
         command.append(topic)
 
-    print(B, f"Command: {' '.join(command)}", RESET, flush=True)
-
+    Print.blue(f"Command: {' '.join(command)}")
     if args.dir:
         process = subprocess.Popen(command, text=True, cwd=args.dir)
     else:

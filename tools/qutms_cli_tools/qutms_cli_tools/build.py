@@ -2,14 +2,8 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-import colorama
+from qutms_cli_tools.common import Print
 import yaml
-
-G = colorama.Fore.GREEN
-R = colorama.Fore.RED
-Y = colorama.Fore.YELLOW
-B = colorama.Fore.BLUE
-RESET = colorama.Fore.RESET
 
 
 def main():
@@ -83,19 +77,14 @@ def main():
         command = command_prefix + ["--packages-up-to", "eufs_launcher"]
 
     elif args.all:
-        print(R, "Ignoring packages: ", colcon_ignores["colcon_ignore"], RESET, flush=True)
+        Print.blue("Ignoring packages from 'colcon_ignore.yaml':")
         command = command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
     else:
-        print(
-            R,
-            "Please specify a build group, use --help or -h for more info",
-            RESET,
-            flush=True,
-        )
+        Print.red("Please specify a build group, use --help or -h for more info")
         return
 
-    print(G, "Building packages...", RESET, flush=True)
-    print(B, f"Command: {' '.join(command)}", RESET, flush=True)
+    Print.green("Building packages...")
+    Print.blue(f"Command: {' '.join(command)}")
     process = subprocess.Popen(command, text=True, cwd=ws_path)
     try:
         process.wait()
