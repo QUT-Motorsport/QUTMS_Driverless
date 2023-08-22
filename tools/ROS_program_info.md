@@ -2,7 +2,7 @@
 
 ## Group: Common
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
@@ -11,7 +11,7 @@
 | `driverless_common` | `display` | Displays top-down images of cone and map detections and planned paths. | `/vision/cone_detection`,   `/lidar/cone_detection`, `/slam/global_map`, `/slam/local_map`, `/control/driving_command`, `/planner/path` | `/debug_imgs/vision_det_img`, `/debug_imgs/lidar_det_img`, `/debug_imgs/slam_image`, `/debug_imgs/local_image`, `/markers/path_line` |
 | `driverless_common` | `topic_to_csv` | Saves ROS topic data to CSV files. | Any specified | n/a |
 
-### Launch Files with packages
+### Launch Files
 
 | Package | Launch File | Description |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 
 ## Group: Control
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
@@ -39,7 +39,7 @@
 
 ## Group: Hardware
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
@@ -52,7 +52,7 @@
 | `vehicle_supervisor` | `vehicle_supervisor_node` | Supervises the vehicle and publishes the vehicle status. | `/can/canbus_rosbound`, `/vehicle/steering_angle`, `/vehicle/velocity`, `/vehicle/wheel_odom`, `/vehicle/accel_command`, `/system/laps_completed`, `/system/shutdown` | `/can/canbus_carbound`, `/system/as_status`, `/system/res_status`, `/system/reset`, `/data_logger/drivingDynamics1`, `/data_logger/systemStatus` |
 | `velocity_controller` | `velocity_controller_node` | Controls the velocity of the vehicle to a specified velocity. | `/vehicle/motor_rpm`, `/vehicle/driving_command`, `/system/as_status` | `/control/accel_command` |
 
-### Launch Files with packages
+### Launch Files
 
 | Package | Launch File | Description |
 | --- | --- | --- |
@@ -64,7 +64,7 @@
 
 ## Group: Machines
 
-### Launch Files with packages
+### Launch Files
 | Package | Launch File | Description |
 | --- | --- | --- |
 | `jetson_machine` | `machine.launch.py` | Launches the camera driver and `vision_pipeline` detector node |
@@ -72,7 +72,7 @@
 
 ## Group: Navigation
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
@@ -86,7 +86,7 @@
 
 ## Group: Operations
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
@@ -95,7 +95,7 @@
 | `mission_controller` | `trackdrive_handler` | Oversees the trackdrive mission through the 10 laps. | `/system/as_status`, `/slam/car_pose` | `/system/shutdown`, `/system/laps_completed` |
 | `terminal_control` | `controller` | Terminal GUI interface for vehicle control and mission selection. | `/system/as_status` | `/system/mission_select`, `/system/reset`, `system/r2d`, `system/laps_completed` |
 
-### Launch Files with packages
+### Launch Files
 
 | Package | Launch File | Description |
 | --- | --- | --- |
@@ -106,7 +106,7 @@
 
 ## Group: Perception
 
-### Nodes with packages
+### Executable Nodes
 
 | Package | Node | Description | Topics Subscribed | Topics Published |
 | --- | --- | --- | --- | --- |
