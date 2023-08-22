@@ -15,7 +15,7 @@
 #include "driverless_msgs/msg/car_status.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
-#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
@@ -56,7 +56,7 @@ class CanBus : public rclcpp::Node {
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
     rclcpp::Publisher<driverless_msgs::msg::CarStatus>::SharedPtr bmu_status_pub_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
 
     // can connection
     std::shared_ptr<TritiumCAN> tritiumCAN;
@@ -64,17 +64,17 @@ class CanBus : public rclcpp::Node {
     // class variables for sensor data
     float wheel_speeds[4];
     driverless_msgs::msg::CarStatus bmu_status;
-    nav_msgs::msg::Odometry odom_msg;
+    geometry_msgs::msg::TwistWithCovarianceStamped twist_msg;
     float last_velocity;
     float last_steering_angle;
 
     void update_odom() {
         // use last velocity and steering angle to update odom
-        odom_msg.header.stamp = this->now();
-        odom_msg.twist.twist.linear.x = last_velocity;
-        odom_msg.twist.twist.linear.y = 0.0;
-        odom_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
-        odom_pub_->publish(odom_msg);
+        twist_msg.header.stamp = this->now();
+        twist_msg.twist.twist.linear.x = last_velocity;
+        twist_msg.twist.twist.linear.y = 0.0;
+        twist_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
+        twist_pub_->publish(twist_msg);
     }
 
     void canmsg_timer() {
@@ -202,7 +202,7 @@ class CanBus : public rclcpp::Node {
         // Vehicle velocity
         this->velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
         // Odometry
-        this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/vehicle/wheel_odom", 10);
+        this->twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/vehicle/wheel_twist", 10);
         // BMU
         this->bmu_status_pub_ = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
         this->bmu_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
