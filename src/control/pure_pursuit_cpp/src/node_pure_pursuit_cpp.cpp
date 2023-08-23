@@ -8,9 +8,10 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/path_stamped.hpp"
-#include "driverless_msgs/msg/state.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 
 using std::placeholders::_1;
 
@@ -32,11 +33,10 @@ struct Point {
     Point(double x, double y, double turn_intensity) : x(x), y(y), turn_intensity(turn_intensity) {}
 };
 
-class PurePursuit : public rclcpp::Node {
+class PurePursuit : public rclcpp_lifecycle::LifecycleNode {
    private:
     rclcpp::Subscription<driverless_msgs::msg::PathStamped>::SharedPtr path_sub;
-    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
-    rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr driving_command_pub;
+    rclcpp_lifecycle::LifecyclePublisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr driving_command_pub;
     rclcpp::TimerBase::SharedPtr timer;
     std::vector<Point> path{};
 
@@ -50,10 +50,6 @@ class PurePursuit : public rclcpp::Node {
     double vel_min;
     int fallback_path_points_offset;  // The number of path points to be skipped for an approximate rvwp
 
-    // Internal states
-    bool driving{false};
-    bool following{false};
-    bool started{false};
     size_t count{0};
 
     static Pose calc_car_axle_pos(double car_pos_x, double car_pos_y, double heading) {
@@ -114,17 +110,6 @@ class PurePursuit : public rclcpp::Node {
         return path.at(rvwp_index);
     }
 
-    void state_callback(driverless_msgs::msg::State const& msg) {
-        if (msg.state == driverless_msgs::msg::State::DRIVING && !driving) {
-            driving = true;
-            RCLCPP_INFO(get_logger(), "Ready to drive");
-        }
-        if (msg.lap_count > 0 && !following) {
-            following = true;
-            RCLCPP_INFO(get_logger(), "Discovery lap completed, commencing following");
-        }
-    }
-
     void path_callback(driverless_msgs::msg::PathStamped const& spline_path_msg) {
         double distance = 0.0;
         path.clear();
@@ -148,15 +133,7 @@ class PurePursuit : public rclcpp::Node {
         // Listens to odom->base_footprint transform and updates the state.
         // Solution is to get the delta and add it to the previous state and subtract the delta from the previous
         // map->odom transform.
-        if (!following || !driving || path.empty()) {
-            started = false;
-            return;
-        }
-
-        if (!started) {
-            started = true;
-            RCLCPP_INFO(get_logger(), "Starting pure pursuit (C++)");
-        }
+        if (path.empty()) return;
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -202,29 +179,72 @@ class PurePursuit : public rclcpp::Node {
     }
 
    public:
-    PurePursuit() : Node("pure_pursuit_cpp_node"), buffer(this->get_clock()), listener(buffer) {
-        this->path_sub = this->create_subscription<driverless_msgs::msg::PathStamped>(
-            "/planner/path", QOS_LATEST, std::bind(&PurePursuit::path_callback, this, _1));
-        this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", QOS_LATEST, std::bind(&PurePursuit::state_callback, this, _1));
-        timer =
-            this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&PurePursuit::transform_callback, this));
+    PurePursuit()
+        : rclcpp_lifecycle::LifecycleNode("pure_pursuit_cpp_node",
+                                          rclcpp::NodeOptions().use_intra_process_comms(false)),
+          buffer(this->get_clock()),
+          listener(buffer) {
+        RCLCPP_INFO(get_logger(), "---Pure Pursuit (C++) Node Initialised---");
+    }
 
-        this->driving_command_pub =
+    CallbackReturn on_configure(rclcpp_lifecycle::State const&) override {
+        driving_command_pub =
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
 
-        this->vel_max = this->declare_parameter<double>("vel_max", 10.0);
-        this->vel_min = this->declare_parameter<double>("vel_min", 4.0);
-        this->kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
-        this->lookahead = this->declare_parameter<double>("lookahead", 3);
+        vel_max = this->declare_parameter<double>("vel_max", 10.0);
+        vel_min = this->declare_parameter<double>("vel_min", 4.0);
+        kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
+        lookahead = this->declare_parameter<double>("lookahead", 3);
         squared_lookahead = lookahead * lookahead;
-        RCLCPP_INFO(get_logger(), "---Pure Pursuit (C++) Node Initialised---");
+
+        RCLCPP_INFO(get_logger(), "On configure");
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn on_activate(rclcpp_lifecycle::State const&) override {
+        path_sub = this->create_subscription<driverless_msgs::msg::PathStamped>(
+            "/planner/path", QOS_LATEST, std::bind(&PurePursuit::path_callback, this, _1));
+        timer =
+            this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&PurePursuit::transform_callback, this));
+        driving_command_pub->on_activate();
+        RCLCPP_INFO(get_logger(), "On activate");
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn on_deactivate(rclcpp_lifecycle::State const&) override {
+        path_sub.reset();
+        timer->reset();
+        driving_command_pub->on_deactivate();
+        RCLCPP_INFO(get_logger(), "On deactivate");
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn on_cleanup(rclcpp_lifecycle::State const&) override {
+        path_sub.reset();
+        timer->reset();
+        driving_command_pub.reset();
+        RCLCPP_INFO(get_logger(), "On cleanup");
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn on_shutdown(rclcpp_lifecycle::State const&) override {
+        path_sub.reset();
+        timer->reset();
+        driving_command_pub.reset();
+        RCLCPP_INFO(get_logger(), "On shutdown");
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn on_error(rclcpp_lifecycle::State const&) override {
+        RCLCPP_INFO(get_logger(), "On error");
+        return CallbackReturn::SUCCESS;
     }
 };
 
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<PurePursuit>());
+    auto node = std::make_shared<PurePursuit>();
+    rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
     return 0;
 }

@@ -8,6 +8,8 @@ endif ()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -21,6 +23,8 @@ target_include_directories(pure_pursuit_cpp
         PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 ament_target_dependencies(pure_pursuit_cpp
         rclcpp
+        rclcpp_lifecycle
+        lifecycle_msgs
         driverless_msgs
         ackermann_msgs
         tf2

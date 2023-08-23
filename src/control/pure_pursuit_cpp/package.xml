@@ -8,6 +8,8 @@
     <license>MIT</license>
 
     <depend>rclcpp</depend>
+    <depend>rclcpp_lifecycle</depend>
+    <depend>lifecycle_msgs</depend>
     <depend>driverless_msgs</depend>
     <depend>ackermann_msgs</depend>
     <depend>tf2</depend>
