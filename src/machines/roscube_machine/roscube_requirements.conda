@@ -2,6 +2,7 @@ cython
 dataclasses
 eigen
 matplotlib
+pycurl
 opencv
 ros-humble-ackermann-msgs
 ros-humble-joint-state-publisher
