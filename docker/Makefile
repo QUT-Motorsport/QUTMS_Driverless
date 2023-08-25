@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_jetson build_docker_base_roscube build run
+.PHONY: all help build_docker_base_jetson build_docker_base_roscube build run roscube_srv jetson_srv
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -27,12 +27,22 @@ all:
 	@echo "        - build a target (see ENVIRONMENT_TARGET options)"
 	@echo "    run target=[ENVIRONMENT_TARGET]"
 	@echo "        - run a target (see ENVIRONMENT_TARGET options)"
+	@echo "    roscube_srv a=[ACTION]"
+	@echo "        - run systemctl service action (see ACTION options)"
+	@echo "    jetson_srv a=[ACTION]"
+	@echo "        - run systemctl service action (see ACTION options)"
 	@echo
 	@echo "ENVIRONMENT_TARGET options:"
 	@echo "    roscube (requires IMAGE_TYPE=roscube)"
 	@echo "    roscube_terminal (requires IMAGE_TYPE=roscube)"
 	@echo "    jetson (requires IMAGE_TYPE=jetson)"
 	@echo "    jetson_terminal (requires IMAGE_TYPE=jetson)"
+	@echo
+	@echo "ACTION options:"
+	@echo "    status"
+	@echo "    start"
+	@echo "    stop"
+	@echo "    restart"
 	@echo
 
 help: all
@@ -45,11 +55,15 @@ build_docker_base_roscube:
 	..
 
 build_docker_base_jetson:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-tensorrt-r8.2.1 \
+	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-jetpack-r35.3.1 \
 	--build-arg USERNAME=$(USERNAME) \
 	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime \
+	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.3.1 \
 	..
+
+build_docker_base_jetson_new:
+	@echo "ensure 'jetson-containers' has been cloned into the 'repos' directory"
+	~/dev/repos/jetson-containers/build.sh --name=qutms_driverless_base pytorch torchvision zed ros:humble-ros-base --skip-tests=all
 
 # use make build target=<value>
 build:

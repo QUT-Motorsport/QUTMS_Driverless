@@ -6,16 +6,23 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    vision_detector_node = Node(
+        package="vision_pipeline",
+        executable="torch_detector",
+        parameters=[
+            {"debug_images": False},
+        ],
+    )
+
+    zed_camera_driver = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("sensors") / "launch" / "zed_camera.launch.py")
+        ),
+    )
+
     return LaunchDescription(
         [
-            Node(
-                package="vision_pipeline",
-                executable="trt_detector",
-            ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("sensors") / "launch" / "zed_camera.launch.py")
-                ),
-            ),
+            vision_detector_node,
+            zed_camera_driver,
         ]
     )
