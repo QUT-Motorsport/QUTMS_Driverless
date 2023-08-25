@@ -35,7 +35,7 @@
       portName: "/dev/ttyUSB0"
 
       # Baude rate (4800 ,9600 ,19200 ,38400 ,115200 [default],230400 ,460800 ,921600)
-      baudRate: 921600
+      baudRate: 115200
 
       # Port Id
       # 0 PORT_A: Main communication interface. Full duplex.
@@ -56,9 +56,9 @@
       # Year at startup
       year: 2023
       # month in year at startup
-      month: 02
+      month: 08
       # day in month at startup
-      day: 02
+      day: 25
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
