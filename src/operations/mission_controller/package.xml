@@ -12,8 +12,8 @@
     <!-- Custom packages -->
     <depend>controllers</depend>
     <depend>py_slam</depend>
-    <depend>vision_pipeline</depend>
     <depend>planners</depend>
+    <depend>path_follower</depend>
     <depend>driverless_common</depend>
 
     <export>
