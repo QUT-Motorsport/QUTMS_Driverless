@@ -184,18 +184,18 @@ class PurePursuit : public rclcpp_lifecycle::LifecycleNode {
                                           rclcpp::NodeOptions().use_intra_process_comms(false)),
           buffer(this->get_clock()),
           listener(buffer) {
+        vel_max = this->declare_parameter<double>("vel_max", 10.0);
+        vel_min = this->declare_parameter<double>("vel_min", 4.0);
+        kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
+        lookahead = this->declare_parameter<double>("lookahead", 3);
+        squared_lookahead = lookahead * lookahead;
+
         RCLCPP_INFO(get_logger(), "---Pure Pursuit (C++) Node Initialised---");
     }
 
     CallbackReturn on_configure(rclcpp_lifecycle::State const&) override {
         driving_command_pub =
             this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
-
-        vel_max = this->declare_parameter<double>("vel_max", 10.0);
-        vel_min = this->declare_parameter<double>("vel_min", 4.0);
-        kp_ang = this->declare_parameter<double>("kp_ang", -3.0);
-        lookahead = this->declare_parameter<double>("lookahead", 3);
-        squared_lookahead = lookahead * lookahead;
 
         RCLCPP_INFO(get_logger(), "On configure");
         return CallbackReturn::SUCCESS;
@@ -212,25 +212,25 @@ class PurePursuit : public rclcpp_lifecycle::LifecycleNode {
     }
 
     CallbackReturn on_deactivate(rclcpp_lifecycle::State const&) override {
-        path_sub.reset();
-        timer->reset();
-        driving_command_pub->on_deactivate();
+        if (path_sub) path_sub.reset();
+        if (timer) timer->reset();
+        if (driving_command_pub) driving_command_pub->on_deactivate();
         RCLCPP_INFO(get_logger(), "On deactivate");
         return CallbackReturn::SUCCESS;
     }
 
     CallbackReturn on_cleanup(rclcpp_lifecycle::State const&) override {
-        path_sub.reset();
-        timer->reset();
-        driving_command_pub.reset();
+        if (path_sub) path_sub.reset();
+        if (timer) timer->reset();
+        if (driving_command_pub) driving_command_pub.reset();
         RCLCPP_INFO(get_logger(), "On cleanup");
         return CallbackReturn::SUCCESS;
     }
 
     CallbackReturn on_shutdown(rclcpp_lifecycle::State const&) override {
-        path_sub.reset();
-        timer->reset();
-        driving_command_pub.reset();
+        if (path_sub) path_sub.reset();
+        if (timer) timer->reset();
+        if (driving_command_pub) driving_command_pub.reset();
         RCLCPP_INFO(get_logger(), "On shutdown");
         return CallbackReturn::SUCCESS;
     }
