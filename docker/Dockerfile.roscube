@@ -15,27 +15,34 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-COPY ./src/machines/roscube_machine/roscube_requirements.conda ./requirements.conda
+WORKDIR /home/${USERNAME}/driverless_ws
+USER ${USERNAME}
+
+RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
+RUN git clone https://github.com/b1n-ch1kn/QUTMS_Nav_Integration.git
+
+# hack, need to install as root
+USER root
+COPY src/machines/roscube_machine/roscube_requirements.conda /tmp/requirements.conda
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
-    mamba install -y --file ./requirements.conda
+    mamba install -y --file /tmp/requirements.conda &&\
+    rm -f /tmp/requirements.conda
 
-# cleanup
-RUN rm -f ./requirements.conda
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    conda activate driverless_env &&\
+    mamba install -y --file QUTMS_Nav_Integration/conda_requirements
 
-WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 # copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
-RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
-
 # run a ros build
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
     colcon build --symlink-install --packages-up-to \
-        roscube_machine
+        roscube_machine qutms_nav2 cone_association
 
 # delete source
 RUN rm -rf ./src
