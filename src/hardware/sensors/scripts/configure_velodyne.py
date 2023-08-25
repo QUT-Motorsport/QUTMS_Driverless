@@ -39,9 +39,9 @@ for setting in settings:
     val = settings[setting]
 
     if setting == "fov":
-        for fov in setting:
-            val = setting[fov]
-            rc = sensor_do(sensor, Base_URL + "setting/fov", urlencode({fov: val}), buffer)
+        for fov in val:
+            fov_val = val[fov]
+            rc = sensor_do(sensor, Base_URL + "setting/fov", urlencode({fov: fov_val}), buffer)
     else:
         rc = sensor_do(sensor, Base_URL + "setting", urlencode({setting: val}), buffer)
 
