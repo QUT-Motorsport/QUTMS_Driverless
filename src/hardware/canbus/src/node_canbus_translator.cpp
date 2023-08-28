@@ -73,7 +73,7 @@ class CanBus : public rclcpp::Node {
     void update_twist() {
         // use last velocity and steering angle to update twist
         twist_msg.header.stamp = this->now();
-        twist_msg.header.frame_id = ros_base_frame_; // PARAMETERISE
+        twist_msg.header.frame_id = ros_base_frame_;  // PARAMETERISE
         twist_msg.twist.twist.linear.x = last_velocity;
         twist_msg.twist.twist.linear.y = 0.0;
         twist_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
@@ -210,7 +210,8 @@ class CanBus : public rclcpp::Node {
         // Vehicle velocity
         this->velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
         // Odometry
-        this->twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/vehicle/wheel_twist", 10);
+        this->twist_pub_ =
+            this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/vehicle/wheel_twist", 10);
         // BMU
         this->bmu_status_pub_ = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
         this->bmu_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);

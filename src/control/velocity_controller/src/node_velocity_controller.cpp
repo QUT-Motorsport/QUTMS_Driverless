@@ -1,12 +1,11 @@
 #include <iostream>
 
-#include "driverless_common/common.hpp"
-
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/state.hpp"
-#include "std_msgs/msg/float32.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 using std::placeholders::_1;
 
@@ -99,13 +98,13 @@ class Velocity_Controller : public rclcpp::Node {
                      this->Ki, this->max_integral_torque, this->histerisis_kickin_ms, this->histerisis_reset_ms);
     }
 
-    void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) { 
-        this->target_ackermann = msg; 
+    void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped msg) {
+        this->target_ackermann = msg;
         this->received_ackermann = true;
     }
 
-    void velocity_callback(const std_msgs::msg::Float32 msg) { 
-        this->avg_velocity = msg.data; 
+    void velocity_callback(const std_msgs::msg::Float32 msg) {
+        this->avg_velocity = msg.data;
         this->received_velocity = true;
     }
 
@@ -123,11 +122,12 @@ class Velocity_Controller : public rclcpp::Node {
             RCLCPP_INFO_ONCE(this->get_logger(), "Motors not enabled, awaiting State::DRIVING");
             return;
         }
-        if (!this->received_velocity || !this->received_ackermann ) {
+        if (!this->received_velocity || !this->received_ackermann) {
             RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for target and current velocities");
             return;
         }
-        RCLCPP_INFO_ONCE(this->get_logger(), "Motors enabled, Received target and current velocities\n - Starting control loop");
+        RCLCPP_INFO_ONCE(this->get_logger(),
+                         "Motors enabled, Received target and current velocities\n - Starting control loop");
 
         // calculate error
         float error = this->target_ackermann.drive.speed - this->avg_velocity;

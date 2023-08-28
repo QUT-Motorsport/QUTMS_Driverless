@@ -23,13 +23,13 @@ target_include_directories(velocity_controller_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(velocity_controller_node 
+ament_target_dependencies(velocity_controller_node
   rclcpp
   rcl_interfaces
   nav_msgs
   ackermann_msgs
   driverless_msgs)
-  
+
 install(TARGETS velocity_controller_node
   DESTINATION lib/${PROJECT_NAME})
 
