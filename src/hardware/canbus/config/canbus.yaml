@@ -2,3 +2,4 @@ canbus_translator_node:
   ros__parameters:
       ip: "192.168.2.125"
       port: 20005
+      base_frame: "base_link"
