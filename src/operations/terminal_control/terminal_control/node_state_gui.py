@@ -1,6 +1,6 @@
 import curses
-
 import threading
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -20,6 +20,7 @@ STEER_MIN = -85.0
 STEER_MAX = 85.0
 STEER_INCREMENT = -5
 
+
 class KeyboardControllerNode(Node):
     desired_velocity = 0.0
     desired_steering = 0.0
@@ -33,18 +34,11 @@ class KeyboardControllerNode(Node):
         self.drive_command_publisher: Publisher = self.create_publisher(
             AckermannDriveStamped, "control/driving_command", 1
         )
-        self.request_lap_publisher: Publisher = self.create_publisher(
-            UInt8, "on_request/lap", 1
-        )
-        self.request_mission_publisher: Publisher = self.create_publisher(
-            UInt8, "on_request/mission", 1
-        )
-        self.request_state_publisher: Publisher = self.create_publisher(
-            UInt8, "on_request/state", 1
-        )
+        self.request_lap_publisher: Publisher = self.create_publisher(UInt8, "on_request/lap", 1)
+        self.request_mission_publisher: Publisher = self.create_publisher(UInt8, "on_request/mission", 1)
+        self.request_state_publisher: Publisher = self.create_publisher(UInt8, "on_request/state", 1)
 
-        self.get_logger().info("---Starting terminal controller node---") 
-
+        self.get_logger().info("---Starting terminal controller node---")
 
     def publish_drive_command(self):
         if self.state == State.DRIVING and self.mission != State.MISSION_NONE:
@@ -58,6 +52,7 @@ class KeyboardControllerNode(Node):
         msg = UInt8()
         msg.data = value
         publisher.publish(msg)
+
 
 def reset_controller(stdscr, node: KeyboardControllerNode):
     # clear screen
@@ -74,6 +69,7 @@ def reset_controller(stdscr, node: KeyboardControllerNode):
     node.publish_int_msg(node.request_mission_publisher, 0)
     node.publish_int_msg(node.request_state_publisher, 0)
 
+
 def default_info(stdscr, node: KeyboardControllerNode):
     # clear screen
     stdscr.clear()
@@ -83,13 +79,16 @@ def default_info(stdscr, node: KeyboardControllerNode):
 
     # display mission prompt and mission enum options
     stdscr.addstr(0, 0, f"State: {state_str} | Selected Mission: {mission_str} | Laps Completed: {node.laps}")
-    stdscr.addstr(1, 0, f"Requested Velocity: {node.desired_velocity} | Requested Steering Angle: {node.desired_steering}")
+    stdscr.addstr(
+        1, 0, f"Requested Velocity: {node.desired_velocity} | Requested Steering Angle: {node.desired_steering}"
+    )
     stdscr.addstr(2, 0, f"")
     stdscr.addstr(3, 0, f"Press 'x' to return to main menu")
     stdscr.addstr(4, 0, f"Press 'r' to reset")
     stdscr.addstr(5, 0, f"")
 
     return 5
+
 
 def main_menu(stdscr, node: KeyboardControllerNode):
     # clear screen
@@ -99,7 +98,9 @@ def main_menu(stdscr, node: KeyboardControllerNode):
     state_str = INT_STATE_TYPE[node.state].value
 
     stdscr.addstr(0, 0, f"State: {state_str} | Selected Mission: {mission_str} | Laps Completed: {node.laps}")
-    stdscr.addstr(1, 0, f"Requested Velocity: {node.desired_velocity} | Requested Steering Angle: {node.desired_steering}")
+    stdscr.addstr(
+        1, 0, f"Requested Velocity: {node.desired_velocity} | Requested Steering Angle: {node.desired_steering}"
+    )
     stdscr.addstr(3, 0, f"Press 'c' to use the [wasd] keys to control the car")
     stdscr.addstr(4, 0, f"Press 'l' to type in laps completed")
     stdscr.addstr(5, 0, f"Press 'm' to type in mission enum")
@@ -125,7 +126,8 @@ def main_menu(stdscr, node: KeyboardControllerNode):
             state_menu(stdscr, node)
         if c == ord("r"):
             main_menu_input = False
-            reset_controller(stdscr, node)    
+            reset_controller(stdscr, node)
+
 
 def control_menu(stdscr, node: KeyboardControllerNode):
     offset = default_info(stdscr, node)
@@ -161,6 +163,7 @@ def control_menu(stdscr, node: KeyboardControllerNode):
             node.desired_steering = 0
             node.publish_drive_command()
 
+
 def laps_menu(stdscr, node: KeyboardControllerNode):
     offset = default_info(stdscr, node)
 
@@ -186,6 +189,7 @@ def laps_menu(stdscr, node: KeyboardControllerNode):
             laps_menu_input = False
             node.laps = sel_laps
             node.publish_int_msg(node.request_lap_publisher, node.laps)
+
 
 def state_menu(stdscr, node: KeyboardControllerNode):
     offset = default_info(stdscr, node)
@@ -220,6 +224,7 @@ def state_menu(stdscr, node: KeyboardControllerNode):
             node.state = sel_state
             node.publish_int_msg(node.request_state_publisher, node.state)
 
+
 def mission_menu(stdscr, node: KeyboardControllerNode):
     default_info(stdscr, node)
 
@@ -253,10 +258,12 @@ def mission_menu(stdscr, node: KeyboardControllerNode):
             mission_menu_input = False
             node.publish_int_msg(node.request_mission_publisher, node.mission)
 
+
 def curses_main(stdscr, node: KeyboardControllerNode):
 
     while True:
         main_menu(stdscr, node)
+
 
 def main():
     rclpy.init()

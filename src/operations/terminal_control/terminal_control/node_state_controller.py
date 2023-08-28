@@ -1,6 +1,6 @@
 import curses
-
 import threading
+
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -11,6 +11,7 @@ from std_msgs.msg import UInt8
 
 from driverless_common.common import QOS_LATEST
 from driverless_common.status_constants import INT_MISSION_TYPE, INT_STATE_TYPE
+
 
 class KeyboardControllerNode(Node):
     state = State.START
@@ -44,6 +45,7 @@ class KeyboardControllerNode(Node):
 
     def state_callback(self, msg: UInt8):
         self.state = msg.data
+
 
 def main():
     rclpy.init()
