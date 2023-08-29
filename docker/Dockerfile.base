@@ -71,5 +71,7 @@ ENTRYPOINT ["/conda_entrypoint.sh"]
 #                              Workspace setup
 # ==============================================================================
 
-RUN mkdir -p /home/${USERNAME}/driverless_ws/src
+RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
+    mkdir -p /home/${USERNAME}/driverless_ws/QUTMS_Nav_Integration && \
+    chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
 WORKDIR /home/$USERNAME/driverless_ws
