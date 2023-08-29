@@ -58,7 +58,7 @@ ENV ROS_PYTHON_VERSION=3
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV SHELL /bin/bash
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-c"] 
 
 WORKDIR /tmp
 
@@ -120,9 +120,9 @@ RUN pip3 install --upgrade --no-cache-dir \
     pytest
 
 # upgrade cmake - https://stackoverflow.com/a/56690743
-# this is needed to build some of the ROS2 packages
+# this is needed to build some of the ROS2 packages	  
 # use pip to upgrade cmake instead because of kitware's rotating GPG keys:
-# https://github.com/dusty-nv/jetson-containers/issues/216
+# https://github.com/dusty-nv/jetson-containers/issues/216			  
 RUN python3 -m pip install --upgrade pip
 RUN pip3 install --no-cache-dir scikit-build && \
     pip3 install --upgrade --no-cache-dir --verbose cmake && \
@@ -161,7 +161,7 @@ RUN rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PACKAGE} \
     > ros2.${ROS_DISTRO}.${ROS_PACKAGE}.rosinstall && \
     cat ros2.${ROS_DISTRO}.${ROS_PACKAGE}.rosinstall && \
     vcs import src < ros2.${ROS_DISTRO}.${ROS_PACKAGE}.rosinstall
-
+    
 # https://github.com/dusty-nv/jetson-containers/issues/181
 RUN rm -r ${ROS_ROOT}/src/ament_cmake && \
     git -C ${ROS_ROOT}/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
@@ -184,7 +184,7 @@ RUN colcon build \
     rm -rf ${ROS_ROOT}/build && \
     rm ${ROS_ROOT}/*.rosinstall && \
     rm -rf /var/lib/apt/lists/* && \
-    apt-get clean
+    apt-get clean 
 
 WORKDIR /home/${USERNAME}/driverless_ws
 
@@ -223,5 +223,6 @@ RUN chmod -R go=rwx /home/${USERNAME} && \
     chmod -R go=rwx /usr/local/lib/python3.8/
 
 # tell ROS to use Cyclone DDS
-ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+# ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+# ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+ENV ROS_DOMAIN_ID=69
