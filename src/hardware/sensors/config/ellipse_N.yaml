@@ -23,8 +23,8 @@
       publishTf: true
       # Odometry frame IDs.
       odomFrameId: "odom"
-      baseFrameId: "base_link"
-      initFrameId: "map"
+      baseFrameId: "base_footprint"
+      initFrameId: "track"
 
     # Configuration of the device with ROS.
     confWithRos: true
