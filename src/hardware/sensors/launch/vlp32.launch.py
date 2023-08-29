@@ -16,7 +16,7 @@ def generate_launch_description():
     convert_params_file = os.path.join(get_package_share_path("sensors") / "config" / "VLP32C.yaml")
     with open(convert_params_file, "r") as f:
         convert_params = yaml.safe_load(f)["velodyne_convert_node"]["ros__parameters"]
-    convert_params["calibration"] = str(get_package_share_path("sensors") / "config" / "VeloView-VLP32C.yaml")
+    convert_params["calibration"] = str(get_package_share_path("sensors") / "config" / "VLP32C-calibration.yaml")
     velodyne_convert_node = launch_ros.actions.Node(
         package="velodyne_pointcloud", executable="velodyne_convert_node", output="both", parameters=[convert_params]
     )

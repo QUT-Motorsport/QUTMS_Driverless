@@ -9,7 +9,7 @@ velodyne_driver_node:
         repeat_delay: 0.0
         frame_id: velodyne
         model: 32C
-        rpm: 1200.0
+        rpm: 600.0
         port: 2368
 
 velodyne_laserscan_node:
