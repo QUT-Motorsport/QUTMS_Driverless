@@ -19,7 +19,6 @@ WORKDIR /home/${USERNAME}/driverless_ws
 USER ${USERNAME}
 
 RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
-RUN git clone https://github.com/b1n-ch1kn/QUTMS_Nav_Integration.git
 
 # hack, need to install as root
 USER root
@@ -29,9 +28,11 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     mamba install -y --file /tmp/requirements.conda &&\
     rm -f /tmp/requirements.conda
 
+COPY src/navigation/QUTMS_Nav_Integration/conda_requirements /tmp/requirements.conda
 RUN source /home/${USERNAME}/mambaforge/bin/activate; \
     conda activate driverless_env &&\
-    mamba install -y --file QUTMS_Nav_Integration/conda_requirements
+    mamba install -y --file /tmp/requirements.conda &&\
+    rm -f /tmp/requirements.conda
 
 USER ${USERNAME}
 
