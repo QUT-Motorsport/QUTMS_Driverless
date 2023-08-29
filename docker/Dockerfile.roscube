@@ -48,5 +48,6 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 RUN rm -rf ./src
 
 # tell ROS to use Cyclone DDS
-ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml
+# ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+# ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml
+ENV ROS_DOMAIN_ID=69
