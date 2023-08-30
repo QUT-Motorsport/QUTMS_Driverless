@@ -143,7 +143,8 @@ class VisionProcessor(Node):
         super().__init__("vision_processor_node")
 
         # declare ros param for debug images
-        self.debug_imgs: bool = self.declare_parameter("debug_imgs", False).value
+        self.declare_parameter("debug_imgs", False)
+        self.debug_imgs: bool = self.get_parameter("debug_imgs")
 
         # subscribers
         colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")
