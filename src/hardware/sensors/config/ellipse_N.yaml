@@ -20,7 +20,7 @@
       # Enable ROS odometry messages.
       enable: false
       # Publish odometry transforms.
-      publishTf: true
+      publishTf: false
       # Odometry frame IDs.
       odomFrameId: "odom"
       baseFrameId: "base_footprint"
@@ -58,7 +58,7 @@
       # month in year at startup
       month: 08
       # day in month at startup
-      day: 25
+      day: 30
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
@@ -138,7 +138,7 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      magnetometerRejectMode: 1
+      magnetometerRejectMode: 0
 
       # Theses parameters are only used for a calibration run
       calibration:
@@ -146,7 +146,7 @@
         #     This calibration mode is only designed to be used when roll and pitch motions are less than ± 5°.
         #     To work correctly, the device should be rotated through at least a full circle.
         # 2 3D Tell the device to start a full 3D magnetic calibration procedure. The 3D magnetic calibration offers the best accuracy
-        mode: 2
+        mode: 1
 
         # 0 LOW_BW Use this parameter in case of strong magnetic noise during calibration.
         #     Motion during calibration is then limited to slow rotations.
@@ -169,7 +169,7 @@
       gnss_model_id: 101
 
       #GNSS primary antenna lever arm in IMU X axis (m)
-      primaryLeverArmX: 0.0
+      primaryLeverArmX: 1.22
       #GNSS primary antenna lever arm in IMU Y axis (m)
       primaryLeverArmY: 0.0
       #GNSS primary antenna lever arm in IMU Z axis (m)
