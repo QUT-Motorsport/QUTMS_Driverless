@@ -28,6 +28,7 @@ set (SOURCES
   src/tcp_client.cpp
   src/udp_client.cpp
   src/TritiumCAN.cpp
+  src/SocketCAN.cpp
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_BMU.c
