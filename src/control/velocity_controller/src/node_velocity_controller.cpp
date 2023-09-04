@@ -19,10 +19,6 @@ class Velocity_Controller : public rclcpp::Node {
 
     float integral_error = 0;
 
-    // wheel params
-    const int MOTOR_COUNT = 4;
-    const float WHEEL_RADIUS = 0.4064;
-
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
