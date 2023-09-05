@@ -15,7 +15,7 @@
 #include "driverless_msgs/msg/car_status.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/wss_velocity.hpp"
-#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
@@ -56,7 +56,9 @@ class CanBus : public rclcpp::Node {
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
     rclcpp::Publisher<driverless_msgs::msg::CarStatus>::SharedPtr bmu_status_pub_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
+
+    std::string ros_base_frame_;
 
     // can connection
     std::shared_ptr<TritiumCAN> tritiumCAN;
@@ -64,17 +66,18 @@ class CanBus : public rclcpp::Node {
     // class variables for sensor data
     float wheel_speeds[4];
     driverless_msgs::msg::CarStatus bmu_status;
-    nav_msgs::msg::Odometry odom_msg;
+    geometry_msgs::msg::TwistWithCovarianceStamped twist_msg;
     float last_velocity;
     float last_steering_angle;
 
-    void update_odom() {
-        // use last velocity and steering angle to update odom
-        odom_msg.header.stamp = this->now();
-        odom_msg.twist.twist.linear.x = last_velocity;
-        odom_msg.twist.twist.linear.y = 0.0;
-        odom_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
-        odom_pub_->publish(odom_msg);
+    void update_twist() {
+        // use last velocity and steering angle to update twist
+        twist_msg.header.stamp = this->now();
+        twist_msg.header.frame_id = ros_base_frame_;  // PARAMETERISE
+        twist_msg.twist.twist.linear.x = last_velocity;
+        twist_msg.twist.twist.linear.y = 0.0;
+        twist_msg.twist.twist.angular.z = last_velocity * tan(last_steering_angle) / AXLE_WIDTH;
+        twist_pub_->publish(twist_msg);
     }
 
     void canmsg_timer() {
@@ -116,8 +119,8 @@ class CanBus : public rclcpp::Node {
                     last_velocity = av_velocity;
                     this->velocity_pub_->publish(vel_msg);
 
-                    // update odom msg with new velocity
-                    update_odom();
+                    // update twist msg with new velocity
+                    update_twist();
                 }
             }
             // Steering Angle
@@ -142,7 +145,9 @@ class CanBus : public rclcpp::Node {
                 if (abs(steering_0 - steering_1) < 10) {
                     angle_msg.data = steering_0;
                     last_steering_angle = steering_0;
-                    update_odom();
+
+                    // update twist msg with new steering angle
+                    update_twist();
                 } else {
                     angle_msg.data = 1111.0;  // error identifier (impossible value)
                 }
@@ -178,14 +183,17 @@ class CanBus : public rclcpp::Node {
    public:
     CanBus() : Node("canbus_translator_node") {
         // Can2Ethernet parameters
-        std::string _ip = this->declare_parameter<std::string>("ip", "192.168.2.125");
-        int _port = this->declare_parameter<int>("port", 20005);
-        this->get_parameter("ip", _ip);
-        this->get_parameter("port", _port);
+        std::string ip = this->declare_parameter<std::string>("ip", "192.168.2.125");
+        int port = this->declare_parameter<int>("port", 20005);
+        ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
 
-        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
+        this->get_parameter("ip", ip);
+        this->get_parameter("port", port);
+        this->get_parameter("base_frame", ros_base_frame_);
+
+        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", ip.c_str(), port);
         this->tritiumCAN = std::make_shared<TritiumCAN>();
-        this->tritiumCAN->setup(_ip);
+        this->tritiumCAN->setup(ip);
         RCLCPP_INFO(this->get_logger(), "done!");
 
         // retrieve can messages from queue
@@ -202,7 +210,8 @@ class CanBus : public rclcpp::Node {
         // Vehicle velocity
         this->velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
         // Odometry
-        this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/vehicle/wheel_odom", 10);
+        this->twist_pub_ =
+            this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/vehicle/wheel_twist", 10);
         // BMU
         this->bmu_status_pub_ = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
         this->bmu_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
