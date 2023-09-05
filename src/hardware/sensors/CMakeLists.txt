@@ -7,19 +7,37 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sbg_driver REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
-# launch folder
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
+add_executable(sbg_translator_node src/node_sbg_translator.cpp ${SOURCES})
+ament_target_dependencies(sbg_translator_node 
+  rclcpp
+  sbg_driver
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_geometry_msgs
 )
 
-# config folder
-install(DIRECTORY
-  config
+target_include_directories(sbg_translator_node PUBLIC
+  ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+install(
+  TARGETS sbg_translator_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# linked folders
+install(
+  DIRECTORY launch config scripts camera_files
   DESTINATION share/${PROJECT_NAME}
 )
 
