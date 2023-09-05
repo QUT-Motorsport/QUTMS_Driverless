@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    config = os.path.join(get_package_share_directory("sensors"), "config", "ellipse_N.yaml")
+    config = os.path.join(get_package_share_directory("sensors"), "config", "ellipse_D.yaml")
 
     return LaunchDescription(
         [
