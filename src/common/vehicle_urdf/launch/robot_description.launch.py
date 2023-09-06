@@ -74,7 +74,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument(
                 "base_frame",
-                default_value="base_link",
+                default_value="base_footprint",
                 description="Base frame of the vehicle",
             ),
             DeclareLaunchArgument(

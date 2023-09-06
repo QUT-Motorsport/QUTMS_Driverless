@@ -2,25 +2,25 @@
 // Much of this odometry conversion is adapted from:
 // https://github.com/SBG-Systems/sbg_ros2_driver/blob/master/src/message_wrapper.cpp
 
-#include "nav_msgs/msg/odometry.hpp"
-#include "sbg_driver/msg/sbg_ekf_euler.hpp"
-#include "sbg_driver/msg/sbg_ekf_nav.hpp"
-#include "sbg_driver/msg/sbg_imu_data.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
-#include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/pose.hpp"
-#include "geometry_msgs/msg/vector3.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/convert.h>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "driverless_common/common.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "sbg_driver/msg/sbg_ekf_euler.hpp"
+#include "sbg_driver/msg/sbg_ekf_nav.hpp"
+#include "sbg_driver/msg/sbg_imu_data.hpp"
 
 using std::placeholders::_1;
 
-typedef struct _UTM0
-{
+typedef struct _UTM0 {
     double easting;
     double northing;
     double altitude;
@@ -36,6 +36,9 @@ class SBGConvert : public rclcpp::Node {
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+
+    // initial values
+    float init_yaw;
 
     // updated values
     sbg_driver::msg::SbgImuData last_imu_msg_;
@@ -56,7 +59,8 @@ class SBGConvert : public rclcpp::Node {
         nav_msgs::msg::Odometry odom_msg;
         double utm_northing, utm_easting;
 
-        // The pose message provides the position and orientation of the robot relative to the frame specified in header.frame_id
+        // The pose message provides the position and orientation of the robot relative to the frame specified in
+        // header.frame_id
         odom_msg.header.stamp = last_imu_msg_.header.stamp;
         odom_msg.header.frame_id = "odom";
 
@@ -92,7 +96,7 @@ class SBGConvert : public rclcpp::Node {
 
         // Convert euler angles to quaternion.
         tf2::Quaternion q;
-        q.setRPY(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z);
+        q.setRPY(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z - init_yaw);
         q.normalize();
         odom_msg.pose.pose.orientation = tf2::toMsg(q);
 
@@ -103,17 +107,14 @@ class SBGConvert : public rclcpp::Node {
         odom_msg.twist.twist.angular.x = last_imu_msg_.gyro.x;
         odom_msg.twist.twist.angular.y = last_imu_msg_.gyro.y;
         odom_msg.twist.twist.angular.z = last_imu_msg_.gyro.z;
-        odom_msg.twist.covariance[0 * 6 + 0] =
-            last_nav_msg_.velocity_accuracy.x * last_nav_msg_.velocity_accuracy.x;
-        odom_msg.twist.covariance[1 * 6 + 1] =
-            last_nav_msg_.velocity_accuracy.y * last_nav_msg_.velocity_accuracy.y;
-        odom_msg.twist.covariance[2 * 6 + 2] =
-            last_nav_msg_.velocity_accuracy.z * last_nav_msg_.velocity_accuracy.z;
+        odom_msg.twist.covariance[0 * 6 + 0] = last_nav_msg_.velocity_accuracy.x * last_nav_msg_.velocity_accuracy.x;
+        odom_msg.twist.covariance[1 * 6 + 1] = last_nav_msg_.velocity_accuracy.y * last_nav_msg_.velocity_accuracy.y;
+        odom_msg.twist.covariance[2 * 6 + 2] = last_nav_msg_.velocity_accuracy.z * last_nav_msg_.velocity_accuracy.z;
         odom_msg.twist.covariance[3 * 6 + 3] = 0;
         odom_msg.twist.covariance[4 * 6 + 4] = 0;
         odom_msg.twist.covariance[5 * 6 + 5] = 0;
 
-        odom_msg.child_frame_id = "base_link";
+        odom_msg.child_frame_id = "base_footprint";
 
         // publish
         odom_pub_->publish(odom_msg);
@@ -123,12 +124,11 @@ class SBGConvert : public rclcpp::Node {
         int zoneNumber;
 
         // Make sure the longitude is between -180.00 .. 179.9
-        double LongTemp = (Long+180)-int((Long+180)/360)*360-180;
+        double LongTemp = (Long + 180) - int((Long + 180) / 360) * 360 - 180;
 
-        zoneNumber = int((LongTemp + 180)/6) + 1;
+        zoneNumber = int((LongTemp + 180) / 6) + 1;
 
-        if( Lat >= 56.0 && Lat < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0 )
-        {
+        if (Lat >= 56.0 && Lat < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0) {
             zoneNumber = 32;
         }
 
@@ -136,32 +136,32 @@ class SBGConvert : public rclcpp::Node {
         m_utm0_.altitude = altitude;
         LLtoUTM(Lat, Long, m_utm0_.zone, m_utm0_.northing, m_utm0_.easting);
 
-        RCLCPP_INFO(this->get_logger(), "initialized from lat:%f long:%f easting:%fm (%dkm) northing:%fm (%dkm)",
-            Lat, Long, m_utm0_.zone, m_utm0_.easting, (int)(m_utm0_.easting)/1000, m_utm0_.northing, (int)(m_utm0_.northing)/1000
-        );
+        RCLCPP_INFO(this->get_logger(), "initialized from lat:%f long:%f easting:%fm (%dkm) northing:%fm (%dkm)", Lat,
+                    Long, m_utm0_.zone, m_utm0_.easting, (int)(m_utm0_.easting) / 1000, m_utm0_.northing,
+                    (int)(m_utm0_.northing) / 1000);
     }
 
     /*
-    * Modification of gps_common::LLtoUTM() to use a constant UTM zone.
-    *
-    * Convert lat/long to UTM coords.  Equations from USGS Bulletin 1532
-    *
-    * East Longitudes are positive, West longitudes are negative.
-    * North latitudes are positive, South latitudes are negative
-    * Lat and Long are in fractional degrees
-    *
-    * Originally written by Chuck Gantz- chuck.gantz@globalstar.com.
-    */
+     * Modification of gps_common::LLtoUTM() to use a constant UTM zone.
+     *
+     * Convert lat/long to UTM coords.  Equations from USGS Bulletin 1532
+     *
+     * East Longitudes are positive, West longitudes are negative.
+     * North latitudes are positive, South latitudes are negative
+     * Lat and Long are in fractional degrees
+     *
+     * Originally written by Chuck Gantz- chuck.gantz@globalstar.com.
+     */
     void LLtoUTM(double Lat, double Long, int zoneNumber, double &UTMNorthing, double &UTMEasting) {
-        const double RADIANS_PER_DEGREE = M_PI/180.0;
+        const double RADIANS_PER_DEGREE = M_PI / 180.0;
 
         // WGS84 Parameters
-        const double WGS84_A = 6378137.0;        // major axis
-        const double WGS84_E = 0.0818191908;     // first eccentricity
+        const double WGS84_A = 6378137.0;     // major axis
+        const double WGS84_E = 0.0818191908;  // first eccentricity
 
         // UTM Parameters
-        const double UTM_K0 = 0.9996;            // scale factor
-        const double UTM_E2 = (WGS84_E*WGS84_E); // e^2
+        const double UTM_K0 = 0.9996;               // scale factor
+        const double UTM_E2 = (WGS84_E * WGS84_E);  // e^2
 
         double a = WGS84_A;
         double eccSquared = UTM_E2;
@@ -172,50 +172,59 @@ class SBGConvert : public rclcpp::Node {
         double N, T, C, A, M;
 
         // Make sure the longitude is between -180.00 .. 179.9
-        double LongTemp = (Long+180)-int((Long+180)/360)*360-180;
+        double LongTemp = (Long + 180) - int((Long + 180) / 360) * 360 - 180;
 
-        double LatRad = Lat*RADIANS_PER_DEGREE;
-        double LongRad = LongTemp*RADIANS_PER_DEGREE;
+        double LatRad = Lat * RADIANS_PER_DEGREE;
+        double LongRad = LongTemp * RADIANS_PER_DEGREE;
         double LongOriginRad;
 
         // +3 puts origin in middle of zone
-        LongOrigin = (zoneNumber - 1)*6 - 180 + 3;
+        LongOrigin = (zoneNumber - 1) * 6 - 180 + 3;
         LongOriginRad = LongOrigin * RADIANS_PER_DEGREE;
 
-        eccPrimeSquared = (eccSquared)/(1-eccSquared);
+        eccPrimeSquared = (eccSquared) / (1 - eccSquared);
 
-        N = a/sqrt(1-eccSquared*sin(LatRad)*sin(LatRad));
-        T = tan(LatRad)*tan(LatRad);
-        C = eccPrimeSquared*cos(LatRad)*cos(LatRad);
-        A = cos(LatRad)*(LongRad-LongOriginRad);
+        N = a / sqrt(1 - eccSquared * sin(LatRad) * sin(LatRad));
+        T = tan(LatRad) * tan(LatRad);
+        C = eccPrimeSquared * cos(LatRad) * cos(LatRad);
+        A = cos(LatRad) * (LongRad - LongOriginRad);
 
-        M = a*((1 - eccSquared/4      - 3*eccSquared*eccSquared/64     - 5*eccSquared*eccSquared*eccSquared/256)*LatRad
-                    - (3*eccSquared/8   + 3*eccSquared*eccSquared/32    + 45*eccSquared*eccSquared*eccSquared/1024)*sin(2*LatRad)
-                                        + (15*eccSquared*eccSquared/256 + 45*eccSquared*eccSquared*eccSquared/1024)*sin(4*LatRad)
-                                        - (35*eccSquared*eccSquared*eccSquared/3072)*sin(6*LatRad));
+        M = a *
+            ((1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared * eccSquared * eccSquared / 256) *
+                 LatRad -
+             (3 * eccSquared / 8 + 3 * eccSquared * eccSquared / 32 +
+              45 * eccSquared * eccSquared * eccSquared / 1024) *
+                 sin(2 * LatRad) +
+             (15 * eccSquared * eccSquared / 256 + 45 * eccSquared * eccSquared * eccSquared / 1024) * sin(4 * LatRad) -
+             (35 * eccSquared * eccSquared * eccSquared / 3072) * sin(6 * LatRad));
 
-        UTMEasting = (double)(k0*N*(A+(1-T+C)*A*A*A/6
-            + (5-18*T+T*T+72*C-58*eccPrimeSquared)*A*A*A*A*A/120)
-            + 500000.0);
+        UTMEasting = (double)(k0 * N *
+                                  (A + (1 - T + C) * A * A * A / 6 +
+                                   (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared) * A * A * A * A * A / 120) +
+                              500000.0);
 
-        UTMNorthing = (double)(k0*(M+N*tan(LatRad)*(A*A/2+(5-T+9*C+4*C*C)*A*A*A*A/24
-            + (61-58*T+T*T+600*C-330*eccPrimeSquared)*A*A*A*A*A*A/720)));
+        UTMNorthing =
+            (double)(k0 *
+                     (M + N * tan(LatRad) *
+                              (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24 +
+                               (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720)));
 
-        if(Lat < 0) {
-            UTMNorthing += 10000000.0; //10000000 meter offset for southern hemisphere
+        if (Lat < 0) {
+            UTMNorthing += 10000000.0;  // 10000000 meter offset for southern hemisphere
         }
     }
 
-    double computeMeridian(int zone_number) {
-        return (zone_number == 0) ? 0.0 : (zone_number - 1) * 6.0 - 177.0;
-    }
-    double sbgDegToRadD(double angle) {
-        return angle * M_PI / 180.0;
-    }
+    double computeMeridian(int zone_number) { return (zone_number == 0) ? 0.0 : (zone_number - 1) * 6.0 - 177.0; }
+    double sbgDegToRadD(double angle) { return angle * M_PI / 180.0; }
 
     void euler_callback(const sbg_driver::msg::SbgEkfEuler::SharedPtr msg) {
         // update last angles
         last_euler_msg_ = *msg;
+
+        if (!received_euler_) {
+            // initialize yaw
+            init_yaw = last_euler_msg_.angle.z;
+        }
         received_euler_ = true;
         update_odom();
     }
