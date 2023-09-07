@@ -18,7 +18,7 @@
 
     odometry:
       # Enable ROS odometry messages.
-      enable: false
+      enable: true
       # Publish odometry transforms.
       publishTf: false
       # Odometry frame IDs.
@@ -138,7 +138,7 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      magnetometerRejectMode: 1
+      magnetometerRejectMode: 0
 
       # Theses parameters are only used for a calibration run
       calibration:
@@ -288,7 +288,7 @@
       # Provides UTC time reference
       log_utc_time: 200
       # Magnetic data with associated accelerometer on each axis
-      log_mag: 4
+      log_mag: 0
       # Magnetometer calibration data (raw buffer)
       log_mag_calib: 0
       # GPS velocities from primary or secondary GPS receiver

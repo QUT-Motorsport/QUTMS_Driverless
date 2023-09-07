@@ -96,7 +96,7 @@ class SBGConvert : public rclcpp::Node {
 
         // Convert euler angles to quaternion.
         tf2::Quaternion q;
-        q.setRPY(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z - init_yaw);
+        q.setRPY(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z);  // - init_yaw);
         q.normalize();
         odom_msg.pose.pose.orientation = tf2::toMsg(q);
 
