@@ -48,17 +48,17 @@
     # Sensor Parameters (Queensland Raceway, Ipswich)
     sensorParameters:
       # Initial latitude (°)
-      initLat: -27.690709297031308
+      initLat: -27.477822
       # Initial longitude (°)
-      initLong: 152.6539901620031
+      initLong: 153.028623
       # Initial altitude (above WGS84 ellipsoid) (m)
-      initAlt: 40.0
+      initAlt: 10.0
       # Year at startup
       year: 2023
       # month in year at startup
       month: 9
       # day in month at startup
-      day: 5
+      day: 7
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
@@ -66,7 +66,7 @@
       # 3 MARINE          Used in marine and underwater applications
       # 4 AIRPLANE        For fixed wings aircraft
       # 5 HELICOPTER      For rotary wing aircraft
-      motionProfile: 2
+      motionProfile: 5
 
     # IMU_ALIGNMENT_LEVER_ARM
     imuAlignementLeverArm:
@@ -138,7 +138,7 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      magnetometerRejectMode: 0
+      magnetometerRejectMode: 1
 
       # Theses parameters are only used for a calibration run
       calibration:
