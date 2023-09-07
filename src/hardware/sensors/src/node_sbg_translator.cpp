@@ -17,6 +17,7 @@
 #include "sbg_driver/msg/sbg_ekf_euler.hpp"
 #include "sbg_driver/msg/sbg_ekf_nav.hpp"
 #include "sbg_driver/msg/sbg_imu_data.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 using std::placeholders::_1;
 
@@ -29,26 +30,32 @@ typedef struct _UTM0 {
 
 class SBGConvert : public rclcpp::Node {
    private:
-    // subscriber
+    // subscribers
     rclcpp::Subscription<sbg_driver::msg::SbgEkfEuler>::SharedPtr euler_sub_;
     rclcpp::Subscription<sbg_driver::msg::SbgEkfNav>::SharedPtr nav_sub_;
     rclcpp::Subscription<sbg_driver::msg::SbgImuData>::SharedPtr imu_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr ekf_odom_sub_;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
 
     // initial values
-    float init_yaw;
+    float init_yaw_;
+    float last_x_;
+    float last_y_;
+    UTM0 m_utm0_;
 
     // updated values
     sbg_driver::msg::SbgImuData last_imu_msg_;
     sbg_driver::msg::SbgEkfNav last_nav_msg_;
     sbg_driver::msg::SbgEkfEuler last_euler_msg_;
-    UTM0 m_utm0_;
+    std::vector<float> state_;
 
     bool received_imu_ = false;
     bool received_nav_ = false;
     bool received_euler_ = false;
+    bool received_odom_ = false;
 
     void update_odom() {
         // only update if all messages have been received
@@ -95,10 +102,8 @@ class SBGConvert : public rclcpp::Node {
         odom_msg.pose.covariance[5 * 6 + 5] = last_euler_msg_.accuracy.z * last_euler_msg_.accuracy.z;
 
         // Convert euler angles to quaternion.
-        tf2::Quaternion q;
-        q.setRPY(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z);  // - init_yaw);
-        q.normalize();
-        odom_msg.pose.pose.orientation = tf2::toMsg(q);
+        odom_msg.pose.pose.orientation =
+            euler_to_quat(last_euler_msg_.angle.x, last_euler_msg_.angle.y, last_euler_msg_.angle.z + init_yaw_);
 
         // The twist message gives the linear and angular velocity relative to the frame defined in child_frame_id
         odom_msg.twist.twist.linear.x = last_nav_msg_.velocity.x;
@@ -117,7 +122,27 @@ class SBGConvert : public rclcpp::Node {
         odom_msg.child_frame_id = "base_footprint";
 
         // publish
-        odom_pub_->publish(odom_msg);
+        // odom_pub_->publish(odom_msg);
+
+        // publish imu message
+        imu_pub_->publish(make_imu_msg(odom_msg));
+    }
+
+    sensor_msgs::msg::Imu make_imu_msg(nav_msgs::msg::Odometry odom_msg) {
+        sensor_msgs::msg::Imu imu_msg;
+        imu_msg.header.stamp = odom_msg.header.stamp;
+        imu_msg.header.frame_id = "base_footprint";
+
+        imu_msg.orientation = odom_msg.pose.pose.orientation;
+
+        return imu_msg;
+    }
+
+    geometry_msgs::msg::Quaternion euler_to_quat(double x, double y, double z) {
+        tf2::Quaternion q;
+        q.setRPY(x, y, z);
+        q.normalize();
+        return tf2::toMsg(q);
     }
 
     void initUTM(double Lat, double Long, double altitude) {
@@ -223,7 +248,7 @@ class SBGConvert : public rclcpp::Node {
 
         if (!received_euler_) {
             // initialize yaw
-            init_yaw = last_euler_msg_.angle.z;
+            init_yaw_ = last_euler_msg_.angle.z;
         }
         received_euler_ = true;
         update_odom();
@@ -243,23 +268,106 @@ class SBGConvert : public rclcpp::Node {
         update_odom();
     }
 
+    void ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+        if (!received_odom_) {
+            // initialize yaw
+            // convert quat to euler
+            double yaw = quat_to_euler(msg->pose.pose.orientation);
+            init_yaw_ = yaw;
+
+            // initialize position
+            last_x_ = msg->pose.pose.position.x;
+            last_y_ = msg->pose.pose.position.y;
+
+            received_odom_ = true;
+            return;
+        }
+
+        // create a new odom msg with the same header
+        nav_msgs::msg::Odometry odom_msg;
+        odom_msg.header = msg->header;
+
+        // orient the position delta by the last yaw
+        double yaw = quat_to_euler(msg->pose.pose.orientation);
+
+        double update_x = msg->pose.pose.position.x - last_x_;
+        double update_y = msg->pose.pose.position.y - last_y_;
+
+        double magnitude = sqrt(update_x * update_x + update_y * update_y);
+
+        double delta_yaw = yaw - init_yaw_ - state_[2];
+        double delta_x = magnitude * cos(state_[2]);
+        double delta_y = magnitude * sin(state_[2]);
+
+        // update the state
+        state_[0] += delta_x;
+        state_[1] += delta_y;
+        state_[2] += delta_yaw;
+
+        // update the last position
+        last_x_ = msg->pose.pose.position.x;
+        last_y_ = msg->pose.pose.position.y;
+
+        // update the odom msg
+        odom_msg.pose.pose.position.x = state_[0];
+        odom_msg.pose.pose.position.y = state_[1];
+        odom_msg.pose.pose.position.z = 0.0;
+
+        // convert yaw to quaternion
+        odom_msg.pose.pose.orientation = euler_to_quat(0.0, 0.0, state_[2]);
+
+        // use existing covariance
+        odom_msg.pose.covariance = msg->pose.covariance;
+
+        // rotate twist by yaw
+        double vel_magnitude = sqrt(msg->twist.twist.linear.x * msg->twist.twist.linear.x +
+                                    msg->twist.twist.linear.y * msg->twist.twist.linear.y);
+
+        odom_msg.twist.twist.linear.x = vel_magnitude * cos(state_[2]);
+        odom_msg.twist.twist.linear.y = vel_magnitude * sin(state_[2]);
+        odom_msg.twist.twist.linear.z = 0.0;
+
+        // publish the odom msg
+        odom_pub_->publish(odom_msg);
+
+        // publish imu message
+        imu_pub_->publish(make_imu_msg(odom_msg));
+    }
+
+    double quat_to_euler(const geometry_msgs::msg::Quaternion &quat) {
+        tf2::Quaternion q(quat.x, quat.y, quat.z, quat.w);
+        tf2::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+        return yaw;
+    }
+
    public:
     SBGConvert() : Node("sbg_converter_node") {
         // subscribe to sbg msgs
-        this->euler_sub_ = this->create_subscription<sbg_driver::msg::SbgEkfEuler>(
-            "/sbg/ekf_euler", 1, std::bind(&SBGConvert::euler_callback, this, _1));
-        this->nav_sub_ = this->create_subscription<sbg_driver::msg::SbgEkfNav>(
-            "/sbg/ekf_nav", 1, std::bind(&SBGConvert::nav_callback, this, _1));
-        this->imu_sub_ = this->create_subscription<sbg_driver::msg::SbgImuData>(
-            "/sbg/imu_data", 1, std::bind(&SBGConvert::imu_callback, this, _1));
+        // this->euler_sub_ = this->create_subscription<sbg_driver::msg::SbgEkfEuler>(
+        //     "/sbg/ekf_euler", 1, std::bind(&SBGConvert::euler_callback, this, _1));
+        // this->nav_sub_ = this->create_subscription<sbg_driver::msg::SbgEkfNav>(
+        //     "/sbg/ekf_nav", 1, std::bind(&SBGConvert::nav_callback, this, _1));
+        // this->imu_sub_ = this->create_subscription<sbg_driver::msg::SbgImuData>(
+        //     "/sbg/imu_data", 1, std::bind(&SBGConvert::imu_callback, this, _1));
+
+        // subscribe to ekf odom
+        this->ekf_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/imu/odometry", 1, std::bind(&SBGConvert::ekf_odom_callback, this, _1));
 
         // Odometry
         this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odometry/sbg_ekf", 1);
+
+        // IMU for GPS init heading
+        this->imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu/sbg_ekf_heading", 1);
 
         m_utm0_.easting = 0.0;
         m_utm0_.northing = 0.0;
         m_utm0_.altitude = 0.0;
         m_utm0_.zone = 0;
+
+        state_ = {0.0, 0.0, 0.0};
 
         RCLCPP_INFO(this->get_logger(), "---SBG Odom Converter Node Initialised---");
     }
