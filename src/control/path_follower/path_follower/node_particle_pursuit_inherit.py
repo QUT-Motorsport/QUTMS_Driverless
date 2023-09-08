@@ -1,17 +1,16 @@
-from math import atan2, cos, dist, pi, sin, sqrt
+from math import cos, dist, pi, sin
+from typing import List
 
 import cv2
 import numpy as np
-
-from cv_bridge import CvBridge
-import rclpy
-
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
-
 from driverless_common.common import angle, fast_dist, wrap_to_pi
+from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 from path_follower.node_pure_pursuit import PurePursuit
 
-from typing import List
+import rclpy
+from cv_bridge import CvBridge
+from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
+from rclpy.subscription import Subscription
 
 # ADD QOS PROFILES
 
@@ -88,13 +87,10 @@ class ParticlePursuit(PurePursuit):
     last_pos_attractive_rel_car = [0, 0]
     last_pos_repulsive_rel_car = [0, 0]
     last_pos_resultant_rel_car = [0, 0]
+    cone_sub: Subscription
 
     def __init__(self):
         super().__init__("particle_pursuit")
-
-        # sub to track for all cone locations relative to car start point, used for boundary danger calculations
-        self.create_subscription(ConeDetectionStamped, "/planner/interpolated_map", self.interp_track_callback, 10)
-
         self.get_logger().info("---Particle pursuit follower initalised---")
 
     # recieve the cone locations
@@ -239,6 +235,34 @@ class ParticlePursuit(PurePursuit):
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
         self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+    def publish_debug_image(self, steering_angle: float, velocity: float, rvwp: List[float], position: List[float]):
+        img_params = self.get_img_params()
+        debug_img = self.draw_rvwp(img_params, rvwp, position)
+        debug_img = self.add_data_text(debug_img, steering_angle, velocity)
+
+        self.debug_pub.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.cone_sub = self.create_subscription(ConeDetectionStamped, "/planner/interpolated_map",
+                                                 self.interp_track_callback, 10)
+        return super().on_activate(state)
+
+    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.destroy_subscription(self.cone_sub)
+        return super().on_activate(state)
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.destroy_subscription(self.cone_sub)
+        return super().on_cleanup(state)
+
+    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.destroy_subscription(self.cone_sub)
+        return super().on_shutdown(state)
+
+    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.destroy_subscription(self.cone_sub)
+        return super().on_error(state)
 
 
 def main(args=None):  # begin ros node

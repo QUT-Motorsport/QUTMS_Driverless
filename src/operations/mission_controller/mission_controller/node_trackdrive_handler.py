@@ -26,7 +26,7 @@ class TrackdriveHandler(Node):
         self.shutdown_pub = self.create_publisher(Shutdown, "/system/shutdown", 1)
         self.lap_trig_pub = self.create_publisher(UInt8, "/system/laps_completed", 1)
 
-        self.pure_pursuit_client = LifecycleServiceClient("pure_pursuit_cpp_node", self)
+        self.pure_pursuit = LifecycleServiceClient("particle_pursuit", self)
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
         self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
@@ -50,8 +50,8 @@ class TrackdriveHandler(Node):
         if not self.init_method_called:
             return
         # Use to periodically check on lifecycle nodes
-        if not self.pure_pursuit_client.is_in_expected_state():
-            self.pure_pursuit_client.change_to_expected_state()
+        if not self.pure_pursuit.is_in_expected_state():
+            self.pure_pursuit.change_to_expected_state()
         if not self.reactive_controller.is_in_expected_state():
             self.reactive_controller.change_to_expected_state()
         if not self.planner.is_in_expected_state():
@@ -78,11 +78,11 @@ class TrackdriveHandler(Node):
             if self.laps == 2:
                 self.reactive_controller.deactivate()
                 self.planner.activate()
-                self.pure_pursuit_client.activate()
+                self.pure_pursuit.activate()
             elif self.laps == 11:
                 self.get_logger().info("Trackdrive mission complete")
-                self.pure_pursuit_client.deactivate()
-                self.pure_pursuit_client.shutdown()
+                self.pure_pursuit.deactivate()
+                self.pure_pursuit.shutdown()
                 self.planner.deactivate()
                 self.planner.shutdown()
                 self.reactive_controller.shutdown()
