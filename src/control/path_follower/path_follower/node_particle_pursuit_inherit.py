@@ -1,16 +1,19 @@
 from math import cos, dist, pi, sin
-from typing import List
 
 import cv2
 import numpy as np
-from driverless_common.common import angle, fast_dist, wrap_to_pi
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
-from path_follower.node_pure_pursuit import PurePursuit
 
-import rclpy
 from cv_bridge import CvBridge
+import rclpy
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.subscription import Subscription
+
+from driverless_msgs.msg import Cone, ConeDetectionStamped, State
+
+from driverless_common.common import angle, fast_dist, wrap_to_pi
+from path_follower.node_pure_pursuit import PurePursuit
+
+from typing import List
 
 # ADD QOS PROFILES
 
@@ -244,8 +247,9 @@ class ParticlePursuit(PurePursuit):
         self.debug_pub.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.cone_sub = self.create_subscription(ConeDetectionStamped, "/planner/interpolated_map",
-                                                 self.interp_track_callback, 10)
+        self.cone_sub = self.create_subscription(
+            ConeDetectionStamped, "/planner/interpolated_map", self.interp_track_callback, 10
+        )
         return super().on_activate(state)
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:

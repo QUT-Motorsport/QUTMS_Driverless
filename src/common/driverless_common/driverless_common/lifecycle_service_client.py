@@ -1,7 +1,8 @@
-from driverless_common.service_client import LostService, ServiceClient
-
 from lifecycle_msgs.msg import State, Transition
+
 from lifecycle_msgs.srv import ChangeState, GetState
+
+from driverless_common.service_client import LostService, ServiceClient
 
 
 class LifecycleServiceClient:
@@ -68,9 +69,11 @@ class LifecycleServiceClient:
             self.expected_state = State.PRIMARY_STATE_ACTIVE
         elif transition_id == Transition.TRANSITION_DEACTIVATE or transition_id == Transition.TRANSITION_CONFIGURE:
             self.expected_state = State.PRIMARY_STATE_INACTIVE
-        elif (transition_id == Transition.TRANSITION_INACTIVE_SHUTDOWN
-              or transition_id == Transition.TRANSITION_ACTIVE_SHUTDOWN
-              or transition_id == Transition.TRANSITION_UNCONFIGURED_SHUTDOWN):
+        elif (
+            transition_id == Transition.TRANSITION_INACTIVE_SHUTDOWN
+            or transition_id == Transition.TRANSITION_ACTIVE_SHUTDOWN
+            or transition_id == Transition.TRANSITION_UNCONFIGURED_SHUTDOWN
+        ):
             self.expected_state = State.PRIMARY_STATE_UNCONFIGURED
 
         request = ChangeState.Request()

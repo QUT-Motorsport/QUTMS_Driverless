@@ -1,15 +1,16 @@
 import time
 
-from driverless_common.lifecycle_service_client import LifecycleServiceClient
-from driverless_msgs.msg import Shutdown, State
-
 import rclpy
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from lifecycle_msgs.msg import State
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
+
+from driverless_msgs.msg import Shutdown, State
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from lifecycle_msgs.msg import State
 from std_msgs.msg import UInt8
+
+from driverless_common.lifecycle_service_client import LifecycleServiceClient
 
 
 class TrackdriveHandler(Node):
@@ -31,8 +32,9 @@ class TrackdriveHandler(Node):
         self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
         self.timer = self.create_timer(1, self.timer_callback, callback_group=MutuallyExclusiveCallbackGroup())
-        self.init_method = self.create_timer(1, self.init_method_callback,
-                                             callback_group=MutuallyExclusiveCallbackGroup())
+        self.init_method = self.create_timer(
+            1, self.init_method_callback, callback_group=MutuallyExclusiveCallbackGroup()
+        )
 
         self.get_logger().info("---Trackdrive handler node initialised---")
 
