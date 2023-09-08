@@ -7,7 +7,7 @@ import rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.msg import State
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import UInt8
 
@@ -99,7 +99,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = TrackdriveHandler()
 
-    executor = MultiThreadedExecutor()
+    executor = SingleThreadedExecutor()
     executor.add_node(node)
     executor.spin()
 
