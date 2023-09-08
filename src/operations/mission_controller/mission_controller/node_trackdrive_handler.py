@@ -28,6 +28,7 @@ class TrackdriveHandler(Node):
 
         self.pure_pursuit_client = LifecycleServiceClient("pure_pursuit_cpp_node", self)
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
+        self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
         self.timer = self.create_timer(1, self.timer_callback, callback_group=MutuallyExclusiveCallbackGroup())
         self.init_method = self.create_timer(1, self.init_method_callback,
@@ -53,6 +54,8 @@ class TrackdriveHandler(Node):
             self.pure_pursuit_client.change_to_expected_state()
         if not self.reactive_controller.is_in_expected_state():
             self.reactive_controller.change_to_expected_state()
+        if not self.planner.is_in_expected_state():
+            self.planner.change_to_expected_state()
 
     def state_callback(self, msg: State):
         if not self.mission_started and msg.state == State.DRIVING and msg.mission == State.TRACKDRIVE:
@@ -74,11 +77,14 @@ class TrackdriveHandler(Node):
 
             if self.laps == 2:
                 self.reactive_controller.deactivate()
+                self.planner.activate()
                 self.pure_pursuit_client.activate()
             elif self.laps == 11:
                 self.get_logger().info("Trackdrive mission complete")
                 self.pure_pursuit_client.deactivate()
                 self.pure_pursuit_client.shutdown()
+                self.planner.deactivate()
+                self.planner.shutdown()
                 self.reactive_controller.shutdown()
 
                 # currently only works when vehicle supervisor node is running on-car

@@ -1,22 +1,19 @@
-from math import atan2, cos, pi, sin, sqrt
+from math import cos, pi, sin, sqrt
+from typing import List, Tuple
 
-from colour import Color
 import numpy as np
 import scipy.interpolate as scipy_interpolate
+from driverless_common.common import QOS_LATEST, angle, dist, midpoint
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from transforms3d.euler import euler2quat
 
 import rclpy
-from rclpy.node import Node
-
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
-from driverless_msgs.msg import PathStamped as QUTMSPathStamped
-from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-
-from driverless_common.common import QOS_LATEST, angle, dist, midpoint
-
-from typing import List, Tuple
+from rclpy.lifecycle import LifecycleNode, LifecyclePublisher, LifecycleState, TransitionCallbackReturn
+from rclpy.subscription import Subscription
+from rclpy.timer import Timer
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
@@ -154,47 +151,34 @@ def parse_orange_cones(node_logger, orange_cones: List[List[float]]) -> List[Lis
     return [blue_cones[0], blue_cones[1], yellow_cones[0], yellow_cones[1]]
 
 
-class OrderedMapSpline(Node):
+class OrderedMapSpline(LifecycleNode):
     spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
     planning = False
     current_track = None
     interp_cone_num = 3  # number of points interpolated between each pair of cones
     final_path_published = False
+    map_sub: Subscription
+    planning_timer: Timer
+    qutms_path_pub: LifecyclePublisher
+    spline_path_pub: LifecyclePublisher
+    interp_cones_pub: LifecyclePublisher
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
 
-        # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
-        self.create_timer(0.1, self.planning_callback)
-
-        # publishers
-        self.qutms_path_pub = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
-        self.spline_path_pub = self.create_publisher(Path, "/planner/spline_path", 1)
-        self.interpolated_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
-
-        self.get_logger().info("---Ordered path planner node initalised---")
-
-    def state_callback(self, msg: State):
-        if msg.state == State.DRIVING and msg.lap_count > 0 and not self.planning:
-            self.planning = True
-            self.get_logger().info("Lap completed, planning commencing")
+        self.get_logger().info("---Ordered path planner node initialised---")
 
     def map_callback(self, track_msg: ConeDetectionStamped):
         if self.final_path_published:
             return
 
-        self.get_logger().debug("Received map")
+        self.get_logger().info("Received map")
         self.current_track = track_msg
 
     def planning_callback(self):
         # skip if we haven't completed a lap yet
-        if (not self.planning) or (self.current_track is None):
-            return
-
-        self.get_logger().debug("Planning")
+        self.get_logger().info("Planning")
 
         # extract data out of message
         cones = self.current_track.cones
@@ -311,7 +295,7 @@ class OrderedMapSpline(Node):
         interpolated_cones = interpolated_blues + interpolated_yellows
         interpolated_cones_msg = ConeDetectionStamped(cones=interpolated_cones)
         interpolated_cones_msg.header = self.current_track.header
-        self.interpolated_cones_pub.publish(interpolated_cones_msg)
+        self.interp_cones_pub.publish(interpolated_cones_msg)
 
         # once we have received the track once, we don't need to keep receiving it
         self.final_path_published = True
@@ -358,6 +342,51 @@ class OrderedMapSpline(Node):
                 interpolated_cones.append(cone)
 
         return interpolated_cones
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_configure")
+        self.qutms_path_pub = self.create_lifecycle_publisher(QUTMSPathStamped, "/planner/path", 1)
+        self.spline_path_pub = self.create_lifecycle_publisher(Path, "/planner/spline_path", 1)
+        self.interp_cones_pub = self.create_lifecycle_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_activate")
+        self.map_sub = self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
+        self.planning_timer = self.create_timer(0.1, self.planning_callback)
+        return super().on_activate(state)
+
+    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_deactivate")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_timer(self.planning_timer)
+        return super().on_deactivate(state)
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_cleanup")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_timer(self.planning_timer)
+        self.destroy_lifecycle_publisher(self.qutms_path_pub)
+        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.interp_cones_pub)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_shutdown")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_timer(self.planning_timer)
+        self.destroy_lifecycle_publisher(self.qutms_path_pub)
+        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.interp_cones_pub)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_error")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_lifecycle_publisher(self.qutms_path_pub)
+        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.interp_cones_pub)
+        return TransitionCallbackReturn.SUCCES
 
 
 def main(args=None):
