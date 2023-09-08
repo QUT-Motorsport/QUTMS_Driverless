@@ -5,27 +5,17 @@ from driverless_common.common import QOS_ALL, midpoint, fast_dist
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 import rclpy
-from rclpy.node import Node
-from rclpy.publisher import Publisher
-
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
-
-from driverless_common.common import QOS_ALL, QOS_LATEST
-from driverless_common.point import Point, cone_to_point, dist
-from driverless_common.shutdown_node import ShutdownNode
-
-from typing import List, Optional, Tuple
+from rclpy.lifecycle import LifecycleNode, LifecycleState, LifecyclePublisher
+from rclpy.lifecycle.node import TransitionCallbackReturn
+from rclpy.subscription import Subscription
 
 Colour = Tuple[int, int, int]
 
 ORIGIN = [0, 0]
 
-LEFT_CONE_COLOUR = Cone.BLUE
-RIGHT_CONE_COLOUR = Cone.YELLOW
 
-
-class ReactiveController(Node):
+class ReactiveController(LifecycleNode):
     Kp_ang: float
     target_vel: float
     target_accel: float
@@ -46,16 +36,10 @@ class ReactiveController(Node):
         if self.ebs_test:
             self.Kp_ang = 2.0
             self.target_vel = 12.0  # m/s
-            self.target_accel = 0.0
-            self.target_cone_count = 2
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
         else:
             self.Kp_ang = 2.5
             self.target_vel = 1.5  # m/s
-            self.target_accel = 0.0
-            self.target_cone_count = 2
-            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, QOS_ALL)
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.get_logger().info("---Reactive controller node initialised---")
@@ -74,9 +58,6 @@ class ReactiveController(Node):
 
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
-
-        if not self.discovering or not self.driving:
-            return
 
         # safety critical, set to 0 if not good detection
         speed = 0.0
@@ -140,7 +121,41 @@ class ReactiveController(Node):
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
         control_msg.drive.acceleration = self.target_accel
-        self.control_publisher.publish(control_msg)
+        self.control_pub.publish(control_msg)
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_configure")
+        self.control_pub = self.create_lifecycle_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_activate")
+        topic = "/lidar/cone_detection" if self.ebs_test else "/slam/local_map"
+        self.map_sub = self.create_subscription(ConeDetectionStamped, topic, self.callback, QOS_ALL)
+        return super().on_activate(state)
+
+    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_deactivate")
+        self.destroy_subscription(self.map_sub)
+        return super().on_deactivate(state)
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_cleanup")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_lifecycle_publisher(self.control_pub)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_shutdown")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_lifecycle_publisher(self.control_pub)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self.get_logger().info("on_error")
+        self.destroy_subscription(self.map_sub)
+        self.destroy_lifecycle_publisher(self.control_pub)
+        return TransitionCallbackReturn.SUCCESS
 
 
 def main(args=None):

@@ -16,7 +16,7 @@ class ServiceClient:
         # If we lose contact with the service, we throw a LostService exception, which the caller is expected to catch.
         # This gives the caller the opportunity to restore the client to the expected state from whichever state it is
         # now in. See lifecycle_service_client.py for an example.
-        if not self.client.service_is_ready():
+        if not self.client.service_is_ready() and not self.client.wait_for_service(timeout_sec):
             raise LostService()
 
         while not self.client.wait_for_service(timeout_sec):
