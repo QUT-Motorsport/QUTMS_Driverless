@@ -18,7 +18,7 @@ def generate_launch_description():
             ),
             Node(
                 package="sbg_translator",
-                executable="sbg_translator",
+                executable="sbg_translator_node",
                 output="screen",
             )
         ]
