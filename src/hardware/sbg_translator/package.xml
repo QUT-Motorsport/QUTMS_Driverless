@@ -8,6 +8,8 @@
     <license>MIT</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
+    <!-- This is cloned in the dockerfile -->
+    <depend>sbg_driver</depend>
 
     <exec_depend>ros2launch</exec_depend>
 
