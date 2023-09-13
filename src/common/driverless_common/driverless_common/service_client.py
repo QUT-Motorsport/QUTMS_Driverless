@@ -2,10 +2,6 @@ import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 
 
-class LostService(Exception):
-    pass
-
-
 class ServiceClient:
     def __init__(self, service_name, node, srv_type):
         self.node = node
@@ -13,12 +9,6 @@ class ServiceClient:
         self.client = node.create_client(srv_type, service_name, callback_group=ReentrantCallbackGroup())
 
     def invoke(self, request, timeout_sec=3):
-        # If we lose contact with the service, we throw a LostService exception, which the caller is expected to catch.
-        # This gives the caller the opportunity to restore the client to the expected state from whichever state it is
-        # now in. See lifecycle_service_client.py for an example.
-        if not self.client.service_is_ready() and not self.client.wait_for_service(timeout_sec):
-            raise LostService()
-
         while not self.client.wait_for_service(timeout_sec):
             if not rclpy.ok():
                 raise Exception(self.service_name + " service client: interrupted while waiting for service")

@@ -31,7 +31,6 @@ class TrackdriveHandler(Node):
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
         self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
-        self.timer = self.create_timer(1, self.timer_callback, callback_group=MutuallyExclusiveCallbackGroup())
         self.init_method = self.create_timer(
             1, self.init_method_callback, callback_group=MutuallyExclusiveCallbackGroup()
         )
@@ -47,17 +46,6 @@ class TrackdriveHandler(Node):
 
         self.destroy_timer(self.init_method)
         self.init_method_called = True
-
-    def timer_callback(self):
-        if not self.init_method_called:
-            return
-        # Use to periodically check on lifecycle nodes
-        if not self.pure_pursuit.is_in_expected_state():
-            self.pure_pursuit.change_to_expected_state()
-        if not self.reactive_controller.is_in_expected_state():
-            self.reactive_controller.change_to_expected_state()
-        if not self.planner.is_in_expected_state():
-            self.planner.change_to_expected_state()
 
     def state_callback(self, msg: State):
         if not self.mission_started and msg.state == State.DRIVING and msg.mission == State.TRACKDRIVE:
