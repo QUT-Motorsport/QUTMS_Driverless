@@ -1,0 +1,14 @@
+slam_carpark:
+- /odometry/sbg_ekf
+- /odometry/gps
+- /zed2i/zed_node/odom
+- /odometry/filtered
+- /slam/car_pose
+- /tf
+- /tf_static
+- /slam/occupancy_grid
+- /scan
+- /vision/cone_detection
+- /lidar/cone_detection
+- /slam/global_map
+- /zed2i/zed_node/rgb/image_rect_color
