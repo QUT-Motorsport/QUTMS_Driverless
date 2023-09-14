@@ -32,7 +32,7 @@
     # Uart configuration
     uartConf:
       # Port Name
-      portName: "/dev/ttyUSB0"
+      portName: "/dev/ttyUSB-sbg"
 
       # Baude rate (4800 ,9600 ,19200 ,38400 ,115200 [default],230400 ,460800 ,921600)
       baudRate: 115200
