@@ -15,7 +15,7 @@ velodyne_driver_node:
 velodyne_laserscan_node:
     ros__parameters:
         ring: -1
-        resolution: 0.007
+        resolution: 0.01
 
 velodyne_convert_node:
     ros__parameters:
