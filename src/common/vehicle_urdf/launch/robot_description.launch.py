@@ -1,12 +1,13 @@
 import os
 from os.path import isfile, join
 
-import xacro
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+import xacro
+
 
 def get_argument(context, arg):
     return LaunchConfiguration(arg).perform(context)
@@ -17,13 +18,13 @@ def process_xacro(context, *args, **kwargs):
     base_frame = get_argument(context, "base_frame")
 
     xacro_path = join(
-        get_package_share_directory("vehicle_urdf"), 
-        "urdf", 
+        get_package_share_directory("vehicle_urdf"),
+        "urdf",
         urdf_model,
     )
     urdf_path = join(
-        get_package_share_directory("vehicle_urdf"), 
-        "urdf", 
+        get_package_share_directory("vehicle_urdf"),
+        "urdf",
         "processed.urdf",
     )
 
@@ -78,8 +79,8 @@ def generate_launch_description():
                 description="Base frame of the vehicle",
             ),
             DeclareLaunchArgument(
-                "urdf_model", 
-                default_value="qev-3d.urdf.xacro", 
+                "urdf_model",
+                default_value="qev-3d.urdf.xacro",
                 description="URDF Model to use (from vehicle_urdf/urdf)",
             ),
             OpaqueFunction(function=process_xacro),
