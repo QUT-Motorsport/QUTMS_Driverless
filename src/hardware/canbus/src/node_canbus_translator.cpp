@@ -9,7 +9,7 @@
 #include "CAN_VCU.h"
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
-#include "SocketCAN.hpp"
+#include "TritiumCAN.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/car_status.hpp"
@@ -59,7 +59,7 @@ class CanBus : public rclcpp::Node {
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
     // can connection
-    std::shared_ptr<SocketCAN> socketCAN;
+    std::shared_ptr<TritiumCAN> tritiumCAN;
 
     // class variables for sensor data
     float wheel_speeds[4];
@@ -78,14 +78,17 @@ class CanBus : public rclcpp::Node {
     }
 
     void canmsg_timer() {
-        auto res = this->socketCAN->rx();
+        auto res = this->tritiumCAN->rx();
 
         for (auto &msg : *res) {
             uint32_t qutms_masked_id = msg.id & ~0xF;
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(can_ids.begin(), can_ids.end(), msg.id) != can_ids.end()) {
+                RCLCPP_INFO(this->get_logger(), "CAN message received from %i", msg.id & 0xF);
                 this->can_pub_->publish(msg);
-            } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
+            } 
+            if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
+                RCLCPP_INFO(this->get_logger(), "Heartbeat received from %i", msg.id & 0xF);
                 this->can_pub_->publish(msg);
             }
 
@@ -95,6 +98,7 @@ class CanBus : public rclcpp::Node {
             uint8_t vesc_id = msg.id & 0xFF;
             if (vesc_id < 4) {
                 if (vesc_masked_id == VESC_CAN_PACKET_STATUS) {
+                    RCLCPP_INFO(this->get_logger(), "VESC CAN Packet Status received from %i", msg.id & 0xF);
                     uint8_t data[8];
                     copy_data(msg.data, data, 8);
                     // extract and publish RPM
@@ -133,7 +137,7 @@ class CanBus : public rclcpp::Node {
 
                 Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
                 // Log steering angle
-                RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                RCLCPP_INFO(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
                              steering_0_raw, steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
@@ -141,12 +145,14 @@ class CanBus : public rclcpp::Node {
                 std_msgs::msg::Float32 angle_msg;
                 if (abs(steering_0 - steering_1) < 10) {
                     angle_msg.data = steering_0;
+                    this->steering_angle_pub_->publish(angle_msg);
+
                     last_steering_angle = steering_0;
-                    update_odom();
+                    // update_odom();
                 } else {
-                    angle_msg.data = 1111.0;  // error identifier (impossible value)
+                    RCLCPP_FATAL(this->get_logger(), "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                             steering_0_raw, steering_1_raw, adc_0, adc_1);
                 }
-                this->steering_angle_pub_->publish(angle_msg);
             }
             // BMU
             else if (msg.id == BMU_TransmitVoltage_ID) {
@@ -173,17 +179,19 @@ class CanBus : public rclcpp::Node {
     }
 
     // ROS can msgs
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->socketCAN->tx(msg.get()); }
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->tritiumCAN->tx(msg.get()); }
 
    public:
     CanBus() : Node("canbus_translator_node") {
-        // socketCAN parameters
-        std::string _interface = this->declare_parameter<std::string>("interface", "can0");
-        this->get_parameter("interface", _interface);
+        // Can2Ethernet parameters
+        std::string _ip = this->declare_parameter<std::string>("ip", "192.168.2.1");
+        int _port = this->declare_parameter<int>("port", 20005);
+        this->get_parameter("ip", _ip);
+        this->get_parameter("port", _port);
 
-        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s...", _interface.c_str());
-        this->socketCAN = std::make_shared<SocketCAN>();
-        this->socketCAN->setup(_interface);
+        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", _ip.c_str(), _port);
+        this->tritiumCAN = std::make_shared<TritiumCAN>();
+        this->tritiumCAN->setup(_ip);
         RCLCPP_INFO(this->get_logger(), "done!");
 
         // retrieve can messages from queue
@@ -203,6 +211,7 @@ class CanBus : public rclcpp::Node {
         this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/vehicle/wheel_odom", 10);
         // BMU
         this->bmu_status_pub_ = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
+        
         this->bmu_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
         for (int i = 0; i < NUM_CMUS; i++) {
             this->bmu_status.brick_data[i].id = i + 1;
@@ -210,10 +219,13 @@ class CanBus : public rclcpp::Node {
             this->bmu_status.brick_data[i].temperatures = std::vector<uint8_t>(NUM_TEMPERATURES);
         }
 
+        last_velocity = 0;
+        last_steering_angle = 0;
+
         RCLCPP_INFO(this->get_logger(), "---CANBus Translator Node Initialised---");
     }
 
-    ~CanBus() { this->socketCAN->~SocketCAN(); }
+    ~CanBus() { this->tritiumCAN->~TritiumCAN(); }
 };
 
 int main(int argc, char *argv[]) {
@@ -222,19 +234,3 @@ int main(int argc, char *argv[]) {
     rclcpp::shutdown();
     return 0;
 }
-
-    }
-
-    ~CanBus() { this->socketCAN->~SocketCAN(); }
-};
-
-int main(int argc, char *argv[]) {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<CanBus>());
-    rclcpp::shutdown();
-    return 0;
-}
-ised---");
-    }
-
-    ~CanBus() { this->socketCAN->~SocketCAN(); }

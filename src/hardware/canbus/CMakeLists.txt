@@ -43,8 +43,22 @@ target_include_directories(canbus_translator_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
+add_executable(canbus_translator_socket_node src/node_canbus_translator_socket.cpp ${SOURCES})
+ament_target_dependencies(canbus_translator_socket_node rclcpp driverless_msgs nav_msgs std_msgs)
+target_include_directories(canbus_translator_socket_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(canbus_translator_socket_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+add_executable(canbus_node src/node_canbus.cpp ${SOURCES})
+ament_target_dependencies(canbus_node rclcpp driverless_msgs nav_msgs std_msgs)
+target_include_directories(canbus_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(canbus_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 install(TARGETS
-  canbus_translator_node
+  canbus_translator_node canbus_translator_socket_node canbus_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
