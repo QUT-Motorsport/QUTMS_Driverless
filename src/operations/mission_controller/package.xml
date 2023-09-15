@@ -7,16 +7,17 @@
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
+    <depend>rclpy_lifecycle</depend>
+
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>lifecycle_msgs</depend>
     <!-- Custom packages -->
     <depend>controllers</depend>
     <depend>py_slam</depend>
-    <depend>vision_pipeline</depend>
+    <depend>path_follower</depend>
     <depend>planners</depend>
     <depend>driverless_common</depend>
-    <depend>rclpy_lifecycle</depend>
 
     <export>
         <build_type>ament_python</build_type>
