@@ -30,7 +30,9 @@ class TrackdriveHandler(ShutdownNode):
         self.shutdown_pub = self.create_publisher(Shutdown, "/system/shutdown", 1)
         self.lap_trig_pub = self.create_publisher(UInt8, "/system/laps_completed", 1)
 
-        self.pure_pursuit = LifecycleServiceClient("particle_pursuit_node", self)  # this changes based on which implementation we're using
+        self.pure_pursuit = LifecycleServiceClient(
+            "particle_pursuit_node", self
+        )  # this changes based on which implementation we're using
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
         self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
@@ -78,12 +80,12 @@ class TrackdriveHandler(ShutdownNode):
         if not self.mission_started:
             self.last_x = msg.pose.pose.position.x
             return
-        
+
         if not abs(msg.pose.pose.position.y) < 3:
             self.last_x = msg.pose.pose.position.x
             return
 
-        if (self.last_x <= self.goal_offet and msg.pose.pose.position.x > self.goal_offet):
+        if self.last_x <= self.goal_offet and msg.pose.pose.position.x > self.goal_offet:
             if not self.crossed_start:
                 self.crossed_start = True
                 self.last_lap_time = time.time()
@@ -104,7 +106,7 @@ class TrackdriveHandler(ShutdownNode):
                 self.reactive_controller.deactivate()
                 self.planner.activate()
                 self.pure_pursuit.activate()
-            
+
             self.last_x = msg.pose.pose.position.x
             self.last_lap_time = time.time()
 
