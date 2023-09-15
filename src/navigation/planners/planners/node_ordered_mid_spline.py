@@ -181,7 +181,7 @@ class OrderedMapSpline(LifecycleNode):
 
     def planning_callback(self):
         # skip if we haven't completed a lap yet
-        self.get_logger().info("Planning")
+        self.get_logger().debug("Planning")
 
         # extract data out of message
         cones = self.current_track.cones
