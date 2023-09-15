@@ -40,8 +40,9 @@ class ReactiveController(LifecycleNode):
             self.target_vel = 12.0  # m/s
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         else:
-            self.Kp_ang = 2.5
-            self.target_vel = 1.5  # m/s
+            # TODO parameterise these
+            self.Kp_ang = 1.8
+            self.target_vel = 2.0  # m/s
             # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
 
         self.get_logger().info("---Reactive controller node initialised---")
