@@ -93,7 +93,7 @@ class ParticlePursuit(PurePursuit):
     cone_sub: Subscription
 
     def __init__(self):
-        super().__init__("particle_pursuit")
+        super().__init__("particle_pursuit_node")
         self.get_logger().info("---Particle pursuit follower initalised---")
 
     # recieve the cone locations
