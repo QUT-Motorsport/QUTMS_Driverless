@@ -8,7 +8,7 @@ import rclpy
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.subscription import Subscription
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 
 from driverless_common.common import angle, fast_dist, wrap_to_pi
 from path_follower.node_pure_pursuit import PurePursuit
@@ -70,7 +70,7 @@ class ParticlePursuit(PurePursuit):
     """
 
     # ------------------------------
-    track = np.array([])
+    track = None
 
     # attractive force constants:
     k_attractive: float = 1  # attractive force gain
@@ -102,20 +102,14 @@ class ParticlePursuit(PurePursuit):
 
         self.track = np.array([[c.location.x, c.location.y] for c in cone_pos_msg.cones])
 
-    def state_callback(self, msg: State):
+    def can_drive(self):
         """
-        Overrides the state_callback method in PurePursuit. Adds interpolated track as a condition.
-        Sets the driving and following flags to True when the state changes to
-        DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
-        vehicle is ready to drive before following commences.
+        Overrides the can_drive method in PurePursuit.
         """
 
-        if msg.state == State.DRIVING and not self.driving:
-            self.driving = True
-            self.get_logger().info("Ready to drive")
-        if msg.lap_count > 0 and not self.following and self.path.size != 0 and self.track.size != 0:
-            self.following = True
-            self.get_logger().info("Lap completed, following commencing")
+        if self.path is None or self.track is None:
+            return False
+        return True
 
     def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
         """
@@ -237,13 +231,6 @@ class ParticlePursuit(PurePursuit):
         debug_img = self.draw_forces(debug_img, img_params, position)
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
-        self.debug_publisher.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
-    def publish_debug_image(self, steering_angle: float, velocity: float, rvwp: List[float], position: List[float]):
-        img_params = self.get_img_params()
-        debug_img = self.draw_rvwp(img_params, rvwp, position)
-        debug_img = self.add_data_text(debug_img, steering_angle, velocity)
-
         self.debug_pub.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -254,7 +241,7 @@ class ParticlePursuit(PurePursuit):
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.destroy_subscription(self.cone_sub)
-        return super().on_activate(state)
+        return super().on_deactivate(state)
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.destroy_subscription(self.cone_sub)

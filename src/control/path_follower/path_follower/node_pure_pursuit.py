@@ -29,14 +29,12 @@ HEIGHT = 1000
 
 
 class PurePursuit(LifecycleNode):
-    path = np.array([])
+    path = None
     count = 0
     img_initialised = False
     scale = 1
     x_offset = 0
     y_offset = 0
-    following = False
-    driving = False
     fallback_path_points_offset = 0
     cog2axle = 0.5  # could be a declared parameter
     path_sub: Subscription
@@ -56,7 +54,7 @@ class PurePursuit(LifecycleNode):
         self.lookahead = self.declare_parameter("lookahead", 3.0).value
         self.vel_max = self.declare_parameter("vel_max", 10.0).value
         self.vel_min = self.declare_parameter("vel_min", 4.0).value
-        self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
+        self.DEBUG_IMG = self.declare_parameter("debug_img", False).value
 
         if node_name == "pure_pursuit_node":
             self.get_logger().info("---Pure pursuit follower initialised---")
@@ -101,6 +99,11 @@ class PurePursuit(LifecycleNode):
 
             self.img_initialised = True
 
+    def can_drive(self):
+        if self.path is None:
+            return False
+        return True
+
     def timer_callback(self):
         """
         Listens to odom->base_footprint transform and updates the state.
@@ -108,7 +111,7 @@ class PurePursuit(LifecycleNode):
         and subtract the delta from the previous map->odom transform.
         """
 
-        if self.path.size == 0:
+        if not self.can_drive():
             return
 
         try:
@@ -333,7 +336,8 @@ class PurePursuit(LifecycleNode):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info("on_configure")
         self.control_pub = self.create_lifecycle_publisher(AckermannDriveStamped, "/control/driving_command", 10)
-        self.debug_pub = self.create_lifecycle_publisher(Image, "/debug_imgs/pursuit_img", 1)
+        if self.DEBUG_IMG:
+            self.debug_pub = self.create_lifecycle_publisher(Image, "/debug_imgs/pursuit_img", QOS_LATEST)
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
