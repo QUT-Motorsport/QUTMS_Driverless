@@ -176,7 +176,7 @@ class OrderedMapSpline(LifecycleNode):
         if self.final_path_published:
             return
 
-        self.get_logger().info("Received map")
+        self.get_logger().info("Received map", once=True)
         self.current_track = track_msg
 
     def planning_callback(self):

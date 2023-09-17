@@ -31,7 +31,7 @@ class TrackdriveHandler(ShutdownNode):
         self.lap_trig_pub = self.create_publisher(UInt8, "/system/laps_completed", 1)
 
         # this changes based on which implementation we're using
-        self.pure_pursuit = LifecycleServiceClient("particle_pursuit_node", self)
+        self.pure_pursuit = LifecycleServiceClient("particle_pursuit_lifecycle", self)
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
         self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
 
