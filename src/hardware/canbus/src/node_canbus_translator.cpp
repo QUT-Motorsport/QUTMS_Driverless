@@ -86,7 +86,7 @@ class CanBus : public rclcpp::Node {
             if (std::find(can_ids.begin(), can_ids.end(), msg.id) != can_ids.end()) {
                 RCLCPP_INFO(this->get_logger(), "CAN message received from %i", msg.id & 0xF);
                 this->can_pub_->publish(msg);
-            } 
+            }
             if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
                 RCLCPP_INFO(this->get_logger(), "Heartbeat received from %i", msg.id & 0xF);
                 this->can_pub_->publish(msg);
@@ -138,7 +138,7 @@ class CanBus : public rclcpp::Node {
                 Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
                 // Log steering angle
                 RCLCPP_INFO(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                             steering_0_raw, steering_1_raw, adc_0, adc_1);
+                            steering_0_raw, steering_1_raw, adc_0, adc_1);
                 double steering_0 = steering_0_raw / 10.0;
                 double steering_1 = steering_1_raw / 10.0;
 
@@ -150,8 +150,9 @@ class CanBus : public rclcpp::Node {
                     last_steering_angle = steering_0;
                     // update_odom();
                 } else {
-                    RCLCPP_FATAL(this->get_logger(), "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                             steering_0_raw, steering_1_raw, adc_0, adc_1);
+                    RCLCPP_FATAL(this->get_logger(),
+                                 "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                                 steering_0_raw, steering_1_raw, adc_0, adc_1);
                 }
             }
             // BMU
@@ -211,7 +212,7 @@ class CanBus : public rclcpp::Node {
         this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/vehicle/wheel_odom", 10);
         // BMU
         this->bmu_status_pub_ = this->create_publisher<driverless_msgs::msg::CarStatus>("/vehicle/bmu_status", 10);
-        
+
         this->bmu_status.brick_data = std::vector<driverless_msgs::msg::BrickData>(NUM_CMUS);
         for (int i = 0; i < NUM_CMUS; i++) {
             this->bmu_status.brick_data[i].id = i + 1;

@@ -11,8 +11,8 @@
 
 #include <iostream>
 
-SocketCAN::SocketCAN() { 
-    this->isConnected = false; 
+SocketCAN::SocketCAN() {
+    this->isConnected = false;
     this->sock = -1;
 }
 
