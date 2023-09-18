@@ -11,9 +11,14 @@
 
 #include <iostream>
 
-SocketCAN::SocketCAN() { this->isConnected = false; }
+SocketCAN::SocketCAN() { 
+    this->isConnected = false; 
+    this->sock = -1;
+}
 
 bool SocketCAN::setup(std::string interface) {
+    std::cout << "CAN - Socket already attached on: " << this->sock << std::endl;
+
     // create socket
     if (this->sock == -1) {
         this->sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
