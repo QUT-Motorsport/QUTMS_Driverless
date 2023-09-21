@@ -15,6 +15,7 @@ from typing import List
 
 cv_bridge = CvBridge()
 
+
 class ParticlePursuit(PurePursuit):
     """
     This inherits from PurePursuit as the underlying path following algorithm is the same

@@ -1,21 +1,19 @@
 import rclpy
+from rclpy.lifecycle import LifecycleNodeMixin, LifecyclePublisher, LifecycleState, TransitionCallbackReturn
 from rclpy.node import Node
-from rclpy.lifecycle import LifecyclePublisher, LifecycleState, LifecycleNodeMixin, TransitionCallbackReturn
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from sensor_msgs.msg import Image
 from driverless_msgs.msg import ConeDetectionStamped, PathStamped
+from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_LATEST
 from pure_pursuit.node_particle_pursuit import ParticlePursuit
 
 
 class ParticlePursuitLifecycle(ParticlePursuit, LifecycleNodeMixin):
-    """
-
-    """
+    """ """
 
     cone_sub: Subscription
     # copied from base class
