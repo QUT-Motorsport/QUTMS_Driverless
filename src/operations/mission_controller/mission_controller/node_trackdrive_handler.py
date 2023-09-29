@@ -33,7 +33,7 @@ class TrackdriveHandler(ShutdownNode):
         # this changes based on which implementation we're using
         self.pure_pursuit = LifecycleServiceClient("particle_pursuit_lifecycle", self)
         self.reactive_controller = LifecycleServiceClient("reactive_controller_node", self)
-        self.planner = LifecycleServiceClient("ordered_map_spline_node", self)
+        self.planner = LifecycleServiceClient("ordered_mid_spline_lifecycle", self)
 
         self.get_logger().info("---Trackdrive handler node initialised---")
 
