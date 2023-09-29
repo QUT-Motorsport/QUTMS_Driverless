@@ -1,17 +1,20 @@
 from math import cos, pi, sin, sqrt
-from typing import List, Tuple
 
 import numpy as np
 import scipy.interpolate as scipy_interpolate
-from driverless_common.common import QOS_LATEST, angle, dist, midpoint
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
-from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from transforms3d.euler import euler2quat
 
 import rclpy
+from rclpy.node import Node
+
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from rclpy.node import Node
+
+from driverless_common.common import QOS_LATEST, angle, dist, midpoint
+
+from typing import List, Tuple
 
 # for colour gradient based on intensity
 MAX_ANGLE = 0.15
@@ -166,7 +169,7 @@ class OrderedMapSpline(Node):
         # publishers
         self.qutms_path_pub = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub = self.create_publisher(Path, "/planner/spline_path", 1)
-        self.interpolated_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
+        self.interp_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
 
         self.get_logger().info("---Ordered path planner node initialised---")
 
@@ -178,6 +181,9 @@ class OrderedMapSpline(Node):
         self.current_track = track_msg
 
     def planning_callback(self):
+        if self.current_track is None:
+            return
+
         # skip if we haven't completed a lap yet
         self.get_logger().debug("Planning")
 
@@ -296,7 +302,7 @@ class OrderedMapSpline(Node):
         interpolated_cones = interpolated_blues + interpolated_yellows
         interpolated_cones_msg = ConeDetectionStamped(cones=interpolated_cones)
         interpolated_cones_msg.header = self.current_track.header
-        self.interpolated_cones_pub.publish(interpolated_cones_msg)
+        self.interp_cones_pub.publish(interpolated_cones_msg)
 
         # once we have received the track once, we don't need to keep receiving it
         self.final_path_published = True
