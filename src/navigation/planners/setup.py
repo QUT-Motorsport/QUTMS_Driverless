@@ -19,8 +19,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "ordered_mid_spline = planners.node_ordered_mid_spline:main",
-            "ordered_mid_spline_lifecycle = planners.node_ordered_mid_spline_lifecycle:main",
+            "ordered_mid_spline_node = planners.node_ordered_mid_spline:main",
+            "ordered_mid_spline_lifecycle = planners.lifecycle_ordered_mid_spline:main",
         ],
     },
 )
