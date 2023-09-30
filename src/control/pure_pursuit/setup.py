@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "planners"
+package_name = "pure_pursuit"
 
 setup(
     name=package_name,
@@ -12,15 +12,17 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Alastair Bradford, Zac Gillerat, Damin Guerin",
+    maintainer="Alastair Bradford, Grant van Breda, Damin Guerin, Zac Gillerat",
     maintainer_email="team@qutmotorsport.com",
-    description="Path Planner for mapped tracks",
+    description="Driverless Guidance Systems",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "ordered_mid_spline_node = planners.node_ordered_mid_spline:main",
-            "ordered_mid_spline_lifecycle = planners.lifecycle_ordered_mid_spline:main",
+            "pure_pursuit_node = pure_pursuit.node_pure_pursuit:main",
+            "pure_pursuit_lifecycle = pure_pursuit.lifecycle_pure_pursuit:main",
+            "particle_pursuit_node = pure_pursuit.node_particle_pursuit:main",
+            "particle_pursuit_lifecycle = pure_pursuit.lifecycle_particle_pursuit:main",
         ],
     },
 )

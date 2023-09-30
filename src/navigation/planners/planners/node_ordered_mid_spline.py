@@ -1,6 +1,5 @@
-from math import atan2, cos, pi, sin, sqrt
+from math import cos, pi, sin, sqrt
 
-from colour import Color
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 from transforms3d.euler import euler2quat
@@ -10,7 +9,6 @@ from rclpy.node import Node
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
-from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 
@@ -164,36 +162,29 @@ class OrderedMapSpline(Node):
 
     def __init__(self):
         super().__init__("ordered_map_spline_node")
-
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
         self.create_timer(0.1, self.planning_callback)
 
         # publishers
         self.qutms_path_pub = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
         self.spline_path_pub = self.create_publisher(Path, "/planner/spline_path", 1)
-        self.interpolated_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
+        self.interp_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
 
-        self.get_logger().info("---Ordered path planner node initalised---")
-
-    def state_callback(self, msg: State):
-        if msg.state == State.DRIVING and msg.lap_count > 0 and not self.planning:
-            self.planning = True
-            self.get_logger().info("Lap completed, planning commencing")
+        self.get_logger().info("---Ordered path planner node initialised---")
 
     def map_callback(self, track_msg: ConeDetectionStamped):
         if self.final_path_published:
             return
 
-        self.get_logger().debug("Received map")
+        self.get_logger().info("Received map", once=True)
         self.current_track = track_msg
 
     def planning_callback(self):
-        # skip if we haven't completed a lap yet
-        if (not self.planning) or (self.current_track is None):
+        if self.current_track is None:
             return
 
+        # skip if we haven't completed a lap yet
         self.get_logger().debug("Planning")
 
         # extract data out of message
@@ -311,7 +302,7 @@ class OrderedMapSpline(Node):
         interpolated_cones = interpolated_blues + interpolated_yellows
         interpolated_cones_msg = ConeDetectionStamped(cones=interpolated_cones)
         interpolated_cones_msg.header = self.current_track.header
-        self.interpolated_cones_pub.publish(interpolated_cones_msg)
+        self.interp_cones_pub.publish(interpolated_cones_msg)
 
         # once we have received the track once, we don't need to keep receiving it
         self.final_path_published = True

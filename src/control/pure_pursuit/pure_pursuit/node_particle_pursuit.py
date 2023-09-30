@@ -5,59 +5,15 @@ import numpy as np
 
 from cv_bridge import CvBridge
 import rclpy
-from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
-from rclpy.subscription import Subscription
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import ConeDetectionStamped
 
 from driverless_common.common import angle, fast_dist, wrap_to_pi
-from path_follower.node_pure_pursuit import PurePursuit
+from pure_pursuit.node_pure_pursuit import PurePursuit
 
 from typing import List
 
-# ADD QOS PROFILES
-
-LEFT_CONE_COLOUR = Cone.BLUE
-RIGHT_CONE_COLOUR = Cone.YELLOW
-
 cv_bridge = CvBridge()
-WIDTH = 1000
-HEIGHT = 1000
-
-
-def get_closest_cone(pos_car: List[float], boundaries: np.ndarray) -> List[float]:
-    """
-    Gets the position of the nearest cone to the car.
-    * param pos_car: [x,y] coords of car position
-    * param boundaries: [x,y] coords of all current cones
-    * return: [x,y] of nearest cone to the car
-    """
-
-    # # get arrays of only coords for more efficient compute
-    # _pos = np.array([[pos_car[0], pos_car[1]]])
-    # boundaries_coords = np.array(boundaries[:, :2])
-
-    # # find distances of all cones and index of closest cone (improve by finding distances of close cones only?)
-    # dists: np.ndarray = scipy.spatial.distance.cdist(
-    #     boundaries_coords,
-    #     _pos,
-    #     "euclidean",
-    # )
-    # # not certain np.where is returning the index - it should though
-    # nearest_cone_index: int = np.where(dists == np.amin(dists))[0][0]
-
-    # nearest_cone = boundaries_coords[nearest_cone_index]
-
-    # iterate through all cones and find the closest one
-    nearest_cone = boundaries[0]
-    last_dist = float("inf")
-    for cone in boundaries:
-        current_dist = fast_dist(pos_car, cone)
-        if current_dist < last_dist:
-            nearest_cone = cone
-            last_dist = current_dist
-
-    return nearest_cone
 
 
 class ParticlePursuit(PurePursuit):
@@ -78,7 +34,7 @@ class ParticlePursuit(PurePursuit):
     # repulsive force constants:
     d_min: float = 1.5  # min repulsive force distance (max. repulsion at or below)
     d_max: float = 2.0  # max repulsive force distance (zero repulsion at or above)
-    k_repulsive: float = 0.5  # repulsive force gain
+    k_repulsive: float = 0.1  # repulsive force gain
 
     # cone_danger - a unitless, *inverse* 'spring constant' of the repulsive force (gamma in documentation)
     # E.g. cone_danger > 0: corners cut tighter
@@ -90,10 +46,13 @@ class ParticlePursuit(PurePursuit):
     last_pos_attractive_rel_car = [0, 0]
     last_pos_repulsive_rel_car = [0, 0]
     last_pos_resultant_rel_car = [0, 0]
-    cone_sub: Subscription
 
     def __init__(self):
-        super().__init__("particle_pursuit_node")
+        super().__init__(node_name="particle_pursuit_node")
+
+        # sub to track for all cone locations relative to car start point, used for boundary danger calculations
+        self.create_subscription(ConeDetectionStamped, "/planner/interpolated_map", self.interp_track_callback, 10)
+
         self.get_logger().info("---Particle pursuit follower initalised---")
 
     # recieve the cone locations
@@ -109,7 +68,26 @@ class ParticlePursuit(PurePursuit):
 
         if self.path is None or self.track is None:
             return False
+        self.get_logger().info("Can drive", once=True)
         return True
+
+    def get_closest_cone(self, pos_car: List[float]) -> List[float]:
+        """
+        Gets the position of the nearest cone to the car.
+        * param pos_car: [x,y] coords of car position
+        * param boundaries: [x,y] coords of all current cones
+        * return: [x,y] of nearest cone to the car
+        """
+        # iterate through all cones and find the closest one
+        nearest_cone = None
+        last_dist = float("inf")
+        for cone in self.track:
+            current_dist = fast_dist(pos_car, cone)
+            if current_dist < last_dist:
+                nearest_cone = cone
+                last_dist = current_dist
+
+        return nearest_cone
 
     def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
         """
@@ -122,7 +100,10 @@ class ParticlePursuit(PurePursuit):
 
         # avoidance from potential field
         # get position of nearest cone
-        pos_nearest_cone = get_closest_cone(pose[:2], self.track)
+        pos_nearest_cone = self.get_closest_cone(pose[:2])
+        if pos_nearest_cone is None:
+            return 0  # no cones detected, dont steer
+
         # maybe use fast_dist instead of dist later
         d_nearestCone = dist(pose[:2], pos_nearest_cone)
 
@@ -232,28 +213,6 @@ class ParticlePursuit(PurePursuit):
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
         self.debug_pub.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.cone_sub = self.create_subscription(
-            ConeDetectionStamped, "/planner/interpolated_map", self.interp_track_callback, 10
-        )
-        return super().on_activate(state)
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.destroy_subscription(self.cone_sub)
-        return super().on_deactivate(state)
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.destroy_subscription(self.cone_sub)
-        return super().on_cleanup(state)
-
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.destroy_subscription(self.cone_sub)
-        return super().on_shutdown(state)
-
-    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.destroy_subscription(self.cone_sub)
-        return super().on_error(state)
 
 
 def main(args=None):  # begin ros node

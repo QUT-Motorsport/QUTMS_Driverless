@@ -11,15 +11,14 @@ from transforms3d.euler import quat2euler
 
 from cv_bridge import CvBridge
 import rclpy
-from rclpy.lifecycle import LifecycleNode, LifecyclePublisher, LifecycleState, TransitionCallbackReturn
-from rclpy.subscription import Subscription
-from rclpy.timer import Timer
+from rclpy.node import Node
+from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
 from sensor_msgs.msg import Image
 
-from driverless_common.common import QOS_LATEST, angle, dist, wrap_to_pi
+from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
 
 from typing import List, Tuple
 
@@ -28,7 +27,7 @@ WIDTH = 1000
 HEIGHT = 1000
 
 
-class PurePursuit(LifecycleNode):
+class PurePursuit(Node):
     path = None
     count = 0
     img_initialised = False
@@ -37,27 +36,35 @@ class PurePursuit(LifecycleNode):
     y_offset = 0
     fallback_path_points_offset = 0
     cog2axle = 0.5  # could be a declared parameter
-    path_sub: Subscription
-    control_pub: LifecyclePublisher
-    debug_pub: LifecyclePublisher
-    timer: Timer
 
     def __init__(self, node_name="pure_pursuit_node"):
         super().__init__(node_name)
 
-        # transform listening
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.initialise_params()
 
+        # subscribers
+        self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
+
+        # transform listening
+        self.create_timer((1 / 50), self.timer_callback)
+
+        # publishers
+        self.control_pub: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
+        self.debug_pub: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
+
+        if node_name == "pure_pursuit_node":
+            self.get_logger().info("---Pure pursuit follower initalised---")
+
+    def initialise_params(self):
         # parameters
         self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
         self.lookahead = self.declare_parameter("lookahead", 3.0).value
         self.vel_max = self.declare_parameter("vel_max", 10.0).value
         self.vel_min = self.declare_parameter("vel_min", 4.0).value
-        self.DEBUG_IMG = self.declare_parameter("debug_img", False).value
-
-        if node_name == "pure_pursuit_node":
-            self.get_logger().info("---Pure pursuit follower initialised---")
+        self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
+        # tf buffer
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
     def path_callback(self, spline_path_msg: PathStamped):
         """
@@ -102,6 +109,7 @@ class PurePursuit(LifecycleNode):
     def can_drive(self):
         if self.path is None:
             return False
+        self.get_logger().info("Can drive", once=True)
         return True
 
     def timer_callback(self):
@@ -332,49 +340,6 @@ class PurePursuit(LifecycleNode):
         debug_img = self.add_data_text(debug_img, steering_angle, velocity)
 
         self.debug_pub.publish(cv_bridge.cv2_to_imgmsg(debug_img, encoding="bgr8"))
-
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_configure")
-        self.control_pub = self.create_lifecycle_publisher(AckermannDriveStamped, "/control/driving_command", 10)
-        if self.DEBUG_IMG:
-            self.debug_pub = self.create_lifecycle_publisher(Image, "/debug_imgs/pursuit_img", QOS_LATEST)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_activate")
-        self.path_sub = self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
-        self.timer = self.create_timer((1 / 50), self.timer_callback)
-        return super().on_activate(state)
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_deactivate")
-        self.destroy_subscription(self.path_sub)
-        self.destroy_timer(self.timer)
-        return super().on_deactivate(state)
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_cleanup")
-        self.destroy_subscription(self.path_sub)
-        self.destroy_timer(self.timer)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        self.destroy_lifecycle_publisher(self.debug_pub)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_shutdown")
-        self.destroy_subscription(self.path_sub)
-        self.destroy_timer(self.timer)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        self.destroy_lifecycle_publisher(self.debug_pub)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_error")
-        self.destroy_subscription(self.path_sub)
-        self.destroy_timer(self.timer)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        self.destroy_lifecycle_publisher(self.debug_pub)
-        return TransitionCallbackReturn.SUCCESS
 
 
 def main(args=None):  # begin ros node
