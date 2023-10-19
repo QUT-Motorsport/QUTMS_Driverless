@@ -11,8 +11,8 @@ from driverless_common.shutdown_node import ShutdownNode
 
 class SineController(Node):
     count = 0
-    interval = 0.0025
-    pub_interval = 0.01
+    interval = 0.02
+    pub_interval = 0.05
 
     def __init__(self):
         super().__init__("sine_controller_node")
