@@ -53,6 +53,7 @@ bool TritiumCAN::setup(std::string ip) {
                         txClient->join_multicast_group(inet_addr(groupAddr.c_str()), ifAddr->sin_addr.s_addr);
 
                         txClients.push_back(txClient);
+                        break;
                     }
                 }
             }
