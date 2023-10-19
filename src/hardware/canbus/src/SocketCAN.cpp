@@ -16,14 +16,13 @@ SocketCAN::SocketCAN() {
     this->sock = -1;
 }
 
-bool SocketCAN::setup(std::string interface) {
-    std::cout << "CAN - Socket already attached on: " << this->sock << std::endl;
-
+bool SocketCAN::setup(std::string interface, rclcpp::Logger logger) {
     // create socket
     if (this->sock == -1) {
         this->sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
         if (this->sock == -1) {
-            std::cout << "CAN - Failed to create socket." << std::endl;
+            // std::cout << "CAN - Failed to create socket." << std::endl;
+            RCLCPP_ERROR(logger, "CAN - Failed to create socket.");
             return false;
         }
     }
@@ -39,7 +38,8 @@ bool SocketCAN::setup(std::string interface) {
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
     if (bind(this->sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        std::cout << "CAN - Failed to bind interface to socket." << std::endl;
+        // std::cout << "CAN - Failed to bind interface to socket." << std::endl;
+        RCLCPP_ERROR(logger, "CAN - Failed to bind interface to socket.");
         return false;
     }
 
@@ -79,18 +79,19 @@ bool SocketCAN::parse_socketcan_frame(struct can_frame *frame, driverless_msgs::
     return true;
 }
 
-void SocketCAN::tx(driverless_msgs::msg::Can *msg) {
+void SocketCAN::tx(driverless_msgs::msg::Can *msg, rclcpp::Logger logger) {
     if (this->isConnected) {
         struct can_frame frame;
         compose_socketcan_frame(msg, &frame);
 
         if (write(this->sock, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
-            std::cout << "CAN - Failed TX." << std::endl;
+            // std::cout << "CAN - Failed TX." << std::endl;
+            RCLCPP_WARN(logger, "CAN - Failed TX.");
         }
     }
 }
 
-std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx() {
+std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Logger logger, rclcpp::Clock::SharedPtr clock) {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
     driverless_msgs::msg::Can rxMsg;
 
@@ -101,6 +102,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx() {
 
         // use DONTWAIT flag to make this non blocking
         ssize_t rxLen = recv(this->sock, this->rxBuf, SCAN_RECV_SIZE, MSG_DONTWAIT);
+        RCLCPP_DEBUG_THROTTLE(logger, *clock, 500, "CAN - RX %ld bytes", rxLen);
 
         if (rxLen > 0) {
             size_t len = rxLen;

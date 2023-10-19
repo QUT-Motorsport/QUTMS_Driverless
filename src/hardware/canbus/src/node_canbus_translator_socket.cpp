@@ -10,6 +10,7 @@
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "SocketCAN.hpp"
+#include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/car_status.hpp"
@@ -36,10 +37,14 @@ void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
 }
 
 // create array of CAN IDs we care about
-std::vector<uint32_t> can_ids = {
-    0x5F0,                  // C5_E stepper ID
-    (0x700 + RES_NODE_ID),  // boot up message
-    RES_Heartbeat_ID,
+std::vector<uint32_t> canopen_ids = {
+    RES_BOOT_UP_ID,
+    RES_HEARTBEAT_ID,
+    C5E_BOOT_UP_ID,
+    C5E_POS_ID,
+    C5E_EMCY_ID,
+    C5E_STATUS_ID,
+    C5E_SRV_ID
 };
 
 class CanBus : public rclcpp::Node {
@@ -52,16 +57,24 @@ class CanBus : public rclcpp::Node {
 
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
     rclcpp::Publisher<driverless_msgs::msg::CarStatus>::SharedPtr bmu_status_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
 
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber1_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber2_;
+
     std::string ros_base_frame_;
 
     // can connection
     std::shared_ptr<SocketCAN> socketCAN;
+    // msg counter
+    uint32_t msg_counter = 0;
+    driverless_msgs::msg::Can last_tx_msg;
+    driverless_msgs::msg::Can last_rx_msg;
 
     // class variables for sensor data
     float wheel_speeds[4];
@@ -81,15 +94,25 @@ class CanBus : public rclcpp::Node {
     }
 
     void canmsg_timer() {
-        auto res = this->socketCAN->rx();
+        auto res = this->socketCAN->rx(this->get_logger(), this->get_clock());
 
         for (auto &msg : *res) {
+            // cout all msgs and timestamp and data
             uint32_t qutms_masked_id = msg.id & ~0xF;
             // only publish can messages with IDs we care about to not flood memory
-            if (std::find(can_ids.begin(), can_ids.end(), msg.id) != can_ids.end()) {
-                this->can_pub_->publish(msg);
+            if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
+                if (msg.id != C5E_POS_ID && msg.id != RES_HEARTBEAT_ID) {
+                    RCLCPP_DEBUG(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id, msg.data[0], msg.data[1], msg.data[2],
+                            msg.data[3], msg.data[4], msg.data[5], msg.data[6], msg.data[7]);
+                }
+                this->canopen_pub_->publish(msg);
             } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
+            } else if (msg.id == 0x4) {
+                RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg.id);
+                RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x", 
+                    last_rx_msg.data[0], last_rx_msg.data[1], last_rx_msg.data[2], last_rx_msg.data[3], 
+                    last_rx_msg.data[4], last_rx_msg.data[5], last_rx_msg.data[6], last_rx_msg.data[7]);
             }
 
             // CAN TRANSLATION OPTIONS
@@ -145,13 +168,13 @@ class CanBus : public rclcpp::Node {
                 if (abs(steering_0 - steering_1) < 10) {
                     angle_msg.data = steering_0;
                     last_steering_angle = steering_0;
-
-                    // update twist msg with new steering angle
+                    this->steering_angle_pub_->publish(angle_msg);
                     update_twist();
                 } else {
-                    angle_msg.data = 1111.0;  // error identifier (impossible value)
+                    RCLCPP_FATAL(this->get_logger(),
+                                 "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                                 steering_0_raw, steering_1_raw, adc_0, adc_1);
                 }
-                this->steering_angle_pub_->publish(angle_msg);
             }
             // BMU
             else if (msg.id == BMU_TransmitVoltage_ID) {
@@ -174,32 +197,71 @@ class CanBus : public rclcpp::Node {
                 }
                 this->bmu_status_pub_->publish(this->bmu_status);
             }
+            last_rx_msg = msg;
         }
     }
 
     // ROS can msgs
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->socketCAN->tx(msg.get()); }
+    // void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
+    //     this->socketCAN->tx(msg.get(), this->get_logger()); 
+    // }
+
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) {
+        this->socketCAN->tx(msg.get(), this->get_logger()); 
+        if (msg->id == 0x670) {
+            // increment msg counter
+            this->msg_counter = this->msg_counter + 1;
+            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Msgs sent: %d", this->msg_counter);
+            uint16_t object_id = (msg->data[2] & 0xFF) << 8 | (msg->data[1] & 0xFF);
+            if (object_id == 0x607A) {
+                RCLCPP_INFO(this->get_logger(), "Cmd: %x, Target: %x %x %x %x", msg->data[0], msg->data[4], msg->data[5], msg->data[6], msg->data[7]);
+                // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Cmd: %x, Target: %x %x %x %x", msg->data[0], msg->data[4], msg->data[5], msg->data[6], msg->data[7]);
+            }
+        }
+        if (msg->id == 0x4) {
+            RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg->id);
+            RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x", 
+                last_tx_msg.data[0], last_tx_msg.data[1], last_tx_msg.data[2], last_tx_msg.data[3], 
+                last_tx_msg.data[4], last_tx_msg.data[5], last_tx_msg.data[6], last_tx_msg.data[7]);
+        }
+        last_tx_msg = *msg;
+    }
 
    public:
     CanBus() : Node("canbus_translator_node") {
         // socketCAN parameters
-        std::string _interface = this->declare_parameter<std::string>("interface", "can0");
+        std::string interface = this->declare_parameter<std::string>("interface", "faro_can0");
         ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
-        this->get_parameter("interface", _interface);
+        this->get_parameter("interface", interface);
         this->get_parameter("base_frame", ros_base_frame_);
 
-        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s...", _interface.c_str());
+        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s...", interface.c_str());
         this->socketCAN = std::make_shared<SocketCAN>();
-        this->socketCAN->setup(_interface);
-        RCLCPP_INFO(this->get_logger(), "done!");
+        while (!this->socketCAN->setup(interface, this->get_logger())) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to create connection on %s. Retrying...", interface.c_str());
+            // check for keyboard interrupt
+            if (!rclcpp::ok()) {
+                return;
+            }
+            rclcpp::sleep_for(std::chrono::seconds(1));
+        }
+
+        callback_group_subscriber1_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_subscriber2_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+        auto sub1_opt = rclcpp::SubscriptionOptions();
+        sub1_opt.callback_group = callback_group_subscriber1_;
+        auto sub2_opt = rclcpp::SubscriptionOptions();
+        sub2_opt.callback_group = callback_group_subscriber2_;
 
         // retrieve can messages from queue
         this->timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer, this));
         // subscribe to can messages from ROS system
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1));
+            "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1), sub2_opt);
         // publish can messages to ROS system
-        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
+        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", QOS_ALL);
+        this->canopen_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canopen_rosbound", QOS_ALL);
 
         // ADD PUBS FOR CAN TOPICS HERE
         // Steering ang
@@ -226,7 +288,13 @@ class CanBus : public rclcpp::Node {
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<CanBus>());
-    rclcpp::shutdown();
+    auto node = std::make_shared<CanBus>();
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+
+    // rclcpp::spin(node);
+    // rclcpp::shutdown();
     return 0;
 }

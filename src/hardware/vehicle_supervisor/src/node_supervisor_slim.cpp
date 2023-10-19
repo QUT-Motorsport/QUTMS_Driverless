@@ -48,6 +48,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     // subscribers
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr control_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steering_angle_sub_;
@@ -67,11 +68,9 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     float last_steering_angle = 0;
     float last_velocity = 0;
 
-    void can_callback(const driverless_msgs::msg::Can msg) {
-        uint32_t qutms_masked_id = msg.id & ~0xF;
-
+    void canopen_callback(const driverless_msgs::msg::Can msg) {
         // RES boot up
-        if (msg.id == (0x700 + RES_NODE_ID)) {
+        if (msg.id == (RES_BOOT_UP_ID)) {
             /*
             RES has reported in, request state change to enable it
 
@@ -81,13 +80,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             Byte 0 = state command (start up)
             Byte 1 = Node ID (0x00 = All Nodes)
             */
-            RCLCPP_DEBUG(this->get_logger(), "RES Booted");
+            RCLCPP_INFO(this->get_logger(), "RES Booted");
             uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             this->res_alive = 1;
-        }
+        }        
         // RES heartbeat
-        else if (msg.id == (0x180 + RES_NODE_ID)) {
+        else if (msg.id == (RES_HEARTBEAT_ID)) {
             // RES Reciever Status Packet
             Parse_RES_Heartbeat((uint8_t *)&msg.data[0], &this->RES_status);
             // Log RES state
@@ -104,8 +103,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->res_status_pub_->publish(res_msg);
             this->res_alive = 1;
         }
+    }
+
+    void can_callback(const driverless_msgs::msg::Can msg) {
+        uint32_t qutms_masked_id = msg.id & ~0xF;
+
         // VCU hearbeat
-        else if (qutms_masked_id == VCU_Heartbeat_ID) {
+        if (qutms_masked_id == VCU_Heartbeat_ID) {
             uint8_t VCU_ID = msg.id & 0xF;
             RCLCPP_DEBUG(this->get_logger(), "VCU ID: %u STATE: %02x", VCU_ID, msg.data[0]);
 
@@ -147,14 +151,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     }
 
     void steering_angle_callback(const std_msgs::msg::Float32 msg) {
-        if (msg.data > 1000) {
-            // error in redundant steering angle
-            // go to emergency
-            this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-        } else {
-            this->last_steering_angle = msg.data;
-            this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)msg.data;
-        }
+        this->last_steering_angle = msg.data;
+        this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)msg.data;
         this->run_fsm();
     }
 
@@ -198,7 +196,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void res_alive_callback() {
         if (!this->res_alive) {
             this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
-            RCLCPP_DEBUG(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
+            RCLCPP_WARN(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
             uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -459,8 +457,11 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // CAN
         this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
+        
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_callback, this, _1));
+        this->canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
+            "/can/canopen_rosbound", QOS_ALL, std::bind(&ASSupervisor::canopen_callback, this, _1));
 
         // State pub
         this->state_pub_ = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);

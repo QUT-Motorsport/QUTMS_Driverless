@@ -36,6 +36,8 @@ set (SOURCES
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
+include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
+
 add_executable(canbus_translator_node src/node_canbus_translator.cpp ${SOURCES})
 ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs nav_msgs std_msgs)
 target_include_directories(canbus_translator_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
