@@ -14,7 +14,7 @@ def generate_launch_description():
             ),
             Node(
                 package="canbus",
-                executable="canbus_translator_node",
+                executable="canbus_translator_socket_node",
                 parameters=[
                     get_package_share_path("canbus") / "config" / "canbus.yaml",
                 ],
