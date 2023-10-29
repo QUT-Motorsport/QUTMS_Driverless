@@ -7,7 +7,7 @@ from transforms3d.euler import euler2quat
 import rclpy
 from rclpy.node import Node
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint, State
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
@@ -164,11 +164,12 @@ class OrderedMapSpline(Node):
         super().__init__("ordered_map_spline_node")
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_timer(0.1, self.planning_callback)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
+        self.create_timer(0.05, self.planning_callback)
 
         # publishers
         self.qutms_path_pub = self.create_publisher(QUTMSPathStamped, "/planner/path", 1)
-        self.spline_path_pub = self.create_publisher(Path, "/planner/spline_path", 1)
+        self.planned_path_pub = self.create_publisher(Path, "/planner/global_path", 1)
         self.interp_cones_pub = self.create_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
 
         self.get_logger().info("---Ordered path planner node initialised---")
@@ -253,7 +254,6 @@ class OrderedMapSpline(Node):
             pose = PoseStamped()
             pose.pose.position.x = tx[i]
             pose.pose.position.y = ty[i]
-            pose.pose.position.z = 0.0
             quat = euler2quat(0.0, 0.0, th_change)
             pose.pose.orientation.w = quat[0]
             pose.pose.orientation.x = quat[1]
@@ -266,7 +266,7 @@ class OrderedMapSpline(Node):
         spline_path_msg = Path()
         spline_path_msg.header.frame_id = "track"
         spline_path_msg.poses = poses
-        self.spline_path_pub.publish(spline_path_msg)
+        self.planned_path_pub.publish(spline_path_msg)
 
         # curvature segments
         qutms_path: list[PathPoint] = []
@@ -285,7 +285,6 @@ class OrderedMapSpline(Node):
                 path_point = PathPoint()
                 path_point.location.x = tx[i + j]
                 path_point.location.y = ty[i + j]
-                path_point.location.z = 0.0
                 path_point.turn_intensity = change_pc
                 qutms_path.append(path_point)
 

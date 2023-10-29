@@ -16,7 +16,7 @@ class OrderedMidSplineLifecycle(OrderedMapSpline, LifecycleNodeMixin):
     map_sub: Subscription
     planning_timer: Timer
     qutms_path_pub: Publisher
-    spline_path_pub: Publisher
+    planned_path_pub: Publisher
     interp_cones_pub: Publisher
 
     def __init__(self):
@@ -32,7 +32,7 @@ class OrderedMidSplineLifecycle(OrderedMapSpline, LifecycleNodeMixin):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info("on_configure")
         self.qutms_path_pub = self.create_lifecycle_publisher(QUTMSPathStamped, "/planner/path", 1)
-        self.spline_path_pub = self.create_lifecycle_publisher(Path, "/planner/spline_path", 1)
+        self.planned_path_pub = self.create_lifecycle_publisher(Path, "/planner/spline_path", 1)
         self.interp_cones_pub = self.create_lifecycle_publisher(ConeDetectionStamped, "/planner/interpolated_map", 1)
         return TransitionCallbackReturn.SUCCESS
 
@@ -53,7 +53,7 @@ class OrderedMidSplineLifecycle(OrderedMapSpline, LifecycleNodeMixin):
         self.destroy_subscription(self.map_sub)
         self.destroy_timer(self.planning_timer)
         self.destroy_lifecycle_publisher(self.qutms_path_pub)
-        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.planned_path_pub)
         self.destroy_lifecycle_publisher(self.interp_cones_pub)
         return TransitionCallbackReturn.SUCCESS
 
@@ -62,7 +62,7 @@ class OrderedMidSplineLifecycle(OrderedMapSpline, LifecycleNodeMixin):
         self.destroy_subscription(self.map_sub)
         self.destroy_timer(self.planning_timer)
         self.destroy_lifecycle_publisher(self.qutms_path_pub)
-        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.planned_path_pub)
         self.destroy_lifecycle_publisher(self.interp_cones_pub)
         return TransitionCallbackReturn.SUCCESS
 
@@ -70,7 +70,7 @@ class OrderedMidSplineLifecycle(OrderedMapSpline, LifecycleNodeMixin):
         self.get_logger().info("on_error")
         self.destroy_subscription(self.map_sub)
         self.destroy_lifecycle_publisher(self.qutms_path_pub)
-        self.destroy_lifecycle_publisher(self.spline_path_pub)
+        self.destroy_lifecycle_publisher(self.planned_path_pub)
         self.destroy_lifecycle_publisher(self.interp_cones_pub)
         return TransitionCallbackReturn.SUCCES
 
