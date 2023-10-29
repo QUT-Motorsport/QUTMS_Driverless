@@ -25,7 +25,8 @@ setup(
         "console_scripts": [
             "mission_launcher = mission_controller.node_mission_launcher:main",
             "inspection_handler = mission_controller.node_inspection_handler:main",
-            "trackdrive_handler = mission_controller.node_trackdrive_handler:main",
+            "trackdrive_handler_node = mission_controller.node_trackdrive_handler:main",
+            "trackdrive_handler_lifecycle = mission_controller.lifecycle_trackdrive_handler:main",
         ],
     },
 )
