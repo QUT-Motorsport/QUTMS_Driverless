@@ -52,7 +52,8 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments=[
-                    ("urdf_model", "qev3.urdf.xacro"),
+                    ("urdf_model", "qev-3d.urdf.xacro"),
+                    ("base_frame", "base_footprint"),
                 ],
             ),
         ]
