@@ -10,11 +10,11 @@
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "TritiumCAN.hpp"
+#include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/car_status.hpp"
 #include "driverless_msgs/msg/res.hpp"
-#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -36,10 +36,14 @@ void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
 }
 
 // create array of CAN IDs we care about
-std::vector<uint32_t> can_ids = {
-    0x5F0,                  // C5_E stepper ID
-    (0x700 + RES_NODE_ID),  // boot up message
-    RES_Heartbeat_ID,
+std::vector<uint32_t> canopen_ids = {
+    RES_BOOT_UP_ID,
+    RES_HEARTBEAT_ID,
+    C5E_BOOT_UP_ID,
+    C5E_POS_ID,
+    C5E_EMCY_ID,
+    C5E_STATUS_ID,
+    C5E_SRV_ID
 };
 
 class CanBus : public rclcpp::Node {
@@ -52,6 +56,7 @@ class CanBus : public rclcpp::Node {
 
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
@@ -82,12 +87,18 @@ class CanBus : public rclcpp::Node {
 
     void canmsg_timer() {
         auto res = this->tritiumCAN->rx();
+        // std::cout << "RX - Num CAN: " << res->size() << std::endl;
 
         for (auto &msg : *res) {
+            // cout all msgs and timestamp and data
             uint32_t qutms_masked_id = msg.id & ~0xF;
             // only publish can messages with IDs we care about to not flood memory
-            if (std::find(can_ids.begin(), can_ids.end(), msg.id) != can_ids.end()) {
-                this->can_pub_->publish(msg);
+            if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
+                if (msg.id != C5E_POS_ID) {
+                    RCLCPP_INFO(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id, msg.data[0], msg.data[1], msg.data[2],
+                            msg.data[3], msg.data[4], msg.data[5], msg.data[6], msg.data[7]);
+                }
+                this->canopen_pub_->publish(msg);
             } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
             }
@@ -145,13 +156,13 @@ class CanBus : public rclcpp::Node {
                 if (abs(steering_0 - steering_1) < 10) {
                     angle_msg.data = steering_0;
                     last_steering_angle = steering_0;
-
-                    // update twist msg with new steering angle
+                    this->steering_angle_pub_->publish(angle_msg);
                     update_twist();
                 } else {
-                    angle_msg.data = 1111.0;  // error identifier (impossible value)
+                    RCLCPP_FATAL(this->get_logger(),
+                                 "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
+                                 steering_0_raw, steering_1_raw, adc_0, adc_1);
                 }
-                this->steering_angle_pub_->publish(angle_msg);
             }
             // BMU
             else if (msg.id == BMU_TransmitVoltage_ID) {
@@ -178,12 +189,14 @@ class CanBus : public rclcpp::Node {
     }
 
     // ROS can msgs
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->tritiumCAN->tx(msg.get()); }
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
+        this->tritiumCAN->tx(msg.get()); 
+    }
 
    public:
     CanBus() : Node("canbus_translator_node") {
         // Can2Ethernet parameters
-        std::string ip = this->declare_parameter<std::string>("ip", "192.168.2.125");
+        std::string ip = this->declare_parameter<std::string>("ip", "192.168.2.126");
         int port = this->declare_parameter<int>("port", 20005);
         ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
 
@@ -202,14 +215,15 @@ class CanBus : public rclcpp::Node {
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1));
         // publish can messages to ROS system
-        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", 10);
+        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", QOS_ALL);
+        this->canopen_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canopen_rosbound", QOS_ALL);
 
         // ADD PUBS FOR CAN TOPICS HERE
         // Steering ang
         this->steering_angle_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
         // Vehicle velocity
         this->velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
-        // Odometry
+        // Twist
         this->twist_pub_ =
             this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/vehicle/wheel_twist", 10);
         // BMU
@@ -229,7 +243,8 @@ class CanBus : public rclcpp::Node {
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<CanBus>());
+    auto node = std::make_shared<CanBus>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }
