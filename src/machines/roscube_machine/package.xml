@@ -25,8 +25,7 @@
     <depend>planners</depend>
     <depend>velocity_controller</depend>
     <depend>mission_controller</depend>
-    <!-- This is cloned in the dockerfile -->
-    <depend>sbg_driver</depend>
+    <depend>sbg_translator</depend>
 
     <exec_depend>ros2launch</exec_depend>
 
