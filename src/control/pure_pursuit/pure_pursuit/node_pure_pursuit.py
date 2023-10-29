@@ -12,11 +12,13 @@ from transforms3d.euler import quat2euler
 from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
-from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import PathStamped
+from driverless_msgs.msg import State
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PointStamped
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
 
@@ -36,6 +38,8 @@ class PurePursuit(Node):
     y_offset = 0
     fallback_path_points_offset = 0
     cog2axle = 0.5  # could be a declared parameter
+    driving = False
+    following = False
 
     def __init__(self, node_name="pure_pursuit_node"):
         super().__init__(node_name)
@@ -43,37 +47,73 @@ class PurePursuit(Node):
         self.initialise_params()
 
         # subscribers
-        self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
+        # self.create_subscription(PathStamped, "/planner/path", self.path_callback, QOS_LATEST)
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
+        self.create_subscription(Path, "/planning/midline_path", self.path_callback, QOS_LATEST)
 
         # transform listening
         self.create_timer((1 / 50), self.timer_callback)
 
         # publishers
-        self.control_pub: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
-        self.debug_pub: Publisher = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
+        self.control_pub = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 10)
+        self.debug_pub = self.create_publisher(Image, "/debug_imgs/pursuit_img", 1)
+        self.rvwp_publisher = self.create_publisher(PointStamped, "/control/rvwp", 1)
 
         if node_name == "pure_pursuit_node":
             self.get_logger().info("---Pure pursuit follower initalised---")
 
     def initialise_params(self):
         # parameters
-        self.Kp_ang = self.declare_parameter("Kp_ang", -3.0).value
-        self.lookahead = self.declare_parameter("lookahead", 3.0).value
-        self.vel_max = self.declare_parameter("vel_max", 10.0).value
-        self.vel_min = self.declare_parameter("vel_min", 4.0).value
-        self.DEBUG_IMG = self.declare_parameter("debug_img", True).value
+        self.declare_parameter("Kp_ang", -3.0)
+        self.declare_parameter("debug_img", True)
+        self.declare_parameter("discovery_lookahead", 3.0)
+        self.declare_parameter("discovery_vel_max", 3.0)
+        self.declare_parameter("discovery_vel_min", 2.0)
+        self.declare_parameter("lookahead", 2.5)
+        self.declare_parameter("vel_max", 8.0)
+        self.declare_parameter("vel_min", 4.0)
+
+        # parameters
+        self.Kp_ang = self.get_parameter("Kp_ang").value
+        self.DEBUG_IMG = self.get_parameter("debug_img").value
         # tf buffer
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-    def path_callback(self, spline_path_msg: PathStamped):
+    def state_callback(self, msg: State):
+        """
+        Callback for the state subscriber. Sets the driving and following flags to True when the state changes to
+        DRIVING and the lap count is greater than 0. This is used to ensure that the path has been recieved and the
+        vehicle is ready to drive before following commences.
+        """
+
+        if msg.state == State.DRIVING:
+            self.driving = True
+            self.get_logger().info("Ready to drive", once=True)
+
+        if msg.lap_count == 0 and not self.following:
+            self.vel_max = self.get_parameter("discovery_vel_max").value
+            self.vel_min = self.get_parameter("discovery_vel_min").value
+            self.lookahead = self.get_parameter("discovery_lookahead").value
+
+        if msg.lap_count > 0 and not self.following:
+            self.following = True
+            self.vel_max = self.get_parameter("vel_max").value
+            self.vel_min = self.get_parameter("vel_min").value
+            self.lookahead = self.get_parameter("lookahead").value
+            self.get_logger().info("Lap completed, following commencing")
+
+    # def path_callback(self, spline_path_msg: PathStamped):
+    def path_callback(self, spline_path_msg: Path):
         """
         Callback for the path subscriber. Stores the path and calculates the number of path points to skip when
         finding a fallback RVWP. Also initialises the image scaling and offset values.
         """
 
-        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
-        self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
+        # self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.path)}")
+        # self.path = np.array([[p.location.x, p.location.y, p.turn_intensity] for p in spline_path_msg.path])
+        self.get_logger().debug(f"Spline Path Recieved - length: {len(spline_path_msg.poses)}")
+        self.path = np.array([[p.pose.position.x, p.pose.position.y] for p in spline_path_msg.poses])
         distance = 0
         for i in range(len(self.path) - 1):
             prev = self.path[i]
@@ -107,7 +147,9 @@ class PurePursuit(Node):
             self.img_initialised = True
 
     def can_drive(self):
-        if self.path is None:
+        # uncomment if you want to use reactive control
+        if self.path is None or not self.driving or not self.following:
+        # if self.path is None or not self.driving:
             return False
         self.get_logger().info("Can drive", once=True)
         return True
@@ -161,6 +203,13 @@ class PurePursuit(Node):
         control_msg.drive.steering_angle = desired_steering
         control_msg.drive.speed = desired_velocity
         self.control_pub.publish(control_msg)
+
+        # publish rvwp
+        rvwp_msg = PointStamped()
+        rvwp_msg.point.x = rvwp[0]
+        rvwp_msg.point.y = rvwp[1]
+        rvwp_msg.header.frame_id = "track"
+        self.rvwp_publisher.publish(rvwp_msg)
 
         self.count += 1
         if self.count == 50:
