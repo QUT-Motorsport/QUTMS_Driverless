@@ -7,6 +7,8 @@
     <maintainer email="team@qutmotorsport.com">Alistair English</maintainer>
     <license>MIT</license>
 
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
     <!-- Packages -->
     <depend>robot_state_publisher</depend>
     <depend>joint_state_publisher</depend>
@@ -15,6 +17,6 @@
     <exec_depend>ros2launch</exec_depend>
 
     <export>
-        <build_type>ament_python</build_type>
+        <build_type>ament_cmake</build_type>
     </export>
 </package>

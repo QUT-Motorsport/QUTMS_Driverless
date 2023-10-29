@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot name="qev-3d" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!--  Get the parameters  -->
+  <xacro:arg name="base_frame" default="base_link"/>
+  <xacro:property name="chassis_link" default="chassis"/>
+
+  <xacro:property name="degrees_90" value="1.5708"/>
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+
+  <xacro:property name="steering_limit" default="0.28"/>
+  <xacro:property name="wheel_diameter" value="0.4064"/>
+  <xacro:property name="wheel_width" value="0.2"/>
+  <xacro:property name="chassis_width" value="1.6"/>
+  <xacro:property name="wheelbase" value="1.580"/>
+
+  <!-- material -->
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+
+  <!-- Vehicle include -->
+  <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
+  <!-- Chassis of the car -->
+  <xacro:chassis base_frame="$(arg base_frame)"/>
+  <!-- Wheels -->
+  <xacro:wheels/>
+
+  <!-- Sensors include -->
+  <xacro:include filename="$(find vehicle_urdf)/urdf/sensors.urdf.xacro"/>
+  <xacro:velodyne parent="${chassis_link}" name="velodyne">
+    <origin xyz="1.590 0.0 -0.15" rpy="0 0 0"/>
+  </xacro:velodyne>
+
+  <xacro:zed2i parent="${chassis_link}" name="zed2i">
+    <origin xyz="-0.370 0.0 0.900" rpy="0 0 0"/>
+  </xacro:zed2i>
+
+</robot>
