@@ -91,7 +91,8 @@ void SocketCAN::tx(driverless_msgs::msg::Can *msg, rclcpp::Logger logger) {
     }
 }
 
-std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Logger logger, rclcpp::Clock::SharedPtr clock) {
+std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Logger logger,
+                                                                      rclcpp::Clock::SharedPtr clock) {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
     driverless_msgs::msg::Can rxMsg;
 

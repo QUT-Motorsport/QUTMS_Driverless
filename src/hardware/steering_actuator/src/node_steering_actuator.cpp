@@ -49,8 +49,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     double center_steering = -2.0;
     double requested_steering_angle = center_steering;  // Desired Steering Angle (Guidance Logic)
     int32_t current_enc_revolutions = 0;                // Current Encoder Revolutions (Stepper encoder)
-    float integral_error = 0;  // Integral Error
-    float prev_error = 0;      // Derivative Error
+    float integral_error = 0;                           // Integral Error
+    float prev_error = 0;                               // Derivative Error
     uint32_t current_velocity;
     uint32_t current_acceleration;
     std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();   // Timer
@@ -279,7 +279,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 // Grab error between steering angle and "zero"
                 double error = -(this->current_steering_angle - this->center_steering);
-                auto& clk = *this->get_clock();
+                auto &clk = *this->get_clock();
                 RCLCPP_INFO_THROTTLE(this->get_logger(), clk, 1000, "Error: %f", error);
 
                 if (abs(error) < this->centre_range) {
@@ -342,16 +342,16 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->send_steering_data(CONTROL_WORD, (uint8_t *)&trigger_control_method, 2);
     }
 
-    void send_steering_data(uint16_t obj_index, uint8_t* data, size_t data_size) {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
+    void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size) {
+        uint32_t id;                                                                    // Packet id out
+        uint8_t out[8];                                                                 // Data out
         sdo_write(C5E_NODE_ID, obj_index, 0x00, (uint8_t *)data, data_size, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void read_steering_data(uint16_t obj_index) {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
+        uint32_t id;                                       // Packet id out
+        uint8_t out[8];                                    // Data out
         sdo_read(C5E_NODE_ID, obj_index, 0x00, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }

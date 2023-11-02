@@ -1,7 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
+
 #include <map>
+#include <string>
 
 typedef enum c5e_object_id {
     HOME_OFFSET = 0x607C,
@@ -66,13 +67,13 @@ struct c5e_state {
 
 typedef enum c5e_state_id {
     NRTSO = 0b0000000000000000,
-    SOD =   0b0000000001000000,
-    RTSO =  0b0000000000100001,
-    SO =    0b0000000000100011,
-    OE =    0b0000000000100111,
-    QSA =   0b0000000000000111,
-    FRA =   0b0000000000001111,
-    F =     0b0000000000001000
+    SOD = 0b0000000001000000,
+    RTSO = 0b0000000000100001,
+    SO = 0b0000000000100011,
+    OE = 0b0000000000100111,
+    QSA = 0b0000000000000111,
+    FRA = 0b0000000000001111,
+    F = 0b0000000000001000
 } c5e_state_id_t;
 
 // State Map Definitions
@@ -90,12 +91,12 @@ std::map<uint16_t, c5e_state> states = {
 // control word definitions
 // last 4 bits are the state control (Operation enabled)
 // 1 in bit 7 means relative positioning
-const uint16_t MODE_ABSOLUTE =  0b00101111;
-const uint16_t MODE_RELATIVE =  0b01101111;
+const uint16_t MODE_ABSOLUTE = 0b00101111;
+const uint16_t MODE_RELATIVE = 0b01101111;
 // transition to 1 in bit 4 starts the travel command
 const uint16_t TRIGGER_MOTION = 0b00010000;
 // transition to 1 in bit 7 resets the fault
-const uint16_t FAULT_RESET =    0b10000000;
+const uint16_t FAULT_RESET = 0b10000000;
 
 // Print state function
 c5e_state parse_state(uint16_t status_word) {

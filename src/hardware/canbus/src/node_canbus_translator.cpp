@@ -36,15 +36,8 @@ void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
 }
 
 // create array of CAN IDs we care about
-std::vector<uint32_t> canopen_ids = {
-    RES_BOOT_UP_ID,
-    RES_HEARTBEAT_ID,
-    C5E_BOOT_UP_ID,
-    C5E_POS_ID,
-    C5E_EMCY_ID,
-    C5E_STATUS_ID,
-    C5E_SRV_ID
-};
+std::vector<uint32_t> canopen_ids = {RES_BOOT_UP_ID, RES_HEARTBEAT_ID, C5E_BOOT_UP_ID, C5E_POS_ID,
+                                     C5E_EMCY_ID,    C5E_STATUS_ID,    C5E_SRV_ID};
 
 class CanBus : public rclcpp::Node {
    private:
@@ -95,8 +88,9 @@ class CanBus : public rclcpp::Node {
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
                 if (msg.id != C5E_POS_ID) {
-                    RCLCPP_INFO(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id, msg.data[0], msg.data[1], msg.data[2],
-                            msg.data[3], msg.data[4], msg.data[5], msg.data[6], msg.data[7]);
+                    RCLCPP_INFO(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id,
+                                msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5],
+                                msg.data[6], msg.data[7]);
                 }
                 this->canopen_pub_->publish(msg);
             } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
@@ -189,9 +183,7 @@ class CanBus : public rclcpp::Node {
     }
 
     // ROS can msgs
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-        this->tritiumCAN->tx(msg.get()); 
-    }
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->tritiumCAN->tx(msg.get()); }
 
    public:
     CanBus() : Node("canbus_translator_node") {

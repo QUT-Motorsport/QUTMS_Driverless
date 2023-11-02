@@ -84,7 +84,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             uint8_t p[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
             this->res_alive = 1;
-        }        
+        }
         // RES heartbeat
         else if (msg.id == (RES_HEARTBEAT_ID)) {
             // RES Reciever Status Packet
@@ -457,7 +457,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // CAN
         this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
-        
+
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
             "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_callback, this, _1));
         this->canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(

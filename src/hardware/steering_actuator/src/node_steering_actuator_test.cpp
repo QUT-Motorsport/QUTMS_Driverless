@@ -1,6 +1,6 @@
+#include <bitset>
 #include <chrono>  // Timer library
 #include <map>     // Container library
-#include <bitset>
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
 #include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
@@ -49,8 +49,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int32_t initial_enc = 0;
     bool steering_ang_received = false;
     double current_steering_angle = 0;
-    double center_angle = -2.0;  // angle sensor has a -2 deg offset
-    int32_t current_enc_revolutions = 0;                // Current Encoder Revolutions (Stepper encoder)
+    double center_angle = -2.0;           // angle sensor has a -2 deg offset
+    int32_t current_enc_revolutions = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity;
     uint32_t current_acceleration;
 
@@ -100,9 +100,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         if (!this->motor_enabled || !this->centred) return;
 
         double requested_steering_angle = msg.drive.steering_angle;
-        // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "Requested angle: %f", msg.drive.steering_angle);
-        // turning left eqn: -83.95x - 398.92
-        // turning right eqn: -96.19x - 83.79
+        // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "Requested angle: %f",
+        // msg.drive.steering_angle); turning left eqn: -83.95x - 398.92 turning right eqn: -96.19x - 83.79
         int32_t target;
         if (requested_steering_angle > this->center_angle) {
             target = int32_t(-86.45 * requested_steering_angle - 398.92) - this->offset;
@@ -110,7 +109,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             target = int32_t(-94.58 * requested_steering_angle - 83.79) - this->offset;
         }
         target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", requested_steering_angle, target);
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", requested_steering_angle,
+                             target);
         this->target_position(target);
     }
 
@@ -141,7 +141,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 this->initial_enc_saved = true;
             }
             // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "Encoder: %d", val);
-            
+
             std_msgs::msg::Int32 enc_msg;
             enc_msg.data = this->current_enc_revolutions;
             this->encoder_pub->publish(enc_msg);
@@ -162,43 +162,44 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             if (object_id == STATUS_WORD) {
                 uint16_t status_word = (msg.data[5] << 8 | msg.data[4]);
                 this->current_state = parse_state(status_word);
-                RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 100, "Status word: %s", std::bitset<16>(status_word).to_string().c_str());
+                RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 100, "Status word: %s",
+                                     std::bitset<16>(status_word).to_string().c_str());
                 RCLCPP_DEBUG(this->get_logger(), "Current state: %s", this->current_state.name.c_str());
 
-            if (this->motor_enabled) {
-                if (this->current_state == states[RTSO]) {
-                    this->desired_state = states[SO];
-                } else if (this->current_state == states[SO]) {
-                    this->desired_state = states[OE];
-                    // default params
-                    this->configure_c5e();
-                } else if (this->current_state == states[OE]) {
-                    // if (!this->centred && this->steering_ang_received) {
-                    //     this->pre_op_centering();
-                    // }
-                    // stay here -> no transition
+                if (this->motor_enabled) {
+                    if (this->current_state == states[RTSO]) {
+                        this->desired_state = states[SO];
+                    } else if (this->current_state == states[SO]) {
+                        this->desired_state = states[OE];
+                        // default params
+                        this->configure_c5e();
+                    } else if (this->current_state == states[OE]) {
+                        // if (!this->centred && this->steering_ang_received) {
+                        //     this->pre_op_centering();
+                        // }
+                        // stay here -> no transition
                     } else {
                         this->desired_state = states[RTSO];
-                } 
-            } else {
-                // disabled transitions
-                this->desired_state = states[RTSO];
-            }
-
-            if (shutdown_requested) {
-                this->desired_state = states[RTSO];
-                if (this->current_state == this->desired_state) {
-                    rclcpp::shutdown();
+                    }
+                } else {
+                    // disabled transitions
+                    this->desired_state = states[RTSO];
                 }
-            }
 
-            // Print current and desired states
-            RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
+                if (shutdown_requested) {
+                    this->desired_state = states[RTSO];
+                    if (this->current_state == this->desired_state) {
+                        rclcpp::shutdown();
+                    }
+                }
+
+                // Print current and desired states
+                RCLCPP_DEBUG(this->get_logger(), "Desired state: %s", this->desired_state.name.c_str());
 
                 // State transition stage via state map definitions
-            if (this->current_state != this->desired_state) {
-                RCLCPP_INFO(this->get_logger(), "Current state: %s", this->current_state.name.c_str());
-                RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
+                if (this->current_state != this->desired_state) {
+                    RCLCPP_INFO(this->get_logger(), "Current state: %s", this->current_state.name.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
                     this->send_steering_data(CONTROL_WORD, (uint8_t *)&this->desired_state.control_word, 2);
                 }
             }
@@ -207,7 +208,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Update Steering
     void pre_op_centering() {
-        if (!this->motor_enabled || !this->steering_ang_received || this->centred || this->current_state != states[OE]) return;  // if multithread doesn't work
+        if (!this->motor_enabled || !this->steering_ang_received || this->centred || this->current_state != states[OE])
+            return;  // if multithread doesn't work
 
         RCLCPP_INFO_ONCE(this->get_logger(), "Centering");
         // center steering
@@ -248,23 +250,25 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         this->send_steering_data(CONTROL_WORD, (uint8_t *)&this->control_method, 2);
         // print bitset control word
-        // RCLCPP_INFO(this->get_logger(), "Control word: %s", std::bitset<16>(this->control_method).to_string().c_str());
+        // RCLCPP_INFO(this->get_logger(), "Control word: %s",
+        // std::bitset<16>(this->control_method).to_string().c_str());
         this->send_steering_data(TARGET_POSITION, (uint8_t *)&target, 4);
         uint16_t trigger_control_method = this->control_method | TRIGGER_MOTION;
         this->send_steering_data(CONTROL_WORD, (uint8_t *)&trigger_control_method, 2);
-        // RCLCPP_INFO(this->get_logger(),"Trigger control word: %s", std::bitset<16>(trigger_control_method).to_string().c_str());
+        // RCLCPP_INFO(this->get_logger(),"Trigger control word: %s",
+        // std::bitset<16>(trigger_control_method).to_string().c_str());
     }
 
-    void send_steering_data(uint16_t obj_index, uint8_t* data, size_t data_size) {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
+    void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size) {
+        uint32_t id;                                                                    // Packet id out
+        uint8_t out[8];                                                                 // Data out
         sdo_write(C5E_NODE_ID, obj_index, 0x00, (uint8_t *)data, data_size, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
     void read_steering_data(uint16_t obj_index) {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
+        uint32_t id;                                       // Packet id out
+        uint8_t out[8];                                    // Data out
         sdo_read(C5E_NODE_ID, obj_index, 0x00, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
@@ -303,22 +307,25 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         // Create subscriber to topic "steering_angle"
         this->steer_ang_sub = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1), sub2_opt);
+            "/vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1),
+            sub2_opt);
 
         // Create subscriber to topic "driving_command"
         this->ackermann_sub = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1), sub2_opt);
+            "/control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1),
+            sub2_opt);
 
         // Create subscriber to topic AS status
         // this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
         //     "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1));
 
-        this->steering_update_timer =
-            this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&SteeringActuator::pre_op_centering, this));
-        
+        this->steering_update_timer = this->create_wall_timer(std::chrono::milliseconds(50),
+                                                              std::bind(&SteeringActuator::pre_op_centering, this));
+
         // Create state request and config timers
         this->state_request_timer = this->create_wall_timer(
-            std::chrono::milliseconds(200), std::bind(&SteeringActuator::c5e_state_request_callback, this), callback_group_subscriber1_);
+            std::chrono::milliseconds(200), std::bind(&SteeringActuator::c5e_state_request_callback, this),
+            callback_group_subscriber1_);
 
         // Create publisher to topic "canbus_carbound"
         this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", QOS_ALL);
@@ -328,7 +335,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
         RCLCPP_INFO(this->get_logger(), "---Steering Actuator Node Initialised---");
     }
-    
+
     // Shutdown system
     void shutdown() { this->shutdown_requested = true; }
 };
@@ -339,7 +346,7 @@ void signal_handler(int signal) { handler(signal); }
 
 // Main loop
 int main(int argc, char *argv[]) {
-    rclcpp::init(argc, argv);  // Initialise ROS2
+    rclcpp::init(argc, argv);                          // Initialise ROS2
     auto node = std::make_shared<SteeringActuator>();  // Constructs an empty SteeringActuator class
     // Hack
     signal(SIGINT, signal_handler);
@@ -354,6 +361,6 @@ int main(int argc, char *argv[]) {
     executor.spin();
 
     // rclcpp::spin(node);
-    // rclcpp::shutdown();    
+    // rclcpp::shutdown();
     return 0;
 }

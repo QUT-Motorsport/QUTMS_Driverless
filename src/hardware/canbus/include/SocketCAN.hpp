@@ -6,9 +6,9 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "rclcpp/rclcpp.hpp"
 
 #include "driverless_msgs/msg/can.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 const int SCAN_RECV_SIZE = 4096;
 
