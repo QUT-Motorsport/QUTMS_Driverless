@@ -4,10 +4,17 @@
 
 #include "driverless_msgs/msg/can.hpp"
 
-#define RES_NODE_ID 0x011
+// CAN Open nodes
+// RES is on Node 0x11
+// FSG Rules: "The Node-ID has to be set to 0x011 at the competition. Only in severe cases,
+// there will be an exception. Please give a detail problem description with the request"
+
+#define RES_NODE_ID 0x11
 #define RES_BOOT_UP_ID 0x700 + RES_NODE_ID
 #define RES_HEARTBEAT_ID 0x180 + RES_NODE_ID
 
+// C5E Steering motor controller is on Node 0x070
+// configured via rotary switches 0x0 - 0x7
 #define C5E_NODE_ID 0x70
 #define C5E_BOOT_UP_ID 0x700 + C5E_NODE_ID
 #define C5E_EMCY_ID 0x80 + C5E_NODE_ID
