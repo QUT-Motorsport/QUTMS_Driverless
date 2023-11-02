@@ -223,5 +223,6 @@ RUN chmod -R go=rwx /home/${USERNAME} && \
     chmod -R go=rwx /usr/local/lib/python3.8/
 
 # tell ROS to use Cyclone DDS
-ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+# ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+# ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+ENV ROS_DOMAIN_ID=69
