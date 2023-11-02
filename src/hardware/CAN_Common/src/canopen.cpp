@@ -10,7 +10,7 @@ std::map<uint8_t, size_t> can_open_size_map = {
 void sdo_read(uint8_t node_id, uint16_t index, uint8_t sub_index, uint32_t* can_packet_id, uint8_t* out) {
     *can_packet_id = 0x600 + node_id;
 
-    out[0] = 0x40;
+    out[0] = 0x40;  // cmd key to request read (manual pg 120)
     out[1] = index & 0xFF;
     out[2] = (index >> 8) & 0xFF;
     out[3] = sub_index;
@@ -25,7 +25,7 @@ void sdo_write(uint8_t node_id, uint16_t index, uint8_t sub_index, uint8_t* data
                uint32_t* can_packet_id, uint8_t* out) {
     *can_packet_id = 0x600 + node_id;
     uint8_t free = 4 - data_size;
-    out[0] = 35;
+    out[0] = 0x23;  // 4 byte data length (manual pg 119/120)
     out[0] = out[0] | ((free << 2) & 0x1E);
 
     out[1] = index & 0xFF;

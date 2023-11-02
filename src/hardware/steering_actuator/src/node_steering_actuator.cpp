@@ -10,112 +10,9 @@
 #include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/int32.hpp"
+#include "steering_actuator/steering_common.hpp"
 
 using std::placeholders::_1;
-
-const int C5_E_ID = 0x70;
-
-/* State ID Definitions
- * NRTSO   = 0   Not ready to switch on
- * SOD     = 64  Switch on disabled
- * RTSO    = 33  Ready to switch on
- * SO      = 35  Switched on
- * OE      = 39  Operation enabled
- * QSA     = 7   Quick stop active
- * FRA     = 15  Fault reaction active
- * F       = 72  Fault
- */
-
-typedef enum c5e_state_id {
-    NRTSO = 0b0000000000000000,
-    SOD = 0b0000000001000000,
-    RTSO = 0b0000000000100001,
-    SO = 0b0000000000100011,
-    OE = 0b0000000000100111,
-    QSA = 0b0000000000000111,
-    FRA = 0b0000000000001111,
-    F = 0b0000000001001000
-} c5e_state_id_t;
-
-/* Object ID Definitions
- * HOME_OFFSET               = 24700
- * MOTION_PROFILE_TYPE       = 24710
- * PROFILE_VELOCITY          = 24705
- * END_VELOCTITY             = 24706
- * PROFILE_ACCELERATION      = 24707
- * PROFILE_DECELERATION      = 24708
- * QUICK_STOP_DECELERATION   = 24709
- * MAX_ACCELERATION          = 24773
- * MAX_DECELERATION          = 24774
- * MODE_OF_OPERATION         = 24672
- * TARGET_POSITION           = 24698
- * CONTROL_WORD              = 24640
- * STATUS_WORD               = 24641
- * REVOLUTION_POS            = 24676
- */
-
-typedef enum c5e_object_id {
-    HOME_OFFSET = 0x607C,
-    MOTION_PROFILE_TYPE = 0x6086,
-    PROFILE_VELOCITY = 0x6081,
-    END_VELOCTITY = 0x6082,
-    PROFILE_ACCELERATION = 0x6083,
-    PROFILE_DECELERATION = 0x6084,
-    QUICK_STOP_DECELERATION = 0x6085,
-    MAX_ACCELERATION = 0x60C5,
-    MAX_DECELERATION = 0x60C6,
-    MODE_OF_OPERATION = 0x6060,
-    TARGET_POSITION = 0x607A,
-    CONTROL_WORD = 0x6040,
-    STATUS_WORD = 0x6041,
-    REVOLUTION_POS = 0x6064,
-} c5e_object_id_t;
-
-/* State Structure
-name - The state which the steering wheel is switched on, enabled, or at fault
-mask - ?
-state_id - State ID Number
-control_word - ?
-*/
-
-struct c5e_state {
-    std::string name;
-    uint16_t mask;
-    uint16_t state_id;
-    uint16_t control_word;
-
-    bool operator==(const c5e_state &rhs) {
-        return (this->name == rhs.name && this->mask == rhs.mask && this->state_id == rhs.state_id);
-    }
-
-    bool operator!=(const c5e_state &rhs) { return !(*this == rhs); }
-};
-
-// State Map Definitions
-std::map<uint16_t, c5e_state> states = {
-    {NRTSO, {"Not ready to switch on", 0b0000000001001111, NRTSO, 0}},
-    {SOD, {"Switch on disabled", 0b0000000001001111, SOD, 0}},
-    {RTSO, {"Ready to switch on", 0b0000000001101111, RTSO, 6}},
-    {SO, {"Switched on", 0b0000000001101111, SO, 7}},
-    {OE, {"Operation enabled", 0b0000000001101111, OE, 15}},
-    {QSA, {"Quick stop active", 0b0000000001101111, QSA, 0}},
-    {FRA, {"Fault reaction active", 0b0000000001001111, FRA, 0}},
-    {F, {"Fault", 0b0000000001001111, F, 0}},
-};
-
-// Parameter string definitions
-const std::string PARAM_ACCELERATION = "acceleration";
-const std::string PARAM_VELOCITY = "velocity";
-const std::string PARAM_VELOCITY_CENTERING = "velocity_centering";
-const std::string PARAM_KP = "Kp";
-const std::string PARAM_KI = "Ki";
-const std::string PARAM_KD = "Kd";
-
-void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        dest[i] = vec[i];
-    }
-}
 
 // Steering Actuation Class
 class SteeringActuator : public rclcpp::Node, public CanInterface {
@@ -131,133 +28,88 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
-    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub;
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
 
-    driverless_msgs::msg::State state;       // State message
-    c5e_state desired_state = states[RTSO];  // Desired State
-    c5e_state current_state = states[RTSO];  // Current State
-    bool motor_enabled = false;              // Enable motors logic
+    // params
+    double Kp, Ki, Kd, centre_range;
+
+    bool shutdown_requested = false;
+    driverless_msgs::msg::State state;
+    c5e_state desired_state = states[RTSO];
+    c5e_state current_state = states[RTSO];
+    uint16_t control_method = MODE_ABSOLUTE;
+    bool motor_enabled = true;
     bool centred = false;
     bool steering_ang_received = false;
     int32_t offset = 0;
     int settled_count = 0;
-    int32_t pre_offset_target = 0;
     bool initial_enc_saved = false;
     int32_t initial_enc;
-    double current_steering_angle = 0;  // Current Steering Angle (Angle Sensor)
+    double current_steering_angle = 0;
     double center_steering = -2.0;
-    double requested_steering_angle = center_steering;  // Desired Steering ANgle (Guidance Logic)
+    double requested_steering_angle = center_steering;  // Desired Steering Angle (Guidance Logic)
     int32_t current_enc_revolutions = 0;                // Current Encoder Revolutions (Stepper encoder)
-    bool shutdown_requested = false;                    // Shutdown logic
-
-    float Kp, Ki, Kd;          // PID Gain
-    float integral_error = 0;  // Integral Error
-    float prev_error = 0;      // Derivative Error
+    float integral_error = 0;                           // Integral Error
+    float prev_error = 0;                               // Derivative Error
+    uint32_t current_velocity;
+    uint32_t current_acceleration;
     std::chrono::high_resolution_clock::time_point last_update = std::chrono::high_resolution_clock::now();   // Timer
     std::chrono::high_resolution_clock::time_point last_reading = std::chrono::high_resolution_clock::now();  // Timer
 
-    // Request callback for configuration (via ROS2)
-    // These publishings are required to send a 'trigger' to the c5e controller
+    // These publishings are required to send a service 'trigger' to the c5e controller
     // with the specific object ID (seen in struct above).
     // Then the c5e controller will send a CAN message back with that ID
     void c5e_state_request_callback() {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
-
-        sdo_read(C5_E_ID, STATUS_WORD, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, REVOLUTION_POS, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+        this->read_steering_data(STATUS_WORD);
+        this->read_steering_data(POSITION_ACTUAL_VAL);
     }
 
-    // Request callback for configuration (via ROS2)
-    // These publishings are required to send a 'trigger' to the c5e controller
-    // with the specific object ID (seen in struct above).
-    // Then the c5e controller will send a CAN message back with that ID
     void c5e_config_request_callback() {
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
-
-        // Read callback information from canbus, grab can packet id for each object, then publish id
-        sdo_read(C5_E_ID, HOME_OFFSET, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, PROFILE_VELOCITY, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, END_VELOCTITY, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, PROFILE_ACCELERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, PROFILE_DECELERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, MAX_ACCELERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, MAX_DECELERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_read(C5_E_ID, MODE_OF_OPERATION, 0x00, &id, (uint8_t *)&out);
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+        this->read_steering_data(HOME_OFFSET);
+        this->read_steering_data(MOTION_PROFILE_TYPE);
+        this->read_steering_data(PROFILE_VELOCITY);
+        this->read_steering_data(END_VELOCITY);
+        this->read_steering_data(PROFILE_ACCELERATION);
+        this->read_steering_data(PROFILE_DECELERATION);
+        this->read_steering_data(QUICK_STOP_DECELERATION);
+        this->read_steering_data(MAX_ACCELERATION);
+        this->read_steering_data(MAX_DECELERATION);
+        this->read_steering_data(MODE_OF_OPERATION);
     }
 
     // Receive message from CAN
     void can_callback(const driverless_msgs::msg::Can msg) {
-        // Message ID from the steering actuator
-        if (msg.id == 0x5F0) {
-            uint32_t id;     // Packet id out
-            uint8_t out[8];  // Data out
-
+        if (msg.id == C5E_BOOT_UP_ID) {
+            RCLCPP_INFO(this->get_logger(), "C5E Booted Up");
+        } else if (msg.id == C5E_SRV_ID) {
+            uint16_t object_id = (msg.data[2] & 0xFF) << 8 | (msg.data[1] & 0xFF);
             if (msg.data[0] == 0x60 || msg.data[0] == 0x80) {
                 // 0x60 -> success ack
                 // 0x80 -> error ack
+                RCLCPP_DEBUG(this->get_logger(), "ACK object: %x, %x", object_id, msg.data[0]);
                 return;
             }
 
-            uint16_t object_id = (msg.data[2] & 0xFF) << 8 | (msg.data[1] & 0xFF);
             uint32_t data = 0;
             size_t size = can_open_size_map[msg.data[0]];
             for (size_t i = 0; i < size; i++) {
                 data |= (msg.data[4 + i] & 0xFF) << i * 8;
             }
 
-            uint32_t param_velocity;
-            if (this->centred) {
-                param_velocity = this->get_parameter(PARAM_VELOCITY).as_int();
-            } else {
-                param_velocity = this->get_parameter(PARAM_VELOCITY_CENTERING).as_int();
-            }
-            uint32_t param_acceleration = this->get_parameter(PARAM_ACCELERATION).as_int();
+            RCLCPP_INFO(this->get_logger(), "Object ID: %x", object_id);
 
-            // To set the controller to a usable state, we must set the:
-            // Home Offset = zero - start
-            // Motion Profile Type = trapezoidal ramp (0)
-            // Profile Velocity = PARAM_VELOCITY
-            // End Velocity = 0
-            // Profile Acceleration = PARAM_ACCELERATION
-            // Profile Deceleration = PARAM_ACCELERATION
-            // Quick Stop Deceleration = PARAM_ACCELERATION
-            // Max Acceleration = PARAM_ACCELERATION
-            // Max Deceleration = PARAM_ACCELERATION
-            // Mode of Operation = 1 (Profile Position)
             if (object_id == STATUS_WORD) {
                 uint16_t status_word = (msg.data[3] << 8 | msg.data[4]);
-                this->current_state = this->parse_state(status_word);
+                this->current_state = parse_state(status_word);
 
                 if (this->motor_enabled) {
                     if (this->current_state == this->desired_state) {
                         // enabled transitions
-                        if (this->current_state == states[RTSO]) {
+                        if (this->current_state == states[NRTSO]) {
+                            this->desired_state = states[SOD];
+                        } else if (this->current_state == states[SOD]) {
+                            this->desired_state = states[RTSO];
+                        } else if (this->current_state == states[RTSO]) {
                             this->desired_state = states[SO];
                         } else if (this->current_state == states[SO]) {
                             this->desired_state = states[OE];
@@ -287,12 +139,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 // is)
                 if (this->current_state != this->desired_state) {
                     RCLCPP_INFO(this->get_logger(), "Sending state: %s", this->desired_state.name.c_str());
-                    sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&this->desired_state.control_word, 2, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->send_steering_data(CONTROL_WORD, (uint8_t *)&this->desired_state.control_word, 2);
                 }
             }
             // message received for position revolution
-            else if (object_id == REVOLUTION_POS) {
+            else if (object_id == POSITION_ACTUAL_VAL) {
                 int32_t val = (int32_t)data;
                 this->current_enc_revolutions = val;
                 if (!this->initial_enc_saved) {
@@ -310,8 +161,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 int32_t desired_val = 0;
                 if (val != desired_val) {
-                    sdo_write(C5_E_ID, HOME_OFFSET, 0x00, (uint8_t *)&this->offset, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->send_steering_data(HOME_OFFSET, (uint8_t *)&this->offset, 4);
                 }
             } else if (object_id == MOTION_PROFILE_TYPE) {
                 int16_t val = (int16_t)data;
@@ -319,65 +169,57 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 int32_t desired_val = 0;
                 if (val != desired_val) {
-                    sdo_write(C5_E_ID, MOTION_PROFILE_TYPE, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->send_steering_data(MOTION_PROFILE_TYPE, (uint8_t *)&desired_val, 4);
                 }
             } else if (object_id == PROFILE_VELOCITY) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "PROFILE_VELOCITY: %u", val);
 
-                if (val != param_velocity) {
-                    sdo_write(C5_E_ID, PROFILE_VELOCITY, 0x00, (uint8_t *)&param_velocity, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_velocity) {
+                    this->send_steering_data(PROFILE_VELOCITY, (uint8_t *)&this->current_velocity, 4);
                 }
-            } else if (object_id == END_VELOCTITY) {
+            } else if (object_id == END_VELOCITY) {
                 uint32_t val = (uint32_t)data;
-                RCLCPP_DEBUG(this->get_logger(), "END_VELOCTITY: %u", val);
+                RCLCPP_DEBUG(this->get_logger(), "END_VELOCITY: %u", val);
 
                 uint32_t desired_val = 0;
                 if (val != desired_val) {
-                    sdo_write(C5_E_ID, END_VELOCTITY, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->send_steering_data(END_VELOCITY, (uint8_t *)&desired_val, 4);
                 }
             } else if (object_id == PROFILE_ACCELERATION) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "PROFILE_ACCELERATION: %u", val);
 
-                if (val != param_acceleration) {
-                    sdo_write(C5_E_ID, PROFILE_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_acceleration) {
+                    this->send_steering_data(PROFILE_ACCELERATION, (uint8_t *)&this->current_acceleration, 4);
                 }
             } else if (object_id == PROFILE_DECELERATION) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "PROFILE_DECELERATION: %u", val);
 
-                if (val != param_acceleration) {
-                    sdo_write(C5_E_ID, PROFILE_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_acceleration) {
+                    this->send_steering_data(PROFILE_DECELERATION, (uint8_t *)&this->current_acceleration, 4);
                 }
             } else if (object_id == QUICK_STOP_DECELERATION) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "QUICK_STOP_DECELERATION: %u", val);
 
-                if (val != param_acceleration) {
-                    sdo_write(C5_E_ID, QUICK_STOP_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_acceleration) {
+                    this->send_steering_data(QUICK_STOP_DECELERATION, (uint8_t *)&this->current_acceleration, 4);
                 }
             } else if (object_id == MAX_ACCELERATION) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "MAX_ACCELERATION: %u", val);
 
-                if (val != param_acceleration) {
-                    sdo_write(C5_E_ID, MAX_ACCELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_acceleration) {
+                    this->send_steering_data(MAX_ACCELERATION, (uint8_t *)&this->current_acceleration, 4);
                 }
             } else if (object_id == MAX_DECELERATION) {
                 uint32_t val = (uint32_t)data;
                 RCLCPP_DEBUG(this->get_logger(), "MAX_DECELERATION: %u", val);
 
-                if (val != param_acceleration) {
-                    sdo_write(C5_E_ID, MAX_DECELERATION, 0x00, (uint8_t *)&param_acceleration, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                if (val != this->current_acceleration) {
+                    this->send_steering_data(MAX_DECELERATION, (uint8_t *)&this->current_acceleration, 4);
                 }
             } else if (object_id == MODE_OF_OPERATION) {
                 int8_t val = (uint32_t)data;
@@ -385,11 +227,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 int32_t desired_val = 1;
                 if (val != desired_val) {
-                    sdo_write(C5_E_ID, MODE_OF_OPERATION, 0x00, (uint8_t *)&desired_val, 4, &id, out);
-                    this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
+                    this->send_steering_data(MODE_OF_OPERATION, (uint8_t *)&desired_val, 4);
                 }
-
-                RCLCPP_INFO(this->get_logger(), "error: %f", -(this->current_steering_angle - this->center_steering));
             }
         }
     }
@@ -440,14 +279,19 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
                 // Grab error between steering angle and "zero"
                 double error = -(this->current_steering_angle - this->center_steering);
+                auto &clk = *this->get_clock();
+                RCLCPP_INFO_THROTTLE(this->get_logger(), clk, 1000, "Error: %f", error);
 
-                if (abs(error) < 0.5) {
+                if (abs(error) < this->centre_range) {
                     // motor has settled enough
                     this->settled_count += 1;
 
                     if (this->settled_count > 200) {
                         this->offset = this->initial_enc - this->current_enc_revolutions;
                         this->centred = true;
+                        this->current_velocity = this->get_parameter("velocity").as_int();
+                        this->current_acceleration = this->get_parameter("acceleration").as_int();
+                        this->control_method = MODE_ABSOLUTE;
                         RCLCPP_INFO(this->get_logger(), "CENTRED STEERING, %i", this->offset);
                         return;
                     }
@@ -476,91 +320,72 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
                 int32_t target;
                 if (this->requested_steering_angle > this->center_steering) {
                     target = int32_t(-86.45 * this->requested_steering_angle - 398.92) - this->offset;
-                    // this->pre_offset_target = int32_t(-83.95 * this->requested_steering_angle - 398.92);
                 } else {
                     target = int32_t(-94.58 * this->requested_steering_angle - 83.79) - this->offset;
-                    // this->pre_offset_target = int32_t(-96.19 * this->requested_steering_angle - 83.79);
                 }
-
-                // int32_t target = this->requested_steering_angle;
-
                 target = std::max(std::min(target, 7500 - this->offset), -7500 - this->offset);
                 this->target_position(target);
             }
         }
     }
 
-    // Figure out what control_worrd is and what it does
     void target_position(int32_t target) {
         if (this->current_state != states[OE]) {
+            RCLCPP_INFO_ONCE(this->get_logger(), "Not enabled, can't target");
             return;
         }
+        RCLCPP_INFO_ONCE(this->get_logger(), "Enabled, Targeting");
 
-        uint32_t id;     // Packet id out
-        uint8_t out[8];  // Data out
-        uint16_t control_word;
+        this->send_steering_data(CONTROL_WORD, (uint8_t *)&this->control_method, 2);
+        this->send_steering_data(TARGET_POSITION, (uint8_t *)&target, 4);
+        uint16_t trigger_control_method = this->control_method | TRIGGER_MOTION;
+        this->send_steering_data(CONTROL_WORD, (uint8_t *)&trigger_control_method, 2);
+    }
 
-        if (this->centred) {
-            control_word = 0b0101111;
-        } else {
-            control_word = 0b1101111;
-        }
-        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        sdo_write(C5_E_ID, TARGET_POSITION, 0x00, (uint8_t *)&target, 4, &id, out);  // Target
-        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
-
-        if (this->centred) {
-            control_word = 0b0111111;
-        } else {
-            control_word = 0b1111111;
-        }
-        sdo_write(C5_E_ID, CONTROL_WORD, 0x00, (uint8_t *)&control_word, 2, &id, out);  // Control Word
+    void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size) {
+        uint32_t id;                                                                    // Packet id out
+        uint8_t out[8];                                                                 // Data out
+        sdo_write(C5E_NODE_ID, obj_index, 0x00, (uint8_t *)data, data_size, &id, out);  // Control Word
         this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
-    // Print state function
-    c5e_state parse_state(uint16_t status_word) {
-        for (const auto &[key, actuator_state] : states) {
-            if ((status_word & actuator_state.mask) == actuator_state.state_id) {
-                return actuator_state;
-            }
-        }
-        return states[F];
+    void read_steering_data(uint16_t obj_index) {
+        uint32_t id;                                       // Packet id out
+        uint8_t out[8];                                    // Data out
+        sdo_read(C5E_NODE_ID, obj_index, 0x00, &id, out);  // Control Word
+        this->can_pub->publish(_d_2_f(id, 0, out, sizeof(out)));
     }
 
    public:
     SteeringActuator() : Node("steering_actuator_node") {
         // Steering parameters
-        this->declare_parameter<int>(PARAM_ACCELERATION, 0);
-        this->declare_parameter<int>(PARAM_VELOCITY, 0);
-        this->declare_parameter<int>(PARAM_VELOCITY_CENTERING, 0);
-
+        this->declare_parameter<int>("velocity", 100);
+        this->declare_parameter<int>("velocity_centering", 200);
+        this->declare_parameter<int>("acceleration", 100);
+        this->declare_parameter<int>("acceleration_centering", 100);
+        this->declare_parameter<float>("centre_range", 5);
         // PID controller parameters
-        this->declare_parameter<float>(PARAM_KP, 0);
-        this->declare_parameter<float>(PARAM_KI, 0);
-        this->declare_parameter<float>(PARAM_KD, 0);
+        this->declare_parameter<double>("Kp", 1.0);
+        this->declare_parameter<float>("Ki", 0.0);
+        this->declare_parameter<float>("Kd", 0.0);
 
-        this->get_parameter(PARAM_KP, this->Kp);
-        this->get_parameter(PARAM_KI, this->Ki);
-        this->get_parameter(PARAM_KD, this->Kd);
-
-        if (this->Kp == 0) {
-            RCLCPP_ERROR(this->get_logger(), "Please provide a rosparam yaml file!");
-            rclcpp::shutdown();
-            exit(EXIT_FAILURE);
-        }
+        this->centre_range = this->get_parameter("centre_range").as_double();
+        this->Kp = this->get_parameter("Kp").as_double();
+        this->Ki = this->get_parameter("Ki").as_double();
+        this->Kd = this->get_parameter("Kd").as_double();
+        this->current_velocity = this->get_parameter("velocity_centering").as_int();
+        this->current_acceleration = this->get_parameter("acceleration_centering").as_int();
+        this->control_method = MODE_RELATIVE;
 
         // Create publisher to topic "canbus_carbound"
-        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
+        this->can_pub = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", QOS_ALL);
 
         // Create publisher to topic "encoder_reading"
-        this->encoder_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", 10);
+        this->encoder_pub = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", QOS_ALL);
 
         // Create subscriber to topic AS status
-        this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1));
+        // this->state_sub = this->create_subscription<driverless_msgs::msg::State>(
+        //     "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1));
 
         // Create subscriber to topic "steering_angle"
         this->steer_ang_sub = this->create_subscription<std_msgs::msg::Float32>(
@@ -571,8 +396,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
             "/control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1));
 
         // Create subscriber to topic "canbus_rosbound"
-        this->can_sub = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1));
+        this->canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
+            "/can/canopen_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1));
 
         // Create state request and config timers
         this->steering_update_timer =
@@ -582,8 +407,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
         this->c5e_state_request_timer = this->create_wall_timer(
             std::chrono::milliseconds(50), std::bind(&SteeringActuator::c5e_state_request_callback, this));
 
-        this->c5e_config_request_timer = this->create_wall_timer(
-            std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
+        // this->c5e_config_request_timer = this->create_wall_timer(
+        //     std::chrono::seconds(1), std::bind(&SteeringActuator::c5e_config_request_callback, this));
 
         RCLCPP_INFO(this->get_logger(), "---Steering Actuator Node Initialised---");
     }
@@ -603,12 +428,12 @@ int main(int argc, char *argv[]) {
     auto node = std::make_shared<SteeringActuator>();  // Constructs an empty SteeringActuator class
 
     // Hack
-    signal(SIGINT, signal_handler);
-    handler = [node](int signal) {
-        RCLCPP_INFO(node->get_logger(), "Shutting down motor.");
-        node->shutdown();
-        return signal;
-    };
+    // signal(SIGINT, signal_handler);
+    // handler = [node](int signal) {
+    //     RCLCPP_INFO(node->get_logger(), "Shutting down motor.");
+    //     node->shutdown();
+    //     return signal;
+    // };
 
     rclcpp::spin(node);
     rclcpp::shutdown();

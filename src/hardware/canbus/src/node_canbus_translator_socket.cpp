@@ -9,12 +9,13 @@
 #include "CAN_VCU.h"
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
-#include "TritiumCAN.hpp"
+#include "SocketCAN.hpp"
 #include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/car_status.hpp"
 #include "driverless_msgs/msg/res.hpp"
+#include "driverless_msgs/msg/wss_velocity.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -56,10 +57,17 @@ class CanBus : public rclcpp::Node {
     rclcpp::Publisher<driverless_msgs::msg::CarStatus>::SharedPtr bmu_status_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
 
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber1_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber2_;
+
     std::string ros_base_frame_;
 
     // can connection
-    std::shared_ptr<TritiumCAN> tritiumCAN;
+    std::shared_ptr<SocketCAN> socketCAN;
+    // msg counter
+    uint32_t msg_counter = 0;
+    driverless_msgs::msg::Can last_tx_msg;
+    driverless_msgs::msg::Can last_rx_msg;
 
     // class variables for sensor data
     float wheel_speeds[4];
@@ -79,22 +87,26 @@ class CanBus : public rclcpp::Node {
     }
 
     void canmsg_timer() {
-        auto res = this->tritiumCAN->rx();
-        // std::cout << "RX - Num CAN: " << res->size() << std::endl;
+        auto res = this->socketCAN->rx(this->get_logger(), this->get_clock());
 
         for (auto &msg : *res) {
             // cout all msgs and timestamp and data
             uint32_t qutms_masked_id = msg.id & ~0xF;
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
-                if (msg.id != C5E_POS_ID) {
-                    RCLCPP_INFO(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id,
-                                msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5],
-                                msg.data[6], msg.data[7]);
+                if (msg.id != C5E_POS_ID && msg.id != RES_HEARTBEAT_ID) {
+                    RCLCPP_DEBUG(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id,
+                                 msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5],
+                                 msg.data[6], msg.data[7]);
                 }
                 this->canopen_pub_->publish(msg);
             } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
+            } else if (msg.id == 0x4) {
+                RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg.id);
+                RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x",
+                             last_rx_msg.data[0], last_rx_msg.data[1], last_rx_msg.data[2], last_rx_msg.data[3],
+                             last_rx_msg.data[4], last_rx_msg.data[5], last_rx_msg.data[6], last_rx_msg.data[7]);
             }
 
             // CAN TRANSLATION OPTIONS
@@ -179,35 +191,70 @@ class CanBus : public rclcpp::Node {
                 }
                 this->bmu_status_pub_->publish(this->bmu_status);
             }
+            last_rx_msg = msg;
         }
     }
 
     // ROS can msgs
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const { this->tritiumCAN->tx(msg.get()); }
+    // void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
+    //     this->socketCAN->tx(msg.get(), this->get_logger());
+    // }
+
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) {
+        this->socketCAN->tx(msg.get(), this->get_logger());
+        if (msg->id == 0x670) {
+            // increment msg counter
+            this->msg_counter = this->msg_counter + 1;
+            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Msgs sent: %d", this->msg_counter);
+            uint16_t object_id = (msg->data[2] & 0xFF) << 8 | (msg->data[1] & 0xFF);
+            if (object_id == 0x607A) {
+                RCLCPP_INFO(this->get_logger(), "Cmd: %x, Target: %x %x %x %x", msg->data[0], msg->data[4],
+                            msg->data[5], msg->data[6], msg->data[7]);
+                // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Cmd: %x, Target: %x %x %x %x",
+                // msg->data[0], msg->data[4], msg->data[5], msg->data[6], msg->data[7]);
+            }
+        }
+        if (msg->id == 0x4) {
+            RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg->id);
+            RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x", last_tx_msg.data[0],
+                         last_tx_msg.data[1], last_tx_msg.data[2], last_tx_msg.data[3], last_tx_msg.data[4],
+                         last_tx_msg.data[5], last_tx_msg.data[6], last_tx_msg.data[7]);
+        }
+        last_tx_msg = *msg;
+    }
 
    public:
     CanBus() : Node("canbus_translator_node") {
-        // Can2Ethernet parameters
-        // IP configured in TritiumCAN driver (x.x.2. subnet separate from car x.x.3. subnet for data passthru)
-        // https://tritiumcharging.com/wp-content/uploads/2020/11/TritiumCAN%E2%80%93Ethernet-Bridge_Manual.pdf
-        std::string ip = this->declare_parameter<std::string>("ip", "192.168.2.126");
-        int port = this->declare_parameter<int>("port", 20005);
+        // socketCAN parameters
+        std::string interface = this->declare_parameter<std::string>("interface", "faro_can0");
         ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
-
-        this->get_parameter("ip", ip);
-        this->get_parameter("port", port);
+        this->get_parameter("interface", interface);
         this->get_parameter("base_frame", ros_base_frame_);
 
-        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s:%i...", ip.c_str(), port);
-        this->tritiumCAN = std::make_shared<TritiumCAN>();
-        this->tritiumCAN->setup(ip);
-        RCLCPP_INFO(this->get_logger(), "done!");
+        RCLCPP_INFO(this->get_logger(), "Creating Connection on %s...", interface.c_str());
+        this->socketCAN = std::make_shared<SocketCAN>();
+        while (!this->socketCAN->setup(interface, this->get_logger())) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to create connection on %s. Retrying...", interface.c_str());
+            // check for keyboard interrupt
+            if (!rclcpp::ok()) {
+                return;
+            }
+            rclcpp::sleep_for(std::chrono::seconds(1));
+        }
+
+        callback_group_subscriber1_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_subscriber2_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+        auto sub1_opt = rclcpp::SubscriptionOptions();
+        sub1_opt.callback_group = callback_group_subscriber1_;
+        auto sub2_opt = rclcpp::SubscriptionOptions();
+        sub2_opt.callback_group = callback_group_subscriber2_;
 
         // retrieve can messages from queue
         this->timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CanBus::canmsg_timer, this));
         // subscribe to can messages from ROS system
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1));
+            "/can/canbus_carbound", QOS_ALL, std::bind(&CanBus::canmsg_callback, this, _1), sub2_opt);
         // publish can messages to ROS system
         this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", QOS_ALL);
         this->canopen_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canopen_rosbound", QOS_ALL);
@@ -232,13 +279,18 @@ class CanBus : public rclcpp::Node {
         RCLCPP_INFO(this->get_logger(), "---CANBus Translator Node Initialised---");
     }
 
-    ~CanBus() { this->tritiumCAN->~TritiumCAN(); }
+    ~CanBus() { this->socketCAN->~SocketCAN(); }
 };
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CanBus>();
-    rclcpp::spin(node);
-    rclcpp::shutdown();
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+
+    // rclcpp::spin(node);
+    // rclcpp::shutdown();
     return 0;
 }
