@@ -188,6 +188,8 @@ class CanBus : public rclcpp::Node {
    public:
     CanBus() : Node("canbus_translator_node") {
         // Can2Ethernet parameters
+        // IP configured in TritiumCAN driver (x.x.2. subnet separate from car x.x.3. subnet for data passthru)
+        // https://tritiumcharging.com/wp-content/uploads/2020/11/TritiumCAN%E2%80%93Ethernet-Bridge_Manual.pdf
         std::string ip = this->declare_parameter<std::string>("ip", "192.168.2.126");
         int port = this->declare_parameter<int>("port", 20005);
         ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
