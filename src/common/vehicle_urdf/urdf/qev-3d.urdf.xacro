@@ -3,6 +3,7 @@
 
   <!--  Get the parameters  -->
   <xacro:arg name="base_frame" default="base_link"/>
+  <xacro:arg name="display_car" default="true"/>
   <xacro:property name="chassis_link" default="chassis"/>
 
   <xacro:property name="degrees_90" value="1.5708"/>
@@ -19,10 +20,14 @@
     <color rgba="0 0 0 1"/>
   </material>
 
+  <material name="orange">
+    <color rgba="0.88 0.36 0.035 1"/>
+  </material>
+
   <!-- Vehicle include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
   <!-- Chassis of the car -->
-  <xacro:chassis base_frame="$(arg base_frame)"/>
+  <xacro:chassis base_frame="$(arg base_frame)" display_car="$(arg display_car)"/>
   <!-- Wheels -->
   <xacro:wheels/>
 

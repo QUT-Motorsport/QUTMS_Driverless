@@ -16,6 +16,7 @@ def get_argument(context, arg):
 def process_xacro(context, *args, **kwargs):
     urdf_model = get_argument(context, "urdf_model")
     base_frame = get_argument(context, "base_frame")
+    display_car = get_argument(context, "display_car")
 
     xacro_path = join(
         get_package_share_directory("vehicle_urdf"),
@@ -35,7 +36,10 @@ def process_xacro(context, *args, **kwargs):
 
     doc = xacro.process_file(
         xacro_path,
-        mappings={"base_frame": base_frame},
+        mappings={
+            "base_frame": base_frame,
+            "display_car": display_car,
+        },
     )
     robot_description = doc.toprettyxml(indent="  ")
 
@@ -82,6 +86,11 @@ def generate_launch_description():
                 "urdf_model",
                 default_value="qev-3d.urdf.xacro",
                 description="URDF Model to use (from vehicle_urdf/urdf)",
+            ),
+            DeclareLaunchArgument(
+                "display_car",
+                default_value="true",
+                description="Display the car in rviz",
             ),
             OpaqueFunction(function=process_xacro),
         ]

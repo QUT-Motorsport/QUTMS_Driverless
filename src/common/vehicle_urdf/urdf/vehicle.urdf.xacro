@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="chassis" params="base_frame">
+  <xacro:macro name="chassis" params="base_frame display_car">
     <!-- Base Frame -->
     <link name="${base_frame}"/>
 
@@ -16,10 +16,19 @@
 
     <link name="${chassis_link}">
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="file://$(find vehicle_urdf)/meshes/lando.dae"/>
-        </geometry>
+        <xacro:if value="${display_car}">
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file://$(find vehicle_urdf)/meshes/lando.dae"/>
+          </geometry>
+        </xacro:if>
+        <xacro:unless value="${display_car}">
+          <origin xyz="0.3 0 0.2" rpy="0 0 0"/>
+          <geometry>
+            <box size="2.5 0.7 0.6"/>
+          </geometry>
+          <material name="orange"/>
+        </xacro:unless>
       </visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </link>
