@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>sbg_translator</name>
+    <version>0.0.0</version>
+    <description>SBG odometry transform</description>
+    <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
+    <license>MIT</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <!-- This is cloned in the dockerfile -->
+    <depend>sbg_driver</depend>
+    <depend>geometry_msgs</depend>
+    <depend>nav_msgs</depend>
+    <depend>tf2</depend>
+    <depend>tf2_geometry_msgs</depend>
+    <depend>sensor_msgs</depend>
+
+    <exec_depend>ros2launch</exec_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>

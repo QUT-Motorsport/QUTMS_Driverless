@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    config = os.path.join(get_package_share_directory("sensors"), "config", "ellipse_N.yaml")
+    config = os.path.join(get_package_share_directory("sensors"), "config", "ellipse_D.yaml")
 
     return LaunchDescription(
         [
@@ -15,6 +15,11 @@ def generate_launch_description():
                 executable="sbg_device",
                 output="screen",
                 parameters=[config],
-            )
+            ),
+            Node(
+                package="sbg_translator",
+                executable="sbg_translator_node",
+                output="screen",
+            ),
         ]
     )
