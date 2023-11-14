@@ -56,9 +56,9 @@
       # Year at startup
       year: 2023
       # month in year at startup
-      month: 9
+      month: 11
       # day in month at startup
-      day: 7
+      day: 17
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
