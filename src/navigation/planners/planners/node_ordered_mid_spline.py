@@ -7,8 +7,9 @@ from transforms3d.euler import euler2quat
 import rclpy
 from rclpy.node import Node
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint, State
+from driverless_msgs.msg import Cone, ConeDetectionStamped, PathPoint
 from driverless_msgs.msg import PathStamped as QUTMSPathStamped
+from driverless_msgs.msg import State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 

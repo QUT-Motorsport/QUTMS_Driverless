@@ -27,6 +27,6 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(nav_package_share, "launch", "cone_association_slam.launch.py")
                 )
-            )
+            ),
         ]
     )

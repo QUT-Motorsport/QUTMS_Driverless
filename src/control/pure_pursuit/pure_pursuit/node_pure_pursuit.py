@@ -14,11 +14,10 @@ import rclpy
 from rclpy.node import Node
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import PathStamped
-from driverless_msgs.msg import State
-from sensor_msgs.msg import Image
-from nav_msgs.msg import Path
+from driverless_msgs.msg import PathStamped, State
 from geometry_msgs.msg import PointStamped
+from nav_msgs.msg import Path
+from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, wrap_to_pi
 
@@ -149,7 +148,7 @@ class PurePursuit(Node):
     def can_drive(self):
         # uncomment if you want to use reactive control
         if self.path is None or not self.driving or not self.following:
-        # if self.path is None or not self.driving:
+            # if self.path is None or not self.driving:
             return False
         self.get_logger().info("Can drive", once=True)
         return True

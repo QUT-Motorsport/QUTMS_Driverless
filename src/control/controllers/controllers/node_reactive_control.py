@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 import rclpy
@@ -9,7 +11,6 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 from driverless_common.common import QOS_ALL, QOS_LATEST, fast_dist, midpoint
 
 from typing import List, Tuple
-import time
 
 Colour = Tuple[int, int, int]
 
@@ -139,6 +140,7 @@ class ReactiveController(Node):
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
         self.control_pub.publish(control_msg)
+
 
 def main(args=None):
     rclpy.init(args=args)

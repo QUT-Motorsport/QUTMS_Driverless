@@ -63,9 +63,7 @@ class TrackdriveHandler(ShutdownNode):
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
         try:
-            track_to_base = self.tf_buffer.lookup_transform(
-                "track", "base_footprint", rclpy.time.Time(seconds=0)
-            )
+            track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
             self.get_logger().debug("Transform exception: " + str(e))
             return

@@ -6,8 +6,8 @@ from rclpy.subscription import Subscription
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import ConeDetectionStamped
 
-from driverless_common.common import QOS_ALL, fast_dist, midpoint
 from controllers.node_reactive_control import ReactiveController
+from driverless_common.common import QOS_ALL, fast_dist, midpoint
 
 from typing import Tuple
 
@@ -31,7 +31,7 @@ class ReactiveControllerLifecycle(ReactiveController, LifecycleNodeMixin):
         self.initialise_params()
 
         self.get_logger().info("---Reactive controller node initialised---")
-    
+
     def can_drive(self):
         # override this function to always return true as conditions are lifecycle managed
         self.get_logger().info("Can drive", once=True)

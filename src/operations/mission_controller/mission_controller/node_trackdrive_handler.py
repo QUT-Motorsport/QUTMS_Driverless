@@ -12,6 +12,7 @@ from std_msgs.msg import UInt8
 
 from driverless_common.shutdown_node import ShutdownNode
 
+
 class TrackdriveHandler(ShutdownNode):
     mission_started = False
     crossed_start = False
@@ -55,22 +56,20 @@ class TrackdriveHandler(ShutdownNode):
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
         try:
-            track_to_base = self.tf_buffer.lookup_transform(
-                "track", "base_footprint", rclpy.time.Time(seconds=0)
-            )
+            track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
             self.get_logger().debug("Transform exception: " + str(e))
             return
-        
+
         if not self.mission_started:
             self.last_x = track_to_base.transform.translation.x
             return
-        
+
         if not abs(track_to_base.transform.translation.y) < 2:
             self.last_x = track_to_base.transform.translation.x
             return
 
-        if (self.last_x <= self.goal_offet and track_to_base.transform.translation.x > self.goal_offet):
+        if self.last_x <= self.goal_offet and track_to_base.transform.translation.x > self.goal_offet:
             if not self.crossed_start:
                 self.crossed_start = True
                 self.last_lap_time = time.time()
@@ -87,7 +86,7 @@ class TrackdriveHandler(ShutdownNode):
             self.laps += 1
             self.lap_trig_pub.publish(UInt8(data=self.laps))
             self.get_logger().info(f"Lap {self.laps} completed")
-            
+
             self.last_x = track_to_base.transform.translation.x
             self.last_lap_time = time.time()
 
