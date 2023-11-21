@@ -9,7 +9,7 @@
 // FSG Rules: "The Node-ID has to be set to 0x011 at the competition. Only in severe cases,
 // there will be an exception. Please give a detail problem description with the request"
 
-#define RES_NODE_ID 0x11
+#define RES_NODE_ID 0x011
 #define RES_BOOT_UP_ID 0x700 + RES_NODE_ID
 #define RES_HEARTBEAT_ID 0x180 + RES_NODE_ID
 
