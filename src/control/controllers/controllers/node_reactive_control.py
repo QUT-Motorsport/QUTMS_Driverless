@@ -1,14 +1,14 @@
+import time
+
 import numpy as np
 
 import rclpy
-from rclpy.lifecycle import LifecycleNode, LifecyclePublisher, LifecycleState
-from rclpy.lifecycle.node import TransitionCallbackReturn
-from rclpy.subscription import Subscription
+from rclpy.node import Node
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 
-from driverless_common.common import QOS_ALL, fast_dist, midpoint
+from driverless_common.common import QOS_ALL, QOS_LATEST, fast_dist, midpoint
 
 from typing import List, Tuple
 
@@ -17,35 +17,40 @@ Colour = Tuple[int, int, int]
 ORIGIN = [0, 0]
 
 
-class ReactiveController(LifecycleNode):
-    Kp_ang: float
-    target_vel: float
-    target_accel: float
-    target_offset: int
-    pub_accel: bool
-    ebs_test: bool
-    map_sub: Subscription
-    control_pub: LifecyclePublisher
+class ReactiveController(Node):
+    def __init__(self, node_name="reactive_controller_node"):
+        super().__init__(node_name)
 
-    def __init__(self):
-        super().__init__("reactive_controller_node")
+        self.initialise_params()
 
-        self.ebs_test = self.declare_parameter("ebs_control", False).get_parameter_value().bool_value
+        if self.ebs_test:
+            self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, 1)
+        else:
+            self.create_subscription(ConeDetectionStamped, "/slam/local_map", self.callback, QOS_ALL)
+            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
+
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
+
+        self.control_pub = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+
+        self.get_logger().info("---Reactive controller node initialised---")
+
+    def initialise_params(self):
+        self.target_offset = 2
+        self.driving = False
+        self.discovering = False
+
+        self.declare_parameter("ebs_control", False)
+        self.ebs_test = self.get_parameter("ebs_control").value
+
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
-        self.target_accel = 0.0
-        self.target_offset = 2
         if self.ebs_test:
             self.Kp_ang = 2.0
             self.target_vel = 12.0  # m/s
-            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
         else:
-            # TODO parameterise these
             self.Kp_ang = 1.8
             self.target_vel = 2.0  # m/s
-            # self.create_subscription(ConeDetectionStamped, "/vision/cone_detection", self.callback, 1)
-
-        self.get_logger().info("---Reactive controller node initialised---")
 
     def get_closest_to_origin(self, cones):
         d = float("inf")
@@ -59,8 +64,30 @@ class ReactiveController(LifecycleNode):
             return None
         return cones[min(index + self.target_offset, len(cones) - 1)]
 
+    def state_callback(self, msg: State):
+        if msg.state == State.DRIVING and not self.driving:
+            # delay starting driving for 2 seconds to allow for mapping to start
+            time.sleep(2)
+            self.driving = True
+            self.discovering = True
+            self.get_logger().info("Ready to drive, discovery started", once=True)
+        # lap has been completed, stop this controller
+        if msg.lap_count > 0 and self.discovering:
+            time.sleep(2)
+            self.discovering = False
+            self.get_logger().debug("Lap completed, discovery stopped")
+
+    def can_drive(self):
+        if not self.discovering or not self.driving:
+            return False
+        self.get_logger().info("Can drive", once=True)
+        return True
+
     def callback(self, msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+
+        if not self.can_drive():
+            return
 
         # safety critical, set to 0 if not good detection
         speed = 0.0
@@ -93,17 +120,6 @@ class ReactiveController(LifecycleNode):
         closest_blue = self.get_closest_to_origin(blues)
         closest_yellow = self.get_closest_to_origin(yellows)
 
-        # if we have two cones, check if they are greater than 5 meters apart
-        # if closest_left is not None and closest_right is not None:
-        # if dist(cone_to_point(closest_left), cone_to_point(closest_right)) > 5:
-        #     # if so - remove the furthest cone from the targeting
-        #     left_dist = dist(ORIGIN, cone_to_point(closest_left))
-        #     right_dist = dist(ORIGIN, cone_to_point(closest_right))
-        #     if left_dist <= right_dist:
-        #         closest_right = None
-        #     else:
-        #         closest_left = None
-
         target = None
         if closest_blue is not None and closest_yellow is not None:
             target = midpoint(closest_blue, closest_yellow)
@@ -123,42 +139,7 @@ class ReactiveController(LifecycleNode):
         control_msg.header.stamp = msg.header.stamp
         control_msg.drive.steering_angle = steering_angle
         control_msg.drive.speed = speed
-        control_msg.drive.acceleration = self.target_accel
         self.control_pub.publish(control_msg)
-
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_configure")
-        self.control_pub = self.create_lifecycle_publisher(AckermannDriveStamped, "/control/driving_command", 1)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_activate")
-        topic = "/lidar/cone_detection" if self.ebs_test else "/slam/local_map"
-        self.map_sub = self.create_subscription(ConeDetectionStamped, topic, self.callback, QOS_ALL)
-        return super().on_activate(state)
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_deactivate")
-        self.destroy_subscription(self.map_sub)
-        return super().on_deactivate(state)
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_cleanup")
-        self.destroy_subscription(self.map_sub)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_shutdown")
-        self.destroy_subscription(self.map_sub)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_error(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("on_error")
-        self.destroy_subscription(self.map_sub)
-        self.destroy_lifecycle_publisher(self.control_pub)
-        return TransitionCallbackReturn.SUCCESS
 
 
 def main(args=None):
