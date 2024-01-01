@@ -9,10 +9,10 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_common.shutdown_node import ShutdownNode
 
 
-class SineController(Node):
+class SineController(ShutdownNode):
     count = 0
-    interval = 0.0025
-    pub_interval = 0.01
+    interval = 0.02
+    pub_interval = 0.05
 
     def __init__(self):
         super().__init__("sine_controller_node")
@@ -20,8 +20,8 @@ class SineController(Node):
         # timed callback
         self.create_timer(self.pub_interval, self.timer_callback)
 
-        self.accel_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
-        self.driving_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.steering_publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
+        self.driving_publisher = self.create_publisher(AckermannDriveStamped, "/control/accel_command", 1)
 
         self.get_logger().info("---Sine controller node initalised---")
 
@@ -30,8 +30,8 @@ class SineController(Node):
         control_msg = AckermannDriveStamped()
         control_msg.drive.steering_angle = sin(self.count * pi) * -60  # maximum degrees to turn
         control_msg.drive.acceleration = 0.1
-        self.accel_publisher.publish(control_msg)
         self.driving_publisher.publish(control_msg)
+        self.steering_publisher.publish(control_msg)
         self.get_logger().info(f"Published angle {control_msg.drive.steering_angle}")
 
 
