@@ -94,19 +94,9 @@ class CanBus : public rclcpp::Node {
             uint32_t qutms_masked_id = msg.id & ~0xF;
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
-                if (msg.id != C5E_POS_ID && msg.id != RES_HEARTBEAT_ID) {
-                    RCLCPP_DEBUG(this->get_logger(), "CAN ID: %x - CAN Data: %x %x %x %x %x %x %x %x", msg.id,
-                                 msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5],
-                                 msg.data[6], msg.data[7]);
-                }
                 this->canopen_pub_->publish(msg);
             } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
-            } else if (msg.id == 0x4) {
-                RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg.id);
-                RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x",
-                             last_rx_msg.data[0], last_rx_msg.data[1], last_rx_msg.data[2], last_rx_msg.data[3],
-                             last_rx_msg.data[4], last_rx_msg.data[5], last_rx_msg.data[6], last_rx_msg.data[7]);
             }
 
             // CAN TRANSLATION OPTIONS
@@ -196,31 +186,8 @@ class CanBus : public rclcpp::Node {
     }
 
     // ROS can msgs
-    // void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-    //     this->socketCAN->tx(msg.get(), this->get_logger());
-    // }
-
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) {
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
         this->socketCAN->tx(msg.get(), this->get_logger());
-        if (msg->id == 0x670) {
-            // increment msg counter
-            this->msg_counter = this->msg_counter + 1;
-            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Msgs sent: %d", this->msg_counter);
-            uint16_t object_id = (msg->data[2] & 0xFF) << 8 | (msg->data[1] & 0xFF);
-            if (object_id == 0x607A) {
-                RCLCPP_INFO(this->get_logger(), "Cmd: %x, Target: %x %x %x %x", msg->data[0], msg->data[4],
-                            msg->data[5], msg->data[6], msg->data[7]);
-                // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Cmd: %x, Target: %x %x %x %x",
-                // msg->data[0], msg->data[4], msg->data[5], msg->data[6], msg->data[7]);
-            }
-        }
-        if (msg->id == 0x4) {
-            RCLCPP_ERROR(this->get_logger(), "Received msg: %x", msg->id);
-            RCLCPP_ERROR(this->get_logger(), "Last msg was: %x, Data: %x, %x, %x, %x, %x, %x, %x", last_tx_msg.data[0],
-                         last_tx_msg.data[1], last_tx_msg.data[2], last_tx_msg.data[3], last_tx_msg.data[4],
-                         last_tx_msg.data[5], last_tx_msg.data[6], last_tx_msg.data[7]);
-        }
-        last_tx_msg = *msg;
     }
 
    public:
