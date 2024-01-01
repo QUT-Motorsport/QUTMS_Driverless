@@ -5,7 +5,12 @@ colcon_ignore:
 - jetson_machine
 - roscube_machine
 - sensors
-- velocity_controller
+- sbg_testing
 - car_status
 - steering_actuator
+- steering_testing
 - yaw_controller
+- slam
+- AirSim
+- Eigen
+- rpc
