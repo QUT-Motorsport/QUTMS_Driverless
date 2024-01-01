@@ -1,0 +1,11 @@
+<!--
+  This Behavior Tree replans the global path when the next goal in sequence is the focus.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence>
+      <FollowPath path="{path}" controller_id="RegulatedPurePursuit"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>
