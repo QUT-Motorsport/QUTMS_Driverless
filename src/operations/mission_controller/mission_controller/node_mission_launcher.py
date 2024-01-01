@@ -23,12 +23,25 @@ class MissionControl(Node):
     def callback(self, status: State):
         if status.mission != State.MISSION_NONE and status.state != State.EMERGENCY and not self.mission_launched:
             target_mission = INT_MISSION_TYPE[status.mission].value
-            launch_file = target_mission + ".launch.py"
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", launch_file]
-            self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
-            self.get_logger().info("Mission started: " + target_mission)
-            self.mission_launched = True
+            if target_mission == "ebs_test":
+                command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
+                self.get_logger().info(f"Command: {' '.join(command)}")
+                self.process = Popen(command)
+                self.get_logger().info("Mission started: " + target_mission)
+                self.mission_launched = True
+
+            else:
+                node = target_mission + "_handler_node"
+                command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
+                self.get_logger().info(f"Command: {' '.join(command)}")
+                self.process = Popen(command)
+                self.get_logger().info("Mission started: " + target_mission)
+                self.mission_launched = True
+
+        elif (status.mission == State.MISSION_NONE or status.state == State.EMERGENCY) and self.mission_launched:
+            self.get_logger().warn("Closing mission")
+            self.process.terminate()
+            self.mission_launched = False
 
 
 def main(args=None):
