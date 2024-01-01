@@ -40,14 +40,14 @@ class ReactiveController(Node):
         self.driving = False
         self.discovering = False
 
-        self.declare_parameter("ebs_control", False)
+        self.declare_parameter("ebs_control", True)
         self.ebs_test = self.get_parameter("ebs_control").value
 
         self.get_logger().info("EBS Control: " + str(self.ebs_test))
 
         if self.ebs_test:
-            self.Kp_ang = 2.0
-            self.target_vel = 12.0  # m/s
+            self.Kp_ang = 0.2
+            self.target_vel = 5.0  # m/s
         else:
             self.Kp_ang = 1.8
             self.target_vel = 2.0  # m/s
@@ -65,7 +65,7 @@ class ReactiveController(Node):
         return cones[min(index + self.target_offset, len(cones) - 1)]
 
     def state_callback(self, msg: State):
-        if msg.state == State.DRIVING and not self.driving:
+        if msg.state == State.DRIVING and not self.driving and msg.navigation_ready:
             # delay starting driving for 2 seconds to allow for mapping to start
             time.sleep(2)
             self.driving = True
