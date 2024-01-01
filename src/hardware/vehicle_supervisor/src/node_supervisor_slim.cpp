@@ -190,6 +190,24 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void steering_state_callback(const std_msgs::msg::Bool msg) { this->ros_state.navigation_ready = msg.data; }
 
     void dvl_heartbeat_callback() {
+        if (this->get_parameter("manual_override").as_bool()) {
+            // override straight to driving trackdrive
+            DVL_HeartbeatState_t or_DVL_heartbeat;
+            or_DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
+            or_DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
+            auto heartbeat = Compose_DVL_Heartbeat(&or_DVL_heartbeat);
+            this->can_pub_->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
+
+            driverless_msgs::msg::State or_ros_state;
+            or_ros_state.state = or_DVL_heartbeat.stateID;
+            or_ros_state.mission = DRIVERLESS_MISSIONS::MISSION_TRACK;
+            or_ros_state.lap_count = this->ros_state.lap_count;
+            or_ros_state.navigation_ready = this->ros_state.navigation_ready;
+            or_ros_state.header.stamp = this->now();
+            this->state_pub_->publish(or_ros_state);
+
+            return;
+        }
         // CAN publisher
         auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
         this->can_pub_->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
@@ -287,7 +305,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Select mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
-            if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_SELECT_MISSION) {
+            if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_SELECT_MISSION ||
+                this->SW_heartbeat.stateID == SW_STATES::SW_STATE_MISSION_ACK) {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_WAIT_FOR_MISSION;
             }
         }
@@ -300,17 +319,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             }
 
             if (this->ros_state.mission != DVL_MISSION::DVL_MISSION_NONE) {
-                std::string mission_string;
                 // set mission for logging
                 if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_INSPECTION) {
                     this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_INSPECTION;
-                    mission_string = "inspection";
                 } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_EBS) {
                     this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_BRAKETEST;
-                    mission_string = "ebs_test";
                 } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_TRACK) {
                     this->DVL_systemStatus._fields.AMI_state = DVL_AMI_State::DVL_AMI_STATE_TRACKDRIVE;
-                    mission_string = "trackdrive";
                 } else {
                     this->DVL_systemStatus._fields.AMI_state = 0;
                 }
@@ -321,7 +336,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 // set the DVL mission IDs according to selection
                 if (this->ros_state.mission == DVL_MISSION::DVL_MISSION_MANUAL) {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_MANUAL;
-                    mission_string = "manual_driving";
                 } else {
                     this->DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
                 }
@@ -459,6 +473,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->ros_state.mission = DVL_MISSION::DVL_MISSION_NONE;
         this->ros_state.lap_count = 0;
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_START;
+
+        this->declare_parameter("manual_override", false);
 
         this->reset_dataLogger();
 
