@@ -21,6 +21,7 @@ setup(
         "console_scripts": [
             "ordered_mid_spline_node = planners.node_ordered_mid_spline:main",
             "ordered_mid_spline_lifecycle = planners.lifecycle_ordered_mid_spline:main",
+            "boundary_interpolation_node = planners.node_boundary_interpolation:main",
         ],
     },
 )
