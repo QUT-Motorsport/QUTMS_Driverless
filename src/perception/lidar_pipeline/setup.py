@@ -24,7 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "lidar_debug_node = lidar_pipeline.node_lidar_debug:main",
-            "lidar_detector_node = lidar_pipeline.node_detector:main",
+            "lidar_detector_node = lidar_pipeline.node_lidar_detector:main",
         ],
     },
 )
