@@ -54,6 +54,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steering_angle_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr velocity_sub_;
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr lap_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr steering_ready_sub_;
 
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
@@ -62,6 +63,10 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub_;
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub_;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub_;
+
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber1_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber2_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_subscriber3_;
 
     bool res_alive = 0;
     float last_torque = 0;
@@ -181,6 +186,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         this->ros_state.lap_count = msg.data;
         this->DVL_systemStatus._fields.lap_counter = msg.data;
     }
+
+    void steering_state_callback(const std_msgs::msg::Bool msg) { this->ros_state.navigation_ready = msg.data; }
 
     void dvl_heartbeat_callback() {
         // CAN publisher
@@ -455,13 +462,69 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         this->reset_dataLogger();
 
-        // CAN
-        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
+        callback_group_subscriber1_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_subscriber2_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_subscriber3_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        auto sub1_opt = rclcpp::SubscriptionOptions();
+        sub1_opt.callback_group = callback_group_subscriber1_;
+        auto sub2_opt = rclcpp::SubscriptionOptions();
+        sub2_opt.callback_group = callback_group_subscriber2_;
+        auto sub3_opt = rclcpp::SubscriptionOptions();
+        sub3_opt.callback_group = callback_group_subscriber3_;
 
+        // CAN
         this->can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_callback, this, _1));
+            "/can/canbus_rosbound", QOS_ALL, std::bind(&ASSupervisor::can_callback, this, _1), sub1_opt);
         this->canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-            "/can/canopen_rosbound", QOS_ALL, std::bind(&ASSupervisor::canopen_callback, this, _1));
+            "/can/canopen_rosbound", QOS_ALL, std::bind(&ASSupervisor::canopen_callback, this, _1), sub1_opt);
+
+        // Steering sub
+        this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1),
+            sub1_opt);
+
+        // Velocity sub
+        this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+            "/vehicle/velocity", QOS_LATEST, std::bind(&ASSupervisor::velocity_callback, this, _1), sub1_opt);
+
+        // Control -> sub to acceleration command
+        this->control_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
+            "/control/accel_command", QOS_LATEST, std::bind(&ASSupervisor::control_callback, this, _1), sub2_opt);
+
+        // Lap counter sub
+        this->lap_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
+            "/system/laps_completed", QOS_LATEST, std::bind(&ASSupervisor::lap_counter_callback, this, _1), sub2_opt);
+
+        // steering ready sub
+        this->steering_ready_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+            "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1),
+            sub2_opt);
+
+        // AS Heartbeat
+        this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
+                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this),
+                                                         callback_group_subscriber3_);
+
+        // RES Alive
+        this->res_alive_timer_ =
+            this->create_wall_timer(std::chrono::milliseconds(4000), std::bind(&ASSupervisor::res_alive_callback, this),
+                                    callback_group_subscriber3_);
+
+        // Data Logger
+        this->dataLogger_timer_ =
+            this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_callback, this),
+                                    callback_group_subscriber3_);
+        this->logging_drivingDynamics1_pub_ =
+            this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
+        this->logging_systemStatus_pub_ =
+            this->create_publisher<driverless_msgs::msg::SystemStatus>("/data_logger/systemStatus", 10);
+
+        // Shutdown emergency
+        this->shutdown_sub_ = this->create_subscription<driverless_msgs::msg::Shutdown>(
+            "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
+
+        // Outgoing CAN
+        this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
         // State pub
         this->state_pub_ = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
@@ -472,49 +535,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Reset pub
         this->reset_pub_ = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
-        // Steering sub
-        this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1));
-
-        // Velocity sub
-        this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/velocity", QOS_LATEST, std::bind(&ASSupervisor::velocity_callback, this, _1));
-
-        // Control -> sub to acceleration command
-        this->control_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-            "/control/accel_command", QOS_LATEST, std::bind(&ASSupervisor::control_callback, this, _1));
-
-        // Lap counter sub
-        this->lap_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
-            "/system/laps_completed", QOS_LATEST, std::bind(&ASSupervisor::lap_counter_callback, this, _1));
-
-        // AS Heartbeat
-        this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
-                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this));
-
-        // RES Alive
-        this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000),
-                                                         std::bind(&ASSupervisor::res_alive_callback, this));
-
-        // Data Logger
-        this->dataLogger_timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
-                                                          std::bind(&ASSupervisor::dataLogger_callback, this));
-        this->logging_drivingDynamics1_pub_ =
-            this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
-        this->logging_systemStatus_pub_ =
-            this->create_publisher<driverless_msgs::msg::SystemStatus>("/data_logger/systemStatus", 10);
-
-        // Shutdown emergency
-        this->shutdown_sub_ = this->create_subscription<driverless_msgs::msg::Shutdown>(
-            "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1));
-
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
 };
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<ASSupervisor>());
-    rclcpp::shutdown();
+    auto node = std::make_shared<ASSupervisor>();
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+
+    // rclcpp::spin(node);
+    // rclcpp::shutdown();
     return 0;
 }
