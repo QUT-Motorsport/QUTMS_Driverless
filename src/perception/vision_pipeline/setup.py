@@ -40,9 +40,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "cv2_detector = vision_pipeline.node_detector:main_cv2",
             "torch_detector = vision_pipeline.node_detector:main_torch",
-            "trt_detector = vision_pipeline.node_detector:main_trt",
+            "v8_torch_detector = vision_pipeline.node_detector:main_v8_torch",
             "annotator = vision_pipeline.node_annotator:main",
             "image_saver = vision_pipeline.node_image_saver:main",
         ],
