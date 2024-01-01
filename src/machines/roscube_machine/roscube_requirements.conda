@@ -1,6 +1,8 @@
 cython
 dataclasses
 eigen
+g2o
+qt
 matplotlib
 pycurl
 opencv
@@ -10,7 +12,12 @@ ros-humble-tf-transformations
 ros-humble-velodyne
 ros-humble-geodesy
 ros-humble-xacro
+ros-humble-pcl-ros
 ros-humble-robot-state-publisher
+ros-humble-robot-localization
+ros-humble-slam-toolbox
+ros-humble-navigation2
+ros-humble-nav2-bringup
 scipy
 scikit-learn
 transforms3d
