@@ -2,7 +2,7 @@
 #include <bitset>
 #include <iostream>
 
-#include "CAN_BMU.h"
+// #include "CAN_BMU.h"
 #include "CAN_DVL.h"
 #include "CAN_RES.h"
 #include "CAN_SW.h"
@@ -95,7 +95,7 @@ class CanBus : public rclcpp::Node {
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
                 this->canopen_pub_->publish(msg);
-            } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID) {
+            } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID || qutms_masked_id == EBS_CTRL_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
             }
 
@@ -161,26 +161,26 @@ class CanBus : public rclcpp::Node {
                 }
             }
             // BMU
-            else if (msg.id == BMU_TransmitVoltage_ID) {
-                uint8_t cmu_id;
-                uint8_t packet_id;
-                uint16_t voltages[3];
-                Parse_BMU_TransmitVoltage((uint8_t *)&msg.data[0], &cmu_id, &packet_id, voltages);
-                for (int i = 0; i < 3 && (packet_id * 3 + i) < NUM_VOLTAGES; i++) {
-                    this->bmu_status.brick_data[cmu_id].voltages[packet_id * 3 + i] = voltages[i];
-                }
-                this->bmu_status_pub_->publish(this->bmu_status);
+            // else if (msg.id == BMU_TransmitVoltage_ID) {
+            //     uint8_t cmu_id;
+            //     uint8_t packet_id;
+            //     uint16_t voltages[3];
+            //     Parse_BMU_TransmitVoltage((uint8_t *)&msg.data[0], &cmu_id, &packet_id, voltages);
+            //     for (int i = 0; i < 3 && (packet_id * 3 + i) < NUM_VOLTAGES; i++) {
+            //         this->bmu_status.brick_data[cmu_id].voltages[packet_id * 3 + i] = voltages[i];
+            //     }
+            //     this->bmu_status_pub_->publish(this->bmu_status);
 
-            } else if (msg.id == BMU_TransmitTemperature_ID) {
-                uint8_t cmu_id;
-                uint8_t packet_id;
-                uint8_t temps[6];
-                Parse_BMU_TransmitTemperatures((uint8_t *)&msg.data[0], &cmu_id, &packet_id, temps);
-                for (int i = 0; i < 6 && (packet_id * 6 + i) < NUM_TEMPERATURES; i++) {
-                    bmu_status.brick_data[cmu_id].temperatures[packet_id * 6 + i] = temps[i];
-                }
-                this->bmu_status_pub_->publish(this->bmu_status);
-            }
+            // } else if (msg.id == BMU_TransmitTemperature_ID) {
+            //     uint8_t cmu_id;
+            //     uint8_t packet_id;
+            //     uint8_t temps[6];
+            //     Parse_BMU_TransmitTemperatures((uint8_t *)&msg.data[0], &cmu_id, &packet_id, temps);
+            //     for (int i = 0; i < 6 && (packet_id * 6 + i) < NUM_TEMPERATURES; i++) {
+            //         bmu_status.brick_data[cmu_id].temperatures[packet_id * 6 + i] = temps[i];
+            //     }
+            //     this->bmu_status_pub_->publish(this->bmu_status);
+            // }
             last_rx_msg = msg;
         }
     }

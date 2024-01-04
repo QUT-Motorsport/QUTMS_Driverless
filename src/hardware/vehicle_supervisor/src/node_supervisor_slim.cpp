@@ -4,6 +4,7 @@
 #include "CAN_RES.h"
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
+#include "CAN_EBS_CTRL.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
@@ -33,7 +34,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
    private:
     DVL_HeartbeatState_t DVL_heartbeat;
     VCU_HeartbeatState_t CTRL_VCU_heartbeat;
-    VCU_HeartbeatState_t EBS_VCU_heartbeat;
+    EBS_CTRL_HeartbeatState_t EBS_heartbeat;
     SW_HeartbeatState_t SW_heartbeat;
     DVL_DrivingDynamics1_Data_u DVL_drivingDynamics1;
     DVL_SystemStatus_Data_u DVL_systemStatus;
@@ -126,15 +127,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             if (VCU_ID == VCU_ID_CTRL) {
                 Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
                 this->run_fsm();
-            } else if (VCU_ID == VCU_ID_EBS) {
-                Parse_VCU_Heartbeat(data, &this->EBS_VCU_heartbeat);
+            }
+        }
+        else if (msg.id == EBS_CTRL_Heartbeat_ID) {
+                  uint8_t data[8];
+            copy_data(msg.data, data, 8);
 
-                if (this->EBS_VCU_heartbeat.otherFlags.ebs._VCU_Flags_EBS.CTRL_EBS == 1) {
+            Parse_EBS_CTRL_Heartbeat(data, &this->EBS_heartbeat);
+
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE_DRIVE) {
                     this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ARMED;
                 } else {
                     this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ACTIVATED;
                 }
-            }
         }
         // Steering wheel heartbeat
         else if (qutms_masked_id == SW_Heartbeat_ID) {
@@ -166,13 +171,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // torque to car range: 50 to 100 for accel, 40 to 0 for regen
 
         // compute torque from accel and braking
-        if (msg.drive.acceleration >= 0) {
-            // accel is positive -> accel (0.0 -> 1.0)
-            this->last_torque = 50 + 50 * msg.drive.acceleration;
-        } else {
-            // accel is negative -> braking (0.0 -> -1.0)
-            this->last_torque = 40 + 40 * msg.drive.acceleration;
-        }
+        this->last_torque = 100 * msg.drive.acceleration;
         // convert requested accel to estimated motor torque
         float torqueValue = msg.drive.acceleration * 9 * 4.5 * 4;
 
@@ -305,8 +304,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Select mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_SELECT_MISSION) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
-            if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_SELECT_MISSION ||
-                this->SW_heartbeat.stateID == SW_STATES::SW_STATE_MISSION_ACK) {
+            if (this->SW_heartbeat.stateID == sw_state_t::SW_STATE_SELECT_MISSION ||
+                this->SW_heartbeat.stateID == sw_state_t::SW_STATE_MISSION_ACK) {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_WAIT_FOR_MISSION;
             }
         }
@@ -314,7 +313,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         // Wait for mission state
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_WAIT_FOR_MISSION) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
-            if (this->SW_heartbeat.stateID == SW_STATES::SW_STATE_MISSION_ACK) {
+            if (this->SW_heartbeat.stateID == sw_state_t::SW_STATE_MISSION_ACK) {
                 this->ros_state.mission = this->SW_heartbeat.missionID;
             }
 
@@ -346,7 +345,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_CHECK_EBS) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
 
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_READY && this->RES_status.sw_k2) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_READY && this->RES_status.sw_k2) {
                 // transition to Ready state when VCU reports EBS checks complete and res switch is forward
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_READY;
             }
@@ -361,7 +360,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_RELEASE_EBS;
             }
 
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_SHUTDOWN) {
                 // transition to E-Stop state when EBS VCU reports shutdown
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
@@ -371,7 +370,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         if (this->DVL_heartbeat.stateID == DVL_STATES::DVL_STATE_RELEASE_EBS) {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_DRIVING;
 
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_DRIVE) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_DRIVE) {
                 // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
                 driverless_msgs::msg::Reset reset_msg;
@@ -379,7 +378,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 this->reset_pub_->publish(reset_msg);
             }
 
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_SHUTDOWN) {
                 // transition to E-Stop state when EBS VCU reports shutdown
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
@@ -397,7 +396,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             //     this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             // }
 
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_SHUTDOWN) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_SHUTDOWN) {
                 // transition to E-Stop state when EBS VCU reports shutdown
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
             }
@@ -411,7 +410,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             // used at end of missions
 
             // if the vcu says its braking, we go to finished
-            if (this->EBS_VCU_heartbeat.stateID == VCU_STATES::VCU_STATE_EBS_BRAKING) {
+            if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_BRAKE_ACTIVATE) {
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_FINISHED;
             }
         }
@@ -496,8 +495,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Steering sub
         this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1),
-            sub1_opt);
+            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1), sub1_opt);
 
         // Velocity sub
         this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
@@ -513,23 +511,19 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // steering ready sub
         this->steering_ready_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-            "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1),
-            sub2_opt);
+            "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1), sub2_opt);
 
         // AS Heartbeat
         this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
-                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this),
-                                                         callback_group_subscriber3_);
+                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this), callback_group_subscriber3_);
 
         // RES Alive
-        this->res_alive_timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(4000), std::bind(&ASSupervisor::res_alive_callback, this),
-                                    callback_group_subscriber3_);
+        this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(4000),
+                                                         std::bind(&ASSupervisor::res_alive_callback, this), callback_group_subscriber3_);
 
         // Data Logger
-        this->dataLogger_timer_ =
-            this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_callback, this),
-                                    callback_group_subscriber3_);
+        this->dataLogger_timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
+                                                          std::bind(&ASSupervisor::dataLogger_callback, this), callback_group_subscriber3_);
         this->logging_drivingDynamics1_pub_ =
             this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
         this->logging_systemStatus_pub_ =
