@@ -1,0 +1,45 @@
+lidar_detector_node:
+  ros__parameters:
+    log_level: DEBUG
+    # Max range of points to process (metres)
+    lidar_range: 25
+    # Delta angle of segments (*2pi)
+    delta_alpha_ang: 128
+    # Size of bins
+    bin_size: 0.14
+    # Max angle that will be considered for ground lines (*2pi)
+    t_m_ang: 148
+    # Angle considered to be a small slope
+    t_m_small: 0
+    # Max y-intercept for a ground plane line
+    t_b: 0.05
+    # Threshold of the Root Mean Square Error of the fit
+    t_rmse: 0.2  # (Recommended: 0.2 - 0.5)
+    # Determines if regression for ground lines should occur between two neighbouring bins when they're described by different lines
+    regress_between_bins: True
+    # Maximum distance between point and line to be considered part of ground plane
+    t_d_ground: 0.125 # The higher this value, the more low object points it will mark as ground BUT this makes dbscan faster
+    # Maximum distance a point can be from the origin to even be considered as a ground point. Otherwise it's labelled as a non-ground point.
+    t_d_max: 100  # keep 100, 50m meant too much of the cones were eliminated as ground
+    # Percentage of CPU Cores to use for multiprocessing ground plane mapping
+    cpu_utilisation: 0.90  # (0.0 - 1.0)
+
+    # LiDAR and Cone params
+    cone_diam: 0.15
+    cone_height: 0.30
+    lidar_height_above_ground: 0.15  # lidar on bonk bar, will change for wing
+    # Degrees in between each vertical layer
+    lidar_vertical_res_val: 1.25
+    # Degrees in between each point
+    lidar_horizontal_res_val: 0.05
+
+    lhag_err: 0.25
+    # Expected number of points on a cone at a given distance
+    hach_lower_err: 0.35
+    hach_upper_err: 0.15
+
+    # DBSCAN Parameters
+    # Neighbourhood Scan Size
+    epsilon: 1.2  # > 1m otherwise clusters smaller non-cones objects
+    # Number of points required to form a neighbourhood
+    min_points: 2  # 2-3 allows for long-range cone detection
