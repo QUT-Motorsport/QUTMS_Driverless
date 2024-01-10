@@ -16,10 +16,5 @@ def generate_launch_description():
                 output="screen",
                 parameters=[config],
             ),
-            Node(
-                package="sbg_translator",
-                executable="sbg_translator_node",
-                output="screen",
-            ),
         ]
     )

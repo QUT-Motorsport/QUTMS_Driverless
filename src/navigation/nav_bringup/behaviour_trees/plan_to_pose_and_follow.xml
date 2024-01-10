@@ -1,0 +1,14 @@
+<!--
+  This Behavior Tree replans the global path only when the goal is updated, then follows that path.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence>
+      <GoalUpdatedController>
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="SmacPlannerHybrid"/>
+      </GoalUpdatedController>
+      <FollowPath path="{path}" controller_id="RegulatedPurePursuit"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

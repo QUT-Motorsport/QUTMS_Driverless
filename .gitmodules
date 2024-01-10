@@ -9,6 +9,6 @@
 	path = src/hardware/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
 	branch = comp22
-[submodule "src/navigation/QUTMS_Nav_Integration"]
-	path = src/navigation/QUTMS_Nav_Integration
-	url = https://github.com/b1n-ch1kn/QUTMS_Nav_Integration
+[submodule "src/navigation/lidarslam_ros2"]
+	path = src/navigation/lidarslam_ros2
+	url = https://github.com/QUT-Motorsport/lidarslam_ros2.git

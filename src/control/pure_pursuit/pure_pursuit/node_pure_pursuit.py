@@ -29,7 +29,7 @@ HEIGHT = 1000
 
 
 class PurePursuit(Node):
-    path = None
+    path = []
     count = 0
     img_initialised = False
     scale = 1
@@ -64,10 +64,10 @@ class PurePursuit(Node):
     def initialise_params(self):
         # parameters
         self.declare_parameter("Kp_ang", -3.0)
-        self.declare_parameter("debug_img", True)
+        self.declare_parameter("debug_img", False)
         self.declare_parameter("discovery_lookahead", 3.0)
-        self.declare_parameter("discovery_vel_max", 3.0)
-        self.declare_parameter("discovery_vel_min", 2.0)
+        self.declare_parameter("discovery_vel_max", 2.0)
+        self.declare_parameter("discovery_vel_min", 1.0)
         self.declare_parameter("lookahead", 2.5)
         self.declare_parameter("vel_max", 8.0)
         self.declare_parameter("vel_min", 4.0)
@@ -78,6 +78,9 @@ class PurePursuit(Node):
         # tf buffer
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.vel_max = self.get_parameter("discovery_vel_max").value
+        self.vel_min = self.get_parameter("discovery_vel_min").value
+        self.lookahead = self.get_parameter("discovery_lookahead").value
 
     def state_callback(self, msg: State):
         """
@@ -90,7 +93,8 @@ class PurePursuit(Node):
             self.driving = True
             self.get_logger().info("Ready to drive", once=True)
 
-        if msg.lap_count == 0 and not self.following:
+        if msg.lap_count == 0:
+            # can reset (for sim)
             self.vel_max = self.get_parameter("discovery_vel_max").value
             self.vel_min = self.get_parameter("discovery_vel_min").value
             self.lookahead = self.get_parameter("discovery_lookahead").value
@@ -147,8 +151,8 @@ class PurePursuit(Node):
 
     def can_drive(self):
         # uncomment if you want to use reactive control
-        if self.path is None or not self.driving or not self.following:
-            # if self.path is None or not self.driving:
+        # if self.path is None or not self.driving or not self.following:
+        if len(self.path) == 0 or not self.driving:
             return False
         self.get_logger().info("Can drive", once=True)
         return True
@@ -210,10 +214,7 @@ class PurePursuit(Node):
         rvwp_msg.header.frame_id = "track"
         self.rvwp_publisher.publish(rvwp_msg)
 
-        self.count += 1
-        if self.count == 50:
-            self.count = 0
-            self.get_logger().debug(f"{(time.perf_counter() - start_time) * 1000}")
+        self.get_logger().debug(f"{(time.perf_counter() - start_time) * 1000}", throttle_duration_sec=1)
 
     def calc_steering(self, pose: List[float], rvwp: List[float]) -> float:
         """

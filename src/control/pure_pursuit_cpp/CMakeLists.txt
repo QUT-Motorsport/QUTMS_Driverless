@@ -6,39 +6,31 @@ if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif ()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(lifecycle_msgs REQUIRED)
-find_package(ackermann_msgs REQUIRED)
-find_package(driverless_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
+set(Dependencies rclcpp rclcpp_lifecycle lifecycle_msgs ackermann_msgs driverless_msgs nav_msgs tf2 tf2_ros)
+
+foreach(Dependency ${Dependencies})
+    find_package(${Dependency} REQUIRED)
+endforeach()
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX)
 
-add_executable(pure_pursuit_cpp src/node_pure_pursuit_cpp.cpp ${SOURCES})
-target_include_directories(pure_pursuit_cpp
-        PUBLIC include
-        PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-ament_target_dependencies(pure_pursuit_cpp
-        rclcpp
-        rclcpp_lifecycle
-        lifecycle_msgs
-        driverless_msgs
-        ackermann_msgs
-        tf2
-        tf2_ros)
+set(Nodes pure_pursuit_cpp_node pure_pursuit_cpp_lifecycle)
+set(Srcs src/node_pure_pursuit_cpp.cpp src/lifecycle_pure_pursuit_cpp.cpp)
 
-target_include_directories(pure_pursuit_cpp PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>)
-
-install(TARGETS pure_pursuit_cpp
-        DESTINATION lib/${PROJECT_NAME})
+foreach(Node Src IN ZIP_LISTS Nodes Srcs)
+    add_executable(${Node} ${Src})
+    ament_target_dependencies(${Node} ${Dependencies})
+    target_include_directories(${Node} PUBLIC
+        ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+    target_include_directories(${Node} PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>)
+    install(TARGETS ${Node}
+            DESTINATION lib/${PROJECT_NAME})
+endforeach()
 
 # config folder
-install(DIRECTORY config
+install(DIRECTORY config launch
         DESTINATION share/${PROJECT_NAME})
 
 ament_package()
