@@ -10,7 +10,7 @@ def generate_launch_description():
         [
             Node(
                 package="mission_controller",
-                executable="mission_launcher",
+                executable="mission_launcher_node",
             ),
             Node(
                 package="canbus",
@@ -22,6 +22,9 @@ def generate_launch_description():
             Node(
                 package="vehicle_supervisor",
                 executable="vehicle_supervisor_slim_node",
+                parameters=[
+                    {"manual_override": False},
+                ],
             ),
             Node(
                 package="rosboard",
@@ -30,6 +33,20 @@ def generate_launch_description():
             Node(
                 package="driverless_common",
                 executable="display",
+            ),
+            Node(
+                package="steering_actuator",
+                executable="steering_actuator_test_node",
+                parameters=[
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
+            ),
+            Node(
+                package="velocity_controller",
+                executable="velocity_controller_node",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
             ),
             Node(
                 package="lidar_pipeline",

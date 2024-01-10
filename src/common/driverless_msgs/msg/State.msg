@@ -22,3 +22,5 @@ uint8 EBS_TEST=3
 uint8 TRACKDRIVE=4
 
 uint8 lap_count
+
+bool navigation_ready

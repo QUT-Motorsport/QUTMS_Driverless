@@ -8,7 +8,6 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    nav_package_share = get_package_share_path("qutms_nav2")
     return LaunchDescription(
         [
             Node(

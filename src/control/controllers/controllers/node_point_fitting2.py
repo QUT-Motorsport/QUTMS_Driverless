@@ -10,7 +10,7 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from driverless_msgs.msg import Cone, ConeDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 from sensor_msgs.msg import Image
 
 from driverless_common.common import QOS_ALL, QOS_LATEST
@@ -39,13 +39,14 @@ if SPLINES % 2 == 0:
 
 LIDAR_DIST = 1.65  # distance from lidar to front of car
 Y_CROP = 6
-X_CROP = 7
-LINE_LEN = 10.0  # len of spline line
-STEERING_VALS = np.linspace(-90, 90, SPLINES)  # steering values to take
+X_CROP = 13
+LINE_LEN = 13.0  # len of spline line
+STEERING_VALS = np.linspace(-37, 37, SPLINES)  # steering values to take
 
 
 class PointFitController(Node):
-    targ_vel: float = 1.5  # m/s
+    driving = False
+    targ_vel: float = 12.0  # m/s
     debug_img = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # create black image
 
     steering_paths: List[List[Point]] = []
@@ -59,6 +60,8 @@ class PointFitController(Node):
         self.create_subscription(Image, "/debug_imgs/lidar_det_img", self.img_callback, QOS_LATEST)
         # cone detections
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
+
+        self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
@@ -118,11 +121,22 @@ class PointFitController(Node):
                     cos(angle) * vector.x - sin(angle) * vector.y, sin(angle) * vector.x + cos(angle) * vector.y
                 )  # rotate
 
+    def state_callback(self, msg: State):
+        if msg.state == State.DRIVING and not self.driving and msg.navigation_ready:
+            # delay starting driving for 2 seconds to allow for mapping to start
+            time.sleep(2)
+            self.driving = True
+            self.get_logger().info("Ready to drive, discovery started", once=True)
+
     def img_callback(self, img_msg: Image):
         self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
 
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
+        if not self.driving:
+            self.get_logger().info("Not ready to drive", once=True)
+            return
+
         start: float = time.perf_counter()  # begin a timer
 
         # safety critical, set to 0 if not good detection
