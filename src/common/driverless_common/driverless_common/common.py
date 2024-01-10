@@ -1,4 +1,5 @@
 from math import atan2, sqrt
+import time
 
 import numpy as np
 
@@ -96,3 +97,17 @@ def midpoint(p1: List[float], p2: List[float]) -> Tuple[float]:
     * return: x,y tuple of midpoint coord
     """
     return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
+
+
+class FPSHandler:
+    def __init__(self):
+        self.timestamp = time.time() + 1
+        self.start = time.time()
+        self.frame_cnt = 0
+
+    def next_iter(self):
+        self.timestamp = time.time()
+        self.frame_cnt += 1
+
+    def fps(self):
+        return self.frame_cnt / (self.timestamp - self.start)

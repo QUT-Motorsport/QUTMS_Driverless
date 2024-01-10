@@ -39,11 +39,15 @@ RUN mkdir -p /home/${USERNAME}/driverless_ws
 
 WORKDIR /home/${USERNAME}/driverless_ws
 
-# zed-ros2 master @6e5865a4c8adce96882871b357bddd85cb2700f3
-RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git \
-    --branch ${ZED_ROS2_VERSION} --recurse-submodules && \
-    git clone https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
+RUN git clone https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
     --recurse-submodules
+
+# zed-ros2 master @105354cc5a5a9a94e7b8db92b126eed3f247f308
+RUN git clone https://github.com/stereolabs/zed-ros2-wrapper.git --recurse-submodules
+WORKDIR /home/${USERNAME}/driverless_ws/zed-ros2-wrapper
+RUN git fetch && git checkout 105354cc5a5a9a94e7b8db92b126eed3f247f308 && git submodule update --init
+
+WORKDIR /home/${USERNAME}/driverless_ws
 
 # ==============================================================================
 #                          Install ROS 2 Dependencies
@@ -186,6 +190,35 @@ RUN colcon build \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
+
+ARG ONNXRUNTIME_VERSION=v1.16.1
+ARG ONNXRUNTIME_FLAGS="--allow_running_as_root"
+ARG CUDA_ARCHITECTURES=53;62;72;87
+
+#ADD https://api.github.com/repos/microsoft/onnxruntime/git/refs/heads/${ONNXRUNTIME_VERSION} /tmp/onnxruntime_version.json
+
+# https://onnxruntime.ai/docs/build/eps.html#nvidia-jetson-tx1tx2nanoxavier
+# https://github.com/microsoft/onnxruntime/commit/b7b8b5b2ce80edb33990c7ae0fedac6ae3c623f4
+RUN pip3 uninstall -y onnxruntime && \
+    git clone https://github.com/microsoft/onnxruntime /tmp/onnxruntime && \
+    cd /tmp/onnxruntime && \
+    git checkout ${ONNXRUNTIME_VERSION} && \
+    git submodule update --init --recursive && \
+    sed -i 's|archive/3.4/eigen-3.4.zip;ee201b07085203ea7bd8eb97cbcb31b07cfa3efb|archive/3.4.0/eigen-3.4.0.zip;ef24286b7ece8737c99fa831b02941843546c081|' cmake/deps.txt || echo "cmake/deps.txt not found" && \
+    ./build.sh --config Release --update --parallel --build --build_wheel \
+        --skip_tests --skip_submodule_sync ${ONNXRUNTIME_FLAGS} \
+        --cmake_extra_defines CMAKE_CXX_FLAGS="-Wno-unused-variable -I/usr/local/cuda/include" CMAKE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" onnxruntime_BUILD_UNIT_TESTS=OFF \
+        --cuda_home /usr/local/cuda --cudnn_home /usr/lib/$(uname -m)-linux-gnu \
+        --use_tensorrt --tensorrt_home /usr/lib/$(uname -m)-linux-gnu && \
+    cd build/Linux/Release && \
+    make install && \
+    cp dist/onnxruntime_gpu-*.whl /opt && \
+    pip3 install --no-cache-dir --verbose /opt/onnxruntime_gpu-*.whl && \
+    rm -rf /tmp/onnxruntime
+
+# test import and print build info
+RUN python3 -c 'import onnxruntime; print(onnxruntime.__version__);'
+
 WORKDIR /home/${USERNAME}/driverless_ws
 
 # remove driverless repo as deps have now been installed
@@ -200,6 +233,8 @@ COPY ./src/hardware/sensors/camera_files/SN33580719.conf /usr/local/zed/settings
 COPY ./src/machines/jetson_machine/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
+# no deps as CV2 is already installed but compiled from source
+RUN pip3 install ultralytics --no-deps
 
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
@@ -215,6 +250,8 @@ RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
 
+RUN cp -f ./src/machines/jetson_machine/scripts/replace_for_tensor.py /usr/lib/python3.8/dist-packages/tensorrt/__init__.py
+
 RUN rm -rf ./src
 
 RUN chmod -R go=rwx /home/${USERNAME} && \
@@ -223,6 +260,6 @@ RUN chmod -R go=rwx /home/${USERNAME} && \
     chmod -R go=rwx /usr/local/lib/python3.8/
 
 # tell ROS to use Cyclone DDS
-# ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-# ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
+ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/jetson_machine/cyclonedds.xml
 ENV ROS_DOMAIN_ID=69

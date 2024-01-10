@@ -9,7 +9,7 @@ import yaml
 
 def generate_launch_description():
     # URDF/xacro file to be loaded by the Robot State Publisher node
-    camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed2i.yaml")
+    camera_config_path = os.path.join(get_package_share_directory("sensors"), "config", "zed_camera.yaml")
 
     # ZED Wrapper node
     zed_wrapper_node = Node(

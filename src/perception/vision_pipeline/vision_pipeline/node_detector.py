@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 
 from cv_bridge import CvBridge
-import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -17,17 +16,14 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Header
 
+from driverless_common.common import dist
+
 from .rect import Rect, draw_box
 
 from typing import Callable, List, Tuple
 
 # translate ROS image messages to OpenCV
 cv_bridge = CvBridge()
-
-CAMERA_FOV = 100  # degrees
-FOCAL_CONST = 360
-MAX_RANGE = 16  # m
-MIN_RANGE = 2  # m
 
 # display colour constants
 Colour = Tuple[int, int, int]
@@ -46,82 +42,68 @@ CONE_DISPLAY_PARAMETERS = [
 ]
 
 # cone heights in metres
-HEIGHTS = [0.3, 0.3, 0.4, 0.4, 0.3]
+HEIGHTS = [0.28, 0.28, 0.525, 0.525, 0.28]
+WIDTHS = [0.224, 0.224, 0.261, 0.261, 0.224]
 
-ConeMsgColour = int  # define arbitrary variable type
+# HEIGHTS = [0.303, 0.303, 0.303, 0.303, 0.303]
+# WIDTHS = [ 0.224, 0.224, 0.224, 0.224, 0.224]
 
 
-def cone_distance(
-    colour_frame_cone_bounding_box: Rect,
-    depth_frame: np.ndarray,
-) -> Tuple[float, Rect]:
+def cone_distance_homography(
+    bbox: Rect,
+    colour: int,
+    # bearing: float,
+    k: np.ndarray,
+    d: np.ndarray,
+    img,
+) -> float:
     """
-    Calculate the distance to the cone using a region of interest in the depth image.
+    Calculate distance using the bounding box height to camera homography matrices.
     """
-    scale: int = 2
+    height = HEIGHTS[colour]
+    width = height * bbox.aspect_ratio
 
-    # resize depth frame
-    depth_frame = cv2.resize(depth_frame, (0, 0), fx=scale, fy=scale)
-    # resize bounding box
-    colour_frame_cone_bounding_box = colour_frame_cone_bounding_box.scale(scale)
-
-    # get center as roi
-    y_height = int(colour_frame_cone_bounding_box.height / 5)
-    depth_rect = Rect(
-        x=colour_frame_cone_bounding_box.center.x - 3,
-        y=colour_frame_cone_bounding_box.center.y + y_height,
-        width=6,
-        height=6,
+    real_points = np.array(
+        [
+            (0, -width / 2, height / 2),
+            (0, -width / 2, -height / 2),
+            (0, width / 2, -height / 2),
+            (0, width / 2, height / 2),
+        ],
+        dtype=np.float32,
     )
-    depth_roi: np.ndarray = depth_rect.as_roi(depth_frame)
 
-    # filter out nans
-    depth_roi = depth_roi[~np.isnan(depth_roi) & ~np.isinf(depth_roi)]
-    return np.mean(depth_roi), depth_rect
+    image_points = np.array(
+        [(bbox.tl.x, bbox.tl.y), (bbox.tl.x, bbox.br.y), (bbox.br.x, bbox.br.y), (bbox.br.x, bbox.tl.y)],
+        dtype=np.float32,
+    )
 
+    success, rvec, tvec = cv2.solvePnP(real_points, image_points, k, d, flags=cv2.SOLVEPNP_ITERATIVE)
+    # Find the rotation and translation vectors.
+    # success, rvec, tvec, inliers = cv2.solvePnPRansac(real_points, image_points, k, d)
 
-def cone_distance_bbox(
-    colour_frame_cone_bounding_box: Rect,
-    colour: ConeMsgColour,
-    bearing: float,
-) -> float:
-    """
-    Calculate distance using the bounding box height to known heights.
-    """
-    cone_height = HEIGHTS[colour]
+    points = np.float32([[0.2, 0, 0], [0, 0.2, 0], [0, 0, 0.2], [0, 0, 0]]).reshape(-1, 3)
+    axisPoints, _ = cv2.projectPoints(points, rvec, tvec, k, d)
+    # convert to ints
+    axisPoints = axisPoints.astype(int)
+    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255, 0, 0), 3)
+    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0, 255, 0), 3)
+    img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0, 0, 255), 3)
 
-    distance = FOCAL_CONST * cone_height / colour_frame_cone_bounding_box.height
-
-    bearing_scalar = abs(bearing) * 0.005
-    distance_corrected = distance * (1 + bearing_scalar)
-    return distance_corrected
-
-
-def cone_bearing(
-    colour_frame_cone_bounding_box: Rect,
-    colour_frame_camera_info: CameraInfo,
-) -> float:
-    """
-    Calculate the bearing to the cone using the bounding box and camera info.
-    """
-
-    cone_center: int = colour_frame_cone_bounding_box.center.x
-    frame_width: int = colour_frame_camera_info.width
-    # 1 to -1 left to right
-    center_scaled: int = (frame_width / 2 - cone_center) / (frame_width / 2)
-    return CAMERA_FOV / 2 * center_scaled
+    rmat = cv2.Rodrigues(rvec)[0]
+    cone_position = -np.matrix(rmat).T * np.matrix(tvec)
+    return cone_position.flatten().tolist()[0]
 
 
 def cone_msg(
-    distance: float,
-    bearing: float,
+    pos: tuple,
     colour: int,
 ) -> Cone:
 
     location = Point(
-        x=distance * cos(radians(bearing)),
-        y=distance * sin(radians(bearing)),
-        z=-0.6,
+        x=pos[0],
+        y=pos[1],
+        z=-0.8,
     )
     if colour == Cone.ORANGE_SMALL:
         colour = Cone.ORANGE_BIG
@@ -132,66 +114,120 @@ def cone_msg(
     )
 
 
+class FPSHandler:
+    def __init__(self):
+        self.timestamp = time.time() + 1
+        self.start = time.time()
+        self.frame_cnt = 0
+
+    def next_iter(self):
+        self.timestamp = time.time()
+        self.frame_cnt += 1
+
+    def fps(self):
+        return self.frame_cnt / (self.timestamp - self.start)
+
+
 class VisionProcessor(Node):
     end: float = 0.0
 
+    right_distortion_coefficients = None
+    right_matrix_coefficients = None
+    left_distortion_coefficients = None
+    left_matrix_coefficients = None
+
+    fps = FPSHandler()
+
     def __init__(
         self,
-        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, ConeMsgColour, Colour]]],
-        enable_cv_filters: bool = False,
+        get_bounding_boxes_callable: Callable[[np.ndarray], List[Tuple[Rect, int, Colour]]],
     ):
         super().__init__("vision_processor_node")
 
         # declare ros param for debug images
-        self.debug_imgs: bool = self.declare_parameter("debug_imgs", False).value
+        self.declare_parameter("debug_bbox", True)
+        self.declare_parameter("debug_depth", False)
+        self.declare_parameter("log_level", "DEBUG")
+        self.declare_parameter("max_range", 15.0)
+        self.declare_parameter("min_range", 2.0)
+
+        self.debug_bbox = self.get_parameter("debug_bbox").value
+        self.debug_depth = self.get_parameter("debug_depth").value
+        self.log_level = self.get_parameter("log_level").value
+        self.max_range = self.get_parameter("max_range").value
+        self.min_range = self.get_parameter("min_range").value
+
+        self.log_level = self.get_parameter("log_level").value
+        log_level: int = getattr(rclpy.impl.logging_severity.LoggingSeverity, self.log_level.upper())
+        self.get_logger().set_level(log_level)
 
         # subscribers
-        colour_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/rgb/image_rect_color")
-        colour_camera_info_sub = message_filters.Subscriber(self, CameraInfo, "/zed2i/zed_node/rgb/camera_info")
-        depth_sub = message_filters.Subscriber(self, Image, "/zed2i/zed_node/depth/depth_registered")
-
-        synchronizer = message_filters.ApproximateTimeSynchronizer(
-            fs=[colour_sub, colour_camera_info_sub, depth_sub],
-            queue_size=10,
-            slop=0.1,
-        )
-        synchronizer.registerCallback(self.callback)
+        self.create_subscription(CameraInfo, "/zed2i/zed_node/left_raw/camera_info", self.info_define, 1)
+        self.create_subscription(CameraInfo, "/zed2i/zed_node/right_raw/camera_info", self.info_define, 1)
+        self.create_subscription(Image, "/zed2i/zed_node/left_raw/image_raw_color", self.callback, 1)
+        self.create_subscription(Image, "/zed2i/zed_node/right_raw/image_raw_color", self.callback, 1)
 
         # publishers
         self.detection_publisher: Publisher = self.create_publisher(ConeDetectionStamped, "/vision/cone_detection", 1)
-        if self.debug_imgs:
-            self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbs_img", 1)
-            self.depth_debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/vision_depth_img", 1)
+        if self.debug_bbox:
+            self.right_debug_img_pub: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbox_right", 1)
+            self.left_debug_img_pub: Publisher = self.create_publisher(Image, "/debug_imgs/vision_bbox_left", 1)
 
         # set which cone detection this will be using
-        self.enable_cv_filters = enable_cv_filters
         self.get_bounding_boxes_callable = get_bounding_boxes_callable
 
         self.end = time.perf_counter()
+        self.get_logger().info(
+            "PARAMS: debug_bbox: " + str(self.debug_bbox) + "\t | debug_depth: " + str(self.debug_depth)
+        )
         self.get_logger().info("---Vision detector node initialised---")
 
-    def callback(self, colour_msg: Image, colour_camera_info_msg: CameraInfo, depth_msg: Image):
+    def info_define(self, info_msg: CameraInfo):
+        if info_msg.header.frame_id == "zed2i_left_camera_optical_frame" and self.left_distortion_coefficients is None:
+            self.left_distortion_coefficients = np.array(info_msg.d)
+            self.left_matrix_coefficients = np.array(info_msg.k).reshape(3, 3)
+            self.get_logger().info("Distortion Coefficients: \n" + str(self.left_distortion_coefficients))
+            self.get_logger().info("Calibration Matrix: \n" + str(self.left_matrix_coefficients))
+        elif (
+            info_msg.header.frame_id == "zed2i_right_camera_optical_frame"
+            and self.right_distortion_coefficients is None
+        ):
+            self.right_distortion_coefficients = np.array(info_msg.d)
+            self.right_matrix_coefficients = np.array(info_msg.k).reshape(3, 3)
+            self.get_logger().info("Distortion Coefficients: \n" + str(self.right_distortion_coefficients))
+            self.get_logger().info("Calibration Matrix: \n" + str(self.right_matrix_coefficients))
+
+    def callback(self, msg: Image):
         self.get_logger().debug("Received image")
 
-        self.get_logger().info(f"Wait time: {str(time.perf_counter()-self.end)}")  # log time
+        if msg.header.frame_id == "zed2i_left_camera_optical_frame":
+            if self.left_distortion_coefficients is None:
+                return
+
+            matrix_coefficients = self.left_matrix_coefficients
+            distortion_coefficients = self.left_distortion_coefficients
+            camera = "left"
+        else:
+            if self.right_distortion_coefficients is None:
+                return
+
+            matrix_coefficients = self.right_matrix_coefficients
+            distortion_coefficients = self.right_distortion_coefficients
+            camera = "right"
+
+        self.get_logger().debug(
+            f"Wait time: {str(time.perf_counter()-self.end)}", throttle_duration_sec=0.5
+        )  # log time
         start: float = time.perf_counter()  # begin a timer
 
-        colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(colour_msg, desired_encoding="bgra8")
-        depth_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(depth_msg, desired_encoding="32FC1")
-
-        if self.debug_imgs:
-            # colour depth map for debugging
-            disp_depth_frame = np.nan_to_num(depth_frame, nan=0, posinf=0, neginf=0)
-            disp_depth_frame = cv2.resize(disp_depth_frame, (0, 0), fx=2, fy=2)
-            disp_depth_frame[disp_depth_frame > 20] = 0
-            disp_depth_frame = cv2.normalize(disp_depth_frame, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
-            disp_depth_frame = cv2.applyColorMap(disp_depth_frame, cv2.COLORMAP_JET)
+        colour_frame: np.ndarray = cv_bridge.imgmsg_to_cv2(msg, desired_encoding=msg.encoding)
+        if colour_frame is None:
+            return
 
         detected_cones: List[Cone] = []
-        i = 0
         for bounding_box, cone_colour, display_colour in self.get_bounding_boxes_callable(colour_frame):
             # filter by height
-            if bounding_box.tl.y < colour_camera_info_msg.height / 2:
+            if bounding_box.tl.y < msg.height / 2:
                 continue
             # filter on area
             if bounding_box.area < 10:
@@ -201,70 +237,72 @@ class VisionProcessor(Node):
                 continue
 
             # using bounding box sizes for distance
-            # distance, d_rect = cone_distance(bounding_box, depth_frame)
-            bearing = cone_bearing(bounding_box, colour_camera_info_msg)
-            distance = cone_distance_bbox(bounding_box, cone_colour, bearing)
+            location = cone_distance_homography(
+                bounding_box, cone_colour, matrix_coefficients, distortion_coefficients, colour_frame
+            )
 
             # filter on distance
-            if isnan(distance) or isinf(distance) or distance > MAX_RANGE or distance < MIN_RANGE:
+            distance = dist([location[0], location[1]], [0, 0])
+            if distance > self.max_range or distance < self.min_range:
                 continue
 
-            detected_cones.append(cone_msg(distance, bearing, cone_colour))
-            if self.debug_imgs:
+            detected_cones.append(cone_msg(location, cone_colour))
+
+            if self.debug_bbox:
                 draw_box(colour_frame, box=bounding_box, colour=display_colour, distance=distance)
 
-            self.get_logger().debug("Range: " + str(round(distance, 2)) + "\t Bearing: " + str(round(bearing, 2)))
-
         detection_msg = ConeDetectionStamped(
-            header=Header(frame_id="zed2i", stamp=colour_msg.header.stamp),
+            header=Header(frame_id="zed2i", stamp=msg.header.stamp),
             cones=detected_cones,
         )
         self.detection_publisher.publish(detection_msg)
 
-        if self.debug_imgs:
-            debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding="bgra8")
-            debug_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
-            self.debug_img_publisher.publish(debug_msg)
-            depth_msg = cv_bridge.cv2_to_imgmsg(disp_depth_frame, encoding="bgr8")
-            depth_msg.header = Header(frame_id="zed2i", stamp=colour_msg.header.stamp)
-            self.depth_debug_img_publisher.publish(depth_msg)
+        if self.debug_bbox:
+            debug_msg = cv_bridge.cv2_to_imgmsg(colour_frame, encoding=msg.encoding)
+            debug_msg.header = Header(frame_id="zed2i", stamp=msg.header.stamp)
+            if camera == "left":
+                self.left_debug_img_pub.publish(debug_msg)
+            else:
+                self.right_debug_img_pub.publish(debug_msg)
 
-        self.get_logger().info(
-            f"Process Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(1/(time.perf_counter() - start), 2)}"
+        self.fps.next_iter()
+        self.get_logger().debug(
+            f"Process Time: {round(time.perf_counter() - start, 4)}\t| EST. FPS: {round(self.fps.fps(), 2)}",
+            throttle_duration_sec=0.5,
         )
         self.end = time.perf_counter()
 
 
-## OpenCV thresholding
-def main_cv2(args=None):
-    from .hsv_cv import get_coloured_bounding_boxes
-    from .threshold import Threshold
+## PyTorch inference
+def main_v8_torch(args=None):
+    from .yolov8_torch_inference import YOLOv8Wrapper
 
-    # HSV threshold constants
-    YELLOW_HSV_THRESH = Threshold(lower=[27, 160, 130], upper=[40, 255, 255])
-    BLUE_HSV_THRESH = Threshold(lower=[100, 100, 110], upper=[120, 255, 145])
-    ORANGE_HSV_THRESH = Threshold(lower=[0, 100, 50], upper=[15, 255, 255])
+    # loading Pytorch model
+    MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov8n_720.engine")
+    CONFIDENCE = 0.25  # higher = tighter filter
+    IMGSZ = 1280
+    SEGMENTATION = False
+    wrapper = YOLOv8Wrapper(MODEL_PATH, CONFIDENCE, IMGSZ, SEGMENTATION)
 
-    # thresh, cone_colour, display_colour
-    HSV_CONE_DETECTION_PARAMETERS = [
-        (BLUE_HSV_THRESH, Cone.BLUE, BLUE_DISP_COLOUR),
-        (YELLOW_HSV_THRESH, Cone.YELLOW, YELLOW_DISP_COLOUR),
-        (ORANGE_HSV_THRESH, Cone.ORANGE_BIG, ORANGE_DISP_COLOUR),
-    ]
-
-    def get_hsv_bounding_boxes(
+    def get_torch_bounding_boxes(
         colour_frame: np.ndarray,
-    ) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-        hsv_frame: np.ndarray = cv2.cvtColor(colour_frame, cv2.COLOR_BGR2HSV)
+    ) -> List[Tuple[Rect, int, Colour]]:  # bbox, msg colour, display colour
+        bounding_boxes: List[Tuple[Rect, int, Colour]] = []
+        data = wrapper.infer(colour_frame)
 
-        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-        for thresh, cone_colour, display_colour in HSV_CONE_DETECTION_PARAMETERS:
-            for bounding_box in get_coloured_bounding_boxes(hsv_frame, thresh):
-                bounding_boxes.append((bounding_box, cone_colour, display_colour))
+        for detection in data:
+            cone_colour = int(detection[0])
+            bounding_box = Rect(
+                int(detection[1]),
+                int(detection[2]),
+                int(detection[3] - detection[1]),
+                int(detection[4] - detection[2]),
+            )
+            bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
         return bounding_boxes
 
     rclpy.init(args=args)
-    node = VisionProcessor(get_hsv_bounding_boxes, enable_cv_filters=True)
+    node = VisionProcessor(get_torch_bounding_boxes)
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
@@ -277,14 +315,14 @@ def main_torch(args=None):
     # loading Pytorch model
     MODEL_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolov5_small.pt")
     REPO_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "yolov5")
-    CONFIDENCE = 0.35  # higher = tighter filter
+    CONFIDENCE = 0.25  # higher = tighter filter
     IOU = 0.1
     model = torch_init(MODEL_PATH, REPO_PATH, CONFIDENCE, IOU)
 
     def get_torch_bounding_boxes(
         colour_frame: np.ndarray,
-    ) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
+    ) -> List[Tuple[Rect, int, Colour]]:  # bbox, msg colour, display colour
+        bounding_boxes: List[Tuple[Rect, int, Colour]] = []
         data = infer(colour_frame, model)
 
         for i in range(len(data.index)):
@@ -300,42 +338,6 @@ def main_torch(args=None):
 
     rclpy.init(args=args)
     node = VisionProcessor(get_torch_bounding_boxes)
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
-
-
-## TensorRT inference
-def main_trt(args=None):
-    from .trt_inference import TensorWrapper
-
-    # loading TensorRT engine
-    ENGINE_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "yolo_small.engine")
-    PLUGIN_PATH = os.path.join(get_package_share_directory("vision_pipeline"), "models", "libplugins.so")
-    CONFIDENCE = 0.35  # higher = tighter filter
-    trt_wrapper = TensorWrapper(ENGINE_PATH, PLUGIN_PATH, CONFIDENCE)
-
-    def get_trt_bounding_boxes(
-        colour_frame: np.ndarray,
-    ) -> List[Tuple[Rect, ConeMsgColour, Colour]]:  # bbox, msg colour, display colour
-        bounding_boxes: List[Tuple[Rect, ConeMsgColour, Colour]] = []
-
-        result_boxes, result_scores, result_classid = trt_wrapper.infer(colour_frame)
-        # Draw rectangles and labels on the original image
-        for i, box in enumerate(result_boxes):
-            cone_colour = int(result_classid[i])
-            bounding_box = Rect(
-                int(box[0]),
-                int(box[1]),
-                int(box[2] - box[0]),
-                int(box[3] - box[1]),
-            )
-            print(box, cone_colour)
-            bounding_boxes.append((bounding_box, cone_colour, CONE_DISPLAY_PARAMETERS[cone_colour]))
-        return bounding_boxes
-
-    rclpy.init(args=args)
-    node = VisionProcessor(get_trt_bounding_boxes)
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
