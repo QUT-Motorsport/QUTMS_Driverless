@@ -11,10 +11,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="mission_controller",
-                executable="trackdrive_handler_node",
-            ),
-            Node(
                 package="sbg_translator",
                 executable="sbg_translator_node",
             ),
