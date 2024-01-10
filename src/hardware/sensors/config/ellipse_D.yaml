@@ -32,7 +32,14 @@
     # Uart configuration
     uartConf:
       # Port Name
-      portName: "/dev/ttyUSB-sbg"
+      ### IMPORTANT REQUIRES UDEV RULE TO BE CREATED
+      # sudo touch /etc/udev/rules.d/99-sbg_example.rules
+      # sudo nano /etc/udev/rules.d/99-sbg_example.rules
+      # SUBSYSTEMS=="usb", ATTRS{product}=="USB-RS232 Cable", ATTRS{serial}=="SERIAL_HERE", SYMLINK+="sbg"
+      ### Find serial by walking through ttyUSBs
+      # udevadm info --name=/dev/ttyUSB0 --attribute-walk # replace with ttyUSB1... etc until you find the RS232
+
+      portName: "/dev/sbg"
 
       # Baude rate (4800 ,9600 ,19200 ,38400 ,115200 [default],230400 ,460800 ,921600)
       baudRate: 115200

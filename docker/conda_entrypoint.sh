@@ -9,4 +9,7 @@ conda activate driverless_env
 # source workspace setup if available
 test -f "/home/developer/driverless_ws/install/setup.bash" && source "/home/developer/driverless_ws/install/setup.bash"
 
+ros2 daemon stop
+ros2 daemon start
+
 exec "$@"
