@@ -95,7 +95,8 @@ class CanBus : public rclcpp::Node {
             // only publish can messages with IDs we care about to not flood memory
             if (std::find(canopen_ids.begin(), canopen_ids.end(), msg.id) != canopen_ids.end()) {
                 this->canopen_pub_->publish(msg);
-            } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID || qutms_masked_id == EBS_CTRL_Heartbeat_ID) {
+            } else if (qutms_masked_id == VCU_Heartbeat_ID || qutms_masked_id == SW_Heartbeat_ID ||
+                       qutms_masked_id == EBS_CTRL_Heartbeat_ID) {
                 this->can_pub_->publish(msg);
             }
 

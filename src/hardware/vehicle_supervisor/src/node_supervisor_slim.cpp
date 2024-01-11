@@ -1,10 +1,10 @@
 #include <iostream>
 
 #include "CAN_DVL.h"
+#include "CAN_EBS_CTRL.h"
 #include "CAN_RES.h"
 #include "CAN_SW.h"
 #include "CAN_VCU.h"
-#include "CAN_EBS_CTRL.h"
 #include "QUTMS_can.h"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
@@ -128,18 +128,17 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
                 Parse_VCU_Heartbeat(data, &this->CTRL_VCU_heartbeat);
                 this->run_fsm();
             }
-        }
-        else if (msg.id == EBS_CTRL_Heartbeat_ID) {
-                  uint8_t data[8];
+        } else if (msg.id == EBS_CTRL_Heartbeat_ID) {
+            uint8_t data[8];
             copy_data(msg.data, data, 8);
 
             Parse_EBS_CTRL_Heartbeat(data, &this->EBS_heartbeat);
 
             if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE_DRIVE) {
-                    this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ARMED;
-                } else {
-                    this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ACTIVATED;
-                }
+                this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ARMED;
+            } else {
+                this->DVL_systemStatus._fields.EBS_state = DVL_EBS_STATE_ACTIVATED;
+            }
         }
         // Steering wheel heartbeat
         else if (qutms_masked_id == SW_Heartbeat_ID) {
@@ -495,7 +494,8 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // Steering sub
         this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1), sub1_opt);
+            "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1),
+            sub1_opt);
 
         // Velocity sub
         this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
@@ -511,19 +511,23 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // steering ready sub
         this->steering_ready_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-            "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1), sub2_opt);
+            "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1),
+            sub2_opt);
 
         // AS Heartbeat
         this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
-                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this), callback_group_subscriber3_);
+                                                         std::bind(&ASSupervisor::dvl_heartbeat_callback, this),
+                                                         callback_group_subscriber3_);
 
         // RES Alive
-        this->res_alive_timer_ = this->create_wall_timer(std::chrono::milliseconds(4000),
-                                                         std::bind(&ASSupervisor::res_alive_callback, this), callback_group_subscriber3_);
+        this->res_alive_timer_ =
+            this->create_wall_timer(std::chrono::milliseconds(4000), std::bind(&ASSupervisor::res_alive_callback, this),
+                                    callback_group_subscriber3_);
 
         // Data Logger
-        this->dataLogger_timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
-                                                          std::bind(&ASSupervisor::dataLogger_callback, this), callback_group_subscriber3_);
+        this->dataLogger_timer_ =
+            this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_callback, this),
+                                    callback_group_subscriber3_);
         this->logging_drivingDynamics1_pub_ =
             this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
         this->logging_systemStatus_pub_ =
