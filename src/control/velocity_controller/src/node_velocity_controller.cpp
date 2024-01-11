@@ -16,6 +16,8 @@ class Velocity_Controller : public rclcpp::Node {
     float max_integral_torque = 0;
     float histerisis_kickin_ms = 0;
     float histerisis_reset_ms = 0;
+    float min_time_to_max_accel_sec = 0;
+    float max_accel_per_tick = 0;
 
     float integral_error = 0;
 
@@ -28,6 +30,8 @@ class Velocity_Controller : public rclcpp::Node {
     std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler;
     std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle;
 
+    const int loop_ms = 10;
+
     // Enable motors logic
     driverless_msgs::msg::State state;
     bool motors_enabled = false;
@@ -36,6 +40,7 @@ class Velocity_Controller : public rclcpp::Node {
 
     float avg_velocity;
     ackermann_msgs::msg::AckermannDriveStamped target_ackermann;
+    ackermann_msgs::msg::AckermannDriveStamped prev_accel_cmd;
 
    public:
     Velocity_Controller() : Node("velocity_controller_node") {
@@ -45,6 +50,7 @@ class Velocity_Controller : public rclcpp::Node {
         this->declare_parameter<float>("max_integral_torque", 0);
         this->declare_parameter<float>("histerisis_kick_ms", 0);
         this->declare_parameter<float>("histerisis_reset_ms", 0);
+        this->declare_parameter<float>("min_time_to_max_accel_sec", 0);
 
         this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
@@ -65,7 +71,7 @@ class Velocity_Controller : public rclcpp::Node {
             "/vehicle/velocity", QOS_LATEST, std::bind(&Velocity_Controller::velocity_callback, this, _1));
 
         // Control loop -> 10ms so runs at double speed heartbeats are sent at
-        this->controller_timer = this->create_wall_timer(std::chrono::milliseconds(10),
+        this->controller_timer = this->create_wall_timer(std::chrono::milliseconds(this->loop_ms),
                                                          std::bind(&Velocity_Controller::controller_callback, this));
 
         // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
@@ -88,6 +94,8 @@ class Velocity_Controller : public rclcpp::Node {
         this->get_parameter("max_integral_torque", this->max_integral_torque);
         this->get_parameter("histerisis_kickin_ms", this->histerisis_kickin_ms);
         this->get_parameter("histerisis_reset_ms", this->histerisis_reset_ms);
+        this->get_parameter("min_time_to_max_accel_sec", this->min_time_to_max_accel_sec);
+        this->max_accel_per_tick = this->loop_ms / (1000 * this->min_time_to_max_accel_sec);
 
         RCLCPP_DEBUG(this->get_logger(),
                      "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", this->Kp,
@@ -106,7 +114,7 @@ class Velocity_Controller : public rclcpp::Node {
 
     void state_callback(const driverless_msgs::msg::State msg) {
         this->state = msg;
-        if (msg.state == driverless_msgs::msg::State::DRIVING) {
+        if (msg.state == driverless_msgs::msg::State::DRIVING && msg.navigation_ready) {
             this->motors_enabled = true;
         } else {
             this->motors_enabled = false;
@@ -149,6 +157,10 @@ class Velocity_Controller : public rclcpp::Node {
             accel += i_term;
         }
 
+        if ((accel - this->prev_accel_cmd.drive.acceleration) > this->max_accel_per_tick) {
+            accel = this->prev_accel_cmd.drive.acceleration + this->max_accel_per_tick;
+        }
+
         // limit output accel to be between -1 (braking) and 1 (accel)
         if (accel > 1) {
             accel = 1;
@@ -164,6 +176,7 @@ class Velocity_Controller : public rclcpp::Node {
 
         // publish accel
         this->accel_pub->publish(accel_cmd);
+        this->prev_accel_cmd = accel_cmd;
     }
 };
 

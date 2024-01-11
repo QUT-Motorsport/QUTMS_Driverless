@@ -95,7 +95,7 @@ class LiDARDetectorNode(Node):
     def initialise_params(self):
         # declare parameters
         self.declare_parameter("log_level", "DEBUG")
-        self.declare_parameter("lidar_range", 25)
+        self.declare_parameter("lidar_range", 20)
         self.declare_parameter("delta_alpha_ang", 128)
         self.declare_parameter("bin_size", 0.14)
         self.declare_parameter("t_m_ang", 148)
@@ -103,18 +103,18 @@ class LiDARDetectorNode(Node):
         self.declare_parameter("t_b", 0.05)
         self.declare_parameter("t_rmse", 0.2)
         self.declare_parameter("regress_between_bins", True)
-        self.declare_parameter("t_d_ground", 0.125)
+        self.declare_parameter("t_d_ground", 0.05)
         self.declare_parameter("t_d_max", 100)
         self.declare_parameter("cpu_utilisation", 0.90)
         self.declare_parameter("cone_diam", 0.15)
         self.declare_parameter("cone_height", 0.30)
-        self.declare_parameter("lidar_height_above_ground", 0.15)
+        self.declare_parameter("lidar_height_above_ground", 0.08)
         self.declare_parameter("lidar_vertical_res_val", 1.25)
         self.declare_parameter("lidar_horizontal_res_val", 0.05)
         self.declare_parameter("lhag_err", 0.25)
         self.declare_parameter("hach_lower_err", 0.35)
         self.declare_parameter("hach_upper_err", 0.15)
-        self.declare_parameter("epsilon", 1.2)
+        self.declare_parameter("epsilon", 0.6)
         self.declare_parameter("min_points", 2)
 
         self.log_level = self.get_parameter("log_level").value

@@ -16,9 +16,10 @@ find_package(std_msgs REQUIRED)
 
 add_compile_definitions(QUTMS_CAN_VESC)
 add_compile_definitions(QUTMS_CAN_VCU)
-add_compile_definitions(QUTMS_CAN_BMU)
+# add_compile_definitions(QUTMS_CAN_BMU)
 add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_SW)
+add_compile_definitions(QUTMS_CAN_EBS)
 
 include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
@@ -31,19 +32,19 @@ set (SOURCES
   src/SocketCAN.cpp
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_BMU.c
+  # ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_BMU.c
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
 
-add_executable(canbus_translator_node src/node_canbus_translator.cpp ${SOURCES})
-ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs nav_msgs std_msgs)
-target_include_directories(canbus_translator_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-target_include_directories(canbus_translator_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+# add_executable(canbus_translator_node src/node_canbus_translator.cpp ${SOURCES})
+# ament_target_dependencies(canbus_translator_node rclcpp driverless_msgs nav_msgs std_msgs)
+# target_include_directories(canbus_translator_node PUBLIC include PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+# target_include_directories(canbus_translator_node PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
 
 add_executable(canbus_translator_socket_node src/node_canbus_translator_socket.cpp ${SOURCES})
 ament_target_dependencies(canbus_translator_socket_node rclcpp driverless_msgs nav_msgs std_msgs)
@@ -53,7 +54,7 @@ target_include_directories(canbus_translator_socket_node PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 install(TARGETS
-  canbus_translator_node canbus_translator_socket_node
+  canbus_translator_socket_node # canbus_translator_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

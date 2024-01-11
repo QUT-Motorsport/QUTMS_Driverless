@@ -5,7 +5,7 @@
 #include "driverless_msgs/msg/can.hpp"
 
 // CAN Open nodes
-// RES is on Node 0x11
+// RES is on Node 0x011
 // FSG Rules: "The Node-ID has to be set to 0x011 at the competition. Only in severe cases,
 // there will be an exception. Please give a detail problem description with the request"
 
