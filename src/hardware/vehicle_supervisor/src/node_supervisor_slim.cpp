@@ -12,7 +12,6 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/res.hpp"
-#include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
@@ -61,7 +60,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_status_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub_;
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub_;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub_;
 
@@ -372,9 +370,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_DRIVE) {
                 // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
-                driverless_msgs::msg::Reset reset_msg;
-                reset_msg.reset = true;
-                this->reset_pub_->publish(reset_msg);
             }
 
             if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_SHUTDOWN) {
@@ -545,9 +540,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // RES status pub
         this->res_status_pub_ = this->create_publisher<driverless_msgs::msg::RES>("/system/res_status", 10);
-
-        // Reset pub
-        this->reset_pub_ = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }

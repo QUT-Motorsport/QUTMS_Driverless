@@ -12,7 +12,6 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
 #include "driverless_msgs/msg/res.hpp"
-#include "driverless_msgs/msg/reset.hpp"
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
@@ -61,7 +60,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub_;
     rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_status_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::Reset>::SharedPtr reset_pub_;
     rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub_;
     rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub_;
 
@@ -282,6 +280,29 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
         }
     }
 
+    void launch_mission() {
+        // run the mission program based on the mission selected
+        // command: ros2 run mission_controller MISSION_handler_node
+        std::string command = "ros2 run mission_controller ";
+        if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_INSPECTION) {
+            RCLCPP_INFO(this->get_logger(), "Launching Inspection Mission");
+            command += "inspection";
+        } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_EBS) {
+            RCLCPP_INFO(this->get_logger(), "Launching EBS Mission");
+            command += "ebs";
+        } else if (this->ros_state.mission == DRIVERLESS_MISSIONS::MISSION_TRACK) {
+            RCLCPP_INFO(this->get_logger(), "Launching Trackdrive Mission");
+            command += "trackdrive";
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Manual driving, no action required");
+        }
+        command += "_handler_node &";
+        // run command without blocking (ampersand at end)
+        system(command.c_str());
+
+        RCLCPP_INFO(this->get_logger(), "Mission Launched");
+    }
+
     void run_fsm() {
         // by default, no torque
         this->DVL_heartbeat.torqueRequest = 0.0;
@@ -314,6 +335,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             this->DVL_systemStatus._fields.AS_state = DVL_AS_State::DVL_AS_STATE_OFF;
             if (this->SW_heartbeat.stateID == sw_state_t::SW_STATE_MISSION_ACK) {
                 this->ros_state.mission = this->SW_heartbeat.missionID;
+                launch_mission();
             }
 
             if (this->ros_state.mission != DVL_MISSION::DVL_MISSION_NONE) {
@@ -372,9 +394,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
             if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_DRIVE) {
                 // transition to Driving state when brakes r good
                 this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
-                driverless_msgs::msg::Reset reset_msg;
-                reset_msg.reset = true;
-                this->reset_pub_->publish(reset_msg);
             }
 
             if (this->EBS_heartbeat.stateID == EBS_CTRL_STATE::EBS_CTRL_STATE_SHUTDOWN) {
@@ -545,9 +564,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
         // RES status pub
         this->res_status_pub_ = this->create_publisher<driverless_msgs::msg::RES>("/system/res_status", 10);
-
-        // Reset pub
-        this->reset_pub_ = this->create_publisher<driverless_msgs::msg::Reset>("/system/reset", 10);
 
         RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
     }
