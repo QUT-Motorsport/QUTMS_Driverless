@@ -39,22 +39,22 @@ set (SOURCES
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
-# add_executable(vehicle_supervisor_node src/node_supervisor.cpp ${SOURCES})
+add_executable(vehicle_supervisor_node src/node_supervisor.cpp ${SOURCES})
 add_executable(vehicle_supervisor_slim_node src/node_supervisor_slim.cpp ${SOURCES})
-# ament_target_dependencies(vehicle_supervisor_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
+ament_target_dependencies(vehicle_supervisor_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
 ament_target_dependencies(vehicle_supervisor_slim_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
-# target_include_directories(vehicle_supervisor_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(vehicle_supervisor_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 target_include_directories(vehicle_supervisor_slim_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
 
-# target_include_directories(vehicle_supervisor_node PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
+target_include_directories(vehicle_supervisor_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 target_include_directories(vehicle_supervisor_slim_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS vehicle_supervisor_slim_node
+install(TARGETS vehicle_supervisor_slim_node vehicle_supervisor_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
