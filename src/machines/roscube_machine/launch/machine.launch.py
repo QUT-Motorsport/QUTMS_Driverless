@@ -9,10 +9,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             Node(
-                package="mission_controller",
-                executable="mission_launcher_node",
-            ),
-            Node(
                 package="canbus",
                 executable="canbus_translator_socket_node",
                 parameters=[
@@ -21,7 +17,7 @@ def generate_launch_description():
             ),
             Node(
                 package="vehicle_supervisor",
-                executable="vehicle_supervisor_slim_node",
+                executable="vehicle_supervisor_node",
                 parameters=[
                     {"manual_override": False},
                 ],
