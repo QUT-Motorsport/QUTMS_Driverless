@@ -19,10 +19,11 @@ jobs:
       - name: 'Checking out eufs_rviz_plugins'
         run: git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
 
-      - name: Install Boost for sbg_ros2_driver
-        run: |
-          sudo apt update
-          sudo apt install libboost-dev
+      - name: Checking out Boost Library
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: boostorg/boost
+          submodules: recursive
 
       - name: 'Checking out sbg_ros2_driver'
         uses: actions/checkout@v2.3.4
