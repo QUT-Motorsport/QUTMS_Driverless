@@ -25,6 +25,11 @@ jobs:
           repository: boostorg/boost
           submodules: recursive
 
+      - name: Installing Boost in other ways
+        run: |
+          sudo apt update
+          sudo apt install build-essential libboost-system-dev libboost-thread-dev libboost-program-options-dev libboost-test-dev
+
       - name: 'Checking out sbg_ros2_driver'
         uses: actions/checkout@v2.3.4
         with: 
