@@ -19,23 +19,18 @@ jobs:
       - name: 'Checking out eufs_rviz_plugins'
         run: git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
 
-      - name: Checking out Boost Library
-        uses: actions/checkout@v2.3.4
-        with:
-          repository: boostorg/boost
-          submodules: recursive
-
       - name: Installing Boost in other ways
         run: |
           sudo apt update
-          sudo apt install build-essential libboost-system-dev libboost-thread-dev libboost-program-options-dev libboost-test-dev
+          sudo apt install build-essential libboost-dev
 
       - name: 'Checking out sbg_ros2_driver'
         uses: actions/checkout@v2.3.4
         with: 
           repository: SBG-Systems/sbg_ros2_driver
+          submodules: recursive
 
       - name: Building and testing
         uses: ichiro-its/ros2-ci@v1.0.0
         with:
-          ros2-distro: humble
+          ros2-distro: rolling
