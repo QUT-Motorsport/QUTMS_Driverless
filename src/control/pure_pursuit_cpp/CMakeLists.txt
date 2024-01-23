@@ -12,22 +12,42 @@ foreach(Dependency ${Dependencies})
     find_package(${Dependency} REQUIRED)
 endforeach()
 
-SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX)
+set(SOURCES src/pure_pursuit.cpp src/node_pure_pursuit.cpp src/lifecycle_pure_pursuit.cpp)
 
-set(Nodes pure_pursuit_cpp_node pure_pursuit_cpp_lifecycle)
-set(Srcs src/node_pure_pursuit_cpp.cpp src/lifecycle_pure_pursuit_cpp.cpp)
-
-foreach(Node Src IN ZIP_LISTS Nodes Srcs)
-    add_executable(${Node} ${Src})
-    ament_target_dependencies(${Node} ${Dependencies})
-    target_include_directories(${Node} PUBLIC
+# Library for common functions
+add_library(pure_pursuit ${SOURCES})
+ament_target_dependencies(pure_pursuit ${Dependencies})
+target_include_directories(pure_pursuit PUBLIC
         ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-    target_include_directories(${Node} PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            $<INSTALL_INTERFACE:include>)
-    install(TARGETS ${Node}
-            DESTINATION lib/${PROJECT_NAME})
-endforeach()
+target_include_directories(pure_pursuit PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+install(TARGETS pure_pursuit
+        DESTINATION lib/${PROJECT_NAME})
+
+# Executable for node_pure_pursuit
+add_executable(node_pure_pursuit src/node_pure_pursuit.cpp)
+ament_target_dependencies(node_pure_pursuit ${Dependencies})
+target_include_directories(node_pure_pursuit PUBLIC
+        ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(node_pure_pursuit PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+target_link_libraries(node_pure_pursuit pure_pursuit)  # Link with the pure_pursuit library
+install(TARGETS node_pure_pursuit
+        DESTINATION lib/${PROJECT_NAME})
+
+# Executable for lifecycle_pure_pursuit
+add_executable(lifecycle_pure_pursuit src/lifecycle_pure_pursuit.cpp)
+ament_target_dependencies(lifecycle_pure_pursuit ${Dependencies})
+target_include_directories(lifecycle_pure_pursuit PUBLIC
+        ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+target_include_directories(lifecycle_pure_pursuit PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+target_link_libraries(lifecycle_pure_pursuit pure_pursuit)  # Link with the pure_pursuit library
+install(TARGETS lifecycle_pure_pursuit
+        DESTINATION lib/${PROJECT_NAME})
 
 # config folder
 install(DIRECTORY config launch
