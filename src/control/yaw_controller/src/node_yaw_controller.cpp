@@ -65,7 +65,7 @@ void YawController::update_parameters(const rcl_interfaces::msg::ParameterEvent&
                 target_velocity, Kp_yaw, Ki_yaw, Kp_yaw_rate, Ki_yaw_rate, max_integral_steering, integral_kickin);
 }
 
-YawController() : Node("yaw_controller_node") {
+YawController::YawController() : Node("yaw_controller_node") {
     this->declare_parameter<float>("target_velocity", 0);
     this->declare_parameter<float>("Kp_yaw", 0);
     this->declare_parameter<float>("Ki_yaw", 0);

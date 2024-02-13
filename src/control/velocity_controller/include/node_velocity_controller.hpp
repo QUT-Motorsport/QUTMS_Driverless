@@ -54,4 +54,4 @@ class Velocity_Controller : public rclcpp::Node {
     void state_callback(const driverless_msgs::msg::State msg);
 
     void controller_callback();
-}
+};

@@ -132,7 +132,7 @@ std::vector<std::vector<double>> discoveryCones(const std::vector<driverless_msg
     return unsearchedCones;
 }
 
-OrderedMapSpline() : Node("ordered_map_spline_node") {
+OrderedMapSpline::OrderedMapSpline() : Node("ordered_map_spline_node") {
     // Create subscriptions, timers, and publishers
     mapSubscription = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
         "/slam/global_map", QOS_LATEST, std::bind(&OrderedMapSpline::mapCallback, this, std::placeholders::_1));

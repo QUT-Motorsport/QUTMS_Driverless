@@ -1,6 +1,6 @@
 #include "node_velocity_controller.hpp"
 
-Velocity_Controller() : Node("velocity_controller_node") {
+Velocity_Controller::Velocity_Controller() : Node("velocity_controller_node") {
     // PID controller parameters
     this->declare_parameter<float>("Kp", 1.0);
     this->declare_parameter<float>("Ki", 0);
@@ -125,8 +125,7 @@ void Velocity_Controller::controller_callback() {
     this->accel_pub->publish(accel_cmd);
     this->prev_accel_cmd = accel_cmd;
 }
-}
-;
+
 
 void Velocity_Controller::state_callback(const driverless_msgs::msg::State msg) {
     this->state = msg;
