@@ -1,26 +1,4 @@
-#include <Eigen/Core>
-#include <chrono>
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <unsupported/Eigen/Splines>
-#include <vector>
-
-#include "driverless_common/common.hpp"
-#include "driverless_msgs/msg/cone.hpp"
-#include "driverless_msgs/msg/cone_detection_stamped.hpp"
-#include "driverless_msgs/msg/state.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/map_meta_data.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "rclcpp/qos.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp/subscription.hpp"
-#include "rclcpp/timer.hpp"
-
-using namespace std;
-using namespace std::chrono_literals;
+#include "node_boundary_interpolation.hpp"
 
 std::vector<std::vector<double>> approximateBSplinePath(const std::vector<double> &x, const std::vector<double> &y,
                                                         int nPathPoints, int degree, double s) {
@@ -154,164 +132,117 @@ std::vector<std::vector<double>> discoveryCones(const std::vector<driverless_msg
     return unsearchedCones;
 }
 
-// // Function to create OccupancyGrid message
-// nav_msgs::msg::OccupancyGrid getOccupancyGrid(
-//     const vector<vector<double>> &bluePoints,
-//     const vector<vector<double>> &yellowPoints,
-//     const std_msgs::msg::Header &header)
-// {
-//     // Implementation of the function
-//     // ...
+OrderedMapSpline() : Node("ordered_map_spline_node") {
+    // Create subscriptions, timers, and publishers
+    mapSubscription = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
+        "/slam/global_map", QOS_LATEST, std::bind(&OrderedMapSpline::mapCallback, this, std::placeholders::_1));
 
-//     return map;
-// }
+    stateSubscription = this->create_subscription<driverless_msgs::msg::State>(
+        "/system/as_status", QOS_LATEST, std::bind(&OrderedMapSpline::stateCallback, this, std::placeholders::_1));
 
-class OrderedMapSpline : public rclcpp::Node {
-   public:
-    OrderedMapSpline() : Node("ordered_map_spline_node") {
-        // Create subscriptions, timers, and publishers
-        mapSubscription = this->create_subscription<driverless_msgs::msg::ConeDetectionStamped>(
-            "/slam/global_map", QOS_LATEST, std::bind(&OrderedMapSpline::mapCallback, this, std::placeholders::_1));
+    blueBoundPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/blue_bounds", QOS_LATEST);
+    yellowBoundPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/yellow_bounds", QOS_LATEST);
+    plannedPathPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/midline_path", QOS_LATEST);
 
-        stateSubscription = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", QOS_LATEST, std::bind(&OrderedMapSpline::stateCallback, this, std::placeholders::_1));
+    mapPublisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+        "/map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    mapMetaPublisher = this->create_publisher<nav_msgs::msg::MapMetaData>(
+        "/map_metadata", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+}
 
-        blueBoundPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/blue_bounds", QOS_LATEST);
-        yellowBoundPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/yellow_bounds", QOS_LATEST);
-        plannedPathPublisher = this->create_publisher<nav_msgs::msg::Path>("/planning/midline_path", QOS_LATEST);
+void OrderedMapSpline::mapCallback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr trackMsg) {
+    RCLCPP_DEBUG(get_logger(), "Received map");
 
-        mapPublisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-            "/map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-        mapMetaPublisher = this->create_publisher<nav_msgs::msg::MapMetaData>(
-            "/map_metadata", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    // if (!following) {
+    //     RCLCPP_INFO_ONCE(get_logger(), "Discovering");
+    //     auto unsearched_cones = discoveryCones(current_track->cones);
+    // } else {
+    //     RCLCPP_INFO_ONCE(get_logger(), "Following");
+    //     auto mapped_cones = mappedCones(current_track->cones);
+    // }
+    auto unsearched_cones = discoveryCones(trackMsg->cones);
+
+    std::vector<double> closest_blue;
+    std::vector<double> closest_yellow;
+    if (!getClosestCone(unsearched_cones, 1, startDist, 0.0, closest_blue)) return;
+    if (!getClosestCone(unsearched_cones, -1, startDist, 0.0, closest_yellow)) return;
+
+    // Example: Sort cones into order by finding the next cone in the direction of travel
+    auto ordered_blues = std::vector<std::vector<double>>{closest_blue};
+    auto ordered_yellows = std::vector<std::vector<double>>{closest_yellow};
+    auto last_blue = closest_blue;
+    auto last_yellow = closest_yellow;
+    auto last_blue_angle = 0.0;
+    auto last_yellow_angle = 0.0;
+
+    // search cones
+    while (unsearched_cones.size() > 0) {
+        std::vector<double> next_blue;
+        double next_blue_angle;
+        if (!getNextCone(unsearched_cones, last_blue, last_blue_angle, searchRange, searchAngle, &next_blue,
+                         &next_blue_angle)) {
+            break;
+        }
+
+        ordered_blues.push_back(next_blue.first);
+        unsearched_cones.erase(std::remove(unsearched_cones.begin(), unsearched_cones.end(), next_blue.first),
+                               unsearched_cones.end());
+        last_blue = next_blue.first;
+        last_blue_angle = next_blue.second;
     }
 
-   private:
-    // declare pubs and subs
-    rclcpp::Subscription<driverless_msgs::msg::ConeDetectionStamped>::SharedPtr mapSubscription;
-    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr stateSubscription;
-    rclcpp::TimerBase::SharedPtr planningTimer;
-
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr blueBoundPublisher;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr yellowBoundPublisher;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plannedPathPublisher;
-
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mapPublisher;
-    rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr mapMetaPublisher;
-
-    // declare variables
-    int splineConst{10};
-    int segment{1};
-    bool following{false};
-    driverless_msgs::msg::ConeDetectionStamped::SharedPtr currentTrack;
-    int interpConeNum{3};
-    bool finalPathPublished{false};
-    double startDist{1.0};
-    double searchRange{5.0};
-    double searchAngle{M_PI / 4};
-
-    void OrderedMapSpline::stateCallback(const driverless_msgs::msg::State::SharedPtr msg) {
-        if (msg->state == driverless_msgs::msg::State::DRIVING && msg->lap_count > 0 && !following) {
-            following = true;
-            RCLCPP_INFO(get_logger(), "Lap completed, planning commencing");
+    while (unsearched_cones.size() > 0) {
+        std::vector<double> next_yellow;
+        double next_yellow_angle;
+        if (!getNextCone(unsearched_cones, last_yellow, last_yellow_angle, searchRange, searchAngle, &next_yellow,
+                         &next_yellow_angle)) {
+            break;
         }
+
+        ordered_yellows.push_back(next_yellow.first);
+        unsearched_cones.erase(std::remove(unsearched_cones.begin(), unsearched_cones.end(), next_yellow.first),
+                               unsearched_cones.end());
+        last_yellow = next_yellow.first;
+        last_yellow_angle = next_yellow.second;
     }
 
-    void OrderedMapSpline::mapCallback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr trackMsg) {
-        RCLCPP_DEBUG(get_logger(), "Received map");
+    // Spline smoothing
+    // make number of pts based on length of path
+    int spline_len = splineConst * ordered_blues.size();
 
-        // if (!following) {
-        //     RCLCPP_INFO_ONCE(get_logger(), "Discovering");
-        //     auto unsearched_cones = discoveryCones(current_track->cones);
-        // } else {
-        //     RCLCPP_INFO_ONCE(get_logger(), "Following");
-        //     auto mapped_cones = mappedCones(current_track->cones);
-        // }
-        auto unsearched_cones = discoveryCones(trackMsg->cones);
+    // specify degree of spline if less than 3 cones
+    int blue_degree = ordered_blues.size() - 1;
+    if (ordered_blues.size() <= 3) blue_degree = 3;
+    int yellow_degree = ordered_yellows.size() - 1;
+    if (ordered_yellows.size() <= 3) yellow_degree = 3;
 
-        std::vector<double> closest_blue;
-        std::vector<double> closest_yellow;
-        if (!getClosestCone(unsearched_cones, 1, startDist, 0.0, closest_blue)) return;
-        if (!getClosestCone(unsearched_cones, -1, startDist, 0.0, closest_yellow)) return;
-
-        // Example: Sort cones into order by finding the next cone in the direction of travel
-        auto ordered_blues = std::vector<std::vector<double>>{closest_blue};
-        auto ordered_yellows = std::vector<std::vector<double>>{closest_yellow};
-        auto last_blue = closest_blue;
-        auto last_yellow = closest_yellow;
-        auto last_blue_angle = 0.0;
-        auto last_yellow_angle = 0.0;
-
-        // search cones
-        while (unsearched_cones.size() > 0) {
-            std::vector<double> next_blue;
-            double next_blue_angle;
-            if (!getNextCone(unsearched_cones, last_blue, last_blue_angle, searchRange, searchAngle, &next_blue,
-                             &next_blue_angle)) {
-                break;
-            }
-
-            ordered_blues.push_back(next_blue.first);
-            unsearched_cones.erase(std::remove(unsearched_cones.begin(), unsearched_cones.end(), next_blue.first),
-                                   unsearched_cones.end());
-            last_blue = next_blue.first;
-            last_blue_angle = next_blue.second;
-        }
-
-        while (unsearched_cones.size() > 0) {
-            std::vector<double> next_yellow;
-            double next_yellow_angle;
-            if (!getNextCone(unsearched_cones, last_yellow, last_yellow_angle, searchRange, searchAngle, &next_yellow,
-                             &next_yellow_angle)) {
-                break;
-            }
-
-            ordered_yellows.push_back(next_yellow.first);
-            unsearched_cones.erase(std::remove(unsearched_cones.begin(), unsearched_cones.end(), next_yellow.first),
-                                   unsearched_cones.end());
-            last_yellow = next_yellow.first;
-            last_yellow_angle = next_yellow.second;
-        }
-
-        // Spline smoothing
-        // make number of pts based on length of path
-        int spline_len = splineConst * ordered_blues.size();
-
-        // specify degree of spline if less than 3 cones
-        int blue_degree = ordered_blues.size() - 1;
-        if (ordered_blues.size() <= 3) blue_degree = 3;
-        int yellow_degree = ordered_yellows.size() - 1;
-        if (ordered_yellows.size() <= 3) yellow_degree = 3;
-
-        if (blue_degree <= 1 || yellow_degree <= 1) {
-            RCLCPP_WARN(get_logger(), "Not enough cones to spline");
-            return;
-        }
-
-        auto yellow_pts =
-            approximateBSplinePath(ordered_yellows[0], ordered_yellows[1], spline_len, yellow_degree, 0.01);
-        auto blue_pts = approximateBSplinePath(ordered_blues[0], ordered_blues[1], spline_len, blue_degree, 0.01);
-
-        std::vector<std::vector<double>> mid_pts;
-        for (int i = 0; i < spline_len; ++i) {
-            mid_pts.push_back(midpoint(yellow_pts[i], blue_pts[i]));
-        }
-
-        auto blue_bound_msg = makePathMsg(ordered_blues, spline_len);
-        blue_bound_pub->publish(blue_bound_msg);
-
-        auto yellow_bound_msg = makePathMsg(ordered_yellows, spline_len);
-        yellow_bound_pub->publish(yellow_bound_msg);
-
-        auto midline_msg = makePathMsg(mid_pts, spline_len);
-        midline_pub->publish(midline_msg);
-
-        // Example: Create and publish the occupancy grid
-        // auto map = getOccupancyGrid(blue_points, yellow_points, current_track->header);
-        // map_pub->publish(map);
-        // map_meta_pub->publish(map.info);
+    if (blue_degree <= 1 || yellow_degree <= 1) {
+        RCLCPP_WARN(get_logger(), "Not enough cones to spline");
+        return;
     }
-};
+
+    auto yellow_pts = approximateBSplinePath(ordered_yellows[0], ordered_yellows[1], spline_len, yellow_degree, 0.01);
+    auto blue_pts = approximateBSplinePath(ordered_blues[0], ordered_blues[1], spline_len, blue_degree, 0.01);
+
+    std::vector<std::vector<double>> mid_pts;
+    for (int i = 0; i < spline_len; ++i) {
+        mid_pts.push_back(midpoint(yellow_pts[i], blue_pts[i]));
+    }
+
+    auto blue_bound_msg = makePathMsg(ordered_blues, spline_len);
+    blue_bound_pub->publish(blue_bound_msg);
+
+    auto yellow_bound_msg = makePathMsg(ordered_yellows, spline_len);
+    yellow_bound_pub->publish(yellow_bound_msg);
+
+    auto midline_msg = makePathMsg(mid_pts, spline_len);
+    midline_pub->publish(midline_msg);
+
+    // Example: Create and publish the occupancy grid
+    // auto map = getOccupancyGrid(blue_points, yellow_points, current_track->header);
+    // map_pub->publish(map);
+    // map_meta_pub->publish(map.info);
+}
 
 int main(int argc, char *argv[]) {
     // Start ROS 2 node
