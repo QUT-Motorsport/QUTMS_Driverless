@@ -126,7 +126,6 @@ void Velocity_Controller::controller_callback() {
     this->prev_accel_cmd = accel_cmd;
 }
 
-
 void Velocity_Controller::state_callback(const driverless_msgs::msg::State msg) {
     this->state = msg;
     if (msg.state == driverless_msgs::msg::State::DRIVING && msg.navigation_ready) {

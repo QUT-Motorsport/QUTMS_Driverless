@@ -3,9 +3,10 @@
 #include "pure_pursuit.hpp"
 
 class PurePursuitLifecycle : public rclcpp_lifecycle::LifecycleNode {
-private:
+   private:
     std::unique_ptr<PurePursuit> pp;
-public:
+
+   public:
     PurePursuitLifecycle();
     void initialise();
 

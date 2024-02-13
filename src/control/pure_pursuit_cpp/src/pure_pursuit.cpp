@@ -74,8 +74,7 @@ void PurePursuit::timer_callback() {
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-    Pose position =
-            get_wheel_position(odom_to_base.transform.translation.x, odom_to_base.transform.translation.y, yaw);
+    Pose position = get_wheel_position(odom_to_base.transform.translation.x, odom_to_base.transform.translation.y, yaw);
 
     double steering_angle = 0.0;
     double velocity = 0.0;
@@ -128,7 +127,7 @@ void PurePursuit::timer_callback() {
 void PurePursuit::path_callback(nav_msgs::msg::Path const &spline_path_msg) {
     double distance = 0.0;
     path.clear();
-    for (const auto &pose: spline_path_msg.poses) {
+    for (const auto &pose : spline_path_msg.poses) {
         if (path.size() >= 2) {
             auto const &previous_point = path.at(path.size() - 1);
             auto diff_x = previous_point.x - pose.pose.position.x;

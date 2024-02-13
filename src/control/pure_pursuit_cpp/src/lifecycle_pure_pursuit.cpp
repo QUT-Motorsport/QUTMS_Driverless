@@ -1,8 +1,7 @@
 #include <lifecycle_pure_pursuit.hpp>
 
-PurePursuitLifecycle::PurePursuitLifecycle() :
-        rclcpp_lifecycle::LifecycleNode("pure_pursuit_cpp_node", rclcpp::NodeOptions().use_intra_process_comms(false)) {
-}
+PurePursuitLifecycle::PurePursuitLifecycle()
+    : rclcpp_lifecycle::LifecycleNode("pure_pursuit_cpp_node", rclcpp::NodeOptions().use_intra_process_comms(false)) {}
 
 // Can't call shared_from_this() is a constructor :(
 void PurePursuitLifecycle::initialise() {
@@ -14,19 +13,19 @@ void PurePursuitLifecycle::initialise() {
 
 PurePursuitLifecycle::CallbackReturn PurePursuitLifecycle::on_configure(rclcpp_lifecycle::State const &) {
     pp->driving_command_pub =
-            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
+        this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
 
     RCLCPP_INFO(get_logger(), "On configure");
     return CallbackReturn::SUCCESS;
 }
 
 PurePursuitLifecycle::CallbackReturn PurePursuitLifecycle::on_activate(rclcpp_lifecycle::State const &) {
-    pp->path_sub = this->create_subscription<nav_msgs::msg::Path>(
-            "/planning/midline_path", QOS_LATEST, std::bind(&PurePursuit::path_callback, pp.get(), _1));
+    pp->path_sub = this->create_subscription<nav_msgs::msg::Path>("/planning/midline_path", QOS_LATEST,
+                                                                  std::bind(&PurePursuit::path_callback, pp.get(), _1));
     pp->timer =
-            this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&PurePursuit::timer_callback, pp.get()));
+        this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&PurePursuit::timer_callback, pp.get()));
     pp->driving_command_pub =
-            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
+        this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
     RCLCPP_INFO(get_logger(), "On activate");
     return CallbackReturn::SUCCESS;
 }

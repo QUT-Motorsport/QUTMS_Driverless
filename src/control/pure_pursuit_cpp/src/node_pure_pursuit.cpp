@@ -29,18 +29,17 @@ void PurePursuitNode::initialise() {
     pp->path_sub = this->create_subscription<nav_msgs::msg::Path>("/planning/midline_path", QOS_LATEST,
                                                                   std::bind(&PurePursuit::path_callback, pp.get(), _1));
     pp->state_sub = this->create_subscription<driverless_msgs::msg::State>(
-            "/system/as_status", QOS_LATEST, std::bind(&PurePursuitNode::state_callback, this, _1));
-    pp->timer = this->create_wall_timer(std::chrono::milliseconds(20),
-                                        std::bind(&PurePursuit::timer_callback, pp.get()));
+        "/system/as_status", QOS_LATEST, std::bind(&PurePursuitNode::state_callback, this, _1));
+    pp->timer =
+        this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&PurePursuit::timer_callback, pp.get()));
     pp->driving_command_pub =
-            this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
+        this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/driving_command", 10);
     pp->rvwp_pub = this->create_publisher<geometry_msgs::msg::PointStamped>("/control/rvwp", 10);
 
     RCLCPP_INFO(get_logger(), "---Pure Pursuit (C++) Node Initialised---");
 }
 
-PurePursuitNode::PurePursuitNode() : Node("pure_pursuit_cpp_node") {
-}
+PurePursuitNode::PurePursuitNode() : Node("pure_pursuit_cpp_node") {}
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);

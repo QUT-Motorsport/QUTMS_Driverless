@@ -14,11 +14,11 @@ def generate_launch_description():
                 ],
             ),
             Node(
-            package="pure_pursuit_cpp",
-            executable="lifecycle_pure_pursuit",
-            parameters=[
-                get_package_share_path("pure_pursuit_cpp") / "config" / "pure_pursuit_cpp.yaml",
+                package="pure_pursuit_cpp",
+                executable="lifecycle_pure_pursuit",
+                parameters=[
+                    get_package_share_path("pure_pursuit_cpp") / "config" / "pure_pursuit_cpp.yaml",
                 ],
-            )
+            ),
         ]
     )

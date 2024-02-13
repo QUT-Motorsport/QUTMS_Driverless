@@ -37,16 +37,18 @@ struct Point {
 };
 
 class PurePursuit {
-public:
-    PurePursuit(rclcpp::Node::SharedPtr node, tf2_ros::Buffer::SharedPtr buffer,std::shared_ptr<tf2_ros::TransformListener> listener);
-    PurePursuit(rclcpp_lifecycle::LifecycleNode::SharedPtr, tf2_ros::Buffer::SharedPtr buffer, std::shared_ptr<tf2_ros::TransformListener> listener);
+   public:
+    PurePursuit(rclcpp::Node::SharedPtr node, tf2_ros::Buffer::SharedPtr buffer,
+                std::shared_ptr<tf2_ros::TransformListener> listener);
+    PurePursuit(rclcpp_lifecycle::LifecycleNode::SharedPtr, tf2_ros::Buffer::SharedPtr buffer,
+                std::shared_ptr<tf2_ros::TransformListener> listener);
 
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub;
     rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr rvwp_pub;
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr driving_command_pub;
     rclcpp::TimerBase::SharedPtr timer;
-    std::vector <Point> path{};
+    std::vector<Point> path{};
     tf2_ros::Buffer::SharedPtr buffer;
     std::shared_ptr<tf2_ros::TransformListener> listener;
 
@@ -84,7 +86,7 @@ public:
         // Reduces the velocity as the steering angle increases
 
         double vel =
-                vel_min + std::max((vel_max - vel_min) * (1 - std::pow(std::abs(desired_steering) / 90.0, 2.0)), 0.0);
+            vel_min + std::max((vel_max - vel_min) * (1 - std::pow(std::abs(desired_steering) / 90.0, 2.0)), 0.0);
         return vel;
     }
 
@@ -98,24 +100,19 @@ public:
         return {x_axle, y_axle, th};
     }
 
-    inline bool can_drive() const {
-        return this->driving && this->path.size() > 0;
-    }
+    inline bool can_drive() const { return this->driving && this->path.size() > 0; }
 
     Point get_rvwp(Pose const &car_axle_pos) const;
     void timer_callback();
     void path_callback(nav_msgs::msg::Path const &spline_path_msg);
-private:
+
+   private:
     void initialise_params(rclcpp::Node::SharedPtr);
     void initialise_params(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
-    rclcpp::Logger get_logger_() const {
-        return node != nullptr ? node->get_logger() : lifecycle_node->get_logger();
-    }
+    rclcpp::Logger get_logger_() const { return node != nullptr ? node->get_logger() : lifecycle_node->get_logger(); }
 
-    rclcpp::Time get_now_() const {
-        return node != nullptr ? node->now() : lifecycle_node->now();
-    }
+    rclcpp::Time get_now_() const { return node != nullptr ? node->now() : lifecycle_node->now(); }
 
     std::shared_ptr<rclcpp::Node> node;
     std::shared_ptr<rclcpp_lifecycle::LifecycleNode> lifecycle_node;
