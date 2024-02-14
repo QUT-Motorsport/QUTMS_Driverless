@@ -14,3 +14,7 @@ colcon_ignore:
 - AirSim
 - Eigen
 - rpc
+- graph_based_slam
+- lidarslam
+- ndt_omp_ros2
+- scanmatcher
