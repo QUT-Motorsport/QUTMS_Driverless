@@ -27,7 +27,7 @@ class TrackdriveHandler(ShutdownNode):
     goal_offet = 5.0
     process = None
 
-    sim = False
+    sim = True
 
     def __init__(self):
         super().__init__("trackdrive_logic_node")
@@ -35,7 +35,7 @@ class TrackdriveHandler(ShutdownNode):
         self.declare_parameter("start_following", False)
 
         self.create_subscription(State, "system/as_status", self.state_callback, 1)
-        self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
+        self.create_subscription(Odometry, "odometry/sbg_ekf", self.odom_callback, 1)
 
         if not self.sim:
             # reset odom and pose from camera
@@ -83,6 +83,7 @@ class TrackdriveHandler(ShutdownNode):
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
+            self.set_process(self.process)
             self.get_logger().info("Trackdrive mission started")
 
     def odom_callback(self, msg: Odometry):
