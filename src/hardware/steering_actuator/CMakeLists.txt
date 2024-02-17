@@ -25,7 +25,6 @@ set (SOURCES
 
 # ROS 2 components
 add_library(steering_actuator_component SHARED src/component_steering_actuator.cpp ${SOURCES})
-target_compile_definitions(steering_actuator_component PRIVATE "COMPOSITION_BUILDING_DLL")
 ament_target_dependencies(steering_actuator_component
   "rclcpp"
   "rclcpp_components"

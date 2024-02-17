@@ -1,6 +1,8 @@
 #include "component_canbus_translator.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+namespace canbus {
+
 void CANTranslator::update_twist() {
     // use last velocity and steering angle to update twist
     twist_msg.header.stamp = this->now();
@@ -168,20 +170,8 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions & options) : Node("canbus
     RCLCPP_INFO(this->get_logger(), "---CANBus Translator Node Initialised---");
 }
 
-// deconstruct
 CANTranslator::~CANTranslator() { this->can_interface_->deconstruct(); }
 
-RCLCPP_COMPONENTS_REGISTER_NODE(CANTranslator)
+}  // namespace canbus
 
-// int main(int argc, char *argv[]) {
-//     rclcpp::init(argc, argv);
-//     auto node = std::make_shared<CanBus>();
-
-//     rclcpp::executors::MultiThreadedExecutor executor;
-//     executor.add_node(node);
-//     executor.spin();
-
-//     // rclcpp::spin(node);
-//     // rclcpp::shutdown();
-//     return 0;
-// }
+RCLCPP_COMPONENTS_REGISTER_NODE(canbus::CANTranslator)

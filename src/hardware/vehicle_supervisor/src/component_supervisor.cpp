@@ -1,6 +1,8 @@
 #include "component_supervisor.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+namespace vehicle_supervisor {
+
 void ASSupervisor::canopen_callback(const driverless_msgs::msg::Can msg) {
     // RES boot up
     if (msg.id == (RES_BOOT_UP_ID)) {
@@ -461,4 +463,6 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions & options, std::string name
     RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
 }
 
-RCLCPP_COMPONENTS_REGISTER_NODE(ASSupervisor)
+}  // namespace vehicle_supervisor
+
+RCLCPP_COMPONENTS_REGISTER_NODE(vehicle_supervisor::ASSupervisor);

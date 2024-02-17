@@ -26,6 +26,8 @@
 
 using std::placeholders::_1;
 
+namespace vehicle_supervisor {
+
 class ASSupervisor : public rclcpp::Node, public CanInterface {
    protected:
     DVL_HeartbeatState_t DVL_heartbeat;
@@ -89,5 +91,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     ASSupervisor(const rclcpp::NodeOptions & options, std::string name="vehicle_supervisor_node");
 
 };
+
+}  // namespace vehicle_supervisor
 
 #endif  // VEHICLE_SUPERVISOR__COMPONENT_SUPERVISOR_HPP_

@@ -5,7 +5,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -19,10 +18,12 @@ add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_SW)
 add_compile_definitions(QUTMS_CAN_EBS)
 
-include_directories(include)
-include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
-include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
-include_directories(${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+include_directories(
+  include
+  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/
+  ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
+)
 
 set (SOURCES
   src/tcp_client.cpp
@@ -38,30 +39,27 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 # ROS 2 components
 add_library(canbus_translator_component SHARED src/component_canbus_translator.cpp ${SOURCES})
-target_compile_definitions(canbus_translator_component PRIVATE "COMPOSITION_BUILDING_DLL")
 ament_target_dependencies(canbus_translator_component
   "rclcpp"
   "rclcpp_components"
   "std_msgs"
   "nav_msgs"
-  "driverless_msgs")
-rclcpp_components_register_nodes(canbus_translator_component "CANTranslator")
-set(node_plugins "${node_plugins}CANTranslator;$<TARGET_FILE:canbus_translator_component>\n")
-
-ament_environment_hooks("${ament_cmake_package_templates_ENVIRONMENT_HOOK_LIBRARY_PATH}")
+  "driverless_msgs"
+)
+rclcpp_components_register_nodes(canbus_translator_component "canbus::CANTranslator")
 
 # ROS 2 nodes
 add_executable(socket_translator_node src/node_socket_translator.cpp)
-target_link_libraries(socket_translator_node 
-  canbus_translator_component)
+target_link_libraries(socket_translator_node canbus_translator_component)
 ament_target_dependencies(socket_translator_node 
-  "rclcpp")
+  "rclcpp"
+)
 
 add_executable(tritium_translator_node src/node_tritium_translator.cpp)
-target_link_libraries(tritium_translator_node 
-  canbus_translator_component)
+target_link_libraries(tritium_translator_node canbus_translator_component)
 ament_target_dependencies(tritium_translator_node 
-  "rclcpp")
+  "rclcpp"
+)
 
 install(TARGETS
   canbus_translator_component

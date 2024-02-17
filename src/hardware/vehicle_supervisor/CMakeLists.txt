@@ -14,7 +14,6 @@ find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 
-add_compile_definitions(QUTMS_CAN_VESC)
 add_compile_definitions(QUTMS_CAN_VCU)
 add_compile_definitions(QUTMS_CAN_DVL)
 add_compile_definitions(QUTMS_CAN_RES)
@@ -30,7 +29,6 @@ include_directories(
 
 set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_DVL.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_EBS_CTRL.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_RES.c
@@ -43,19 +41,17 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 # ROS 2 components
 add_library(supervisor_component SHARED src/component_supervisor.cpp ${SOURCES})
-target_compile_definitions(supervisor_component PRIVATE "COMPOSITION_BUILDING_DLL")
 ament_target_dependencies(supervisor_component
   "rclcpp"
   "rclcpp_components"
   "std_msgs"
   "nav_msgs"
   "driverless_msgs"
-  "ackermann_msgs")
-rclcpp_components_register_nodes(supervisor_component "ASSupervisor")
-set(node_plugins "${node_plugins}ASSupervisor;$<TARGET_FILE:supervisor_component>\n")
+  "ackermann_msgs"
+)
+rclcpp_components_register_nodes(supervisor_component "vehicle_supervisor::ASSupervisor")
 
-add_library(supervisor_launch_component SHARED src/component_supervisor_launch.cpp ${SOURCES})
-target_compile_definitions(supervisor_launch_component PRIVATE "COMPOSITION_BUILDING_DLL")
+add_library(supervisor_launch_component SHARED src/component_supervisor_launch.cpp src/component_supervisor.cpp ${SOURCES})
 ament_target_dependencies(supervisor_launch_component
   "rclcpp"
   "rclcpp_components"
@@ -63,24 +59,20 @@ ament_target_dependencies(supervisor_launch_component
   "nav_msgs"
   "driverless_msgs"
   "ackermann_msgs")
-rclcpp_components_register_nodes(supervisor_launch_component "ASSupervisorLaunch")
-set(node_plugins "${node_plugins}ASSupervisorLaunch;$<TARGET_FILE:supervisor_launch_component>\n")
-
-ament_environment_hooks("${ament_cmake_package_templates_ENVIRONMENT_HOOK_LIBRARY_PATH}")
+rclcpp_components_register_nodes(supervisor_launch_component "vehicle_supervisor::ASSupervisorLaunch")
 
 # ROS 2 nodes
 add_executable(supervisor_node src/node_supervisor.cpp)
-target_link_libraries(supervisor_node 
-  supervisor_component)
+target_link_libraries(supervisor_node supervisor_component)
 ament_target_dependencies(supervisor_node 
-  "rclcpp")
+  "rclcpp"
+)
 
 add_executable(supervisor_launch_node src/node_supervisor_launch.cpp)
-target_link_libraries(supervisor_launch_node 
-  supervisor_launch_component
-  supervisor_component)
+target_link_libraries(supervisor_launch_node supervisor_launch_component supervisor_component)
 ament_target_dependencies(supervisor_launch_node 
-  "rclcpp")
+  "rclcpp"
+)
 
 install(TARGETS
   supervisor_component supervisor_launch_component
@@ -89,7 +81,7 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 install(TARGETS
-supervisor_node supervisor_launch_node
+  supervisor_node supervisor_launch_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

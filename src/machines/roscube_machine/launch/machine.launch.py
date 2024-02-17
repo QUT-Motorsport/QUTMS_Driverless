@@ -16,18 +16,10 @@ def generate_launch_description():
         composable_node_descriptions=[
             ComposableNode(
                 package='vehicle_supervisor',
-                plugin='ASSupervisor',
+                plugin='vehicle_supervisor::ASSupervisorLaunch',
                 name='vehicle_supervisor_launch_node',
                 parameters=[
                     {"manual_override": False},
-                ],
-                extra_arguments=[{'use_intra_process_comms': True}]),
-            ComposableNode(
-                package='canbus',
-                plugin='CANTranslator',
-                name='canbus_translator_node',
-                parameters=[
-                    get_package_share_path("canbus") / "config" / "canbus.yaml",
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}]),
             ComposableNode(
@@ -36,6 +28,14 @@ def generate_launch_description():
                 name='steering_actuator_node',
                 parameters=[
                     get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
+                extra_arguments=[{'use_intra_process_comms': True}]),
+            ComposableNode(
+                package='canbus',
+                plugin='canbus::CANTranslator',
+                name='canbus_translator_node',
+                parameters=[
+                    get_package_share_path("canbus") / "config" / "canbus.yaml",
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}]),
         ],
@@ -53,13 +53,13 @@ def generate_launch_description():
                 package="driverless_common",
                 executable="display",
             ),
-            # Node(
-            #     package="velocity_controller",
-            #     executable="velocity_controller_node",
-            #     parameters=[
-            #         get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
-            #     ],
-            # ),
+            Node(
+                package="velocity_controller",
+                executable="velocity_controller_node",
+                parameters=[
+                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+                ],
+            ),
             Node(
                 package="lidar_pipeline",
                 executable="lidar_detector_node",

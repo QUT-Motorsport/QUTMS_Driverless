@@ -24,6 +24,8 @@
 
 using std::placeholders::_1;
 
+namespace steering_actuator {
+
 typedef enum c5e_object_id {
     HOME_OFFSET = 0x607C,
     MOTION_PROFILE_TYPE = 0x6086,
@@ -128,7 +130,6 @@ c5e_state parse_state(uint16_t status_word) {
     return states[F];
 }
 
-// Steering Actuation Class
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
     // Creates
@@ -185,5 +186,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
    public:
     SteeringActuator(const rclcpp::NodeOptions &options);
 };
+
+}  // namespace steering_actuator
 
 #endif  // STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_

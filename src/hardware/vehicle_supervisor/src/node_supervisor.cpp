@@ -5,7 +5,7 @@ int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
 
     rclcpp::NodeOptions options;
-    auto node = std::make_shared<ASSupervisor>(options);
+    auto node = std::make_shared<vehicle_supervisor::ASSupervisor>(options);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);

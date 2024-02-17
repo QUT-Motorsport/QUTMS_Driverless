@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
 
     rclcpp::NodeOptions options;
-    auto node = std::make_shared<CANTranslator>(options);
+    auto node = std::make_shared<canbus::CANTranslator>(options);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);

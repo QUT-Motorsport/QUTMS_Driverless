@@ -25,6 +25,8 @@
 
 using std::placeholders::_1;
 
+namespace canbus {
+
 const int NUM_CMUS = 8;
 const int NUM_VOLTAGES = 14;
 const int NUM_TEMPERATURES = 16;
@@ -84,5 +86,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
 
     bool set_interface();
 };
+
+}  // namespace canbus
 
 #endif  // CANBUS__COMPONENT_CANBUS_TRANSLATOR_HPP_

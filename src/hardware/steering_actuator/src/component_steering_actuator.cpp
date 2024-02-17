@@ -1,6 +1,8 @@
 #include "component_steering_actuator.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+namespace steering_actuator {
+
 void SteeringActuator::configure_c5e() {
     this->send_steering_data(PROFILE_VELOCITY, (uint8_t *)&current_velocity_, 4);
     this->send_steering_data(PROFILE_ACCELERATION, (uint8_t *)&current_acceleration_, 4);
@@ -281,4 +283,6 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions & options) : Node("
     RCLCPP_INFO(this->get_logger(), "---Steering Actuator Node Initialised---");
 }
 
-RCLCPP_COMPONENTS_REGISTER_NODE(SteeringActuator);
+}  // namespace steering_actuator
+
+RCLCPP_COMPONENTS_REGISTER_NODE(steering_actuator::SteeringActuator);

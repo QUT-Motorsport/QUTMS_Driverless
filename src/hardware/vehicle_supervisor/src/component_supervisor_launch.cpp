@@ -1,6 +1,8 @@
 #include "component_supervisor_launch.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+namespace vehicle_supervisor {
+
 void ASSupervisorLaunch::launch_mission() {
     // run the mission program based on the mission selected
     // command: ros2 run mission_controller MISSION_handler_node
@@ -186,4 +188,6 @@ void ASSupervisorLaunch::run_fsm() {
 
 ASSupervisorLaunch::ASSupervisorLaunch(const rclcpp::NodeOptions & options) : ASSupervisor(options, "vehicle_supervisor_launch_node") {}
 
-RCLCPP_COMPONENTS_REGISTER_NODE(ASSupervisorLaunch)
+}  // namespace vehicle_supervisor
+
+RCLCPP_COMPONENTS_REGISTER_NODE(vehicle_supervisor::ASSupervisorLaunch)

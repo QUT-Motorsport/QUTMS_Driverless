@@ -3,6 +3,8 @@
 
 #include "component_supervisor.hpp"
 
+namespace vehicle_supervisor {
+
 class ASSupervisorLaunch : public ASSupervisor {
    private:    
     void run_fsm();
@@ -10,7 +12,8 @@ class ASSupervisorLaunch : public ASSupervisor {
 
    public:
     ASSupervisorLaunch(const rclcpp::NodeOptions & options);
-
 };
+
+}  // namespace vehicle_supervisor
 
 #endif  // VEHICLE_SUPERVISOR__COMPONENT_SUPERVISOR_LAUNCH_HPP_
