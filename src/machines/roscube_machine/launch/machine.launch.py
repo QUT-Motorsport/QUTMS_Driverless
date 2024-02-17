@@ -30,6 +30,14 @@ def generate_launch_description():
                     get_package_share_path("canbus") / "config" / "canbus.yaml",
                 ],
                 extra_arguments=[{'use_intra_process_comms': True}]),
+            ComposableNode(
+                package='steering_actuator',
+                plugin='steering_actuator::SteeringActuator',
+                name='steering_actuator_node',
+                parameters=[
+                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
+                ],
+                extra_arguments=[{'use_intra_process_comms': True}]),
         ],
         output='both',
     )
@@ -44,13 +52,6 @@ def generate_launch_description():
             Node(
                 package="driverless_common",
                 executable="display",
-            ),
-            Node(
-                package="steering_actuator",
-                executable="steering_actuator_test_node",
-                parameters=[
-                    get_package_share_path("steering_actuator") / "config" / "steering.yaml",
-                ],
             ),
             # Node(
             #     package="velocity_controller",

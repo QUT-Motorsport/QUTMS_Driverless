@@ -1,8 +1,28 @@
+#ifndef STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_
+#define STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_
+
+#include <bitset>
+#include <chrono>  // Timer library
+#include <map>     // Container library
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include <map>
 #include <string>
+
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"  // ROS Messages
+#include "can_interface.hpp"  // CAN interface library to convert data array into a canbus frame (data_2_frame)
+#include "canopen.hpp"        // CAN library to communicate systems via sdo_read and sdo_write
+#include "driverless_common/common.hpp"
+#include "driverless_msgs/msg/can.hpp"  // ROS Messages
+#include "driverless_msgs/msg/state.hpp"
+#include "rclcpp/rclcpp.hpp"  // C++ Required Libraries
+#include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/int32.hpp"
+
+using std::placeholders::_1;
 
 typedef enum c5e_object_id {
     HOME_OFFSET = 0x607C,
@@ -107,3 +127,63 @@ c5e_state parse_state(uint16_t status_word) {
     }
     return states[F];
 }
+
+// Steering Actuation Class
+class SteeringActuator : public rclcpp::Node, public CanInterface {
+   private:
+    // Creates
+    rclcpp::TimerBase::SharedPtr steering_update_timer_;
+    rclcpp::TimerBase::SharedPtr state_request_timer_;
+
+    // Creates publishers and subscribers
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
+    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
+    rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
+
+    rclcpp::CallbackGroup::SharedPtr sensor_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
+
+    // params
+    double Kp_, Ki_, Kd_, centre_range_, centre_angle_;
+    int settling_iter_, max_position_;
+
+    driverless_msgs::msg::State state_;
+    c5e_state desired_state_ = states[RTSO];
+    c5e_state current_state_ = states[NRTSO];
+    uint16_t control_method_ = MODE_RELATIVE;
+    bool motor_enabled_ = false;
+    bool centred_ = false;
+    int32_t offset_ = 0;
+    int settled_count_ = 0;
+    bool initial_enc_saved_ = false;
+    int32_t initial_enc_ = 0;
+    bool steering_ang_received_ = false;
+    double current_steering_angle_ = 0;
+    int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
+    uint32_t current_velocity_;
+    uint32_t current_acceleration_;
+
+    // time to reset node if no state received
+    std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
+
+    void configure_c5e();
+    void c5e_state_request_callback();
+    void as_state_callback(const driverless_msgs::msg::State msg);
+    void steering_angle_callback(const std_msgs::msg::Float32 msg);
+    void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped msg);
+    void can_callback(const driverless_msgs::msg::Can msg);
+
+    void pre_op_centering();
+    void target_position(int32_t target);
+    void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size);
+    void read_steering_data(uint16_t obj_index);
+
+   public:
+    SteeringActuator(const rclcpp::NodeOptions &options);
+};
+
+#endif  // STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_
