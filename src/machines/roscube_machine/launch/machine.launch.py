@@ -3,25 +3,40 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-
+from launch_ros.actions import ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 
 def generate_launch_description():
-    return LaunchDescription(
-        [
-            Node(
-                package="canbus",
-                executable="canbus_translator_socket_node",
-                parameters=[
-                    get_package_share_path("canbus") / "config" / "canbus.yaml",
-                ],
-            ),
-            Node(
-                package="vehicle_supervisor",
-                executable="vehicle_supervisor_node",
+    # safety critical signals should use intra process comms for low latency
+    scs_container = ComposableNodeContainer(
+        name='critcial_signal_container',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container_mt',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='vehicle_supervisor',
+                plugin='ASSupervisor',
+                name='vehicle_supervisor_launch_node',
                 parameters=[
                     {"manual_override": False},
                 ],
-            ),
+                extra_arguments=[{'use_intra_process_comms': True}]),
+            ComposableNode(
+                package='canbus',
+                plugin='CANTranslator',
+                name='canbus_translator_node',
+                parameters=[
+                    get_package_share_path("canbus") / "config" / "canbus.yaml",
+                ],
+                extra_arguments=[{'use_intra_process_comms': True}]),
+        ],
+        output='both',
+    )
+
+    return LaunchDescription(
+        [
+            scs_container,
             Node(
                 package="rosboard",
                 executable="rosboard_node",
@@ -37,13 +52,13 @@ def generate_launch_description():
                     get_package_share_path("steering_actuator") / "config" / "steering.yaml",
                 ],
             ),
-            Node(
-                package="velocity_controller",
-                executable="velocity_controller_node",
-                parameters=[
-                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
-                ],
-            ),
+            # Node(
+            #     package="velocity_controller",
+            #     executable="velocity_controller_node",
+            #     parameters=[
+            #         get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+            #     ],
+            # ),
             Node(
                 package="lidar_pipeline",
                 executable="lidar_detector_node",
