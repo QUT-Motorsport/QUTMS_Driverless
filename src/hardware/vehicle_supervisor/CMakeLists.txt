@@ -7,13 +7,12 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 add_compile_definitions(QUTMS_CAN_VESC)
 add_compile_definitions(QUTMS_CAN_VCU)
@@ -22,9 +21,12 @@ add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_EBS)
 add_compile_definitions(QUTMS_CAN_SW)
 
-include_directories(include)
-include_directories(${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc)
-include_directories(${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/)
+include_directories(
+  include
+  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include
+  ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
+)
 
 set (SOURCES
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
@@ -39,22 +41,55 @@ set (SOURCES
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
-add_executable(vehicle_supervisor_node src/node_supervisor.cpp ${SOURCES})
-add_executable(vehicle_supervisor_slim_node src/node_supervisor_slim.cpp ${SOURCES})
-ament_target_dependencies(vehicle_supervisor_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
-ament_target_dependencies(vehicle_supervisor_slim_node rclcpp driverless_msgs ackermann_msgs std_msgs nav_msgs)
-target_include_directories(vehicle_supervisor_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-target_include_directories(vehicle_supervisor_slim_node PUBLIC ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
+# ROS 2 components
+add_library(supervisor_component SHARED src/component_supervisor.cpp ${SOURCES})
+target_compile_definitions(supervisor_component PRIVATE "COMPOSITION_BUILDING_DLL")
+ament_target_dependencies(supervisor_component
+  "rclcpp"
+  "rclcpp_components"
+  "std_msgs"
+  "nav_msgs"
+  "driverless_msgs"
+  "ackermann_msgs")
+rclcpp_components_register_nodes(supervisor_component "ASSupervisor")
+set(node_plugins "${node_plugins}ASSupervisor;$<TARGET_FILE:supervisor_component>\n")
 
-target_include_directories(vehicle_supervisor_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+add_library(supervisor_launch_component SHARED src/component_supervisor_launch.cpp ${SOURCES})
+target_compile_definitions(supervisor_launch_component PRIVATE "COMPOSITION_BUILDING_DLL")
+ament_target_dependencies(supervisor_launch_component
+  "rclcpp"
+  "rclcpp_components"
+  "std_msgs"
+  "nav_msgs"
+  "driverless_msgs"
+  "ackermann_msgs")
+rclcpp_components_register_nodes(supervisor_launch_component "ASSupervisorLaunch")
+set(node_plugins "${node_plugins}ASSupervisorLaunch;$<TARGET_FILE:supervisor_launch_component>\n")
 
-target_include_directories(vehicle_supervisor_slim_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+ament_environment_hooks("${ament_cmake_package_templates_ENVIRONMENT_HOOK_LIBRARY_PATH}")
 
-install(TARGETS vehicle_supervisor_slim_node vehicle_supervisor_node
+# ROS 2 nodes
+add_executable(supervisor_node src/node_supervisor.cpp)
+target_link_libraries(supervisor_node 
+  supervisor_component)
+ament_target_dependencies(supervisor_node 
+  "rclcpp")
+
+add_executable(supervisor_launch_node src/node_supervisor_launch.cpp)
+target_link_libraries(supervisor_launch_node 
+  supervisor_launch_component
+  supervisor_component)
+ament_target_dependencies(supervisor_launch_node 
+  "rclcpp")
+
+install(TARGETS
+  supervisor_component supervisor_launch_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+install(TARGETS
+supervisor_node supervisor_launch_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
