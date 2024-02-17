@@ -124,7 +124,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Lo
     return msgs;
 }
 
-SocketCAN::~SocketCAN() {
+void SocketCAN::deconstruct() {
     if (this->sock != -1) {
         close(this->sock);
         this->isConnected = false;
