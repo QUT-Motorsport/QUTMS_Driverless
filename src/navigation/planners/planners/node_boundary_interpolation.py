@@ -257,7 +257,7 @@ class OrderedMapSpline(Node):
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
         self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
-        self.create_timer(1 / 10, self.planning_callback)
+        self.create_timer(1 / 20, self.planning_callback)
 
         self.declare_parameter("start_following", False)
 
