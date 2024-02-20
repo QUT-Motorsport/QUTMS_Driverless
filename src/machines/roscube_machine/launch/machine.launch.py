@@ -19,7 +19,7 @@ def generate_launch_description():
                 plugin="vehicle_supervisor::ASSupervisor",
                 name="vehicle_supervisor_node",
                 parameters=[
-                    {"manual_override": False},
+                    {"manual_override": True},
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
@@ -41,15 +41,15 @@ def generate_launch_description():
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
-            ComposableNode(
-                package="canbus",
-                plugin="canbus::CANTranslator",
-                name="canbus_translator_node",
-                parameters=[
-                    get_package_share_path("canbus") / "config" / "canbus.yaml",
-                ],
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
+            # ComposableNode(
+            #     package="canbus",
+            #     plugin="canbus::CANTranslator",
+            #     name="canbus_translator_node",
+            #     parameters=[
+            #         get_package_share_path("canbus") / "config" / "canbus.yaml",
+            #     ],
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
         ],
         output="both",
     )
@@ -57,10 +57,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             scs_container,
-            # Node(
-            #     package="rosboard",
-            #     executable="rosboard_node",
-            # ),
+            Node(
+                package="rosboard",
+                executable="rosboard_node",
+            ),
             Node(
                 package="driverless_common",
                 executable="display",

@@ -19,8 +19,8 @@ from typing import List, Tuple
 
 # for colour gradient based on intensity
 SEARCH_RANGE = 6
-SEARCH_ANGLE = pi / 3
-SEARCH_RANGE_LENIANCE = 0.3
+SEARCH_ANGLE = pi / 4
+SEARCH_RANGE_LENIANCE = 0.5
 SEARCH_ANGLE_MIN_LENIANCE = 15 * pi / 180  # 10 degrees
 
 
@@ -246,7 +246,7 @@ def get_occupancy_grid(blue_points, yellow_points, header):
 class OrderedMapSpline(Node):
     spline_const = 10  # number of points per cone
     segment = int(spline_const * 0.1)  # percentage of PPC
-    following = False
+    following = True
     current_track = None
     interp_cone_num = 3  # number of points interpolated between each pair of cones
     final_path_published = False
