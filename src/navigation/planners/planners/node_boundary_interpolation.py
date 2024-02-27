@@ -18,7 +18,7 @@ from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, midpoin
 from typing import List, Tuple
 
 # for colour gradient based on intensity
-SEARCH_RANGE = 5
+SEARCH_RANGE = 6  # Add 20% error
 SEARCH_ANGLE = pi / 3
 SEARCH_RANGE_LENIANCE = 0.1
 SEARCH_ANGLE_MIN_LENIANCE = 15 * pi / 180  # 10 degrees
@@ -118,7 +118,7 @@ def get_closest_cone(cones: list, dir: int = 1, half_track_wid: float = 1.5) -> 
 
 
 def get_next_cone(
-    cones: list, current_cone: list, last_angle: float, prefer_left_cone, search_range=5, search_angle=pi / 2
+    cones: list, current_cone: list, last_angle: float, prefer_left_cone, search_range=6, search_angle=pi / 2
 ):
     """
     Gets the next cone in the direction of travel. searches within view cone of 90 degrees.
