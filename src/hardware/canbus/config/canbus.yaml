@@ -1,6 +1,5 @@
 canbus_translator_node:
   ros__parameters:
-      ip: "192.168.2.125"
-      port: 20005
-      interface: "faro_can0"
+      interface_name: "socketcan" # "tritium"
+      interface: "can0" # "192.168.2.125"  # socketcan or tritium can
       base_frame: "base_footprint"

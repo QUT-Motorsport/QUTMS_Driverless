@@ -10,7 +10,7 @@ std::string groupAddr("239.255.60.60");
 
 TritiumCAN::TritiumCAN() { this->isConnected = false; }
 
-bool TritiumCAN::setup(std::string ip) {
+bool TritiumCAN::setup(std::string ip, rclcpp::Logger logger) {
     int port = 4876;
     std::string localLoopbackAddr("127.0.0.1");
 
@@ -42,7 +42,7 @@ bool TritiumCAN::setup(std::string ip) {
                 if (getnameinfo(ifAddrRaw, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) ==
                     0) {
                     std::string hostname(host);
-                    std::cout << "Found interface: " << hostname << std::endl;
+                    RCLCPP_INFO(logger, "Found interface: %s", hostname.c_str());
 
                     rxClient->join_multicast_group(inet_addr(groupAddr.c_str()), ifAddr->sin_addr.s_addr);
 
@@ -66,7 +66,7 @@ bool TritiumCAN::setup(std::string ip) {
     return true;
 }
 
-void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
+void TritiumCAN::tx(driverless_msgs::msg::Can *msg, rclcpp::Logger logger) {
     // std::vector<driverless_msgs::msg::Can> msgs;
     // msgs.push_back(*msg);
 
@@ -81,7 +81,11 @@ void TritiumCAN::tx(driverless_msgs::msg::Can *msg) {
     }
 
     auto msgData = this->compose_tritum_can_bytes(*msg);
-    this->tcpClient->send_data(msgData);
+    bool success = this->tcpClient->send_data(msgData);
+
+    if (!success) {
+        RCLCPP_WARN(logger, "CAN - Failed TX.");
+    }
 
     /*
         auto data = this->compose_tritium_packet(msgs);
@@ -185,7 +189,8 @@ std::shared_ptr<std::vector<uint8_t>> TritiumCAN::compose_tritum_can_bytes(drive
     return result;
 }
 
-std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
+std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx(rclcpp::Logger logger,
+                                                                       rclcpp::Clock::SharedPtr clock) {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
     // auto rxData = this->tcpClient->recieve_data();
@@ -200,7 +205,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
         int numCANBytes = rxData->size() - 16;
         int numCAN = numCANBytes / CAN_MSG_LEN;
 
-        // std::cout << ", Num CAN: " << numCAN << std::endl;
+        RCLCPP_DEBUG_THROTTLE(logger, *clock, 500, "CAN - RX %d bytes", numCAN);
 
         for (int i = 0; i < numCAN; i++) {
             uint8_t data[CAN_MSG_LEN];
@@ -211,7 +216,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> TritiumCAN::rx() {
             if (result) {
                 msgs->push_back(msg);
             } else {
-                std::cout << "RX - INVALID CAN PACKET " << std::endl;
+                RCLCPP_WARN(logger, "RX - INVALID CAN PACKET");
             }
         }
 
@@ -311,4 +316,4 @@ bool TritiumCAN::process_can_msg(uint8_t *data, driverless_msgs::msg::Can *msg) 
     return true;
 }
 
-TritiumCAN::~TritiumCAN() {}
+void TritiumCAN::deconstruct() {}

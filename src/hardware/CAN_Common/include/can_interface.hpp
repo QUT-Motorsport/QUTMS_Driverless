@@ -28,5 +28,5 @@ class CanInterface {
    protected:
     void copy_data(const std::vector<uint8_t> &vec, uint8_t *dest, size_t n);
     // Convert a data array, bool and id information to a canbus frame (data_2_frame)
-    driverless_msgs::msg::Can _d_2_f(uint32_t id, bool is_extended, uint8_t *data, uint8_t dlc);
+    driverless_msgs::msg::Can::UniquePtr _d_2_f(uint32_t id, bool is_extended, uint8_t *data, uint8_t dlc);
 };

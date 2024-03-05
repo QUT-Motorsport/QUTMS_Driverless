@@ -8,11 +8,12 @@
 #include <vector>
 
 #include "driverless_msgs/msg/can.hpp"
+#include "interface.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 const int SCAN_RECV_SIZE = 4096;
 
-class SocketCAN {
+class SocketCAN : public CANInterface {
    private:
     bool isConnected;
     int sock;
@@ -29,5 +30,5 @@ class SocketCAN {
     void compose_socketcan_frame(driverless_msgs::msg::Can *msg, struct can_frame *frame);
     bool parse_socketcan_frame(struct can_frame *frame, driverless_msgs::msg::Can *msg);
 
-    ~SocketCAN();
+    void deconstruct();
 };
