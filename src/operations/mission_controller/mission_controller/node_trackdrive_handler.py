@@ -27,17 +27,16 @@ class TrackdriveHandler(ShutdownNode):
     goal_offet = 5.0
     process = None
 
-    sim = True
-
     def __init__(self):
         super().__init__("trackdrive_logic_node")
 
         self.declare_parameter("start_following", False)
+        self.declare_parameter("sim", False)
 
         self.create_subscription(State, "system/as_status", self.state_callback, 1)
-        self.create_subscription(Odometry, "odometry/sbg_ekf", self.odom_callback, 1)
+        self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
 
-        if not self.sim:
+        if not self.get_parameter("sim").value:
             # reset odom and pose from camera
             self.reset_odom_client = self.create_client(Trigger, "zed2i/zed_node/reset_odometry")
             self.reset_pose_client = self.create_client(Trigger, "zed2i/zed_node/reset_pos_tracking")
@@ -75,7 +74,7 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            if not self.sim:
+            if not self.get_parameter("sim").value:
                 # reset odom and pose from camera
                 self.reset_odom_client.call_async(Trigger.Request())
                 self.reset_pose_client.call_async(Trigger.Request())

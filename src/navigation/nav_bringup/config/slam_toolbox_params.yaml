@@ -1,6 +1,6 @@
 slam_toolbox_node:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
 
     # Solver Params
     solver_plugin: solver_plugins::CeresSolver
