@@ -1,0 +1,7 @@
+control:
+- /control/accel_command
+- /control/driving_command
+- /vehicle/steering_angle
+- /vehicle/encoder_reading
+- /vehicle/wheel_twist
+- /vehicle/velocity
