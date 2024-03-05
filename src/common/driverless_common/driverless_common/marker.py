@@ -1,7 +1,7 @@
 from math import sqrt
 
 from builtin_interfaces.msg import Duration
-from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance, TrackDetectionStamped
+from driverless_msgs.msg import Cone, ConeDetectionStamped, ConeWithCovariance
 from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker, MarkerArray
@@ -13,7 +13,7 @@ SMALL_HEIGHT = 1.0
 MAX_NUM_CONES = 50
 
 
-def marker_array_from_map(detection: TrackDetectionStamped, ground_truth: bool = False) -> MarkerArray:
+def marker_array_from_map(detection: ConeDetectionStamped, ground_truth: bool = False) -> MarkerArray:
     cones: List[ConeWithCovariance] = detection.cones
 
     if ground_truth:  # ground truth markers out of the sim are translucent
