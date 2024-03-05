@@ -18,6 +18,7 @@ ros-humble-robot-localization
 ros-humble-slam-toolbox
 ros-humble-navigation2
 ros-humble-nav2-bringup
+ros-humble-foxglove-bridge
 scipy
 scikit-learn
 transforms3d
