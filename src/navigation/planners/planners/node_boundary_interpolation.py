@@ -18,9 +18,9 @@ from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, midpoin
 from typing import List, Tuple
 
 # for colour gradient based on intensity
-SEARCH_RANGE = 5
+SEARCH_RANGE = 6
 SEARCH_ANGLE = pi / 3
-SEARCH_RANGE_LENIANCE = 0.1
+SEARCH_RANGE_LENIANCE = 0.3
 SEARCH_ANGLE_MIN_LENIANCE = 15 * pi / 180  # 10 degrees
 
 

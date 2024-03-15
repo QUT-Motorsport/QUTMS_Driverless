@@ -17,9 +17,10 @@
     <depend>vehicle_urdf</depend>
     <depend>vehicle_supervisor</depend>
     <depend>terminal_control</depend>
-    <depend>pure_pursuit</depend>
+    <depend>planners</depend>
     <depend>pure_pursuit_cpp</depend>
     <depend>map_creation</depend>
+    <depend>nav_bringup</depend>
     <depend>sensors</depend>
     <depend>driverless_common</depend>
     <depend>lidar_pipeline</depend>

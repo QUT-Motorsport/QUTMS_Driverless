@@ -26,27 +26,27 @@ install(TARGETS pure_pursuit
         DESTINATION lib/${PROJECT_NAME})
 
 # Executable for node_pure_pursuit
-add_executable(node_pure_pursuit src/node_pure_pursuit.cpp)
-ament_target_dependencies(node_pure_pursuit ${Dependencies})
-target_include_directories(node_pure_pursuit PUBLIC
+add_executable(pure_pursuit_node src/node_pure_pursuit.cpp)
+ament_target_dependencies(pure_pursuit_node ${Dependencies})
+target_include_directories(pure_pursuit_node PUBLIC
         ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-target_include_directories(node_pure_pursuit PUBLIC
+target_include_directories(pure_pursuit_node PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
-target_link_libraries(node_pure_pursuit pure_pursuit)  # Link with the pure_pursuit library
-install(TARGETS node_pure_pursuit
+target_link_libraries(pure_pursuit_node pure_pursuit)  # Link with the pure_pursuit library
+install(TARGETS pure_pursuit_node
         DESTINATION lib/${PROJECT_NAME})
 
 # Executable for lifecycle_pure_pursuit
-add_executable(lifecycle_pure_pursuit src/lifecycle_pure_pursuit.cpp)
-ament_target_dependencies(lifecycle_pure_pursuit ${Dependencies})
-target_include_directories(lifecycle_pure_pursuit PUBLIC
+add_executable(pure_pursuit_lifecycle src/lifecycle_pure_pursuit.cpp)
+ament_target_dependencies(pure_pursuit_lifecycle ${Dependencies})
+target_include_directories(pure_pursuit_lifecycle PUBLIC
         ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include)
-target_include_directories(lifecycle_pure_pursuit PUBLIC
+target_include_directories(pure_pursuit_lifecycle PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
-target_link_libraries(lifecycle_pure_pursuit pure_pursuit)  # Link with the pure_pursuit library
-install(TARGETS lifecycle_pure_pursuit
+target_link_libraries(pure_pursuit_lifecycle pure_pursuit)  # Link with the pure_pursuit library
+install(TARGETS pure_pursuit_lifecycle
         DESTINATION lib/${PROJECT_NAME})
 
 # config folder

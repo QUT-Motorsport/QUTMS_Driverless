@@ -1,6 +1,6 @@
 odom_filter_node:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     # 1. Set the map_frame, odom_frame, and base_link frames to the appropriate frame names for your system.
     #     1a. If your system does not have a map_frame, just remove it, and make sure "world_frame" is set to the value of odom_frame.
     # 2. If you are fusing continuous position data such as wheel encoder odometry, visual odometry, or IMU data, set "world_frame"
