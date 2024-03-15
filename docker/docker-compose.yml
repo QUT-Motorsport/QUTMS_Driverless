@@ -12,7 +12,8 @@ x-volumes-roscube: &volumes-roscube
     volumes:
         - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
         - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../../datasets:/home/${USERNAME}/driverless_ws/datasets
+        - ../tools:/home/${USERNAME}/driverless_ws/tools
+        - ../bags:/home/${USERNAME}/driverless_ws/bags
         # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
         - /dev/sbg:/dev/sbg
@@ -24,7 +25,8 @@ x-volumes-jetson: &volumes-jetson
         # mount in X11 stuff for display
         - /tmp/.X11-unix:/tmp/.X11-unix
         - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../../datasets:/home/${USERNAME}/driverless_ws/datasets
+        - ../tools:/home/${USERNAME}/driverless_ws/tools
+        - ../bags:/home/${USERNAME}/driverless_ws/bags
 
 x-devices: &devices
     devices:
@@ -99,6 +101,34 @@ services:
         build:
             context: ../
             dockerfile: ./docker/Dockerfile.roscube
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *volumes-roscube
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: bash
+
+    roscube_new:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.roscube_new
+            args:
+                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
+        <<: *volumes-roscube
+        <<: *user
+        <<: *devices
+        <<: *network
+        <<: *interactive
+        command: ros2 launch roscube_machine machine.launch.py
+
+    roscube_terminal_new:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.roscube_new
             args:
                 USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
                 HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}

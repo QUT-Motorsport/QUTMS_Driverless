@@ -1,7 +1,7 @@
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource, FrontendLaunchDescriptionSource
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
@@ -76,6 +76,11 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("sensors") / "launch" / "vlp32.launch.py")
+                ),
+            ),
+            IncludeLaunchDescription(
+                launch_description_source=FrontendLaunchDescriptionSource(
+                    launch_file_path=str(get_package_share_path("foxglove_bridge") /  "launch" / "foxglove_bridge_launch.xml")
                 ),
             ),
             IncludeLaunchDescription(
