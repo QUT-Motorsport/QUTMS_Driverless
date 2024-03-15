@@ -1,5 +1,6 @@
 *
+!bags/
 !src/
+!tools/
 !docker/
-!installation/humble_environment.yml
 !csv_data/
