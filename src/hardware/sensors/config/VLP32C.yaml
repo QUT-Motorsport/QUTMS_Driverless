@@ -17,11 +17,13 @@ velodyne_laserscan_node:
         ring: -1
         resolution: 0.01
 
-velodyne_convert_node:
+velodyne_transform_node:
     ros__parameters:
         calibration: VeloView-VLP32C.yaml
         min_range: 0.5
         max_range: 130.0
         view_direction: 0.0
-        view_width: 3.141592
+        view_width: 6.282185
         organize_cloud: true
+        fixed_frame: ""
+        target_frame: ""

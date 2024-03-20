@@ -1,5 +1,5 @@
 rpm: 600
 returns: Strongest
 fov:
-  start: 300
-  end: 60
+  start: 270
+  end: 90

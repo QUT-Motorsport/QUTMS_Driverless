@@ -94,7 +94,6 @@ void SocketCAN::tx(driverless_msgs::msg::Can *msg, rclcpp::Logger logger) {
 std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Logger logger,
                                                                       rclcpp::Clock::SharedPtr clock) {
     auto msgs = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
-    driverless_msgs::msg::Can rxMsg;
 
     if (this->isConnected) {
         // only need to try Rx if we're connected
@@ -113,6 +112,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Lo
 
                     // convert appropriate bytes from socket into a can_frame
                     struct can_frame *frame = (struct can_frame *)&(this->rxBuf[offset]);
+                    driverless_msgs::msg::Can rxMsg;
                     if (parse_socketcan_frame(frame, &rxMsg)) {
                         msgs->push_back(rxMsg);
                     }
@@ -124,7 +124,7 @@ std::shared_ptr<std::vector<driverless_msgs::msg::Can>> SocketCAN::rx(rclcpp::Lo
     return msgs;
 }
 
-SocketCAN::~SocketCAN() {
+void SocketCAN::deconstruct() {
     if (this->sock != -1) {
         close(this->sock);
         this->isConnected = false;
