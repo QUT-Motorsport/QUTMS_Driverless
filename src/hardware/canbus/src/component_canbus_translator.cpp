@@ -1,10 +1,12 @@
 #include "component_canbus_translator.hpp"
+
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace canbus {
 
 void CANTranslator::update_twist() {
-    geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(new geometry_msgs::msg::TwistWithCovarianceStamped());
+    geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(
+        new geometry_msgs::msg::TwistWithCovarianceStamped());
     // use last velocity and steering angle to update twist
     twist_msg->header.stamp = this->now();
     twist_msg->header.frame_id = ros_base_frame_;  // PARAMETERISE
@@ -23,7 +25,7 @@ void CANTranslator::canmsg_timer() {
         msg->id = can_msg.id;
         msg->dlc = can_msg.dlc;
         msg->data = can_msg.data;
-        
+
         // only publish can messages with IDs we care about to not flood memory
         uint32_t canopen_index = std::find(canopen_ids.begin(), canopen_ids.end(), msg->id) - canopen_ids.begin();
         if (canopen_index < canopen_ids.size()) {
@@ -49,7 +51,9 @@ void CANTranslator::canmsg_timer() {
         if (vesc_id < 4) {
             if (vesc_masked_id == VESC_CAN_PACKET_STATUS) {
                 // 3 wheel drive :/
-                if (vesc_id == 1) { continue; }
+                if (vesc_id == 1) {
+                    continue;
+                }
 
                 uint8_t data[8];
                 this->copy_data(msg->data, data, 8);
@@ -62,7 +66,7 @@ void CANTranslator::canmsg_timer() {
                 wheel_speeds_[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * WHEEL_DIAMETER / 60;
                 driverless_msgs::msg::Float32Stamped::UniquePtr speed_msg(new driverless_msgs::msg::Float32Stamped());
                 speed_msg->header.stamp = this->now();
-                speed_msg->header.frame_id = ros_base_frame_; // could change to wheel frame
+                speed_msg->header.frame_id = ros_base_frame_;  // could change to wheel frame
                 speed_msg->data = wheel_speeds_[vesc_id];
                 wheel_speed_pubs_[vesc_id]->publish(std::move(speed_msg));
 
@@ -102,7 +106,7 @@ void CANTranslator::canmsg_timer() {
             Parse_VCU_TransmitSteering(data, &steering_0_raw, &steering_1_raw, &adc_0, &adc_1);
             // Log steering angle
             RCLCPP_DEBUG(this->get_logger(), "Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                            steering_0_raw, steering_1_raw, adc_0, adc_1);
+                         steering_0_raw, steering_1_raw, adc_0, adc_1);
             double steering_0 = steering_0_raw / 10.0;
             double steering_1 = steering_1_raw / 10.0;
 
@@ -116,8 +120,8 @@ void CANTranslator::canmsg_timer() {
                 update_twist();
             } else {
                 RCLCPP_FATAL(this->get_logger(),
-                                "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i",
-                                steering_0_raw, steering_1_raw, adc_0, adc_1);
+                             "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i", steering_0_raw,
+                             steering_1_raw, adc_0, adc_1);
             }
         }
     }
@@ -157,11 +161,13 @@ bool CANTranslator::set_interface() {
     return true;
 }
 
-CANTranslator::CANTranslator(const rclcpp::NodeOptions & options) : Node("canbus_translator_node", options) {
+CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_translator_node", options) {
     ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
 
     // set can interface
-    if (!set_interface()) { return; }
+    if (!set_interface()) {
+        return;
+    }
 
     timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     sub_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -170,7 +176,8 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions & options) : Node("canbus
     sub_opt.callback_group = sub_cb_group_;
 
     // retrieve can messages from queue
-    timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CANTranslator::canmsg_timer, this), timer_cb_group_);
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&CANTranslator::canmsg_timer, this),
+                                     timer_cb_group_);
     // subscribe to can messages from ROS system
     can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
         "/can/canbus_carbound", QOS_ALL, std::bind(&CANTranslator::canmsg_callback, this, _1), sub_opt);

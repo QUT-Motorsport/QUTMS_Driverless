@@ -6,14 +6,14 @@
 namespace vehicle_supervisor {
 
 class ASSupervisorLaunch : public ASSupervisor {
-   private:    
+   private:
     void run_fsm();
     void launch_mission();
 
     void dvl_heartbeat_timer_callback();
 
    public:
-    ASSupervisorLaunch(const rclcpp::NodeOptions & options);
+    ASSupervisorLaunch(const rclcpp::NodeOptions& options);
 };
 
 }  // namespace vehicle_supervisor

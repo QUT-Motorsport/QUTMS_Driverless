@@ -1,4 +1,5 @@
 #include "component_supervisor.hpp"
+
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace vehicle_supervisor {
@@ -26,8 +27,8 @@ void ASSupervisor::canopen_callback(const driverless_msgs::msg::Can::SharedPtr m
         Parse_RES_Heartbeat((uint8_t *)&msg->data[0], &this->RES_status);
         // Log RES state
         RCLCPP_DEBUG(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
-                        this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
-                        this->RES_status.radio_quality);
+                     this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
+                     this->RES_status.radio_quality);
         // // publish RES status
         // driverless_msgs::msg::RES res_msg;
         // res_msg.sw_k2 = this->RES_status.sw_k2;
@@ -69,7 +70,7 @@ void ASSupervisor::can_callback(const driverless_msgs::msg::Can::SharedPtr msg) 
 
         Parse_SW_Heartbeat(data, &this->SW_heartbeat);
         RCLCPP_DEBUG(this->get_logger(), "SW State: %02x Mission Id: %d", this->SW_heartbeat.stateID,
-                        this->SW_heartbeat.missionID);
+                     this->SW_heartbeat.missionID);
     }
 }
 
@@ -100,8 +101,8 @@ void ASSupervisor::lap_counter_callback(const std_msgs::msg::UInt8::SharedPtr ms
     this->DVL_systemStatus._fields.lap_counter = msg->data;
 }
 
-void ASSupervisor::steering_state_callback(const std_msgs::msg::Bool::SharedPtr msg) { 
-    this->ros_state.navigation_ready = msg->data; 
+void ASSupervisor::steering_state_callback(const std_msgs::msg::Bool::SharedPtr msg) {
+    this->ros_state.navigation_ready = msg->data;
 }
 
 void ASSupervisor::shutdown_callback(const driverless_msgs::msg::Shutdown::SharedPtr msg) {
@@ -121,8 +122,7 @@ void ASSupervisor::publish_heartbeart() {
         or_DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
         or_DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
         auto heartbeat = Compose_DVL_Heartbeat(&or_DVL_heartbeat);
-        this->can_pub_->publish(std::move(
-            this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
+        this->can_pub_->publish(std::move(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
 
         driverless_msgs::msg::State::UniquePtr or_ros_state(new driverless_msgs::msg::State());
         or_ros_state->state = or_DVL_heartbeat.stateID;
@@ -136,8 +136,7 @@ void ASSupervisor::publish_heartbeart() {
     }
     // CAN publisher
     auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
-    this->can_pub_->publish(std::move(
-        this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
+    this->can_pub_->publish(std::move(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
 
     // ROS publisher
     driverless_msgs::msg::State::UniquePtr state_msg(new driverless_msgs::msg::State());
@@ -170,8 +169,8 @@ void ASSupervisor::res_alive_timer_callback() {
 void ASSupervisor::dataLogger_timer_callback() {
     // system status
     auto systemStatusMsg = Compose_DVL_SystemStatus(&this->DVL_systemStatus);
-    this->can_pub_->publish(std::move(
-        this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data))));
+    this->can_pub_->publish(
+        std::move(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data))));
 
     driverless_msgs::msg::SystemStatus systemStatus_ROSmsg;
     systemStatus_ROSmsg.as_state = this->DVL_systemStatus._fields.AS_state;
@@ -385,7 +384,7 @@ void ASSupervisor::reset_dataLogger() {
     this->DVL_drivingDynamics1._fields.motor_moment_target = 0;
 }
 
-ASSupervisor::ASSupervisor(const rclcpp::NodeOptions & options, std::string name) : Node(name, options) {
+ASSupervisor::ASSupervisor(const rclcpp::NodeOptions &options, std::string name) : Node(name, options) {
     // Setup inital states
     this->ros_state.state = DVL_STATES::DVL_STATE_START;
     this->ros_state.mission = DVL_MISSION::DVL_MISSION_NONE;
@@ -415,8 +414,7 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions & options, std::string name
 
     // Steering sub
     this->steering_angle_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
-        "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1),
-        sensor_opt);
+        "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1), sensor_opt);
 
     // Velocity sub
     this->velocity_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
@@ -432,27 +430,23 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions & options, std::string name
 
     // steering ready sub
     this->steering_ready_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1),
-        ctrl_opt);
+        "/system/steering_ready", QOS_LATEST, std::bind(&ASSupervisor::steering_state_callback, this, _1), ctrl_opt);
 
     // Shutdown emergency
     this->shutdown_sub_ = this->create_subscription<driverless_msgs::msg::Shutdown>(
         "/system/shutdown", 10, std::bind(&ASSupervisor::shutdown_callback, this, _1), timer_opt);
 
     // AS Heartbeat
-    this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
-                                                        std::bind(&ASSupervisor::dvl_heartbeat_timer_callback, this),
-                                                        timer_cb_group_);
+    this->heartbeat_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(20), std::bind(&ASSupervisor::dvl_heartbeat_timer_callback, this), timer_cb_group_);
 
     // RES Alive
-    this->res_alive_timer_ =
-        this->create_wall_timer(std::chrono::milliseconds(4000), std::bind(&ASSupervisor::res_alive_timer_callback, this),
-                                timer_cb_group_);
+    this->res_alive_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(4000), std::bind(&ASSupervisor::res_alive_timer_callback, this), timer_cb_group_);
 
     // Data Logger
-    this->dataLogger_timer_ =
-        this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_timer_callback, this),
-                                timer_cb_group_);
+    this->dataLogger_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_timer_callback, this), timer_cb_group_);
 
     // Publishers
     this->logging_drivingDynamics1_pub_ =

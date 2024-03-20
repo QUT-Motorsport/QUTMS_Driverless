@@ -1,9 +1,10 @@
 #include "component_velocity_controller.hpp"
+
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace velocity_controller {
 
-VelocityController::VelocityController(const rclcpp::NodeOptions & options) : Node("velocity_controller_node", options) {
+VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Node("velocity_controller_node", options) {
     // PID controller parameters
     this->declare_parameter<float>("Kp", 0.05);
     this->declare_parameter<float>("Ki", 0);
@@ -32,7 +33,7 @@ VelocityController::VelocityController(const rclcpp::NodeOptions & options) : No
 
     // Control loop -> 10ms so runs at double speed heartbeats are sent at
     controller_timer_ = this->create_wall_timer(std::chrono::milliseconds(loop_ms_),
-                                                     std::bind(&VelocityController::controller_callback, this));
+                                                std::bind(&VelocityController::controller_callback, this));
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
     accel_pub_ = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
@@ -57,8 +58,8 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
     max_accel_per_tick_ = loop_ms_ / (1000 * min_time_to_max_accel_sec_);
 
     RCLCPP_DEBUG(this->get_logger(),
-                 "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_,
-                 Ki_, max_integral_torque_, histerisis_kickin_ms_, histerisis_reset_ms_);
+                 "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_, Ki_,
+                 max_integral_torque_, histerisis_kickin_ms_, histerisis_reset_ms_);
 }
 
 void VelocityController::ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
@@ -131,8 +132,8 @@ void VelocityController::controller_callback() {
 
 void VelocityController::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
     state_ = msg;
-    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->navigation_ready 
-        && msg->mission != driverless_msgs::msg::State::INSPECTION) {
+    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->navigation_ready &&
+        msg->mission != driverless_msgs::msg::State::INSPECTION) {
         motors_enabled_ = true;
     } else {
         motors_enabled_ = false;

@@ -1,4 +1,5 @@
 #include "component_supervisor_launch.hpp"
+
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace vehicle_supervisor {
@@ -191,9 +192,11 @@ void ASSupervisorLaunch::dvl_heartbeat_timer_callback() {
     publish_heartbeart();
 }
 
-ASSupervisorLaunch::ASSupervisorLaunch(const rclcpp::NodeOptions & options) : ASSupervisor(options, "vehicle_supervisor_launch_node") {
+ASSupervisorLaunch::ASSupervisorLaunch(const rclcpp::NodeOptions& options)
+    : ASSupervisor(options, "vehicle_supervisor_launch_node") {
     // override the heartbeat timer
-    this->heartbeat_timer_ = this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&ASSupervisorLaunch::dvl_heartbeat_timer_callback, this));
+    this->heartbeat_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(20), std::bind(&ASSupervisorLaunch::dvl_heartbeat_timer_callback, this));
 }
 
 }  // namespace vehicle_supervisor

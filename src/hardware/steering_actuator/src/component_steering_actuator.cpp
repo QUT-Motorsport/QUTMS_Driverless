@@ -1,4 +1,5 @@
 #include "component_steering_actuator.hpp"
+
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace steering_actuator {
@@ -25,8 +26,7 @@ void SteeringActuator::c5e_state_request_callback() {
 
 // Check State to enable or disable motor
 void SteeringActuator::as_state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
-    if (msg->state == driverless_msgs::msg::State::DRIVING ||
-        msg->state == driverless_msgs::msg::State::ACTIVATE_EBS) {
+    if (msg->state == driverless_msgs::msg::State::DRIVING || msg->state == driverless_msgs::msg::State::ACTIVATE_EBS) {
         // Enable motor
         motor_enabled_ = true;
     } else {
@@ -62,7 +62,7 @@ void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::Acker
     }
     target = std::max(std::min(target, max_position_ - offset_), -max_position_ - offset_);
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", requested_steering_angle,
-                            target);
+                         target);
     this->target_position(target);
 }
 
@@ -112,9 +112,9 @@ void SteeringActuator::can_callback(const driverless_msgs::msg::Can::SharedPtr m
             uint16_t status_word = (msg->data[5] << 8 | msg->data[4]);
             current_state_ = parse_state(status_word);
             RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 100, "Status word: %s",
-                                    std::bitset<16>(status_word).to_string().c_str());
+                                  std::bitset<16>(status_word).to_string().c_str());
             RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 100, "Current state: %s",
-                                    current_state_.name.c_str());
+                                  current_state_.name.c_str());
 
             if (motor_enabled_) {
                 if (current_state_ == states[RTSO]) {
@@ -212,7 +212,7 @@ void SteeringActuator::read_steering_data(uint16_t obj_index) {
     can_pub_->publish(std::move(_d_2_f(id, 0, out, sizeof(out))));
 }
 
-SteeringActuator::SteeringActuator(const rclcpp::NodeOptions & options) : Node("steering_actuator_node", options) {
+SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("steering_actuator_node", options) {
     // Steering parameters
     this->declare_parameter<int>("velocity", 10000);
     this->declare_parameter<int>("velocity_centering", 100);
@@ -262,14 +262,13 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions & options) : Node("
     state_sub_ = this->create_subscription<driverless_msgs::msg::State>(
         "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1), control_cb_opt);
 
-    steering_update_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
-                                                        std::bind(&SteeringActuator::pre_op_centering, this),
-                                                        sensor_cb_group_);
+    steering_update_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(50), std::bind(&SteeringActuator::pre_op_centering, this), sensor_cb_group_);
 
     // Create state request and config timers
-    state_request_timer_ = this->create_wall_timer(std::chrono::milliseconds(200),
-                                                    std::bind(&SteeringActuator::c5e_state_request_callback, this),
-                                                    control_cb_group_);
+    state_request_timer_ =
+        this->create_wall_timer(std::chrono::milliseconds(200),
+                                std::bind(&SteeringActuator::c5e_state_request_callback, this), control_cb_group_);
 
     // Create publisher to topic "canbus_carbound"
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", QOS_ALL);

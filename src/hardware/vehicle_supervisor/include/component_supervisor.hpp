@@ -14,11 +14,11 @@
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/driving_dynamics1.hpp"
+#include "driverless_msgs/msg/float32_stamped.hpp"
 #include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/system_status.hpp"
-#include "driverless_msgs/msg/float32_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -83,14 +83,13 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void dvl_heartbeat_timer_callback();
     void res_alive_timer_callback();
     void dataLogger_timer_callback();
-    
+
     void run_fsm();
     void publish_heartbeart();
     void reset_dataLogger();
 
    public:
-    ASSupervisor(const rclcpp::NodeOptions & options, std::string name="vehicle_supervisor_node");
-
+    ASSupervisor(const rclcpp::NodeOptions& options, std::string name = "vehicle_supervisor_node");
 };
 
 }  // namespace vehicle_supervisor

@@ -11,7 +11,6 @@
 #include "CAN_VCU.h"
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
-#include "interface.hpp"
 #include "SocketCAN.hpp"
 #include "TritiumCAN.hpp"
 #include "can_interface.hpp"
@@ -19,6 +18,7 @@
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/float32_stamped.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
+#include "interface.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
@@ -83,7 +83,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const;
 
    public:
-    CANTranslator(const rclcpp::NodeOptions & options);
+    CANTranslator(const rclcpp::NodeOptions& options);
     ~CANTranslator() override;
 
     bool set_interface();

@@ -5,8 +5,8 @@
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_common/common.hpp"
-#include "driverless_msgs/msg/state.hpp"
 #include "driverless_msgs/msg/float32_stamped.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -45,11 +45,12 @@ class VelocityController : public rclcpp::Node {
     bool received_ackermann_ = false;
 
     float avg_velocity_;
-    ackermann_msgs::msg::AckermannDriveStamped::SharedPtr target_ackermann_ = std::make_shared<ackermann_msgs::msg::AckermannDriveStamped>();
+    ackermann_msgs::msg::AckermannDriveStamped::SharedPtr target_ackermann_ =
+        std::make_shared<ackermann_msgs::msg::AckermannDriveStamped>();
     float prev_accel_ = 0;
 
    public:
-    VelocityController(const rclcpp::NodeOptions & options);
+    VelocityController(const rclcpp::NodeOptions& options);
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent& event);
 
@@ -60,6 +61,6 @@ class VelocityController : public rclcpp::Node {
     void controller_callback();
 };
 
-}  // namespace vehicle_supervisor
+}  // namespace velocity_controller
 
 #endif  // VELOCITY_CONTROLLER__COMPONENT_VELOCITY_CONTROLLER_HPP_

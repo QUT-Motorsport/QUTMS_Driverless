@@ -1,11 +1,11 @@
 #ifndef STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_
 #define STEERING_ACTUATOR__COMPONENT_STEERING_ACTUATOR_HPP_
 
-#include <bitset>
-#include <chrono>
-#include <map>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <bitset>
+#include <chrono>
 #include <map>
 #include <string>
 
