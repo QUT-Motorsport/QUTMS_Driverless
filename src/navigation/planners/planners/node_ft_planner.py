@@ -1,14 +1,14 @@
 from math import atan2, cos, pi, sin, sqrt
 import time
-import cv2
 
+import cv2
+from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 import numpy as np
 import scipy.interpolate as scipy_interpolate
-from transforms3d.euler import euler2quat
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from transforms3d.euler import quat2euler
+from transforms3d.euler import euler2quat, quat2euler
 
 import rclpy
 from rclpy.node import Node
@@ -20,8 +20,6 @@ from nav_msgs.msg import MapMetaData, OccupancyGrid, Path
 
 from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, midpoint, wrap_to_pi
 from driverless_common.draw import draw_map
-
-from fsd_path_planning import PathPlanner, MissionTypes, ConeTypes
 
 from typing import List, Tuple
 
@@ -60,6 +58,7 @@ def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree=3, s=
 
     return spline_x, spline_y
 
+
 def make_path_msg(points) -> Path:
     spline_len = len(points)
     poses: List[PoseStamped] = []  # target spline poses
@@ -93,6 +92,7 @@ def make_path_msg(points) -> Path:
     path_msg.header.frame_id = "track"
     path_msg.poses = poses
     return path_msg
+
 
 def get_occupancy_grid(blue_points, yellow_points, header):
     # turn spline boundary points into an occupancy grid map
@@ -137,6 +137,7 @@ def get_occupancy_grid(blue_points, yellow_points, header):
     map.data = grid.ravel().tolist()
     return map
 
+
 class FaSTTUBeBoundaryExtractor(Node):
     following = False
     current_track = None
@@ -174,7 +175,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
         self.get_logger().info("---Ordered path planner node initalised---")
-    
+
     def get_planner_cfg(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)
 
@@ -289,7 +290,15 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
 
-        path, ordered_blues, ordered_yellows, virt_blues, virt_yellows, _, _ = self.path_planner.calculate_path_in_global_frame(
+        (
+            path,
+            ordered_blues,
+            ordered_yellows,
+            virt_blues,
+            virt_yellows,
+            _,
+            _,
+        ) = self.path_planner.calculate_path_in_global_frame(
             global_cones, car_position, car_direction, return_intermediate_results=True
         )
 
@@ -297,7 +306,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         if use_virt:
             ordered_blues = virt_blues
             ordered_yellows = virt_yellows
-        
+
         if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
             self.get_logger().warn("No cones found", throttle_duration_sec=1)
             return
@@ -313,12 +322,12 @@ class FaSTTUBeBoundaryExtractor(Node):
         yx, yy = approximate_b_spline_path(
             [cone[0] for cone in ordered_yellows],
             [cone[1] for cone in ordered_yellows],
-            spline_len, yellow_degree, 0.01,
+            spline_len,
+            yellow_degree,
+            0.01,
         )
         bx, by = approximate_b_spline_path(
-            [cone[0] for cone in ordered_blues], 
-            [cone[1] for cone in ordered_blues], 
-            spline_len, blue_degree, 0.01
+            [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], spline_len, blue_degree, 0.01
         )
         # turn individual x,y lists into points lists
         blue_points = []
@@ -346,6 +355,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.current_map = map
         self.map_pub.publish(self.current_map)
         self.map_meta_pub.publish(self.current_map.info)
+
 
 def main(args=None):
     # begin ros node
