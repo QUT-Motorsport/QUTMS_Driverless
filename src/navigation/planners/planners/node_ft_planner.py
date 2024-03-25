@@ -25,11 +25,6 @@ from fsd_path_planning import PathPlanner, MissionTypes, ConeTypes
 
 from typing import List, Tuple
 
-# for colour gradient based on intensity
-SEARCH_RANGE = 6
-SEARCH_ANGLE = pi / 3
-SEARCH_RANGE_LENIANCE = 0.3
-SEARCH_ANGLE_MIN_LENIANCE = 15 * pi / 180  # 10 degrees
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree=3, s=0) -> Tuple[list, list]:
     """
@@ -147,10 +142,8 @@ class FaSTTUBeBoundaryExtractor(Node):
     current_track = None
     spline_const = 10  # number of points per cone
 
-    path_planner = PathPlanner(MissionTypes.trackdrive)
-
     def __init__(self):
-        super().__init__("ordered_map_spline_node")
+        super().__init__("ft_planner_node")
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
@@ -178,7 +171,74 @@ class FaSTTUBeBoundaryExtractor(Node):
             self.following = True
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
+        self.path_planner = PathPlanner(**self.get_planner_cfg())
+
         self.get_logger().info("---Ordered path planner node initalised---")
+    
+    def get_planner_cfg(self):
+        self.declare_parameter("mission", MissionTypes.trackdrive)
+
+        # cone sorting
+        self.declare_parameter("max_n_neighbors", 5)
+        self.declare_parameter("max_dist", 6.5)
+        self.declare_parameter("max_dist_to_first", 6.0)
+        self.declare_parameter("max_length", 12)
+        self.declare_parameter("threshold_directional_angle", 40)
+        self.declare_parameter("threshold_absolute_angle", 65)
+        self.declare_parameter("use_unknown_cones", True)
+
+        cone_sorting_kwargs = {
+            "max_n_neighbors": self.get_parameter("max_n_neighbors").value,
+            "max_dist": self.get_parameter("max_dist").value,
+            "max_dist_to_first": self.get_parameter("max_dist_to_first").value,
+            "max_length": self.get_parameter("max_length").value,
+            "threshold_directional_angle": np.deg2rad(self.get_parameter("threshold_directional_angle").value),
+            "threshold_absolute_angle": np.deg2rad(self.get_parameter("threshold_absolute_angle").value),
+            "use_unknown_cones": self.get_parameter("use_unknown_cones").value,
+        }
+
+        # cone fitting
+        self.declare_parameter("smoothing", 0.2)
+        self.declare_parameter("predict_every", 0.1)
+        self.declare_parameter("max_deg", 3)
+
+        cone_fitting_kwargs = {
+            "smoothing": self.get_parameter("smoothing").value,
+            "predict_every": self.get_parameter("predict_every").value,
+            "max_deg": self.get_parameter("max_deg").value,
+        }
+
+        # path calculation
+        self.declare_parameter("maximal_distance_for_valid_path", 5)
+        self.declare_parameter("mpc_path_length", 20)
+        self.declare_parameter("mpc_prediction_horizon", 40)
+
+        path_calculation_kwargs = {
+            "maximal_distance_for_valid_path": self.get_parameter("maximal_distance_for_valid_path").value,
+            "mpc_path_length": self.get_parameter("mpc_path_length").value,
+            "mpc_prediction_horizon": self.get_parameter("mpc_prediction_horizon").value,
+        }
+
+        # cone matching
+        self.declare_parameter("min_track_width", 4.5)
+        self.declare_parameter("max_search_range", 5)
+        self.declare_parameter("max_search_angle", 50)
+        self.declare_parameter("matches_should_be_monotonic", True)
+
+        cone_matching_kwargs = {
+            "min_track_width": self.get_parameter("min_track_width").value,
+            "max_search_range": self.get_parameter("max_search_range").value,
+            "max_search_angle": np.deg2rad(self.get_parameter("max_search_angle").value),
+            "matches_should_be_monotonic": self.get_parameter("matches_should_be_monotonic").value,
+        }
+
+        return {
+            "mission": self.get_parameter("mission").value,
+            "cone_sorting_kwargs": cone_sorting_kwargs,
+            "cone_fitting_kwargs": cone_fitting_kwargs,
+            "path_calculation_kwargs": path_calculation_kwargs,
+            "cone_matching_kwargs": cone_matching_kwargs,
+        }
 
     def map_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received map")
@@ -233,10 +293,10 @@ class FaSTTUBeBoundaryExtractor(Node):
             global_cones, car_position, car_direction, return_intermediate_results=True
         )
 
-        # use_virt = True
-        # if use_virt:
-        #     ordered_blues = virt_blues
-        #     ordered_yellows = virt_yellows
+        use_virt = True
+        if use_virt:
+            ordered_blues = virt_blues
+            ordered_yellows = virt_yellows
         
         if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
             self.get_logger().warn("No cones found", throttle_duration_sec=1)
