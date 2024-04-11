@@ -1,8 +1,8 @@
 #Verifying User Decision
 read -p "This script will install and configure the QUTMS Driverless software. Please only run this on a fresh Ubuntu installation. Do not run this to rebuild. Proceed? (y/n) " choice
-case "$choice" in 
+case "$choice" in
   y|Y ) echo "Proceeding with installation..." ;;
-  n|N ) echo "Cancelled." 
+  n|N ) echo "Cancelled."
         exit 0;;
   * ) echo "Invalid input. Please enter y or n.";;
 esac
@@ -40,7 +40,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null  
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update -y
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo apt install -y docker-compose
@@ -49,7 +49,7 @@ sudo usermod -aG docker ${USER}
 echo "Re-enter password to Assign Permissions"
 su -s ${USER}
 sudo chown "$USER":"$USER" /home/"$USER"/.docker -R
-sudo chmod 666 /var/run/docker.sock 
+sudo chmod 666 /var/run/docker.sock
 # making
 cd /home/$USER/dev/repos/QUTMS_Driverless/tools/
 ./MakeROS.sh
