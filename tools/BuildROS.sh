@@ -44,12 +44,6 @@ echo \
 sudo apt-get update -y
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo apt install -y docker-compose
-# Create directory 
-mkdir -p /home/$USER/dev/repos/
-cd /home/$USER/dev/repos/
-# Clone the repository
-git clone https://github.com/QUT-Motorsport/QUTMS_Driverless.git --recurse-submodules
-cd /home/$USER/dev/repos/QUTMS_Driverless/docker
 # Permissions Fix
 sudo usermod -aG docker ${USER}
 echo "Re-enter password to Assign Permissions"
@@ -57,6 +51,6 @@ su -s ${USER}
 sudo chown "$USER":"$USER" /home/"$USER"/.docker -R
 sudo chmod 666 /var/run/docker.sock 
 # making
-cd /home/$USER/dev/repos/QUTMS_Driverless/docker
-make build_docker_base_roscube
-make build target=roscube
+cd /home/$USER/dev/repos/QUTMS_Driverless/tools/
+./MakeROS.sh
+exit 0
