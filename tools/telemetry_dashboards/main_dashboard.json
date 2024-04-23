@@ -1,536 +1,536 @@
 {
-  "configById": {
-    "Image!1utg59n": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/zed2i/zed_node/left/image_rect_color",
-        "calibrationTopic": "/zed2i/zed_node/left/camera_info"
-      },
-      "foxglovePanelTitle": "Left Camera"
-    },
-    "Image!un8mgm": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/zed2i/zed_node/right/image_rect_color",
-        "calibrationTopic": "/zed2i/zed_node/right/camera_info"
-      },
-      "foxglovePanelTitle": "Right Camera"
-    },
-    "3D!10keujy": {
-      "cameraState": {
-        "perspective": true,
-        "distance": 9.753499582250253,
-        "phi": 54.642914441183166,
-        "thetaOffset": 93.21428571429509,
-        "targetOffset": [
-          1.9699597726752252,
-          -1.0091598293164892,
-          4.2938761751494417e-17
-        ],
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
-      },
-      "followMode": "follow-pose",
-      "followTf": "chassis",
-      "scene": {
-        "enableStats": true,
-        "syncCamera": true,
-        "transforms": {
-          "editable": true
+    "configById": {
+        "Image!1utg59n": {
+            "cameraState": {
+                "distance": 20,
+                "perspective": true,
+                "phi": 60,
+                "target": [
+                    0,
+                    0,
+                    0
+                ],
+                "targetOffset": [
+                    0,
+                    0,
+                    0
+                ],
+                "targetOrientation": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "thetaOffset": 45,
+                "fovy": 45,
+                "near": 0.5,
+                "far": 5000
+            },
+            "followMode": "follow-pose",
+            "scene": {},
+            "transforms": {},
+            "topics": {},
+            "layers": {},
+            "publish": {
+                "type": "point",
+                "poseTopic": "/move_base_simple/goal",
+                "pointTopic": "/clicked_point",
+                "poseEstimateTopic": "/initialpose",
+                "poseEstimateXDeviation": 0.5,
+                "poseEstimateYDeviation": 0.5,
+                "poseEstimateThetaDeviation": 0.26179939
+            },
+            "imageMode": {
+                "imageTopic": "/zed2i/zed_node/left/image_rect_color",
+                "calibrationTopic": "/zed2i/zed_node/left/camera_info"
+            },
+            "foxglovePanelTitle": "Left Camera"
+        },
+        "Image!un8mgm": {
+            "cameraState": {
+                "distance": 20,
+                "perspective": true,
+                "phi": 60,
+                "target": [
+                    0,
+                    0,
+                    0
+                ],
+                "targetOffset": [
+                    0,
+                    0,
+                    0
+                ],
+                "targetOrientation": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "thetaOffset": 45,
+                "fovy": 45,
+                "near": 0.5,
+                "far": 5000
+            },
+            "followMode": "follow-pose",
+            "scene": {},
+            "transforms": {},
+            "topics": {},
+            "layers": {},
+            "publish": {
+                "type": "point",
+                "poseTopic": "/move_base_simple/goal",
+                "pointTopic": "/clicked_point",
+                "poseEstimateTopic": "/initialpose",
+                "poseEstimateXDeviation": 0.5,
+                "poseEstimateYDeviation": 0.5,
+                "poseEstimateThetaDeviation": 0.26179939
+            },
+            "imageMode": {
+                "imageTopic": "/zed2i/zed_node/right/image_rect_color",
+                "calibrationTopic": "/zed2i/zed_node/right/camera_info"
+            },
+            "foxglovePanelTitle": "Right Camera"
+        },
+        "3D!10keujy": {
+            "cameraState": {
+                "perspective": true,
+                "distance": 9.753499582250253,
+                "phi": 54.642914441183166,
+                "thetaOffset": 93.21428571429509,
+                "targetOffset": [
+                    1.9699597726752252,
+                    -1.0091598293164892,
+                    4.2938761751494417e-17
+                ],
+                "target": [
+                    0,
+                    0,
+                    0
+                ],
+                "targetOrientation": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "fovy": 45,
+                "near": 0.5,
+                "far": 5000
+            },
+            "followMode": "follow-pose",
+            "followTf": "chassis",
+            "scene": {
+                "enableStats": true,
+                "syncCamera": true,
+                "transforms": {
+                    "editable": true
+                }
+            },
+            "transforms": {
+                "frame:zed2i_left_camera_frame": {
+                    "visible": true
+                },
+                "frame:track": {
+                    "visible": true
+                },
+                "frame:odom": {
+                    "visible": true
+                }
+            },
+            "topics": {
+                "/debug_imgs/lidar_det_img": {
+                    "visible": false
+                },
+                "/debug_imgs/local_image": {
+                    "visible": false
+                },
+                "/debug_imgs/slam_image": {
+                    "visible": false
+                },
+                "/debug_imgs/vision_det_img": {
+                    "visible": true,
+                    "color": "#00000045",
+                    "cameraInfoTopic": "/zed2i/zed_node/depth/camera_info"
+                },
+                "/map": {
+                    "visible": true,
+                    "minColor": "#000000ff",
+                    "maxColor": "#ffffffff"
+                },
+                "/markers/path_line": {
+                    "visible": false
+                },
+                "/scan": {
+                    "visible": false,
+                    "colorField": "intensity",
+                    "colorMode": "colormap",
+                    "colorMap": "turbo"
+                },
+                "/slam/car_pose": {
+                    "visible": false
+                },
+                "/slam/occupancy_grid": {
+                    "visible": false
+                },
+                "/slam_toolbox/scan_visualization": {
+                    "visible": false
+                },
+                "/velodyne_points": {
+                    "visible": false,
+                    "colorField": "intensity",
+                    "colorMode": "colormap",
+                    "colorMap": "turbo"
+                },
+                "/zed2i/zed_node/confidence/confidence_map": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/depth/camera_info": {
+                    "visible": false
+                },
+                "/slam_toolbox/graph_visualization": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/depth/depth_registered": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/left/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/left/image_rect_color": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/left/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/left/image_rect_gray": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/left_raw/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/left_raw/image_raw_color": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/left_raw/image_raw_gray": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/left_raw/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/point_cloud/cloud_registered": {
+                    "visible": false,
+                    "colorField": "rgb",
+                    "colorMode": "rgb",
+                    "colorMap": "turbo"
+                },
+                "/zed2i/zed_node/pose": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/pose_with_covariance": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/rgb/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/rgb/image_rect_color": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/rgb/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/rgb/image_rect_gray": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/rgb/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/rgb_raw/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/rgb_raw/image_raw_color": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/rgb_raw/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/rgb_raw/image_raw_gray": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/rgb_raw/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/right/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/right/image_rect_color": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/right/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/right/image_rect_gray": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/right/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/right_raw/camera_info": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/right_raw/image_raw_color": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/right_raw/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/right_raw/image_raw_gray": {
+                    "visible": false,
+                    "frameLocked": true,
+                    "cameraInfoTopic": "/zed2i/zed_node/right_raw/camera_info",
+                    "distance": 1,
+                    "planarProjectionFactor": 0,
+                    "color": "#ffffff"
+                },
+                "/zed2i/zed_node/stereo/image_rect_color": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/stereo_raw/image_raw_color": {
+                    "visible": false
+                },
+                "/planning/blue_bounds": {
+                    "visible": true,
+                    "type": "arrow"
+                },
+                "/planning/midline_path": {
+                    "visible": true,
+                    "gradient": [
+                        "#ffffffff",
+                        "#ffffff80"
+                    ],
+                    "type": "line"
+                },
+                "/planning/yellow_bounds": {
+                    "visible": true,
+                    "gradient": [
+                        "#dbe715ff",
+                        "#efe71a80"
+                    ],
+                    "type": "arrow"
+                },
+                "/zed2i/zed_node/path_map": {
+                    "visible": false
+                },
+                "/zed2i/zed_node/path_odom": {
+                    "visible": false
+                },
+                "/robot_description": {
+                    "visible": false
+                }
+            },
+            "layers": {},
+            "publish": {
+                "type": "point",
+                "poseTopic": "/move_base_simple/goal",
+                "pointTopic": "/clicked_point",
+                "poseEstimateTopic": "/initialpose",
+                "poseEstimateXDeviation": 0.5,
+                "poseEstimateYDeviation": 0.5,
+                "poseEstimateThetaDeviation": 0.26179939
+            },
+            "imageMode": {}
+        },
+        "Plot!7ggzdf": {
+            "paths": [
+                {
+                    "timestampMethod": "receiveTime",
+                    "value": "/vehicle/encoder_reading.data",
+                    "enabled": true,
+                    "label": ""
+                }
+            ],
+            "showXAxisLabels": true,
+            "showYAxisLabels": true,
+            "showLegend": false,
+            "legendDisplay": "floating",
+            "showPlotValuesInLegend": false,
+            "isSynced": true,
+            "xAxisVal": "timestamp",
+            "sidebarDimension": 240,
+            "foxglovePanelTitle": "Encoder Reading"
+        },
+        "Gauge!25j3pjs": {
+            "path": "/vehicle/encoder_reading.data",
+            "minValue": -10000,
+            "maxValue": 10000,
+            "colorMap": "red-yellow-green",
+            "colorMode": "gradient",
+            "gradient": [
+                "#f700ffff",
+                "#ff00ff"
+            ],
+            "reverse": false,
+            "foxglovePanelTitle": "Encoder Reading"
+        },
+        "DiagnosticSummary!3fxs7ni": {
+            "minLevel": 2,
+            "pinnedIds": [],
+            "hardwareIdFilter": "",
+            "topicToRender": "/diagnostics",
+            "sortByLevel": false
+        },
+        "DiagnosticStatusPanel!29r3i3j": {
+            "topicToRender": "/diagnostics",
+            "collapsedSections": [],
+            "selectedHardwareId": "none",
+            "selectedName": "odom_filter_node: odometry/filtered topic status"
+        },
+        "Gauge!1h8o9bs": {
+            "path": "/system/laps_completed.data",
+            "minValue": 0,
+            "maxValue": 10,
+            "colorMap": "turbo",
+            "colorMode": "gradient",
+            "gradient": [
+                "#84fd03ff",
+                "#5dff00ff"
+            ],
+            "reverse": false,
+            "foxglovePanelTitle": "Laps Completed"
+        },
+        "Plot!jnem0z": {
+            "paths": [
+                {
+                    "timestampMethod": "receiveTime",
+                    "value": "/vehicle/velocity.data",
+                    "enabled": true
+                }
+            ],
+            "showXAxisLabels": true,
+            "showYAxisLabels": true,
+            "showLegend": false,
+            "legendDisplay": "floating",
+            "showPlotValuesInLegend": false,
+            "isSynced": true,
+            "xAxisVal": "timestamp",
+            "sidebarDimension": 240,
+            "foxglovePanelTitle": "Velocity"
+        },
+        "Plot!46wtrrs": {
+            "paths": [
+                {
+                    "timestampMethod": "receiveTime",
+                    "value": "/vehicle/steering_angle.data",
+                    "enabled": true
+                }
+            ],
+            "showXAxisLabels": true,
+            "showYAxisLabels": true,
+            "showLegend": false,
+            "legendDisplay": "floating",
+            "showPlotValuesInLegend": false,
+            "isSynced": true,
+            "xAxisVal": "timestamp",
+            "sidebarDimension": 240,
+            "foxglovePanelTitle": "Steering Angle"
+        },
+        "Gauge!49y5w9y": {
+            "path": "/vehicle/velocity.data",
+            "minValue": 0,
+            "maxValue": 5,
+            "colorMap": "red-yellow-green",
+            "colorMode": "colormap",
+            "gradient": [
+                "#0000ff",
+                "#ff00ff"
+            ],
+            "reverse": false,
+            "foxglovePanelTitle": "Velocity"
+        },
+        "Gauge!2xy2a11": {
+            "path": "/vehicle/steering_angle.data",
+            "minValue": -100,
+            "maxValue": 100,
+            "colorMap": "red-yellow-green",
+            "colorMode": "gradient",
+            "gradient": [
+                "#0000ff",
+                "#3b00ffff"
+            ],
+            "reverse": false,
+            "foxglovePanelTitle": "Steering Angle"
         }
-      },
-      "transforms": {
-        "frame:zed2i_left_camera_frame": {
-          "visible": true
-        },
-        "frame:track": {
-          "visible": true
-        },
-        "frame:odom": {
-          "visible": true
-        }
-      },
-      "topics": {
-        "/debug_imgs/lidar_det_img": {
-          "visible": false
-        },
-        "/debug_imgs/local_image": {
-          "visible": false
-        },
-        "/debug_imgs/slam_image": {
-          "visible": false
-        },
-        "/debug_imgs/vision_det_img": {
-          "visible": true,
-          "color": "#00000045",
-          "cameraInfoTopic": "/zed2i/zed_node/depth/camera_info"
-        },
-        "/map": {
-          "visible": true,
-          "minColor": "#000000ff",
-          "maxColor": "#ffffffff"
-        },
-        "/markers/path_line": {
-          "visible": false
-        },
-        "/scan": {
-          "visible": false,
-          "colorField": "intensity",
-          "colorMode": "colormap",
-          "colorMap": "turbo"
-        },
-        "/slam/car_pose": {
-          "visible": false
-        },
-        "/slam/occupancy_grid": {
-          "visible": false
-        },
-        "/slam_toolbox/scan_visualization": {
-          "visible": false
-        },
-        "/velodyne_points": {
-          "visible": false,
-          "colorField": "intensity",
-          "colorMode": "colormap",
-          "colorMap": "turbo"
-        },
-        "/zed2i/zed_node/confidence/confidence_map": {
-          "visible": false
-        },
-        "/zed2i/zed_node/depth/camera_info": {
-          "visible": false
-        },
-        "/slam_toolbox/graph_visualization": {
-          "visible": false
-        },
-        "/zed2i/zed_node/depth/depth_registered": {
-          "visible": false
-        },
-        "/zed2i/zed_node/left/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/left/image_rect_color": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/left/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/left/image_rect_gray": {
-          "visible": false
-        },
-        "/zed2i/zed_node/left_raw/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/left_raw/image_raw_color": {
-          "visible": false
-        },
-        "/zed2i/zed_node/left_raw/image_raw_gray": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/left_raw/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/point_cloud/cloud_registered": {
-          "visible": false,
-          "colorField": "rgb",
-          "colorMode": "rgb",
-          "colorMap": "turbo"
-        },
-        "/zed2i/zed_node/pose": {
-          "visible": false
-        },
-        "/zed2i/zed_node/pose_with_covariance": {
-          "visible": false
-        },
-        "/zed2i/zed_node/rgb/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/rgb/image_rect_color": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/rgb/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/rgb/image_rect_gray": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/rgb/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/rgb_raw/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/rgb_raw/image_raw_color": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/rgb_raw/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/rgb_raw/image_raw_gray": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/rgb_raw/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/right/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/right/image_rect_color": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/right/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/right/image_rect_gray": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/right/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/right_raw/camera_info": {
-          "visible": false
-        },
-        "/zed2i/zed_node/right_raw/image_raw_color": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/right_raw/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/right_raw/image_raw_gray": {
-          "visible": false,
-          "frameLocked": true,
-          "cameraInfoTopic": "/zed2i/zed_node/right_raw/camera_info",
-          "distance": 1,
-          "planarProjectionFactor": 0,
-          "color": "#ffffff"
-        },
-        "/zed2i/zed_node/stereo/image_rect_color": {
-          "visible": false
-        },
-        "/zed2i/zed_node/stereo_raw/image_raw_color": {
-          "visible": false
-        },
-        "/planning/blue_bounds": {
-          "visible": true,
-          "type": "arrow"
-        },
-        "/planning/midline_path": {
-          "visible": true,
-          "gradient": [
-            "#ffffffff",
-            "#ffffff80"
-          ],
-          "type": "line"
-        },
-        "/planning/yellow_bounds": {
-          "visible": true,
-          "gradient": [
-            "#dbe715ff",
-            "#efe71a80"
-          ],
-          "type": "arrow"
-        },
-        "/zed2i/zed_node/path_map": {
-          "visible": false
-        },
-        "/zed2i/zed_node/path_odom": {
-          "visible": false
-        },
-        "/robot_description": {
-          "visible": false
-        }
-      },
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {}
     },
-    "Plot!7ggzdf": {
-      "paths": [
-        {
-          "timestampMethod": "receiveTime",
-          "value": "/vehicle/encoder_reading.data",
-          "enabled": true,
-          "label": ""
-        }
-      ],
-      "showXAxisLabels": true,
-      "showYAxisLabels": true,
-      "showLegend": false,
-      "legendDisplay": "floating",
-      "showPlotValuesInLegend": false,
-      "isSynced": true,
-      "xAxisVal": "timestamp",
-      "sidebarDimension": 240,
-      "foxglovePanelTitle": "Encoder Reading"
+    "globalVariables": {},
+    "userNodes": {},
+    "playbackConfig": {
+        "speed": 1
     },
-    "Gauge!25j3pjs": {
-      "path": "/vehicle/encoder_reading.data",
-      "minValue": -10000,
-      "maxValue": 10000,
-      "colorMap": "red-yellow-green",
-      "colorMode": "gradient",
-      "gradient": [
-        "#f700ffff",
-        "#ff00ff"
-      ],
-      "reverse": false,
-      "foxglovePanelTitle": "Encoder Reading"
-    },
-    "DiagnosticSummary!3fxs7ni": {
-      "minLevel": 2,
-      "pinnedIds": [],
-      "hardwareIdFilter": "",
-      "topicToRender": "/diagnostics",
-      "sortByLevel": false
-    },
-    "DiagnosticStatusPanel!29r3i3j": {
-      "topicToRender": "/diagnostics",
-      "collapsedSections": [],
-      "selectedHardwareId": "none",
-      "selectedName": "odom_filter_node: odometry/filtered topic status"
-    },
-    "Gauge!1h8o9bs": {
-      "path": "/system/laps_completed.data",
-      "minValue": 0,
-      "maxValue": 10,
-      "colorMap": "turbo",
-      "colorMode": "gradient",
-      "gradient": [
-        "#84fd03ff",
-        "#5dff00ff"
-      ],
-      "reverse": false,
-      "foxglovePanelTitle": "Laps Completed"
-    },
-    "Plot!jnem0z": {
-      "paths": [
-        {
-          "timestampMethod": "receiveTime",
-          "value": "/vehicle/velocity.data",
-          "enabled": true
-        }
-      ],
-      "showXAxisLabels": true,
-      "showYAxisLabels": true,
-      "showLegend": false,
-      "legendDisplay": "floating",
-      "showPlotValuesInLegend": false,
-      "isSynced": true,
-      "xAxisVal": "timestamp",
-      "sidebarDimension": 240,
-      "foxglovePanelTitle": "Velocity"
-    },
-    "Plot!46wtrrs": {
-      "paths": [
-        {
-          "timestampMethod": "receiveTime",
-          "value": "/vehicle/steering_angle.data",
-          "enabled": true
-        }
-      ],
-      "showXAxisLabels": true,
-      "showYAxisLabels": true,
-      "showLegend": false,
-      "legendDisplay": "floating",
-      "showPlotValuesInLegend": false,
-      "isSynced": true,
-      "xAxisVal": "timestamp",
-      "sidebarDimension": 240,
-      "foxglovePanelTitle": "Steering Angle"
-    },
-    "Gauge!49y5w9y": {
-      "path": "/vehicle/velocity.data",
-      "minValue": 0,
-      "maxValue": 5,
-      "colorMap": "red-yellow-green",
-      "colorMode": "colormap",
-      "gradient": [
-        "#0000ff",
-        "#ff00ff"
-      ],
-      "reverse": false,
-      "foxglovePanelTitle": "Velocity"
-    },
-    "Gauge!2xy2a11": {
-      "path": "/vehicle/steering_angle.data",
-      "minValue": -100,
-      "maxValue": 100,
-      "colorMap": "red-yellow-green",
-      "colorMode": "gradient",
-      "gradient": [
-        "#0000ff",
-        "#3b00ffff"
-      ],
-      "reverse": false,
-      "foxglovePanelTitle": "Steering Angle"
-    }
-  },
-  "globalVariables": {},
-  "userNodes": {},
-  "playbackConfig": {
-    "speed": 1
-  },
-  "layout": {
-    "first": {
-      "first": {
-        "first": "Image!1utg59n",
-        "second": "Image!un8mgm",
-        "direction": "row"
-      },
-      "second": "3D!10keujy",
-      "direction": "column"
-    },
-    "second": {
-      "first": {
+    "layout": {
         "first": {
-          "first": "Plot!7ggzdf",
-          "second": "Gauge!25j3pjs",
-          "direction": "column"
+            "first": {
+                "first": "Image!1utg59n",
+                "second": "Image!un8mgm",
+                "direction": "row"
+            },
+            "second": "3D!10keujy",
+            "direction": "column"
         },
         "second": {
-          "first": {
-            "direction": "row",
-            "second": "DiagnosticStatusPanel!29r3i3j",
-            "first": "DiagnosticSummary!3fxs7ni",
-            "splitPercentage": 66.59877800407334
-          },
-          "second": "Gauge!1h8o9bs",
-          "direction": "column"
+            "first": {
+                "first": {
+                    "first": "Plot!7ggzdf",
+                    "second": "Gauge!25j3pjs",
+                    "direction": "column"
+                },
+                "second": {
+                    "first": {
+                        "direction": "row",
+                        "second": "DiagnosticStatusPanel!29r3i3j",
+                        "first": "DiagnosticSummary!3fxs7ni",
+                        "splitPercentage": 66.59877800407334
+                    },
+                    "second": "Gauge!1h8o9bs",
+                    "direction": "column"
+                },
+                "direction": "row",
+                "splitPercentage": 36.12378929093567
+            },
+            "second": {
+                "first": {
+                    "first": "Plot!jnem0z",
+                    "second": "Plot!46wtrrs",
+                    "direction": "row"
+                },
+                "second": {
+                    "first": "Gauge!49y5w9y",
+                    "second": "Gauge!2xy2a11",
+                    "direction": "row"
+                },
+                "direction": "column",
+                "splitPercentage": 56.83060109289616
+            },
+            "direction": "column"
         },
         "direction": "row",
-        "splitPercentage": 36.12378929093567
-      },
-      "second": {
-        "first": {
-          "first": "Plot!jnem0z",
-          "second": "Plot!46wtrrs",
-          "direction": "row"
-        },
-        "second": {
-          "first": "Gauge!49y5w9y",
-          "second": "Gauge!2xy2a11",
-          "direction": "row"
-        },
-        "direction": "column",
-        "splitPercentage": 56.83060109289616
-      },
-      "direction": "column"
-    },
-    "direction": "row",
-    "splitPercentage": 46.619841966637395
-  }
+        "splitPercentage": 46.619841966637395
+    }
 }
