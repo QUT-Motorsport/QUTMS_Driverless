@@ -32,6 +32,13 @@ RUN source /home/${USERNAME}/mambaforge/bin/activate; \
 
 USER ${USERNAME}
 
+RUN git clone https://github.com/QUT-Motorsport/ft-fsd-path-planning.git
+WORKDIR /home/${USERNAME}/driverless_ws/ft-fsd-path-planning
+RUN source /home/${USERNAME}/mambaforge/bin/activate; \
+    pip install -e .
+
+WORKDIR /home/${USERNAME}/driverless_ws
+
 # copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 
