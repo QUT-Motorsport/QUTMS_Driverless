@@ -3,7 +3,7 @@
     <Domain id="69">
         <General>
             <Interfaces>
-                <NetworkInterface address='192.168.3.2'/>
+                <NetworkInterface address='192.168.3.4'/>
             </Interfaces>
             <AllowMulticast>spdp</AllowMulticast>
         </General>

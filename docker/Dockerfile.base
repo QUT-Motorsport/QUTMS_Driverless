@@ -31,7 +31,7 @@ ARG HOST_UID
 ARG HOST_GROUP=dialout
 
 # create user and set no password required
-RUN useradd \
+RUN useradd -o \
         -r \
         -m \
         -d /home/${USERNAME}/ \

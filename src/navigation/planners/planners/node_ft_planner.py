@@ -23,6 +23,37 @@ from driverless_common.draw import draw_map
 
 from typing import List, Tuple
 
+pre_track = [
+    np.array([]),
+    np.array(
+        [
+            [2.0613708496093754, 12.062088012695312],
+            [2.248870849609375, 15.124588012695314],
+            [1.6238708496093752, 3.812088012695313],
+            [2.811370849609375, 18.499588012695312],
+            [1.9988708496093752, 9.624588012695312],
+        ]
+    ),
+    np.array(
+        [
+            [-0.688629150390625, 12.499588012695314],
+            [-0.626129150390625, 14.999588012695314],
+            [-0.313629150390625, 19.124588012695316],
+            [-1.5011291503906252, 4.187088012695313],
+            [-0.9386291503906252, 9.374588012695312],
+        ]
+    ),
+    np.array([]),
+    np.array(
+        [
+            [1.873870849609375, 6.187088012695313],
+            [-1.188629150390625, 6.3745880126953125],
+            [1.7488708496093752, 5.6245880126953125],
+            [-1.251129150390625, 5.9370880126953125],
+        ]
+    ),
+]
+
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree=3, s=0) -> Tuple[list, list]:
     """
@@ -142,6 +173,7 @@ class FaSTTUBeBoundaryExtractor(Node):
     following = False
     current_track = None
     spline_const = 10  # number of points per cone
+    initialised = False
 
     def __init__(self):
         super().__init__("ft_planner_node")
@@ -246,6 +278,22 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.current_track = track_msg
 
     def planning_callback(self):
+        if not self.initialised:
+            (
+                path,
+                ordered_blues,
+                ordered_yellows,
+                virt_blues,
+                virt_yellows,
+                _,
+                _,
+            ) = self.path_planner.calculate_path_in_global_frame(
+                pre_track, np.array([0.0, 0.0]), 0.0, return_intermediate_results=True
+            )
+            self.initialised = True
+            self.get_logger().info("Initialised planner calcs")
+            return
+
         # skip if we haven't completed a lap yet
         if self.current_track is None or len(self.current_track.cones) == 0:
             self.get_logger().warn("No track data received", throttle_duration_sec=1)
