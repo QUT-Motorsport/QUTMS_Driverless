@@ -20,9 +20,7 @@ def main():
     ]
 
     # build packages listed as args
-    parser = ArgumentParser(
-        description="Building selected packages. Must select a build group."
-    )
+    parser = ArgumentParser(description="Building selected packages. Must select a build group.")
     parser.add_argument(
         "--select",
         "-s",
@@ -79,9 +77,7 @@ def main():
 
     elif args.all:
         print("Ignoring packages from 'colcon_ignore.yaml':")
-        command = (
-            command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
-        )
+        command = command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
     else:
         print("Please specify a build group, use --help or -h for more info")
         return
