@@ -41,6 +41,12 @@ pip install -r ~/QUTMS/QUTMS_Driverless/installation/requirements.txt
 ## Create an alias for ease
 echo "alias a='source install/setup.bash'" >> ~/.bashrc
 
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/build.sh ~/QUTMS/build.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/format.sh ~/QUTMS/format.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/launch.sh ~/QUTMS/launch.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/pull.sh ~/QUTMS/pull.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/record.sh ~/QUTMS/record.sh
+
 ## Check if user is going to work with vision
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_torch_pip.sh
 
@@ -71,9 +77,9 @@ echo "---Building packages---"
 echo ""
 sleep 3
 cd ~/QUTMS
-colcon build --symlink-install --packages-up-to qutms_cli_tools
-# once the cli tools are built, we can use them to build the rest of the workspace
-ws_build --all
+
+# build the rest of the workspace
+source ~/QUTMS/build.sh
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
