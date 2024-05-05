@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-from qutms_cli_tools.common import Print
+from common import Print
 
 
 def main():
@@ -40,3 +40,7 @@ def main():
         command = ["git", "pull"]
         process = subprocess.Popen(command, text=True, cwd=repo)
         process.wait()
+
+
+if __name__ == "__main__":
+    main()

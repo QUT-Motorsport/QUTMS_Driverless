@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-from qutms_cli_tools.common import Print
+# from common import Print
 import yaml
 
 
@@ -20,7 +20,9 @@ def main():
     ]
 
     # build packages listed as args
-    parser = ArgumentParser(description="Building selected packages. Must select a build group.")
+    parser = ArgumentParser(
+        description="Building selected packages. Must select a build group."
+    )
     parser.add_argument(
         "--select",
         "-s",
@@ -72,19 +74,20 @@ def main():
 
     elif args.up_to_package:
         command = command_prefix + ["--packages-up-to"] + args.up_to_package
-
     elif args.sim:
         command = command_prefix + ["--packages-up-to", "eufs_launcher"]
 
     elif args.all:
-        Print.blue("Ignoring packages from 'colcon_ignore.yaml':")
-        command = command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
+        print("Ignoring packages from 'colcon_ignore.yaml':")
+        command = (
+            command_prefix + ["--packages-ignore"] + colcon_ignores["colcon_ignore"]
+        )
     else:
-        Print.red("Please specify a build group, use --help or -h for more info")
+        print("Please specify a build group, use --help or -h for more info")
         return
 
-    Print.green("Building packages...")
-    Print.blue(f"Command: {' '.join(command)}")
+    print("Building packages...")
+    print(f"Command: {' '.join(command)}")
     process = subprocess.Popen(command, text=True, cwd=ws_path)
     try:
         process.wait()
@@ -94,3 +97,7 @@ def main():
         except OSError:
             pass
         process.wait()
+
+
+if __name__ == "__main__":
+    main()

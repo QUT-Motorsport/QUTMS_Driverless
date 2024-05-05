@@ -41,6 +41,12 @@ pip install -r ~/QUTMS/QUTMS_Driverless/installation/requirements.txt
 ## Create an alias for ease
 echo "alias a='source install/setup.bash'" >> ~/.bashrc
 
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/build.sh ~/QUTMS/build.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/format.sh ~/QUTMS/format.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/launch.sh ~/QUTMS/launch.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/pull.sh ~/QUTMS/pull.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/record.sh ~/QUTMS/record.sh
+
 ## Check if user is going to work with vision
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_torch_pip.sh
 

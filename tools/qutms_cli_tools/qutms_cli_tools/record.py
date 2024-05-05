@@ -2,8 +2,9 @@ from argparse import ArgumentParser
 import os
 import subprocess
 
-from qutms_cli_tools.common import Print
 import yaml
+
+from common import Print
 
 
 def main():
@@ -54,7 +55,13 @@ def main():
 
     Print.green("Recording bag...")
 
-    config_path = os.path.join(ws_path, "QUTMS_Driverless", "tools", "topics_to_record", str(args.yaml) + ".yaml")
+    config_path = os.path.join(
+        ws_path,
+        "QUTMS_Driverless",
+        "tools",
+        "topics_to_record",
+        str(args.yaml) + ".yaml",
+    )
 
     with open(config_path, "r") as f:
         topics = yaml.safe_load(f)
@@ -85,3 +92,7 @@ def main():
         except OSError:
             pass
         process.wait()
+
+
+if __name__ == "__main__":
+    main()

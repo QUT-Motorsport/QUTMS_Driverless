@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import subprocess
 
-from qutms_cli_tools.common import Print
+from common import Print
 
 
 def main():
@@ -32,3 +32,7 @@ def main():
         except OSError:
             pass
         process.wait()
+
+
+if __name__ == "__main__":
+    main()
