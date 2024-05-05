@@ -46,7 +46,7 @@ def generate_launch_description():
         ("/tf_static", "tf_static"),
         ("cmd_vel", "control/nav_cmd_vel"),
         ("plan", "planning/midline_path"),
-        ('map', 'planning/boundary_grid'),
+        ("map", "planning/boundary_grid"),
     ]
 
     # behaviour tree xml file location
@@ -58,7 +58,7 @@ def generate_launch_description():
         # 'replan_to_pose.xml')
         # "plan_to_pose_and_follow.xml",
         #'replan_to_pose_and_follow.xml'
-        'follow_path.xml'
+        "follow_path.xml",
     )
 
     through_poses_bt_xml = os.path.join(
