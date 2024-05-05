@@ -77,9 +77,9 @@ echo "---Building packages---"
 echo ""
 sleep 3
 cd ~/QUTMS
-colcon build --symlink-install --packages-up-to qutms_cli_tools
-# once the cli tools are built, we can use them to build the rest of the workspace
-ws_build --all
+
+# build the rest of the workspace
+source ~/QUTMS/build.sh
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
