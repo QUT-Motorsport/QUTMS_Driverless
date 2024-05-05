@@ -1,6 +1,6 @@
 /**: # stack-wide parameters
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: False
     global_frame: track
     local_frame: odom
     robot_base_frame: base_footprint
@@ -179,7 +179,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.3
+    failure_tolerance: 0.5
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["RegulatedPurePursuit"]
@@ -198,8 +198,8 @@ controller_server:
     # Controller parameters
     RegulatedPurePursuit:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 8.0  # The desired maximum linear velocity to use.
-      lookahead_dist: 2.5  # The lookahead distance to use to find the lookahead point.
+      desired_linear_vel: 5.0  # The desired maximum linear velocity to use.
+      lookahead_dist: 4.0  # The lookahead distance to use to find the lookahead point.
       # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       lookahead_time: 1.5  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.

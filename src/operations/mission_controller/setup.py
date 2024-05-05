@@ -27,6 +27,7 @@ setup(
             "inspection_handler_node = mission_controller.node_inspection_handler:main",
             "trackdrive_handler_node = mission_controller.node_trackdrive_handler:main",
             "trackdrive_handler_lifecycle = mission_controller.lifecycle_trackdrive_handler:main",
+            "trackdrive_handler_plan_node = mission_controller.node_trackdrive_handler_plan:main",
         ],
     },
 )

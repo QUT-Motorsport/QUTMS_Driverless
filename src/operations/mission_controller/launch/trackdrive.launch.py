@@ -28,16 +28,21 @@ def generate_launch_description():
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                 ],
             ),
-            Node(
-                package="pure_pursuit_cpp",
-                executable="pure_pursuit_node",
-                parameters=[
-                    get_package_share_path("pure_pursuit_cpp") / "config" / "pure_pursuit_cpp.yaml",
-                ],
-            ),
+            # Node(
+            #     package="pure_pursuit_cpp",
+            #     executable="pure_pursuit_node",
+            #     parameters=[
+            #         get_package_share_path("pure_pursuit_cpp") / "config" / "pure_pursuit_cpp.yaml",
+            #     ],
+            # ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(get_package_share_path("nav_bringup"), "launch", "slam_toolbox.launch.py")
+                )
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(get_package_share_path("nav_bringup"), "launch", "nav2_bringup2.launch.py")
                 )
             ),
         ]
