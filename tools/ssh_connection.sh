@@ -1,14 +1,15 @@
 #!/bin/bash
-# ^idk what this is i just keep seeing it - it's a shebang
 
+# download this script into your home user folder
+# eg. C:\Users\YOURNAME\
 # chmod +x ssh_connection.sh
-# to run it use "bash ssh_connection.sh"
+# to run it use "./ssh_connection.sh"
 
-
-roscube='192.168.3.2'
-jetson='192.168.3.3'
-rasbipi='192.168.3.20'
-# idk if this does what i think it does :)
+# addresses and usernames
+roscube='qutms@192.168.3.2'
+panda='qev3d@192.168.3.4'
+jetson='qutms@192.168.3.3'
+rasbipi='qutms@192.168.3.20'
 
 servername=''
 # if no opts
@@ -33,7 +34,7 @@ if [ -z "$servername" ]; then
 fi
 
 # if servername is not in the list
-if [ "$servername" != "roscube" ] && [ "$servername" != "jetson" ] && [ "$servername" != "rasbipi" ]; then
+if [ "$servername" != "roscube" ] && [ "$servername" != "jetson" ] && [ "$servername" != "rasbipi" ] && [ "$servername" != "panda" ]; then
   echo "Servername is not in the list"
   exit 1
 fi
@@ -48,10 +49,13 @@ fi
 if [ "$servername" == "rasbipi" ]; then
   servername=$rasbipi
 fi
+if [ "$servername" == "panda" ]; then
+  servername=$panda
+fi
 
 echo "Connecting to $servername..."
 
 until ssh ${servername}; do
-    echo "Server is down, retrying in 5 seconds"
-    sleep 5
+    echo "Server is down, retrying..."
+    sleep 3
 done
