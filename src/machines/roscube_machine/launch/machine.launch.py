@@ -91,5 +91,10 @@ def generate_launch_description():
                     ("display_car", "false"),
                 ],
             ),
+            IncludeLaunchDescription(
+                launch_description_source=PythonLaunchDescriptionSource(
+                    launch_file_path=str(get_package_share_path("roscube_machine") / "launch" / "foxglove.launch.py")
+                ),
+            ),
         ]
     )
