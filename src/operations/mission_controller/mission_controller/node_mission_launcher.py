@@ -1,5 +1,5 @@
-from subprocess import Popen
 import signal
+from subprocess import Popen
 
 import rclpy
 from rclpy.node import Node
