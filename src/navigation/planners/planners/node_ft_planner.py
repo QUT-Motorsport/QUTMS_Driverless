@@ -253,7 +253,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         }
 
         # cone matching
-        self.declare_parameter("min_track_width", 4.5)
+        self.declare_parameter("min_track_width", 3.5)
         self.declare_parameter("max_search_range", 5)
         self.declare_parameter("max_search_angle", 50)
         self.declare_parameter("matches_should_be_monotonic", True)
