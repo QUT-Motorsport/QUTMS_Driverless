@@ -1,7 +1,9 @@
+import os
+from subprocess import PIPE, Popen
 import time
-import numpy as np
-from subprocess import Popen
 
+from nav2_msgs.action import FollowPath
+import numpy as np
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -10,15 +12,14 @@ import rclpy
 from rclpy.action import ActionClient
 
 from driverless_msgs.msg import Shutdown, State
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
-from std_msgs.msg import UInt8, Bool
-from nav_msgs.msg import Path, Odometry
-
-from nav2_msgs.action import FollowPath
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from nav_msgs.msg import Odometry, Path
+from std_msgs.msg import Bool, UInt8
 
 from std_srvs.srv import Trigger
 
 from driverless_common.shutdown_node import ShutdownNode
+
 
 class TrackdriveHandler(ShutdownNode):
     mission_started = False
@@ -62,9 +63,7 @@ class TrackdriveHandler(ShutdownNode):
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
 
         # actions
-        self.nav_through_poses_client = ActionClient(self,
-                                                     FollowPath,
-                                                     'follow_path')
+        self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
         if self.get_parameter("start_following").value:
             # start at lap 1
@@ -94,7 +93,6 @@ class TrackdriveHandler(ShutdownNode):
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
-            self.set_process(self.process)
             self.get_logger().info("Trackdrive mission started")
 
     def path_callback(self, msg: Path):
@@ -116,22 +114,20 @@ class TrackdriveHandler(ShutdownNode):
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
         try:
-            track_to_base = self.tf_buffer.lookup_transform(
-                "track", "base_footprint", rclpy.time.Time(seconds=0)
-            )
+            track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
             self.get_logger().debug("Transform exception: " + str(e))
             return
-        
+
         if not self.mission_started:
             self.last_x = track_to_base.transform.translation.x
             return
-        
+
         if not abs(track_to_base.transform.translation.y) < 2:
             self.last_x = track_to_base.transform.translation.x
             return
 
-        if (self.last_x <= self.goal_offet and track_to_base.transform.translation.x >= self.goal_offet):
+        if self.last_x <= self.goal_offet and track_to_base.transform.translation.x >= self.goal_offet:
             if not self.crossed_start:
                 self.crossed_start = True
                 self.last_lap_time = time.time()
@@ -182,9 +178,10 @@ class TrackdriveHandler(ShutdownNode):
 
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = TrackdriveHandler()
     rclpy.spin(node)
-    node.destroy_node()
+    # node.destroy_node()
     rclpy.shutdown()

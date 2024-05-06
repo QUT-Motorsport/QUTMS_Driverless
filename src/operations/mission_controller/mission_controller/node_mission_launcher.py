@@ -1,4 +1,5 @@
 from subprocess import Popen
+import signal
 
 import rclpy
 from rclpy.node import Node
@@ -42,7 +43,7 @@ class MissionControl(Node):
 
         elif (status.mission == State.MISSION_NONE or status.state == State.EMERGENCY) and self.mission_launched:
             self.get_logger().warn("Closing mission")
-            self.process.terminate()
+            self.process.send_signal(signal.SIGINT)
             self.mission_launched = False
 
 

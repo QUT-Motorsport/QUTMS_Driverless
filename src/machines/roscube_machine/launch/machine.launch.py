@@ -16,8 +16,8 @@ def generate_launch_description():
         composable_node_descriptions=[
             ComposableNode(
                 package="vehicle_supervisor",
-                plugin="vehicle_supervisor::ASSupervisorLaunch",
-                name="vehicle_supervisor_launch_node",
+                plugin="vehicle_supervisor::ASSupervisor",
+                name="vehicle_supervisor_node",
                 parameters=[
                     {"manual_override": False},
                 ],
@@ -68,6 +68,10 @@ def generate_launch_description():
             Node(
                 package="lidar_pipeline",
                 executable="lidar_detector_node",
+            ),
+            Node(
+                package="mission_controller",
+                executable="mission_control_node",
             ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(

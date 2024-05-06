@@ -82,7 +82,6 @@ class TrackdriveHandler(ShutdownNode):
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
-            self.set_process(self.process)
             self.get_logger().info("Trackdrive mission started")
 
     def odom_callback(self, msg: Odometry):
