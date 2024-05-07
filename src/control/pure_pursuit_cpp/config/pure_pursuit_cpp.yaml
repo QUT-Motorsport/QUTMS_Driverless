@@ -1,9 +1,9 @@
 pure_pursuit_cpp_node:
   ros__parameters:
-    Kp_ang: -3.5
+    Kp_ang: -4
     lookahead: 2.5
-    vel_max: 4.0
-    vel_min: 3.0
+    vel_max: 6.0
+    vel_min: 4.0
     discovery_lookahead: 3.0
-    discovery_vel_max: 4.0
-    discovery_vel_min: 3.0
+    discovery_vel_max: 6.0
+    discovery_vel_min: 4.0

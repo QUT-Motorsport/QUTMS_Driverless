@@ -216,8 +216,8 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.declare_parameter("max_dist", 6.5)
         self.declare_parameter("max_dist_to_first", 6.0)
         self.declare_parameter("max_length", 12)
-        self.declare_parameter("threshold_directional_angle", 40)
-        self.declare_parameter("threshold_absolute_angle", 65)
+        self.declare_parameter("threshold_directional_angle", 30)
+        self.declare_parameter("threshold_absolute_angle", 55)
         self.declare_parameter("use_unknown_cones", True)
 
         cone_sorting_kwargs = {
@@ -295,6 +295,22 @@ class FaSTTUBeBoundaryExtractor(Node):
             return
 
         # skip if we haven't completed a lap yet
+        if not self.initialised:
+            (
+                path,
+                ordered_blues,
+                ordered_yellows,
+                virt_blues,
+                virt_yellows,
+                _,
+                _,
+            ) = self.path_planner.calculate_path_in_global_frame(
+                pre_track, np.array([0.0,0.0]), 0.0, return_intermediate_results=True
+            )
+            self.initialised = True
+            self.get_logger().info("Initialised planner calcs")
+            return
+
         if self.current_track is None or len(self.current_track.cones) == 0:
             self.get_logger().warn("No track data received", throttle_duration_sec=1)
             return
@@ -338,17 +354,21 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
 
-        (
-            path,
-            ordered_blues,
-            ordered_yellows,
-            virt_blues,
-            virt_yellows,
-            _,
-            _,
-        ) = self.path_planner.calculate_path_in_global_frame(
-            global_cones, car_position, car_direction, return_intermediate_results=True
-        )
+        try:
+            (
+                path,
+                ordered_blues,
+                ordered_yellows,
+                virt_blues,
+                virt_yellows,
+                _,
+                _,
+            ) = self.path_planner.calculate_path_in_global_frame(
+                global_cones, car_position, car_direction, return_intermediate_results=True
+            )
+        except Exception as e:
+            self.get_logger().warn("Cant plan, error" + str(e), throttle_duration_sec=1)
+            return
 
         use_virt = True
         if use_virt:

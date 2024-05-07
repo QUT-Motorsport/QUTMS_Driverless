@@ -84,11 +84,13 @@ struct TrackedCone {
                 colour = driverless_msgs::msg::Cone::YELLOW;
             } else if (blue_count > yellow_count && blue_count > orange_count) {
                 colour = driverless_msgs::msg::Cone::BLUE;
+            } else if (orange_count > yellow_count && orange_count > blue_count) {
+                colour = driverless_msgs::msg::Cone::ORANGE_SMALL;
             }
 
-            if (orange_count > 10 || orange_count > yellow_count || orange_count > blue_count) {
-                colour = driverless_msgs::msg::Cone::ORANGE_BIG;
-            }
+            // if (orange_count > 10 || orange_count > yellow_count || orange_count > blue_count) {
+            //     colour = driverless_msgs::msg::Cone::ORANGE_BIG;
+            // }
         }
 
         // transform map to car
