@@ -180,7 +180,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
-        self.create_timer(1 / 20, self.planning_callback)
+        self.create_timer(1 / 10, self.planning_callback)
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -205,6 +205,22 @@ class FaSTTUBeBoundaryExtractor(Node):
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
+
+
+        # skip if we haven't completed a lap yet
+        (
+            path,
+            ordered_blues,
+            ordered_yellows,
+            virt_blues,
+            virt_yellows,
+            _,
+            _,
+        ) = self.path_planner.calculate_path_in_global_frame(
+            pre_track, np.array([0.0,0.0]), 0.0, return_intermediate_results=True
+        )
+        self.initialised = True
+        self.get_logger().info("Initialised planner calcs")
 
         self.get_logger().info("---Ordered path planner node initalised---")
 
@@ -253,7 +269,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         }
 
         # cone matching
-        self.declare_parameter("min_track_width", 3.5)
+        self.declare_parameter("min_track_width", 4.0)
         self.declare_parameter("max_search_range", 5)
         self.declare_parameter("max_search_angle", 50)
         self.declare_parameter("matches_should_be_monotonic", True)
@@ -278,39 +294,6 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.current_track = track_msg
 
     def planning_callback(self):
-        if not self.initialised:
-            (
-                path,
-                ordered_blues,
-                ordered_yellows,
-                virt_blues,
-                virt_yellows,
-                _,
-                _,
-            ) = self.path_planner.calculate_path_in_global_frame(
-                pre_track, np.array([0.0, 0.0]), 0.0, return_intermediate_results=True
-            )
-            self.initialised = True
-            self.get_logger().info("Initialised planner calcs")
-            return
-
-        # skip if we haven't completed a lap yet
-        if not self.initialised:
-            (
-                path,
-                ordered_blues,
-                ordered_yellows,
-                virt_blues,
-                virt_yellows,
-                _,
-                _,
-            ) = self.path_planner.calculate_path_in_global_frame(
-                pre_track, np.array([0.0,0.0]), 0.0, return_intermediate_results=True
-            )
-            self.initialised = True
-            self.get_logger().info("Initialised planner calcs")
-            return
-
         if self.current_track is None or len(self.current_track.cones) == 0:
             self.get_logger().warn("No track data received", throttle_duration_sec=1)
             return
