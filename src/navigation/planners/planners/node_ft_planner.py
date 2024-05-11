@@ -196,8 +196,8 @@ class FaSTTUBeBoundaryExtractor(Node):
             depth=1,
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
         )
-        self.map_pub = self.create_publisher(OccupancyGrid, "/map", map_qos)
-        self.map_meta_pub = self.create_publisher(MapMetaData, "/map_metadata", map_qos)
+        self.map_pub = self.create_publisher(OccupancyGrid, "/planning/boundary_grid", map_qos)
+        self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
 
         self.declare_parameter("start_following", False)
         if self.get_parameter("start_following").value:
