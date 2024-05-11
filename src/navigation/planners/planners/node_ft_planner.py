@@ -206,7 +206,6 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
-
         # skip if we haven't completed a lap yet
         (
             path,
@@ -217,7 +216,7 @@ class FaSTTUBeBoundaryExtractor(Node):
             _,
             _,
         ) = self.path_planner.calculate_path_in_global_frame(
-            pre_track, np.array([0.0,0.0]), 0.0, return_intermediate_results=True
+            pre_track, np.array([0.0, 0.0]), 0.0, return_intermediate_results=True
         )
         self.initialised = True
         self.get_logger().info("Initialised planner calcs")
