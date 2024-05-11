@@ -14,7 +14,7 @@ MAX_NUM_CONES = 50
 
 
 def marker_array_from_map(detection: ConeDetectionStamped, ground_truth: bool = False) -> MarkerArray:
-    cones: List[ConeWithCovariance] = detection.cones
+    cones: List[ConeWithCovariance] = detection.cones_with_cov
 
     if ground_truth:  # ground truth markers out of the sim are translucent
         alpha: float = 1.0
@@ -29,8 +29,7 @@ def marker_array_from_map(detection: ConeDetectionStamped, ground_truth: bool = 
             z_scale = SMALL_HEIGHT
         markers.append(
             marker_msg(
-                x=cone.cone.location.x,
-                y=cone.cone.location.y,
+                position=cone.cone.location,
                 z_scale=z_scale,
                 id_=i,
                 header=detection.header,
@@ -41,12 +40,12 @@ def marker_array_from_map(detection: ConeDetectionStamped, ground_truth: bool = 
         )
         markers.append(
             cov_marker_msg(
-                x=cone.cone.location.x,
-                y=cone.cone.location.y,
+                position=cone.cone.location,
                 id_=i,
                 x_scale=3 * sqrt(abs(cone.covariance[0])),
                 y_scale=3 * sqrt(abs(cone.covariance[3])),
                 lifetime=Duration(sec=10, nanosec=100000),
+                header=detection.header,
             )
         )
 
@@ -72,8 +71,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
                 z_scale = SMALL_HEIGHT
             markers.append(
                 marker_msg(
-                    x=cones[i].location.x,
-                    y=cones[i].location.y,
+                    position=cones[i].location,
                     z_scale=z_scale,
                     id_=i,
                     header=detection.header,
@@ -83,8 +81,7 @@ def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance
             if covariance:
                 markers.append(
                     cov_marker_msg(
-                        x=cones[i].location.x,
-                        y=cones[i].location.y,
+                        position=cones[i].location,
                         id_=i,
                         x_scale=3 * sqrt(abs(covs[i][0])),
                         y_scale=3 * sqrt(abs(covs[i][3])),
@@ -119,8 +116,7 @@ CONE_TO_RGB_MAP = {
 
 
 def marker_msg(
-    x: float,
-    y: float,
+    position: Point,
     z_scale: float,
     id_: int,
     header: Header,
@@ -132,12 +128,14 @@ def marker_msg(
         header=header,
         ns="cones",
         id=id_,
-        type=Marker.MESH_RESOURCE,
-        mesh_resource="package://driverless_common/meshes/cone.dae",
-        mesh_use_embedded_materials=False,
+        # type=Marker.MESH_RESOURCE,
+        type=Marker.CYLINDER,
+        # mesh_resource="package://driverless_common/meshes/cone.dae",
+        # mesh_use_embedded_materials=False,
         action=Marker.ADD,
-        pose=Pose(position=Point(x=x, y=y, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
-        scale=Vector3(x=1.0, y=1.0, z=z_scale),
+        pose=Pose(position=position, orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        # scale=Vector3(x=1.0, y=1.0, z=z_scale),
+        scale=Vector3(x=0.2, y=0.2, z=z_scale * 0.3),
         color=CONE_TO_RGB_MAP.get(cone_colour, ColorRGBA(r=0.0, g=0.0, b=0.0, a=1.0)),
         lifetime=lifetime,
     )
@@ -146,13 +144,13 @@ def marker_msg(
 
 
 def cov_marker_msg(
-    x: float,
-    y: float,
+    position: Point,
     id_: int,
     x_scale: float,  # x sigma
     y_scale: float,  # y sigma
     lifetime=Duration(sec=1, nanosec=0),
     header=Header(frame_id="track"),
+    z=0,
 ) -> Marker:
     return Marker(
         header=header,
@@ -160,9 +158,9 @@ def cov_marker_msg(
         id=id_,
         type=Marker.CYLINDER,
         action=Marker.ADD,
-        pose=Pose(position=Point(x=x, y=y, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
+        pose=Pose(position=position, orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)),
         scale=Vector3(x=x_scale, y=y_scale, z=0.05),
-        color=ColorRGBA(r=0.3, g=0.1, b=0.1, a=0.1),
+        color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3),
         lifetime=lifetime,
     )
 
