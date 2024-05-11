@@ -29,7 +29,7 @@ class MissionControl(Node):
 
             # specific for trackdrive running new planner
             elif target_mission == "trackdrive":
-                node = target_mission + "_handler_plan_node"
+                node = target_mission + "_handler_nav_node"
                 command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
 
             else:
