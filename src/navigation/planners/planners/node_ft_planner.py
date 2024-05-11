@@ -173,7 +173,6 @@ class FaSTTUBeBoundaryExtractor(Node):
     following = False
     current_track = None
     spline_const = 10  # number of points per cone
-    initialised = False
 
     def __init__(self):
         super().__init__("ft_planner_node")
@@ -206,19 +205,9 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
-        # skip if we haven't completed a lap yet
-        (
-            path,
-            ordered_blues,
-            ordered_yellows,
-            virt_blues,
-            virt_yellows,
-            _,
-            _,
-        ) = self.path_planner.calculate_path_in_global_frame(
+        init_plan_calcs = self.path_planner.calculate_path_in_global_frame(
             pre_track, np.array([0.0, 0.0]), 0.0, return_intermediate_results=True
         )
-        self.initialised = True
         self.get_logger().info("Initialised planner calcs")
 
         self.get_logger().info("---Ordered path planner node initalised---")
