@@ -9,11 +9,12 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "driverless_common/common.hpp"
-#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sbg_driver/msg/sbg_ekf_euler.hpp"
 #include "sbg_driver/msg/sbg_ekf_nav.hpp"
@@ -39,7 +40,10 @@ class SBGTranslate : public rclcpp::Node {
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr raw_pose_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
 
     // initial values
     float init_yaw_;
@@ -53,6 +57,10 @@ class SBGTranslate : public rclcpp::Node {
     sbg_driver::msg::SbgEkfEuler last_euler_msg_;
     std::vector<float> state_;
 
+    // store path
+    nav_msgs::msg::Path path_msg_;
+    rclcpp::Time last_pub_time_;
+
     bool received_imu_ = false;
     bool received_nav_ = false;
     bool received_euler_ = false;
@@ -63,11 +71,21 @@ class SBGTranslate : public rclcpp::Node {
     sensor_msgs::msg::Imu make_imu_msg(nav_msgs::msg::Odometry odom_msg) {
         sensor_msgs::msg::Imu imu_msg;
         imu_msg.header.stamp = odom_msg.header.stamp;
-        imu_msg.header.frame_id = "base_footprint";
+        imu_msg.header.frame_id = "chassis";
 
         imu_msg.orientation = odom_msg.pose.pose.orientation;
 
         return imu_msg;
+    }
+
+    geometry_msgs::msg::PoseStamped make_pose_msg(nav_msgs::msg::Odometry odom_msg) {
+        geometry_msgs::msg::PoseStamped pose_msg;
+        pose_msg.header.stamp = odom_msg.header.stamp;
+        pose_msg.header.frame_id = "track";
+
+        pose_msg.pose = odom_msg.pose.pose;
+
+        return pose_msg;
     }
 
     void initUTM(double Lat, double Long, double altitude);

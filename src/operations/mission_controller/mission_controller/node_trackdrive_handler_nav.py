@@ -89,6 +89,9 @@ class TrackdriveHandler(ShutdownNode):
                 # reset odom and pose from camera
                 self.reset_odom_client.call_async(Trigger.Request())
                 self.reset_pose_client.call_async(Trigger.Request())
+            
+            print("Waiting for pose to reset")
+            time.sleep(2)
 
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
