@@ -358,31 +358,34 @@ class FaSTTUBeBoundaryExtractor(Node):
         blue_degree = len(ordered_blues) - 1 if len(ordered_blues) <= 3 else 3
         yellow_degree = len(ordered_yellows) - 1 if len(ordered_yellows) <= 3 else 3
 
-        yx, yy = approximate_b_spline_path(
-            [cone[0] for cone in ordered_yellows],
-            [cone[1] for cone in ordered_yellows],
-            spline_len,
-            yellow_degree,
-            0.01,
-        )
-        bx, by = approximate_b_spline_path(
-            [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], spline_len, blue_degree, 0.01
-        )
-        # turn individual x,y lists into points lists
-        blue_points = []
-        yellow_points = []
-        mid_points = []
-        for i in range(spline_len):
-            blue_points.append([bx[i], by[i]])
-            yellow_points.append([yx[i], yy[i]])
-            mid_points.append(midpoint([yx[i], yy[i]], [bx[i], by[i]]))
+        try:
+            yx, yy = approximate_b_spline_path(
+                [cone[0] for cone in ordered_yellows],
+                [cone[1] for cone in ordered_yellows],
+                spline_len,
+                yellow_degree,
+                0.01,
+            )
+            bx, by = approximate_b_spline_path(
+                [cone[0] for cone in ordered_blues], [cone[1] for cone in ordered_blues], spline_len, blue_degree, 0.01
+            )
+            # turn individual x,y lists into points lists
+            blue_points = []
+            yellow_points = []
+            mid_points = []
+            for i in range(spline_len):
+                blue_points.append([bx[i], by[i]])
+                yellow_points.append([yx[i], yy[i]])
+                mid_points.append(midpoint([yx[i], yy[i]], [bx[i], by[i]]))
 
-        # publish bounds
-        blue_bound_msg = make_path_msg(blue_points)
-        self.blue_bound_pub.publish(blue_bound_msg)
+            # publish bounds
+            blue_bound_msg = make_path_msg(blue_points)
+            self.blue_bound_pub.publish(blue_bound_msg)
 
-        yellow_bound_msg = make_path_msg(yellow_points)
-        self.yellow_bound_pub.publish(yellow_bound_msg)
+            yellow_bound_msg = make_path_msg(yellow_points)
+            self.yellow_bound_pub.publish(yellow_bound_msg)
+        except Exception as e:
+            self.get_logger().warn("Cant calculate bounds, error" + str(e), throttle_duration_sec=1)
 
         # publish midpoints
         mid_bound_msg = make_path_msg(mid_points)
