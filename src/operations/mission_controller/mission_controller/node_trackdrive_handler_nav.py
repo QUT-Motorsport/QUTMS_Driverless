@@ -19,6 +19,7 @@ from std_msgs.msg import Bool, UInt8
 from std_srvs.srv import Trigger
 
 from driverless_common.shutdown_node import ShutdownNode
+from rclpy.node import Node
 
 
 class TrackdriveHandler(ShutdownNode):

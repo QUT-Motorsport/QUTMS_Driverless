@@ -22,13 +22,13 @@ slam_toolbox_node:
     # map_start_pose: [0.0, 0.0, 0.0]  # Pose to start pose-graph mapping/localization in, if available
     debug_logging: false  # Change logger to debug
     throttle_scans: 1  # Number of scans to throttle in synchronous mode
-    transform_publish_period: 0.02  # The map to odom transform publish period. 0 will not publish transforms
-    map_update_interval: 2.0  # Interval to update the 2D occupancy map for other applications / visualization
+    transform_publish_period: 0.01  # The map to odom transform publish period. 0 will not publish transforms
+    map_update_interval: 3.0  # Interval to update the 2D occupancy map for other applications / visualization
     enable_interactive_mode: false  # Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode
-    position_covariance_scale: 1.0  # This can be used to tune the influence of the pose position in a downstream localization filter
+    position_covariance_scale: 1.5  # This can be used to tune the influence of the pose position in a downstream localization filter
     yaw_covariance_scale: 1.0  # Pose yaw
-    resolution: 0.1  # Resolution of the 2D occupancy map to generate
-    max_laser_range: 50.0  # Maximum laser range to use for 2D occupancy map rastering
+    resolution: 0.15  # Resolution of the 2D occupancy map to generate
+    max_laser_range: 35.0  # Maximum laser range to use for 2D occupancy map rastering
     minimum_time_interval: 0.5  # The minimum duration of time between scans to be processed in synchronous mode
     transform_timeout: 0.5  # TF timeout for looking up transforms
     tf_buffer_duration: 0.1  # Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode
