@@ -55,17 +55,19 @@
     # Sensor Parameters (Queensland Raceway, Ipswich)
     sensorParameters:
       # Initial latitude (°)
-      initLat: -27.477822
+      # initLat: -27.477822
+      initLat: -27.226920
       # Initial longitude (°)
-      initLong: 153.028623
+      # initLong: 153.028623
+      initLong: 152.967250
       # Initial altitude (above WGS84 ellipsoid) (m)
-      initAlt: 10.0
+      initAlt: 20.0
       # Year at startup
-      year: 2023
+      year: 2024
       # month in year at startup
-      month: 11
+      month: 05
       # day in month at startup
-      day: 17
+      day: 21
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
@@ -84,7 +86,7 @@
       # 3 ALIGNMENT_RIGHT     IMU Axis is turned in vehicle's right direction
       # 4 ALIGNMENT_UP        IMU Axis is turned in vehicle's up direction
       # 5 ALIGNMENT_DOWN      IMU Axis is turned in vehicle's down direction
-      axisDirectionX: 2
+      axisDirectionX: 0
       # IMU Y axis direction in vehicle frame
       # 0 ALIGNMENT_FORWARD   IMU Axis is turned in vehicle's forward direction
       # 1 ALIGNMENT_BACKWARD  IMU Axis is turned in vehicle's backward direction
@@ -92,7 +94,7 @@
       # 3 ALIGNMENT_RIGHT     IMU Axis is turned in vehicle's right direction
       # 4 ALIGNMENT_UP        IMU Axis is turned in vehicle's up direction
       # 5 ALIGNMENT_DOWN      IMU Axis is turned in vehicle's down direction
-      axisDirectionY: 1
+      axisDirectionY: 3
       # Residual roll error after axis alignment rad
       misRoll: 0.0
       # Residual pitch error after axis alignment rad
@@ -100,9 +102,9 @@
       # Residual yaw error after axis alignment rad
       misYaw: 0.0
       # X Primary lever arm in IMU X axis (once IMU alignment is applied) m
-      leverArmX: 0.0
+      leverArmX: -0.52
       # Y Primary lever arm in IMU Y axis (once IMU alignment is applied) m
-      leverArmY: 0.0
+      leverArmY: 0.25
       # Z Primary lever arm in IMU Z axis (once IMU alignment is applied) m
       leverArmZ: 0.0
 
@@ -176,20 +178,20 @@
       gnss_model_id: 107
 
       #GNSS primary antenna lever arm in IMU X axis (m)
-      primaryLeverArmX: 0.3
+      primaryLeverArmX: 1.03
       #GNSS primary antenna lever arm in IMU Y axis (m)
-      primaryLeverArmY: 0.0
+      primaryLeverArmY: 0.25
       #GNSS primary antenna lever arm in IMU Z axis (m)
-      primaryLeverArmZ: 0.0
+      primaryLeverArmZ: -0.40
       #GNSS primary antenna precise. Set to true if the primary lever arm has been accurately entered and doesn't need online re-estimation.
       primaryLeverPrecise: true
 
       #GNSS secondary antenna lever arm in IMU X axis (m)
-      secondaryLeverArmX: -0.22
+      secondaryLeverArmX: -0.45
       #GNSS secondary antenna lever arm in IMU Y axis (m)
-      secondaryLeverArmY: 0.0
+      secondaryLeverArmY: 0.25
       #GNSS secondary antenna lever arm in IMU Z axis (m)
-      secondaryLeverArmZ: 0.0
+      secondaryLeverArmZ: -0.90
 
       # Secondary antenna operating mode.
       # 1 The GNSS will be used in single antenna mode only and the secondary lever arm is not used.
@@ -272,7 +274,7 @@
       #
       # true : ENU convention (X east, Y north, Z up)
       # false (default): NED convention (X north, Y east, Z down)
-      use_enu: true
+      use_enu: false
 
       # Frame ID:
       # Note: If the frame convention is NED so the default frame ID is (imu_link_ned)
