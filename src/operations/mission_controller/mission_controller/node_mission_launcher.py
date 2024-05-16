@@ -1,3 +1,4 @@
+import signal
 from subprocess import Popen
 
 import rclpy
@@ -25,22 +26,24 @@ class MissionControl(Node):
             target_mission = INT_MISSION_TYPE[status.mission].value
             if target_mission == "ebs_test":
                 command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.process = Popen(command)
-                self.get_logger().info("Mission started: " + target_mission)
-                self.mission_launched = True
+
+            # specific for trackdrive running new planner
+            elif target_mission == "trackdrive":
+                node = target_mission + "_handler_nav_node"
+                command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
 
             else:
                 node = target_mission + "_handler_node"
                 command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.process = Popen(command)
-                self.get_logger().info("Mission started: " + target_mission)
-                self.mission_launched = True
+
+            self.get_logger().info(f"Command: {' '.join(command)}")
+            self.process = Popen(command)
+            self.get_logger().info("Mission started: " + target_mission)
+            self.mission_launched = True
 
         elif (status.mission == State.MISSION_NONE or status.state == State.EMERGENCY) and self.mission_launched:
             self.get_logger().warn("Closing mission")
-            self.process.terminate()
+            self.process.send_signal(signal.SIGINT)
             self.mission_launched = False
 
 

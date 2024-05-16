@@ -37,7 +37,8 @@ ConeAssociation::ConeAssociation() : Node("cone_placement_node") {
 
 void ConeAssociation::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
     // we haven't started driving yet
-    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->lap_count == 0) {
+    // if (msg->state == driverless_msgs::msg::State::DRIVING && msg->lap_count == 0) {
+    if (msg->lap_count == 0) {
         mapping = true;
     }
 
@@ -50,6 +51,7 @@ void ConeAssociation::state_callback(const driverless_msgs::msg::State::SharedPt
 
 void ConeAssociation::callback(const driverless_msgs::msg::ConeDetectionStamped::SharedPtr msg) {
     if (!mapping) {
+        RCLCPP_INFO_ONCE(get_logger(), "Not ready to map");
         return;
     }
 
