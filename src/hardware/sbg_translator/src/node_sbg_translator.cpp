@@ -13,6 +13,9 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     this->ekf_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/imu/odometry", 1, std::bind(&SBGTranslate::ekf_odom_callback, this, _1));
 
+    // this->imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+    //     "/imu/data", 1, std::bind(&SBGTranslate::imu_data_callback, this, _1));
+
     // Odometry
     this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/sbg_translated/odometry", 1);
 
@@ -37,6 +40,18 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
 
     RCLCPP_INFO(this->get_logger(), "---SBG Odom Converter Node Initialised---");
 }
+
+// void SBGTranslate::imu_data_callback(sensor_msgs::msg::Imu imu_data_msg) {
+//     sensor_msgs::msg::Imu imu_msg = imu_data_msg;
+
+//     // orient the position delta by the last yaw
+//     double yaw = quat_to_euler(imu_msg.orientation.z);
+
+//     imu_msg.orientation = euler_to_quat(0.0, 0.0, -yaw);
+//     imu_msg.angular_velocity.z = -imu_msg.angular_velocity.z;
+    
+//     imu_pub_->publish(imu_msg);
+// }
 
 void SBGTranslate::update_odom() {
     // only update if all messages have been received
@@ -233,7 +248,7 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
         // initialize yaw
         // convert quat to euler
         double yaw = quat_to_euler(msg->pose.pose.orientation);
-        init_yaw_ = yaw;
+        init_yaw_ = -yaw;
 
         // initialize position
         last_x_ = msg->pose.pose.position.x;
@@ -259,7 +274,7 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
 
     double magnitude = sqrt(update_x * update_x + update_y * update_y);
 
-    double delta_yaw = yaw - init_yaw_ - state_[2];
+    double delta_yaw = -yaw - init_yaw_ - state_[2];
     double delta_x = magnitude * cos(state_[2]);
     double delta_y = magnitude * sin(state_[2]);
 
@@ -290,12 +305,13 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
     odom_msg.twist.twist.linear.x = vel_magnitude * cos(state_[2]);
     odom_msg.twist.twist.linear.y = vel_magnitude * sin(state_[2]);
     odom_msg.twist.twist.linear.z = 0.0;
+    odom_msg.twist.twist.angular.z = msg->twist.twist.angular.z;
 
     // publish the odom msg
     odom_pub_->publish(odom_msg);
 
     // publish imu message
-    imu_pub_->publish(make_imu_msg(odom_msg));
+    // imu_pub_->publish(make_imu_msg(odom_msg));
 
     // publish pose message
     pose_pub_->publish(make_pose_msg(odom_msg));

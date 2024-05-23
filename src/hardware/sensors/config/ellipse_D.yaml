@@ -75,7 +75,7 @@
       # 3 MARINE          Used in marine and underwater applications
       # 4 AIRPLANE        For fixed wings aircraft
       # 5 HELICOPTER      For rotary wing aircraft
-      motionProfile: 5
+      motionProfile: 1
 
     # IMU_ALIGNMENT_LEVER_ARM
     imuAlignementLeverArm:
@@ -204,11 +204,11 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      posRejectMode: 1
+      posRejectMode: 2
       # Rejection mode for velocity (see posRejectMode values)
-      velRejectMode: 1
+      velRejectMode: 2
       # Rejection mode for true heading (see posRejectMode values)
-      hdtRejectMode: 1
+      hdtRejectMode: 2
 
     # Odometer configuration
     odom:
