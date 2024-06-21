@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 from sklearn.cluster import DBSCAN
+import array
 
 import rclpy
 from rclpy.node import Node
@@ -16,12 +17,48 @@ from driverless_common.common import QOS_ALL, FPSHandler
 from .library.cy_library import total_least_squares as tls
 
 
+def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
+    # The PointCloud2.data setter will create an array.array object for you if you don't
+    # provide it one directly. This causes very slow performance because it iterates
+    # over each byte in python.
+    # Here we create an array.array object using a memoryview, limiting copying and
+    # increasing performance.
+
+    # remove the dummy fields that were added
+    cloud_arr = cloud_arr[
+        [fname for fname, _type in dtype_list if not (
+            fname[:len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]]
+
+    point_cloud_msg.height = 1
+    point_cloud_msg.width = cloud_arr.shape[0]
+
+    if point_cloud_msg.height == 1:
+        cloud_arr = np.reshape(cloud_arr, (point_cloud_msg.width,))
+    else:
+        cloud_arr = np.reshape(cloud_arr, (point_cloud_msg.height, point_cloud_msg.width))
+
+    # make it 2d (even if height will be 1)
+    cloud_arr = np.atleast_2d(cloud_arr)
+
+    memory_view = memoryview(cloud_arr)
+    if memory_view.nbytes > 0:
+        array_bytes = memory_view.cast("B")
+    else:
+        # Casting raises a TypeError if the array has no elements
+        array_bytes = b""
+    as_array = array.array("B")
+    as_array.frombytes(array_bytes)
+    point_cloud_msg.data = as_array
+    return point_cloud_msg
+
+
+DUMMY_FIELD_PREFIX = "__"
+    
 def fields_to_dtype(fields, point_step):
     """
     FROM ROS2_NUMPY
     Convert a list of PointFields to a numpy record datatype.
     """
-    DUMMY_FIELD_PREFIX = "__"
     # mappings between PointField types and numpy types
     type_mappings = [
         (PointField.INT8, np.dtype("int8")),
@@ -87,7 +124,10 @@ class LiDARDetectorNode(Node):
 
         # Create subscribers and publishers
         self.create_subscription(PointCloud2, "/velodyne_points", self.callback, QOS_ALL)
-        self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
+
+        self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection_new", 1)
+        self.point_cloud_publisher_ground = self.create_publisher(PointCloud2, "/lidar_debug/filtered_ground", 1)
+        self.point_cloud_publisher_z_filter = self.create_publisher(PointCloud2, "/lidar_debug/filtered_z", 1)
 
         # Log info
         self.get_logger().info("---LiDAR detector node initialised---")
@@ -108,7 +148,7 @@ class LiDARDetectorNode(Node):
         self.declare_parameter("cpu_utilisation", 0.90)
         self.declare_parameter("cone_diam", 0.15)
         self.declare_parameter("cone_height", 0.30)
-        self.declare_parameter("lidar_height_above_ground", 0.08)
+        self.declare_parameter("lidar_height_above_ground", 0.15)
         self.declare_parameter("lidar_vertical_res_val", 1.25)
         self.declare_parameter("lidar_horizontal_res_val", 0.05)
         self.declare_parameter("lhag_err", 0.25)
@@ -151,65 +191,6 @@ class LiDARDetectorNode(Node):
         self.numer = self.cone_height * self.cone_diam
         self.denom = 8 * math.tan(self.lidar_vertical_res / 2) * math.tan(self.lidar_horizontal_res / 2)
 
-        self.get_logger().info(
-            "PARAMS: Lidar Range: "
-            + str(self.lidar_range)
-            + "m"
-            + "\t| Delta Alpha: "
-            + str(self.delta_alpha)
-            + "rad"
-            + "\t| Bin Size: "
-            + str(self.bin_size)
-            + "m"
-            + "\t| T_m: "
-            + str(self.t_m)
-            + "rad"
-            + "\t| T_b: "
-            + str(self.t_b)
-            + "m"
-            + "\t| T_rmse: "
-            + str(self.t_rmse)
-            + "m"
-            + "\t| Regress Between Bins: "
-            + str(self.regress_between_bins)
-            + "\t| T_d_ground: "
-            + str(self.t_d_ground)
-            + "m"
-            + "\t| T_d_max: "
-            + str(self.t_d_max)
-            + "m"
-            + "\t| CPU Utilisation: "
-            + str(self.cpu_utilisation)
-            + "\t| Cone Diameter: "
-            + str(self.cone_diam)
-            + "m"
-            + "\t| Cone Height: "
-            + str(self.cone_height)
-            + "m"
-            + "\t| Lidar Height Above Ground: "
-            + str(self.lidar_height_above_ground)
-            + "m"
-            + "\t| Lidar Vertical Resolution: "
-            + str(self.lidar_vertical_res)
-            + "rad"
-            + "\t| Lidar Horizontal Resolution: "
-            + str(self.lidar_horizontal_res)
-            + "rad"
-            + "\t| LHAG Error: "
-            + str(self.lhag_err)
-            + "m"
-            + "\t| HACH Lower Error: "
-            + str(self.hach_lower_err)
-            + "m"
-            + "\t| HACH Upper Error: "
-            + str(self.hach_upper_err)
-            + "m"
-            + "\t| Epsilon: "
-            + str(self.epsilon)
-            + "\t| Min Points: "
-            + str(self.min_points)
-        )
-
     def callback(self, msg: PointCloud2):
         """
         Callback function for when point cloud data is received.
@@ -228,8 +209,16 @@ class LiDARDetectorNode(Node):
 
         # Remove points that are above the height of cones
         point_cloud = point_cloud[
-            point_cloud["z"] < self.lhag_err * (self.lidar_height_above_ground + self.cone_height)
+            point_cloud["z"] < self.lhag_err * self.lidar_height_above_ground + self.cone_height / 2
         ]
+
+        # 0 = lidar_centre (approx half cone height off ground)
+        # ground = -lidar_height = -0.15
+        # top_crop = cone_height / 2 + lidar_centre = 0.15 + 0 = 0.15
+
+        # create a new pointcloud msg to publish the pointcloud after this step of filtering:
+        new_point_cloud_msg = array_to_pointcloud2(msg, point_cloud, dtype_list)
+        self.point_cloud_publisher_z_filter.publish(new_point_cloud_msg)
 
         # Compute point normals
         point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
@@ -253,14 +242,19 @@ class LiDARDetectorNode(Node):
             point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane
         )
         object_points = point_cloud[point_labels]
+        ground_points = point_cloud[~point_labels]
+
+        # create a new pointcloud msg to publish the pointcloud after this step of filtering:
+        # new_point_cloud_msg = array_to_pointcloud2(msg, ground_points, dtype_list)
+        # self.point_cloud_publisher_ground.publish(new_point_cloud_msg)
+        new_point_cloud_msg = array_to_pointcloud2(msg, object_points, dtype_list)
+        self.point_cloud_publisher_ground.publish(new_point_cloud_msg)
 
         if object_points.size == 0:
             self.get_logger().info("No objects points detected")
             return []
 
         object_centers, objects = self.group_points(object_points)
-
-        ground_points = point_cloud[~point_labels]
         (
             obj_segs,
             obj_bins,
