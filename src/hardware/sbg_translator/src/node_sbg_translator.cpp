@@ -66,59 +66,51 @@ double SBGTranslate::filer_yaw(double x, double y) {
     double Q = 0.4;
     double R = 0.1;
 
-    // prediction
-    // x = x + v * dt
-    double yaw_pred = state_[2] + last_yaw_rate_ * (this->now() - last_time_).seconds();
-    yaw_pred = wrap_to_pi(yaw_pred); // -pi to pi
-
-    double yaw = yaw_pred; // default to prediction to init variable
-
-    yaw_cov_ += Q; // process noise, continues to increase the covariance if measurement is ignored
-
     // measurement update
-    double x_delta = x - state_[0];
-    double y_delta = y - state_[1];
+    // double x_delta = x - state_[0];
+    // double y_delta = y - state_[1];
 
     // add to circular buffer
-    update_pos_buffer(x_delta, y_delta);
+    update_pos_buffer(state_[0], state_[1]);
 
     // get the angle between the two vectors
     // use average of the last 10 deltas
+    // double yaw_vec_angle = atan2(
+    //     std::accumulate(y_deltas_.begin(), y_deltas_.end(), 0.0) / y_deltas_.size(),
+    //     std::accumulate(x_deltas_.begin(), x_deltas_.end(), 0.0) / x_deltas_.size()
+    // );
+    // use the difference between the first and last element
     double yaw_vec_angle = atan2(
-        std::accumulate(y_deltas_.begin(), y_deltas_.end(), 0.0) / y_deltas_.size(),
-        std::accumulate(x_deltas_.begin(), x_deltas_.end(), 0.0) / x_deltas_.size()
+        y_deltas_.back() - y_deltas_.front(),
+        x_deltas_.back() - x_deltas_.front()
     );
     yaw_vec_angle = wrap_to_pi(yaw_vec_angle);
 
-    // ignore deltas that are too large
-    if (fabs(wrap_to_pi(yaw_vec_angle - last_yaw_vec_angle_)) < yaw_cov_) {
-        // calc this kalman gain
-        double K = yaw_cov_ / (yaw_cov_ + R);
+    double K = yaw_cov_ / (yaw_cov_ + R);
 
-        if (fabs(wrap_to_pi(yaw_vec_angle - yaw)) < yaw_cov_) {
-            // update the yaw
-            double yaw = yaw_pred + K * (yaw_vec_angle - yaw_pred);
-            yaw = wrap_to_pi(yaw);
-        } else {
-            // override the yaw
-            yaw = yaw_vec_angle;
-            RCLCPP_INFO(this->get_logger(), "Yaw pred: %f, Yaw measurement: %f - Too large", yaw_pred, yaw_vec_angle);
-        }
+    double yaw_update = state_[2] + K * (yaw_vec_angle - state_[2]);
+    yaw_update = wrap_to_pi(yaw_update);
 
-        // update covariance
-        yaw_cov_ = (1 - K) * yaw_cov_;
+    // RCLCPP_INFO(this->get_logger(), "Yaw measurement: %f, Yaw update: %f, cov: %f, K: %f", yaw_vec_angle, yaw_vec_angle - state_[2], yaw_cov_, K);
 
-        RCLCPP_INFO(this->get_logger(), "Yaw pred: %f, Yaw measurement: %f, Yaw update: %f, cov: %f, K: %f", yaw_pred, yaw_vec_angle, yaw, yaw_cov_, K);
-    } else {
-        RCLCPP_INFO(this->get_logger(), "Last yaw measurement: %f, Yaw measurement: %f - Too large", last_yaw_vec_angle_, yaw_vec_angle);
-    }
+    // update covariance
+    yaw_cov_ = (1 - K) * yaw_cov_;
+
+    // prediction
+    // x = x + v * dt
+    double yaw_pred = yaw_update + last_yaw_rate_ * (this->now() - last_time_).seconds();
+    yaw_pred = wrap_to_pi(yaw_pred); // -pi to pi
+
+    yaw_cov_ += Q; // process noise, continues to increase the covariance if measurement is ignored
+
+    // RCLCPP_INFO(this->get_logger(), "Yaw pred: %f, cov: %f", yaw_pred, yaw_cov_);
 
     // update the states
     state_[0] = x;
     state_[1] = y;
     last_yaw_vec_angle_ = yaw_vec_angle;
 
-    return yaw;
+    return yaw_pred;
 }
 
 void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
