@@ -73,9 +73,7 @@ class SBGTranslate : public rclcpp::Node {
         }
     }
 
-    double wrap_to_pi(double angle) {
-        return std::fmod(angle + M_PI, 2 * M_PI) - M_PI;
-    }
+    double wrap_to_pi(double angle) { return std::fmod(angle + M_PI, 2 * M_PI) - M_PI; }
 
     sensor_msgs::msg::Imu make_imu_msg(nav_msgs::msg::Odometry odom_msg) {
         sensor_msgs::msg::Imu imu_msg;

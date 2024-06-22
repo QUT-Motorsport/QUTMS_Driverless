@@ -10,6 +10,7 @@ from tf2_ros.transform_listener import TransformListener
 
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.node import Node
 
 from driverless_msgs.msg import Shutdown, State
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
@@ -19,7 +20,6 @@ from std_msgs.msg import Bool, UInt8
 from std_srvs.srv import Trigger
 
 from driverless_common.shutdown_node import ShutdownNode
-from rclpy.node import Node
 
 
 class TrackdriveHandler(ShutdownNode):
@@ -90,7 +90,7 @@ class TrackdriveHandler(ShutdownNode):
                 # reset odom and pose from camera
                 self.reset_odom_client.call_async(Trigger.Request())
                 self.reset_pose_client.call_async(Trigger.Request())
-            
+
             print("Waiting for pose to reset")
             time.sleep(2)
 

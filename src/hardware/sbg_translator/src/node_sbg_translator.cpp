@@ -5,8 +5,8 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     this->ekf_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/imu/odometry", 1, std::bind(&SBGTranslate::ekf_odom_callback, this, _1));
 
-    this->imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-        "/imu/data", 1, std::bind(&SBGTranslate::imu_callback, this, _1));
+    this->imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 1,
+                                                                      std::bind(&SBGTranslate::imu_callback, this, _1));
 
     // Odometry
     this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/sbg_translated/odometry", 1);
@@ -37,14 +37,14 @@ void SBGTranslate::imu_callback(sensor_msgs::msg::Imu::SharedPtr imu_data_msg) {
     imu_msg.orientation = euler_to_quat(0.0, 0.0, -yaw);
     imu_msg.angular_velocity.z = -imu_msg.angular_velocity.z;
     imu_msg.linear_acceleration.y = -imu_msg.linear_acceleration.y;
-    
+
     imu_pub_->publish(imu_msg);
 }
 
 // void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 //     // flip x and y and invert the yaw
 //     nav_msgs::msg::Odometry odom_msg = *msg;
-    
+
 //     odom_msg.pose.pose.position.x = -msg->pose.pose.position.y;
 //     odom_msg.pose.pose.position.y = msg->pose.pose.position.x;
 
@@ -80,10 +80,7 @@ double SBGTranslate::filer_yaw(double x, double y) {
     //     std::accumulate(x_deltas_.begin(), x_deltas_.end(), 0.0) / x_deltas_.size()
     // );
     // use the difference between the first and last element
-    double yaw_vec_angle = atan2(
-        y_deltas_.back() - y_deltas_.front(),
-        x_deltas_.back() - x_deltas_.front()
-    );
+    double yaw_vec_angle = atan2(y_deltas_.back() - y_deltas_.front(), x_deltas_.back() - x_deltas_.front());
     yaw_vec_angle = wrap_to_pi(yaw_vec_angle);
 
     double K = yaw_cov_ / (yaw_cov_ + R);
@@ -91,7 +88,8 @@ double SBGTranslate::filer_yaw(double x, double y) {
     double yaw_update = state_[2] + K * (yaw_vec_angle - state_[2]);
     yaw_update = wrap_to_pi(yaw_update);
 
-    // RCLCPP_INFO(this->get_logger(), "Yaw measurement: %f, Yaw update: %f, cov: %f, K: %f", yaw_vec_angle, yaw_vec_angle - state_[2], yaw_cov_, K);
+    // RCLCPP_INFO(this->get_logger(), "Yaw measurement: %f, Yaw update: %f, cov: %f, K: %f", yaw_vec_angle,
+    // yaw_vec_angle - state_[2], yaw_cov_, K);
 
     // update covariance
     yaw_cov_ = (1 - K) * yaw_cov_;
@@ -99,9 +97,9 @@ double SBGTranslate::filer_yaw(double x, double y) {
     // prediction
     // x = x + v * dt
     double yaw_pred = yaw_update + last_yaw_rate_ * (this->now() - last_time_).seconds();
-    yaw_pred = wrap_to_pi(yaw_pred); // -pi to pi
+    yaw_pred = wrap_to_pi(yaw_pred);  // -pi to pi
 
-    yaw_cov_ += Q; // process noise, continues to increase the covariance if measurement is ignored
+    yaw_cov_ += Q;  // process noise, continues to increase the covariance if measurement is ignored
 
     // RCLCPP_INFO(this->get_logger(), "Yaw pred: %f, cov: %f", yaw_pred, yaw_cov_);
 
@@ -128,7 +126,7 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
 
     // flip x and y and invert the yaw
     nav_msgs::msg::Odometry odom_msg = *msg;
-    
+
     odom_msg.pose.pose.position.x = -msg->pose.pose.position.y;
     odom_msg.pose.pose.position.y = msg->pose.pose.position.x;
 
