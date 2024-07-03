@@ -7,7 +7,7 @@
     <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
     <license>MIT</license>
 
-    <depend>rclpy_lifecycle</depend>
+    <!-- <depend>rclpy_lifecycle</depend> -->
 
     <!-- Messages -->
     <depend>driverless_msgs</depend>

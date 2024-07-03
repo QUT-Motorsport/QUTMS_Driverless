@@ -6,10 +6,21 @@ echo ""
 sleep 3
 cd ~/QUTMS
 git clone https://github.com/QUT-Motorsport/eufs_sim.git
-git clone https://gitlab.com/eufs/eufs_msgs.git
-git clone https://github.com/QUT-Motorsport/eufs_rviz_plugins.git
-# git clone https://github.com/QUT-Motorsport/qutms_msgs.git
 echo "export EUFS_MASTER=~/QUTMS" >> ~/.bashrc
 echo "export QUTMS_WS=~/QUTMS" >> ~/.bashrc
 export EUFS_MASTER=~/QUTMS
 export QUTMS_WS=~/QUTMS
+
+## Clone SBG driver
+echo ""
+echo "---Cloning SBG Driver---"
+echo ""
+git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
+
+sudo rosdep init
+rosdep update
+rosdep install -y \
+    --rosdistro=${ROS_DISTRO} \
+    --ignore-src \
+    --from-paths ~/QUTMS \
+    --skip-keys "zed_ros2"

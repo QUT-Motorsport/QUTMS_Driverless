@@ -65,13 +65,6 @@ source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_pre-commit.
 ## Check if user wants to install WSL version of GitKraken
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_gitkraken.sh
 
-## Clone SBG driver
-echo ""
-echo "---Cloning SBG Driver---"
-echo ""
-cd ~/QUTMS
-git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
-
 echo ""
 echo "---Building packages---"
 echo ""
