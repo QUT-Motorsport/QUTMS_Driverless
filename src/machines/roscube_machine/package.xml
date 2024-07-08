@@ -9,6 +9,11 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
+    <depend>rosbag2_storage_mcap</depend>
+    <depend>foxglove_bridge</depend>
+    <depend>rmw_cyclonedds_cpp</depend>
+    <depend>velodyne</depend>
+
     <!-- Packages -->
     <depend>rosboard</depend>
     <depend>controllers</depend>

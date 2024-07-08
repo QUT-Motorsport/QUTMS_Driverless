@@ -1,0 +1,116 @@
+FROM ros:humble
+
+ENV ROS_DISTRO=humble
+
+# Docker config setup
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL /bin/bash
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /tmp
+
+# ==============================================================================
+#                           Set up a user using host UID
+#    (this helps with file permissions when mounting folders into a container)
+# ==============================================================================
+
+ARG USERNAME
+ARG HOST_UID
+# dialout group is used for compatability with mac
+ARG HOST_GROUP=dialout
+
+# create user and set no password required
+RUN useradd \
+        -r \
+        -m \
+        -d /home/${USERNAME}/ \
+        -u ${HOST_UID} \
+        -g ${HOST_GROUP} \
+        -G sudo,video,audio \
+        ${USERNAME} && \
+    echo ${USERNAME}:${USERNAME} | chpasswd && \
+    echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
+
+
+RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
+    mkdir -p /home/${USERNAME}/driverless_ws/tools && \
+    chown -R ${USERNAME}:${HOST_GROUP} /home/${USERNAME}/driverless_ws
+
+# ==============================================================================
+#                          Download repos we use
+# ==============================================================================
+
+WORKDIR /home/$USERNAME/driverless_ws
+USER ${USERNAME}
+
+RUN git clone -b ros-install-dockerfile https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
+        --recurse-submodules
+
+RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
+
+# ==============================================================================
+#                          Install Dependencies
+# ==============================================================================
+
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        can-utils net-tools usbutils udev mesa-common-dev \
+        # lots of dependencies for opengl
+        libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libgl-dev \
+        python3-pip
+
+# # install ros requirements
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
+    rosdep update && rosdep install -y \
+        --rosdistro ${ROS_DISTRO} \
+        --from-paths QUTMS_Driverless sbg_ros2_driver \
+        --skip-keys "zed_ros2" \
+        --ignore-src
+
+# install pip requirements
+COPY ./src/machines/roscube_machine/requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+
+RUN rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# remove driverless repo as deps have now been installed
+RUN rm -rf QUTMS_Driverless
+
+# ==============================================================================
+#                          Build and initialise ROS 2
+# ==============================================================================
+
+USER ${USERNAME}
+
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /home/${USERNAME}/.bashrc
+RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /home/${USERNAME}/driverless_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
+
+# copy in source
+COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
+COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./tools
+
+# build packages in the driverless workspace 
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
+    colcon build --symlink-install --packages-up-to roscube_machine qutms_cli_tools
+        # qutms_nav2 nav_interfaces lidarslam --cmake-args\
+        # ' -DOPENGL_gl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so' \
+        # ' -DOPENGL_opengl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so' \
+        # ' -DOPENGL_glu_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLU.so' \
+        # ' -DOPENGL_egl_LIBRARY=/usr/lib/x86_64-linux-gnu/libEGL.so' \
+        # ' -DOPENGL_glx_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLX.so' \
+        # ' -DOPENGL_INCLUDE_DIR=/usr/include/GL' \
+        # ' -DEGL_INCLUDE_DIR=/usr/include/EGL'
+
+RUN python3 src/navigation/planners/scripts/pre_calc.py
+
+# delete source
+RUN rm -rf ./src ./tools
+
+COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/${USERNAME}/.bashrc
+RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/${USERNAME}/.bashrc
+RUN echo 'export ROS_DOMAIN_ID=69' >> /home/${USERNAME}/.bashrc

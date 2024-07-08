@@ -23,7 +23,7 @@ velodyne_transform_node:
         min_range: 0.5
         max_range: 130.0
         view_direction: 0.0
-        view_width: 6.282185
+        view_width: 3.14159
         organize_cloud: true
         fixed_frame: ""
         target_frame: ""

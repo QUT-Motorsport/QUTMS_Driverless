@@ -49,7 +49,7 @@ def generate_launch_description():
             ),
             ComposableNode(
                 package="velodyne_pointcloud",
-                plugin="velodyne_pointcloud::Convert",  # Transform',
+                plugin="velodyne_pointcloud::Transform",
                 name="velodyne_transform_node",
                 parameters=[transform_params],
                 extra_arguments=[{"use_intra_process_comms": True}],
