@@ -63,15 +63,10 @@ RUN apt-get update && \
 # # install ros requirements
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
     rosdep update && rosdep install -y \
+        --rosdistro ${ROS_DISTRO} \
         --from-paths QUTMS_Driverless sbg_ros2_driver \
         --skip-keys "zed_ros2" \
-        --ignore-src \
-        --rosdistro ${ROS_DISTRO}
-
-# extra deps for ROS 2
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        ros-humble-rmw-cyclonedds-cpp ros-humble-foxglove-bridge ros-humble-rosbag2-storage-mcap
+        --ignore-src
 
 # install pip requirements
 COPY ./src/machines/roscube_machine/requirements.txt /tmp/requirements.txt
