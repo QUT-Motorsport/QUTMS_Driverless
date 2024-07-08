@@ -1,4 +1,4 @@
-.PHONY: all help build_docker_base_jetson build_docker_base_roscube build run roscube_srv jetson_srv
+.PHONY: all help build_docker_base_jetson build run panda_srv jetson_srv
 
 export USERNAME=developer
 export HOST_UID=$(shell id -u)
@@ -18,25 +18,20 @@ all:
 	@echo "COMMAND options:"
 	@echo "    help"
 	@echo "        - show this message"
-	@echo "    build_docker_base_[IMAGE_TYPE]"
-	@echo "        - build the base docker container"
-	@echo "        - IMAGE_TYPE options:"
-	@echo "            - roscube"
-	@echo "            - jetson"
-	@echo "    build target=[ENVIRONMENT_TARGET]"
-	@echo "        - build a target (see ENVIRONMENT_TARGET options)"
-	@echo "    run target=[ENVIRONMENT_TARGET]"
-	@echo "        - run a target (see ENVIRONMENT_TARGET options)"
-	@echo "    roscube_srv a=[ACTION]"
-	@echo "        - run systemctl service action (see ACTION options)"
+	@echo "    build target=[DEVICE]"
+	@echo "        - build a target (see DEVICE options)"
+	@echo "    run target=[DEVICE]"
+	@echo "        - run a target (see DEVICE options)"
 	@echo "    jetson_srv a=[ACTION]"
 	@echo "        - run systemctl service action (see ACTION options)"
+	@echo "    panda_srv a=[ACTION]"
+	@echo "        - run systemctl service action (see ACTION options)"
 	@echo
-	@echo "ENVIRONMENT_TARGET options:"
-	@echo "    roscube (requires IMAGE_TYPE=roscube)"
-	@echo "    roscube_terminal (requires IMAGE_TYPE=roscube)"
-	@echo "    jetson (requires IMAGE_TYPE=jetson)"
-	@echo "    jetson_terminal (requires IMAGE_TYPE=jetson)"
+	@echo "DEVICE options:"
+	@echo "    jetson (requires base jetson image)"
+	@echo "    jetson_terminal (requires base jetson image)"
+	@echo "    panda (requires nothing, just build)"
+	@echo "    panda_terminal (requires nothing, just build)"
 	@echo
 	@echo "ACTION options:"
 	@echo "    status"
@@ -47,19 +42,19 @@ all:
 
 help: all
 
-build_docker_base_roscube:
-	docker build -f Dockerfile.base -t qutms_driverless_base:ubuntu-22.04 \
-	--build-arg USERNAME=$(USERNAME) \
-	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=ubuntu:22.04 \
-	..
+# build_docker_base_roscube:
+# 	docker build -f Dockerfile.base -t qutms_driverless_base:ubuntu-22.04 \
+# 	--build-arg USERNAME=$(USERNAME) \
+# 	--build-arg HOST_UID=$(HOST_UID) \
+# 	--build-arg BASE_IMAGE=ubuntu:22.04 \
+# 	..
 
-build_docker_base_jetson:
-	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-jetpack-r35.3.1 \
-	--build-arg USERNAME=$(USERNAME) \
-	--build-arg HOST_UID=$(HOST_UID) \
-	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.3.1 \
-	..
+# build_docker_base_jetson:
+# 	docker build -f Dockerfile.base -t qutms_driverless_base:l4t-jetpack-r35.3.1 \
+# 	--build-arg USERNAME=$(USERNAME) \
+# 	--build-arg HOST_UID=$(HOST_UID) \
+# 	--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.3.1 \
+# 	..
 
 build_docker_base_jetson_new:
 	@echo "ensure 'jetson-containers' has been cloned into the 'repos' directory"
@@ -74,8 +69,11 @@ build:
 run:
 	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
 
-roscube_srv:
-	systemctl $(a) roscube_startup.service
+# roscube_srv:
+# 	systemctl $(a) roscube_startup.service
 
 jetson_srv:
 	systemctl $(a) jetson_startup.service
+
+panda_srv:
+	systemctl $(a) panda_startup.service

@@ -8,7 +8,7 @@ make run target=panda
 # [Unit]
 # Description=Run Panda Startup Service as user qev3d
 # DefaultDependencies=no
-# After=network.target
+# After=docker.service
 
 # [Service]
 # Type=simple
