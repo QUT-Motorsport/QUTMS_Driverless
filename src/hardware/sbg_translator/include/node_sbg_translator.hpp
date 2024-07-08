@@ -31,13 +31,11 @@ class SBGTranslate : public rclcpp::Node {
    private:
     // subscribers
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr ekf_odom_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr raw_pose_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
 
     // initial values
@@ -59,7 +57,6 @@ class SBGTranslate : public rclcpp::Node {
 
     bool received_odom_ = false;
 
-    void imu_callback(sensor_msgs::msg::Imu::SharedPtr msg);
     void ekf_odom_callback(nav_msgs::msg::Odometry::SharedPtr msg);
     double filer_yaw(double x, double y);
 
@@ -74,16 +71,6 @@ class SBGTranslate : public rclcpp::Node {
     }
 
     double wrap_to_pi(double angle) { return std::fmod(angle + M_PI, 2 * M_PI) - M_PI; }
-
-    sensor_msgs::msg::Imu make_imu_msg(nav_msgs::msg::Odometry odom_msg) {
-        sensor_msgs::msg::Imu imu_msg;
-        imu_msg.header.stamp = odom_msg.header.stamp;
-        imu_msg.header.frame_id = "chassis";
-
-        imu_msg.orientation = odom_msg.pose.pose.orientation;
-
-        return imu_msg;
-    }
 
     geometry_msgs::msg::PoseStamped make_pose_msg(nav_msgs::msg::Odometry odom_msg) {
         geometry_msgs::msg::PoseStamped pose_msg;

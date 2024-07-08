@@ -5,13 +5,8 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     this->ekf_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/imu/odometry", 1, std::bind(&SBGTranslate::ekf_odom_callback, this, _1));
 
-    this->imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 1,
-                                                                      std::bind(&SBGTranslate::imu_callback, this, _1));
-
     // Odometry
     this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/sbg_translated/odometry", 1);
-
-    this->imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/sbg_translated/imu", 1);
 
     // // Pose (for visuals)
     // this->pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/sbg_translated/pose", 1);
@@ -27,38 +22,6 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     RCLCPP_INFO(this->get_logger(), "---SBG Odom Converter Node Initialised---");
 }
 
-void SBGTranslate::imu_callback(sensor_msgs::msg::Imu::SharedPtr imu_data_msg) {
-    sensor_msgs::msg::Imu imu_msg = *imu_data_msg;
-
-    // orient the position delta by the last yaw
-    double yaw = quat_to_euler(imu_msg.orientation);
-
-    // invert the yaw
-    imu_msg.orientation = euler_to_quat(0.0, 0.0, -yaw);
-    imu_msg.angular_velocity.z = -imu_msg.angular_velocity.z;
-    imu_msg.linear_acceleration.y = -imu_msg.linear_acceleration.y;
-
-    imu_pub_->publish(imu_msg);
-}
-
-// void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-//     // flip x and y and invert the yaw
-//     nav_msgs::msg::Odometry odom_msg = *msg;
-
-//     odom_msg.pose.pose.position.x = -msg->pose.pose.position.y;
-//     odom_msg.pose.pose.position.y = msg->pose.pose.position.x;
-
-//     odom_msg.twist.twist.linear.x = -msg->twist.twist.linear.y;
-//     odom_msg.twist.twist.linear.y = msg->twist.twist.linear.x;
-
-//     double yaw = quat_to_euler(odom_msg.pose.pose.orientation);
-
-//     odom_msg.pose.pose.orientation = euler_to_quat(0.0, 0.0, -yaw);
-
-//     odom_msg.twist.twist.angular.z = -msg->twist.twist.angular.z;
-
-//     odom_pub_->publish(odom_msg);
-// }
 
 double SBGTranslate::filer_yaw(double x, double y) {
     // remove outliers from yaw with a kalman filter
@@ -114,10 +77,10 @@ double SBGTranslate::filer_yaw(double x, double y) {
 void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     if (!received_odom_) {
         // initialize position and yaw
-        state_[0] = -msg->pose.pose.position.y;
-        state_[1] = msg->pose.pose.position.x;
+        state_[0] = msg->pose.pose.position.x;
+        state_[1] = msg->pose.pose.position.y;
         state_[2] = 0.0;
-        last_yaw_rate_ = -msg->twist.twist.angular.z;
+        last_yaw_rate_ = msg->twist.twist.angular.z;
         last_time_ = this->now();
 
         received_odom_ = true;
@@ -127,12 +90,6 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
     // flip x and y and invert the yaw
     nav_msgs::msg::Odometry odom_msg = *msg;
 
-    odom_msg.pose.pose.position.x = -msg->pose.pose.position.y;
-    odom_msg.pose.pose.position.y = msg->pose.pose.position.x;
-
-    odom_msg.twist.twist.linear.x = -msg->twist.twist.linear.y;
-    odom_msg.twist.twist.linear.y = msg->twist.twist.linear.x;
-
     double yaw = filer_yaw(odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y);
     odom_msg.pose.pose.orientation = euler_to_quat(0.0, 0.0, yaw);
 
@@ -141,7 +98,7 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
 
     // update the last time
     last_time_ = this->now();
-    last_yaw_rate_ = -msg->twist.twist.angular.z;
+    last_yaw_rate_ = msg->twist.twist.angular.z;
     last_yaw_change_ = odom_msg.twist.twist.angular.z;
     state_[2] = yaw;
 

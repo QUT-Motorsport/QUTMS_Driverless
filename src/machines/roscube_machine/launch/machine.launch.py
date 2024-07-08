@@ -57,10 +57,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             scs_container,
-            # Node(
-            #     package="rosboard",
-            #     executable="rosboard_node",
-            # ),
+            Node(
+                package="rosboard",
+                executable="rosboard_node",
+            ),
             Node(
                 package="driverless_common",
                 executable="display",
