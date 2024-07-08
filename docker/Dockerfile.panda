@@ -87,9 +87,6 @@ USER ${USERNAME}
 RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /home/${USERNAME}/.bashrc
 RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /home/${USERNAME}/driverless_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
 
-COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
-ENTRYPOINT ["/ros_entrypoint.sh"]
-
 # copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./tools
@@ -110,3 +107,10 @@ RUN python3 src/navigation/planners/scripts/pre_calc.py
 
 # delete source
 RUN rm -rf ./src ./tools
+
+COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/${USERNAME}/.bashrc
+RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/${USERNAME}/.bashrc
+RUN echo 'export ROS_DOMAIN_ID=69' >> /home/${USERNAME}/.bashrc
