@@ -1,6 +1,10 @@
 #!/bin/bash
 #set -e
 
+# echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/$USERNAME/.bashrc
+# echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/$USERNAME/.bashrc
+# echo 'export ROS_DOMAIN_ID=69' >> /home/$USERNAME/.bashrc
+
 test -f "/opt/ros/$ROS_DISTRO/setup.bash" && source "/opt/ros/$ROS_DISTRO/setup.bash"
 test -f "/opt/ros/$ROS_DISTRO/install/setup.bash" && source "/opt/ros/$ROS_DISTRO/install/setup.bash"
 

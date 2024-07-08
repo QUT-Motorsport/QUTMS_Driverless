@@ -44,7 +44,7 @@ WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
 RUN git clone https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
-    --recurse-submodules
+        --recurse-submodules
 
 RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
 
@@ -60,22 +60,23 @@ RUN apt-get update && \
         libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libgl-dev \
         python3-pip
 
+# # install ros requirements
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
+    rosdep update && rosdep install -y \
+        --from-paths QUTMS_Driverless sbg_ros2_driver \
+        --skip-keys "zed_ros2" \
+        --ignore-src \
+        --rosdistro ${ROS_DISTRO}
+
+# extra deps for ROS 2
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ros-humble-rmw-cyclonedds-cpp ros-humble-foxglove-bridge ros-humble-rosbag2-storage-mcap
+
 # install pip requirements
 COPY ./src/machines/roscube_machine/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
-
-# install ros requirements
-RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
-    rosdep update && rosdep install -y \
-        --from-paths QUTMS_Driverless sbg_ros2_driver \
-        --skip-keys "zed_ros2 rclpy_lifecycle" \
-        --ignore-src \
-        --rosdistro ${ROS_DISTRO}
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        ros-humble-rmw-cyclonedds-cpp ros-humble-foxglove-bridge
 
 RUN rm -rf /var/lib/apt/lists/* && apt-get clean
 
@@ -87,15 +88,6 @@ RUN rm -rf QUTMS_Driverless
 # ==============================================================================
 
 USER ${USERNAME}
-
-# tell ROS to use Cyclone DDS
-ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
-ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml
-ENV ROS_DOMAIN_ID=69
-
-RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/$USERNAME/.bashrc
-RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/$USERNAME/.bashrc
-RUN echo 'export ROS_DOMAIN_ID=69' >> /home/$USERNAME/.bashrc
 
 RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /home/${USERNAME}/.bashrc
 RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /home/${USERNAME}/driverless_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
@@ -118,6 +110,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
         # ' -DOPENGL_glx_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLX.so' \
         # ' -DOPENGL_INCLUDE_DIR=/usr/include/GL' \
         # ' -DEGL_INCLUDE_DIR=/usr/include/EGL'
+
+RUN python3 src/navigation/planners/scripts/pre_calc.py
 
 # delete source
 RUN rm -rf ./src ./tools
