@@ -8,6 +8,7 @@ opencv-python
 pandas
 Pillow
 protobuf
+pycurl
 PyYAML
 requests
 scikit-learn
