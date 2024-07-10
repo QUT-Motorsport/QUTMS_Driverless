@@ -16,7 +16,7 @@ slam_toolbox_node:
     map_frame: track
     base_frame: base_footprint
     map_name: /slam/occupancy_grid  # occpancy grid map topic, absolute path
-    scan_topic: /scan  # scan topic, absolute path
+    scan_topic: /lidar/converted_2D_scan  # scan topic, absolute path
     scan_queue_size: 1  # The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
     use_map_saver: false  # Instantiate the map saver service and self-subscribe to the map topic
     # map_start_pose: [0.0, 0.0, 0.0]  # Pose to start pose-graph mapping/localization in, if available

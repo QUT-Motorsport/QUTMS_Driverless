@@ -129,13 +129,15 @@ class LiDARDetectorNode(Node):
         self.point_cloud_publisher_ground = self.create_publisher(PointCloud2, "/lidar_debug/filtered_ground", 1)
         self.point_cloud_publisher_z_filter = self.create_publisher(PointCloud2, "/lidar_debug/filtered_z", 1)
 
+        self.point_cloud_publisher_cones = self.create_publisher(PointCloud2, "/lidar/cone_points", 1)
+
         # Log info
         self.get_logger().info("---LiDAR detector node initialised---")
 
     def initialise_params(self):
         # declare parameters
         self.declare_parameter("log_level", "DEBUG")
-        self.declare_parameter("lidar_range", 20)
+        self.declare_parameter("lidar_range", 25)
         self.declare_parameter("delta_alpha_ang", 128)
         self.declare_parameter("bin_size", 0.14)
         self.declare_parameter("t_m_ang", 148)
@@ -292,6 +294,11 @@ class LiDARDetectorNode(Node):
         detected_cones: list = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
         detection_msg = ConeDetectionStamped(header=msg.header, cones=detected_cones)
         self.detection_publisher.publish(detection_msg)
+
+        # create pointcloud of only cone points
+        cone_points = np.concatenate(cone_points)
+        new_point_cloud_msg = array_to_pointcloud2(msg, cone_points, dtype_list)
+        self.point_cloud_publisher_cones.publish(new_point_cloud_msg)
 
     def get_discretised_positions(self, x, y, point_norms):
         # Calculating the segment index for each point
