@@ -65,9 +65,9 @@
       # Year at startup
       year: 2024
       # month in year at startup
-      month: 05
+      month: 07
       # day in month at startup
-      day: 21
+      day: 11
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
@@ -75,7 +75,7 @@
       # 3 MARINE          Used in marine and underwater applications
       # 4 AIRPLANE        For fixed wings aircraft
       # 5 HELICOPTER      For rotary wing aircraft
-      motionProfile: 1
+      motionProfile: 5
 
     # IMU_ALIGNMENT_LEVER_ARM
     imuAlignementLeverArm:
@@ -274,7 +274,7 @@
       #
       # true : ENU convention (X east, Y north, Z up)
       # false (default): NED convention (X north, Y east, Z down)
-      use_enu: true
+      use_enu: false
 
       # Frame ID:
       # Note: If the frame convention is NED so the default frame ID is (imu_link_ned)

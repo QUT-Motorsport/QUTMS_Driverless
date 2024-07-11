@@ -198,7 +198,7 @@ controller_server:
     # Controller parameters
     RegulatedPurePursuit:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 3.0  # The desired maximum linear velocity to use.
+      desired_linear_vel: 4.0  # The desired maximum linear velocity to use.
       lookahead_dist: 4.0  # The lookahead distance to use to find the lookahead point.
       # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.

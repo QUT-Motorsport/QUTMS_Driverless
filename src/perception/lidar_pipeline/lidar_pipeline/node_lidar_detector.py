@@ -125,7 +125,7 @@ class LiDARDetectorNode(Node):
         # Create subscribers and publishers
         self.create_subscription(PointCloud2, "/velodyne_points", self.callback, QOS_ALL)
 
-        self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection_new", 1)
+        self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
         self.point_cloud_publisher_ground = self.create_publisher(PointCloud2, "/lidar_debug/filtered_ground", 1)
         self.point_cloud_publisher_z_filter = self.create_publisher(PointCloud2, "/lidar_debug/filtered_z", 1)
 

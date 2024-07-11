@@ -80,7 +80,14 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
         state_[0] = msg->pose.pose.position.x;
         state_[1] = msg->pose.pose.position.y;
         state_[2] = 0.0;
-        last_yaw_rate_ = msg->twist.twist.angular.z;
+
+        state_[0] = -msg->pose.pose.position.y;
+        state_[1] = msg->pose.pose.position.x;
+
+        init_x = state_[0];
+        init_y = state_[1];
+
+        last_yaw_rate_ = 0.0;
         last_time_ = this->now();
 
         received_odom_ = true;
@@ -90,7 +97,16 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
     // flip x and y and invert the yaw
     nav_msgs::msg::Odometry odom_msg = *msg;
 
+    odom_msg.pose.pose.position.x = -msg->pose.pose.position.y;
+    odom_msg.pose.pose.position.y = msg->pose.pose.position.x;
+
+    odom_msg.twist.twist.linear.x = -msg->twist.twist.linear.y;
+    odom_msg.twist.twist.linear.y = msg->twist.twist.linear.x;
+
     double yaw = filer_yaw(odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y);
+    if (state_[0] < init_x + 5.0) {
+        yaw = 0.0;
+    }
     odom_msg.pose.pose.orientation = euler_to_quat(0.0, 0.0, yaw);
 
     // get angular rate between current and last
@@ -98,7 +114,7 @@ void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
 
     // update the last time
     last_time_ = this->now();
-    last_yaw_rate_ = msg->twist.twist.angular.z;
+    last_yaw_rate_ = -msg->twist.twist.angular.z;
     last_yaw_change_ = odom_msg.twist.twist.angular.z;
     state_[2] = yaw;
 

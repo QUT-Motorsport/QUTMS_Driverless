@@ -43,6 +43,9 @@ class SBGTranslate : public rclcpp::Node {
     double last_yaw_change_ = 0.0;
     double last_yaw_vec_angle_ = 0.0;
 
+    double init_x = 0.0;
+    double init_y = 0.0;
+
     // updated values
     std::vector<float> state_;
     double yaw_cov_ = 0.5;
