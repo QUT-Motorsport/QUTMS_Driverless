@@ -27,7 +27,7 @@
       initFrameId: "track"
 
     # Configuration of the device with ROS.
-    confWithRos: true
+    confWithRos: false
 
     # Uart configuration
     uartConf:
@@ -67,7 +67,7 @@
       # month in year at startup
       month: 07
       # day in month at startup
-      day: 11
+      day: 18
 
       # Montion profile ID
       # 1 GENERAL_PURPOSE Should be used as a default when other profiles do not apply
@@ -75,7 +75,7 @@
       # 3 MARINE          Used in marine and underwater applications
       # 4 AIRPLANE        For fixed wings aircraft
       # 5 HELICOPTER      For rotary wing aircraft
-      motionProfile: 5
+      motionProfile: 2
 
     # IMU_ALIGNMENT_LEVER_ARM
     imuAlignementLeverArm:
@@ -102,9 +102,9 @@
       # Residual yaw error after axis alignment rad
       misYaw: 0.0
       # X Primary lever arm in IMU X axis (once IMU alignment is applied) m
-      leverArmX: -0.52
+      leverArmX: 0.25
       # Y Primary lever arm in IMU Y axis (once IMU alignment is applied) m
-      leverArmY: 0.25
+      leverArmY: 0.52
       # Z Primary lever arm in IMU Z axis (once IMU alignment is applied) m
       leverArmZ: 0.0
 
@@ -142,7 +142,7 @@
       # Magnetometer model ID
       # 201 Should be used in most applications
       # 202 Should be used in disturbed magnetic environment
-      magnetometerModel: 201
+      magnetometerModel: 202
       # Magnetometer rejection mode
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
@@ -204,11 +204,11 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      posRejectMode: 2
+      posRejectMode: 1
       # Rejection mode for velocity (see posRejectMode values)
-      velRejectMode: 2
+      velRejectMode: 1
       # Rejection mode for true heading (see posRejectMode values)
-      hdtRejectMode: 2
+      hdtRejectMode: 1
 
     # Odometer configuration
     odom:
@@ -232,7 +232,7 @@
       # 0 Measurement is not taken into account
       # 1 Measurement is rejected if inconsistent with current estimate (depending on error model)
       # 2 Measurement is always accepted
-      rejectMode: 1
+      rejectMode: 0
 
     # ToDo: event & CAN configuration
 
@@ -274,7 +274,7 @@
       #
       # true : ENU convention (X east, Y north, Z up)
       # false (default): NED convention (X north, Y east, Z down)
-      use_enu: false
+      use_enu: true
 
       # Frame ID:
       # Note: If the frame convention is NED so the default frame ID is (imu_link_ned)
@@ -295,19 +295,19 @@
       # Heave, surge and sway and accelerations on each axis for up to 4 points
       log_ship_motion: 0
       # Provides UTC time reference
-      log_utc_time: 200
+      log_utc_time: 0
       # Magnetic data with associated accelerometer on each axis
       log_mag: 0
       # Magnetometer calibration data (raw buffer)
       log_mag_calib: 0
       # GPS velocities from primary or secondary GPS receiver
-      log_gps1_vel: 10001
+      log_gps1_vel: 0
       # GPS positions from primary or secondary GPS receiver
-      log_gps1_pos: 10001
+      log_gps1_pos: 0
       # GPS true heading from dual antenna system
-      log_gps1_hdt: 10001
+      log_gps1_hdt: 0
       # GPS 1 raw data for post processing.
-      log_gps1_raw: 10001
+      log_gps1_raw: 0
       # Provides odometer velocity
       log_odo_vel: 0
       # Event A/B/C/D Event markers sent when events are detected on a sync in pin
