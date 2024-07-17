@@ -7,6 +7,8 @@
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/float32_stamped.hpp"
 #include "driverless_msgs/msg/state.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -28,10 +30,13 @@ class VelocityController : public rclcpp::Node {
 
     rclcpp::TimerBase::SharedPtr controller_timer_;
 
-    rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
+
+    rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
 
     std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler_;
     std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle_;
@@ -56,6 +61,7 @@ class VelocityController : public rclcpp::Node {
 
     void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
+    void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void state_callback(const driverless_msgs::msg::State::SharedPtr msg);
 
     void controller_callback();
