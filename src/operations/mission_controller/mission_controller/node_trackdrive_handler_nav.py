@@ -71,9 +71,6 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            print("Waiting for pose to reset")
-            time.sleep(2)
-
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
