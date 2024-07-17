@@ -69,10 +69,10 @@ def generate_launch_description():
                 package="lidar_pipeline",
                 executable="lidar_detector_node",
             ),
-            # Node(
-            #     package="mission_controller",
-            #     executable="mission_launcher_node",
-            # ),
+            Node(
+                package="mission_controller",
+                executable="mission_launcher_node",
+            ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(
                     launch_file_path=str(get_package_share_path("sensors") / "launch" / "vlp32.launch.py")

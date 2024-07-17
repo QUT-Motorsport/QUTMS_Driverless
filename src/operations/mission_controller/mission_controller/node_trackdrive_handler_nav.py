@@ -37,7 +37,7 @@ class TrackdriveHandler(ShutdownNode):
 
         self.create_subscription(State, "system/as_status", self.state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
-        self.create_subscription(Odometry, "ground_truth/odom", self.odom_callback, 1)
+        self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
 
         self.create_timer((1 / 20), self.timer_callback)
         self.tf_buffer = Buffer()

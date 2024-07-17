@@ -64,7 +64,7 @@ RUN apt-get update && \
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
     rosdep update && rosdep install -y \
         --rosdistro ${ROS_DISTRO} \
-        --from-paths QUTMS_Driverless sbg_ros2_driver \
+        --from-paths sbg_ros2_driver QUTMS_Driverless \
         --skip-keys "zed_ros2" \
         --ignore-src
 
@@ -72,6 +72,10 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
 COPY ./src/machines/roscube_machine/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ros-humble-pointcloud-to-laserscan
 
 RUN rm -rf /var/lib/apt/lists/* && apt-get clean
 

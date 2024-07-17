@@ -31,6 +31,7 @@ def generate_launch_description():
         ],
         remappings=[
             ("/pose", "/slam/car_pose"),
+            ("/slam_toolbox/graph_visualization", "/slam/graph_visualisation"),
         ],
     )
 
