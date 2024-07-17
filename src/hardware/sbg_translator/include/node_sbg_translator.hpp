@@ -31,11 +31,13 @@ class SBGTranslate : public rclcpp::Node {
    private:
     // subscribers
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr ekf_odom_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr raw_pose_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
 
     // initial values
@@ -60,6 +62,7 @@ class SBGTranslate : public rclcpp::Node {
 
     bool received_odom_ = false;
 
+    void imu_callback(sensor_msgs::msg::Imu::SharedPtr msg);
     void ekf_odom_callback(nav_msgs::msg::Odometry::SharedPtr msg);
     double filer_yaw(double x, double y);
 

@@ -5,8 +5,13 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     this->ekf_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/imu/odometry", 1, std::bind(&SBGTranslate::ekf_odom_callback, this, _1));
 
+    this->imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 1,
+                                                                      std::bind(&SBGTranslate::imu_callback, this, _1));
+
     // Odometry
     this->odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/sbg_translated/odometry", 1);
+
+    this->imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/sbg_translated/imu", 1);
 
     // // Pose (for visuals)
     // this->pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/sbg_translated/pose", 1);
@@ -72,6 +77,19 @@ double SBGTranslate::filer_yaw(double x, double y) {
     last_yaw_vec_angle_ = yaw_vec_angle;
 
     return yaw_pred;
+}
+
+void SBGTranslate::imu_callback(sensor_msgs::msg::Imu::SharedPtr imu_data_msg) {
+    sensor_msgs::msg::Imu imu_msg = *imu_data_msg;
+
+    // orient the position delta by the last yaw
+    double yaw = quat_to_euler(imu_msg.orientation);
+
+    // invert the yaw
+    imu_msg.orientation = euler_to_quat(0.0, 0.0, -yaw);
+    imu_msg.angular_velocity.z = -imu_msg.angular_velocity.z;
+
+    imu_pub_->publish(imu_msg);
 }
 
 void SBGTranslate::ekf_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
