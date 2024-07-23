@@ -19,7 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "odom_transformer = odom_transformer.node_odom_transformer:main",
+            "odom_transformer_node = odom_transformer.node_odom_transformer:main",
         ],
     },
 )

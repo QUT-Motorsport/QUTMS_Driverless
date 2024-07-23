@@ -38,7 +38,7 @@ class OdometryTransformer(Node):
             self.initial_easting = msg.pose.pose.position.x
             self.initial_northing = msg.pose.pose.position.y
             # Assuming orientation is in quaternion, converting to heading (yaw)
-            self.initial_heading = yaw(msg.pose.pose.orientation)
+            self.initial_heading = yaw(msg.pose.pose.orientation) + pi/2
             self.initialised = True
 
             print(f"Initialised at ({self.initial_easting}, {self.initial_northing}, {self.initial_heading})")
@@ -52,7 +52,7 @@ class OdometryTransformer(Node):
         delta_northing = current_northing - self.initial_northing
         
         # relative_heading = -current_heading - self.initial_heading + pi / 2  # use when ENU is false (eg recorded data)
-        relative_heading = current_heading - self.initial_heading
+        relative_heading = current_heading - self.initial_heading + pi/2
         
         x = delta_easting * cos(self.initial_heading) + delta_northing * sin(self.initial_heading)
         y = -delta_easting * sin(self.initial_heading) + delta_northing * cos(self.initial_heading)
@@ -65,14 +65,7 @@ class OdometryTransformer(Node):
         local_odom.pose.pose.position.z = msg.pose.pose.position.z
         # Adjust the orientation to be relative to the initial heading
         local_odom.pose.pose.orientation = orientation(0, 0, relative_heading)
-
-        # correct x y velocity
-        local_odom.twist.twist.linear.x = msg.twist.twist.linear.x * cos(self.initial_heading) + msg.twist.twist.linear.y * sin(self.initial_heading)
-        local_odom.twist.twist.linear.y = -msg.twist.twist.linear.x * sin(self.initial_heading) + msg.twist.twist.linear.y * cos(self.initial_heading)
-        local_odom.twist.twist.linear.z = msg.twist.twist.linear.z
-        local_odom.twist.twist.angular.x = msg.twist.twist.angular.x
-        local_odom.twist.twist.angular.y = msg.twist.twist.angular.y
-        local_odom.twist.twist.angular.z = msg.twist.twist
+        local_odom.twist = msg.twist
 
         self.publisher.publish(local_odom)
 

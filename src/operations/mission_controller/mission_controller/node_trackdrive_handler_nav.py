@@ -18,7 +18,7 @@ from std_msgs.msg import UInt8
 from driverless_common.shutdown_node import ShutdownNode
 
 
-class TrackdriveHandler(Node):
+class TrackdriveHandler(ShutdownNode):
     mission_started = False
     odom_received = False
     crossed_start = False
@@ -59,12 +59,12 @@ class TrackdriveHandler(Node):
         self.get_logger().info("---Trackdrive handler node initialised---")
 
     def state_callback(self, msg: State):
-        # super().state_callback(msg)
+        super().state_callback(msg)
         if (
-            # msg.state == State.DRIVING
-            # and msg.mission == State.TRACKDRIVE
-            # and msg.navigation_ready
-            not self.mission_started
+            msg.state == State.DRIVING
+            and msg.mission == State.TRACKDRIVE
+            and msg.navigation_ready
+            and not self.mission_started
             and self.odom_received
         ):
             self.mission_started = True

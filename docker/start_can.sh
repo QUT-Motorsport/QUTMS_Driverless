@@ -3,6 +3,8 @@
 sudo modprobe can
 sudo modprobe can_raw
 
+sudo ip link set dev can0 down
+
 sudo ip link set dev can0 type can bitrate 1000000
 sudo ip link set dev can0 up
 

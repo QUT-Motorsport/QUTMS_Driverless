@@ -39,21 +39,11 @@ odom_filter_node:
     # sensor0_twist_rejection_threshold: 0.8
     # sensor0_linear_acceleration_rejection_threshold: 0.8
 
-    imu0: sbg_translated/imu
-    imu0_config: [false, false, false,  # x, y, z
-                   false, false, true,  # roll, pitch, yaw
-                   false, false, false,  # x_dot, y_dot, z_dot
-                   false, false, true,  # roll_dot, pitch_dot, yaw_dot
-                   false, false, false]  # x_ddot, y_ddot, z_ddot
-    imu0_relative: true
-    imu0_pose_rejection_threshold: 0.5
-    imu0_twist_rejection_threshold: 0.5
-
-    odom0: sbg_translated/odometry
+    odom0: imu/local_odometry
     odom0_config: [true, true, false,
                   false, false, true,
                   true, true, false,
-                  false, false, false,
+                  false, false, true,
                   false, false, false]
     odom0_relative: true
 
