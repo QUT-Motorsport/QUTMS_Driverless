@@ -22,6 +22,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/u_int8.hpp"
 
 using std::placeholders::_1;
@@ -51,7 +52,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr control_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr steering_angle_sub_;
-    rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr velocity_sub_;
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr lap_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr steering_ready_sub_;
 
@@ -73,7 +74,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
 
     void canopen_callback(const driverless_msgs::msg::Can::SharedPtr msg);
     void can_callback(const driverless_msgs::msg::Can::SharedPtr msg);
-    void velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
+    void velocity_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void steering_angle_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
     void control_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void lap_counter_callback(const std_msgs::msg::UInt8::SharedPtr msg);
