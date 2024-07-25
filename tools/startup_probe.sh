@@ -6,7 +6,7 @@ IMAGE_NAME="qutms_driverless_panda"  # Define monitored image
 # Record the time the system booted up
 BOOT_TIME=$(date +%s)
 
-# Function to log service start time
+# Function to log service start time with timestamp
 log_service_start_time() {
     SERVICE_NAME=$1
     systemctl is-active --quiet $SERVICE_NAME
@@ -15,7 +15,7 @@ log_service_start_time() {
         systemctl is-active --quiet $SERVICE_NAME
     done
     SERVICE_START_TIME=$(date +%s)
-    echo "$SERVICE_NAME started in $((SERVICE_START_TIME - BOOT_TIME)) seconds after system boot." >> $LOG_FILE
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $SERVICE_NAME started in $((SERVICE_START_TIME - BOOT_TIME)) seconds after system boot." >> $LOG_FILE
 }
 
 # Log start times for the specified services
@@ -33,7 +33,7 @@ get_container_id_by_image() {
 CONTAINER_ID=$(get_container_id_by_image)
 while [ -z "$CONTAINER_ID" ] || [ "$(docker inspect -f '{{.State.Running}}' $CONTAINER_ID 2>/dev/null)" != "true" ]; do
     if [ -z "$CONTAINER_ID" ]; then
-        echo "No container found for image $IMAGE_NAME. Retrying..." >> $LOG_FILE
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - No container found for image $IMAGE_NAME. Retrying..." >> $LOG_FILE
     fi
     sleep 1
     CONTAINER_ID=$(get_container_id_by_image)
@@ -46,5 +46,5 @@ CONTAINER_START_TIME=$(date +%s)
 TIME_DIFF=$((CONTAINER_START_TIME - BOOT_TIME))
 
 # Log the results
-echo "Container with image $IMAGE_NAME started in $TIME_DIFF seconds after system boot." >> $LOG_FILE
-echo "Service Successfully Logging..." >> $LOG_FILE
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Container with image $IMAGE_NAME started in $TIME_DIFF seconds after system boot." >> $LOG_FILE
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Service Successfully Logging..." >> $LOG_FILE
