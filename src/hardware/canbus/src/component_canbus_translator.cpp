@@ -82,7 +82,7 @@ void CANTranslator::canmsg_timer() {
                 vel_msg->header.frame_id = ros_base_frame_;
                 vel_msg->data = av_velocity;
                 last_velocity_ = av_velocity;
-                velocity_pub_->publish(std::move(vel_msg));
+                // velocity_pub_->publish(std::move(vel_msg));
 
                 // update twist msg with new velocity
                 update_twist();
@@ -189,7 +189,7 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     // Steering ang
     steering_angle_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/steering_angle", 10);
     // Vehicle velocity
-    velocity_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/velocity", 10);
+    // velocity_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/velocity", 10);
 
     wss_velocity_pub1_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed1", 10);
     wss_velocity_pub2_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed2", 10);

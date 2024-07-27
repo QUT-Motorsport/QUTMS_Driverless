@@ -32,7 +32,6 @@ class VelocityController : public rclcpp::Node {
 
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
-    rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_sub_;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
 
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr accel_pub_;

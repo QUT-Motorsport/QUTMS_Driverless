@@ -28,7 +28,7 @@ slam_toolbox_node:
     position_covariance_scale: 2.0  # This can be used to tune the influence of the pose position in a downstream localization filter
     yaw_covariance_scale: 1.5  # Pose yaw
     resolution: 0.1  # Resolution of the 2D occupancy map to generate
-    max_laser_range: 25.0  # Maximum laser range to use for 2D occupancy map rastering
+    max_laser_range: 13.0  # Maximum laser range to use for 2D occupancy map rastering
     minimum_time_interval: 0.1  # The minimum duration of time between scans to be processed in synchronous mode
     transform_timeout: 0.5  # TF timeout for looking up transforms
     tf_buffer_duration: 0.1  # Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode

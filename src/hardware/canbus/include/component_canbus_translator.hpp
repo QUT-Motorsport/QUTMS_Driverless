@@ -54,7 +54,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr steering_angle_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_pub_;
+    // rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub1_;
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub2_;

@@ -43,7 +43,7 @@ odom_filter_node:
     odom0_config: [true, true, false,
                   false, false, true,
                   true, true, false,
-                  false, false, true,
+                  false, false, false,
                   false, false, false]
     odom0_relative: true
 
