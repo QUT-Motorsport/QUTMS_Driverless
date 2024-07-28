@@ -27,10 +27,6 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
     ackermann_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
         "/control/driving_command", QOS_ALL, std::bind(&VelocityController::ackermann_callback, this, _1));
 
-    // Velocity updates
-    // velocity_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
-    //     "/vehicle/velocity", QOS_LATEST, std::bind(&VelocityController::velocity_callback, this, _1));
-
     // imu updates
     twist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
         "/imu/velocity", QOS_LATEST, std::bind(&VelocityController::twist_callback, this, _1));
