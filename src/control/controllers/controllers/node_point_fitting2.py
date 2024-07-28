@@ -1,34 +1,24 @@
 from math import cos, pi, sin, sqrt
 import time
 
-import cv2
 import numpy as np
 
-from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import Cone, ConeDetectionStamped, State
-from sensor_msgs.msg import Image
+from nav_msgs.msg import Path
 
 from driverless_common.common import QOS_ALL, QOS_LATEST
 from driverless_common.draw import *
-from driverless_common.point import Point
+from driverless_common.point import Point, points_to_path
 from driverless_common.shutdown_node import ShutdownNode
 
 from typing import List, Tuple
 
 Colour = Tuple[int, int, int]
-
-# translate ROS image messages to OpenCV
-cv_bridge = CvBridge()
-
-ORIGIN = Point(0, 0)
-
-LEFT_CONE_COLOUR = Cone.BLUE
-RIGHT_CONE_COLOUR = Cone.YELLOW
 
 WEIGHT = -1
 
@@ -39,9 +29,9 @@ if SPLINES % 2 == 0:
 
 LIDAR_DIST = 1.65  # distance from lidar to front of car
 Y_CROP = 6
-X_CROP = 13
-LINE_LEN = 13.0  # len of spline line
-STEERING_VALS = np.linspace(-37, 37, SPLINES)  # steering values to take
+X_CROP = 20
+LINE_LEN = 20.0  # len of spline line
+STEERING_VALS = np.linspace(-25, 25, SPLINES)  # steering values to take
 
 
 class PointFitController(Node):
@@ -56,8 +46,6 @@ class PointFitController(Node):
     def __init__(self):
         super().__init__("point_fit_controller_node")
 
-        # debug image
-        self.create_subscription(Image, "/debug_imgs/lidar_det_img", self.img_callback, QOS_LATEST)
         # cone detections
         self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.callback, QOS_ALL)
 
@@ -65,8 +53,7 @@ class PointFitController(Node):
 
         # publishers
         self.control_publisher: Publisher = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
-
-        self.debug_img_publisher: Publisher = self.create_publisher(Image, "/debug_imgs/control_img", 1)
+        self.path_publisher: Publisher = self.create_publisher(Path, "/debug_markers/control_arc", 1)
 
         self.initialize_splines()  # initialize steering curves to take
 
@@ -128,9 +115,6 @@ class PointFitController(Node):
             self.driving = True
             self.get_logger().info("Ready to drive, discovery started", once=True)
 
-    def img_callback(self, img_msg: Image):
-        self.debug_img = cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
-
     def callback(self, cone_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detection")
         if not self.driving:
@@ -168,30 +152,20 @@ class PointFitController(Node):
                         + (cone.location.y - steering_path[bin].y) ** 2
                     )
 
-                    # draw cones that are being used
-                    cv2.drawMarker(
-                        self.debug_img,
-                        loc_to_img_pt((cone.location.x + LIDAR_DIST), cone.location.y).to_tuple(),
-                        (0, 255, 255),
-                        markerType=cv2.MARKER_SQUARE,
-                        markerSize=5,
-                        thickness=5,
-                    )
-
                 if s_error[n_spline] < max_error:
                     max_error = s_error[n_spline]
                     best_spline = n_spline
 
-                for point in steering_path:
-                    # draw each element in target spline
-                    cv2.drawMarker(
-                        self.debug_img,
-                        loc_to_img_pt(point.x, point.y).to_tuple(),
-                        (0, 0, 255),
-                        markerType=cv2.MARKER_SQUARE,
-                        markerSize=2,
-                        thickness=2,
-                    )
+                # for point in steering_path:
+                #     # draw each element in target spline
+                #     cv2.drawMarker(
+                #         self.debug_img,
+                #         loc_to_img_pt(point.x, point.y).to_tuple(),
+                #         (0, 0, 255),
+                #         markerType=cv2.MARKER_SQUARE,
+                #         markerSize=2,
+                #         thickness=2,
+                #     )
 
             if self.last_counter % 1 == 0:
                 # ensure that the best spline is next to the last best spline
@@ -204,17 +178,7 @@ class PointFitController(Node):
             self.last_counter += 1
 
             best_path = self.steering_paths[self.last_steering_index]
-            for point in best_path:
-                # draw each element in target spline
-                cv2.drawMarker(
-                    self.debug_img,
-                    loc_to_img_pt(point.x, point.y).to_tuple(),
-                    (0, 255, 0),
-                    markerType=cv2.MARKER_SQUARE,
-                    markerSize=2,
-                    thickness=2,
-                )
-            self.debug_img_publisher.publish(cv_bridge.cv2_to_imgmsg(self.debug_img, encoding="bgr8"))
+            self.path_publisher.publish(points_to_path(best_path, cone_msg.header))
 
             speed = self.targ_vel
             steering_angle = STEERING_VALS[self.last_steering_index]
