@@ -74,7 +74,7 @@ void ASSupervisor::can_callback(const driverless_msgs::msg::Can::SharedPtr msg) 
     }
 }
 
-void ASSupervisor::velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg) {
+void ASSupervisor::velocity_callback(const std_msgs::msg::Float32::SharedPtr msg) {
     this->last_velocity = msg->data;
     this->DVL_drivingDynamics1._fields.speed_actual = (int8_t)msg->data;
 }
@@ -417,7 +417,7 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions &options, std::string name)
         "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1), sensor_opt);
 
     // Velocity sub
-    this->velocity_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
+    this->velocity_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         "/vehicle/velocity", QOS_LATEST, std::bind(&ASSupervisor::velocity_callback, this, _1), sensor_opt);
 
     // Control -> sub to acceleration command

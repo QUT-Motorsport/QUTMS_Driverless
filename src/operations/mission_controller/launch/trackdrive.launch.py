@@ -10,9 +10,13 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription(
         [
+            # Node(
+            #     package="sbg_translator",
+            #     executable="sbg_translator_node",
+            # ),
             Node(
-                package="sbg_translator",
-                executable="sbg_translator_node",
+                package="odom_transformer",
+                executable="odom_transformer_node",
             ),
             Node(
                 package='pointcloud_to_laserscan', executable='pointcloud_to_laserscan_node',
