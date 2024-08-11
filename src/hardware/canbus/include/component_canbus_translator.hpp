@@ -12,7 +12,6 @@
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "SocketCAN.hpp"
-#include "TritiumCAN.hpp"
 #include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"

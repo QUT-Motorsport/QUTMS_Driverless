@@ -123,8 +123,6 @@ bool CANTranslator::set_interface() {
 
     if (interface_name == "socketcan") {
         can_interface_ = std::make_shared<SocketCAN>();
-    } else if (interface_name == "tritium") {
-        can_interface_ = std::make_shared<TritiumCAN>();
     } else {
         RCLCPP_ERROR(this->get_logger(), "Invalid interface_name: %s", interface_name.c_str());
         return false;
