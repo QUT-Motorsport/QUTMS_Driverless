@@ -1,4 +1,5 @@
 import array
+import array
 import math
 import time
 
@@ -28,6 +29,8 @@ def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
     cloud_arr = cloud_arr[
         [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
     ]
+        [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
+    ]
 
     point_cloud_msg.height = 1
     point_cloud_msg.width = cloud_arr.shape[0]
@@ -53,6 +56,8 @@ def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
 
 
 DUMMY_FIELD_PREFIX = "__"
+
+
 
 
 def fields_to_dtype(fields, point_step):
@@ -128,8 +133,8 @@ class LiDARDetectorNode(Node):
 
         self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/lidar/cone_detection", 1)
         self.point_cloud_publisher_ground = self.create_publisher(PointCloud2, "/lidar_debug/filtered_ground", 1)
+        self.point_cloud_publisher_objects = self.create_publisher(PointCloud2, "/lidar_debug/filtered_objects", 1)
         self.point_cloud_publisher_z_filter = self.create_publisher(PointCloud2, "/lidar_debug/filtered_z", 1)
-
         self.point_cloud_publisher_cones = self.create_publisher(PointCloud2, "/lidar/cone_points", 1)
 
         # Log info
@@ -137,27 +142,61 @@ class LiDARDetectorNode(Node):
 
     def initialise_params(self):
         # declare parameters
+
+        # "t_" prefix is used to denote thresholds
+
         self.declare_parameter("log_level", "DEBUG")
+        # Max range of points to process (metres)
         self.declare_parameter("lidar_range", 30)
-        self.declare_parameter("delta_alpha_ang", 128)
-        self.declare_parameter("bin_size", 0.14)
+        self.declare_parameter("min_range", 2)
+        # Delta angle of segments (*2pi)
+        self.declare_parameter("delta_alpha_ang", 64)
+        # Size of bins
+        self.declare_parameter("bin_size", 0.5)
+        # Max angle that will be considered for ground lines (*2pi)
         self.declare_parameter("t_m_ang", 148)
+        # Angle considered to be a small slope
         self.declare_parameter("t_m_small", 0)
-        self.declare_parameter("t_b", 0.05)
+        # Max y-intercept for a ground plane line
+        self.declare_parameter("intercept_thres", 0.05)
+        # Threshold of the Root Mean Square Error of the fit
         self.declare_parameter("t_rmse", 0.3)
+        # Determines if regression for ground lines should occur between two neighbouring
+        # bins when they're described by different lines
         self.declare_parameter("regress_between_bins", True)
-        self.declare_parameter("t_d_ground", 0.05)
-        self.declare_parameter("t_d_max", 100)
+        # Maximum distance a point can be from the origin to even be considered as
+        # a ground point. Otherwise it's labelled as a non-ground point.
+        # The higher this value, the more low object points it will mark as ground
+        # BUT this makes dbscan faster
+        self.declare_parameter("t_d_ground", 0.0)
+        # Percentage of CPU Cores to use for multiprocessing ground plane mapping
+        # (0.0 - 1.0)
         self.declare_parameter("cpu_utilisation", 0.90)
+
+        # LiDAR and Cone params
         self.declare_parameter("cone_diam", 0.15)
         self.declare_parameter("cone_height", 0.30)
-        self.declare_parameter("lidar_height_above_ground", 0.20)
+
+        # Degrees in between each vertical layer
         self.declare_parameter("lidar_vertical_res_val", 1.25)
+        # Degrees in between each point
         self.declare_parameter("lidar_horizontal_res_val", 0.05)
-        self.declare_parameter("lhag_err", 0.15)  ## TIHS IS GOOD
-        self.declare_parameter("hach_lower_err", 0.35)
-        self.declare_parameter("hach_upper_err", 0.15)
+
+        # lidar on bonk bar, will change for roll hog
+        self.declare_parameter("lidar_height_above_ground", -0.925)
+
+        self.declare_parameter("lhag_err", 0.15)
+
+        # Expected number of points on a cone at a given distance
+        self.declare_parameter("hach_lower_err", 0.45)
+        self.declare_parameter("hach_upper_err", 0.45)
+
+        # DBSCAN Parameters
+        # Neighbourhood Scan Size
+        # > 1m otherwise clusters smaller non-cones objects
+        # Number of points required to form a neighbourhood
         self.declare_parameter("epsilon", 0.8)
+        # 2-3 allows for long-range cone detection
         self.declare_parameter("min_points", 2)
 
         self.log_level = self.get_parameter("log_level").value
@@ -165,15 +204,15 @@ class LiDARDetectorNode(Node):
         self.get_logger().set_level(log_level)
 
         self.lidar_range = self.get_parameter("lidar_range").value
+        self.min_range = self.get_parameter("min_range").value
         self.delta_alpha = (2 * math.pi) / self.get_parameter("delta_alpha_ang").value
         self.bin_size = self.get_parameter("bin_size").value
         self.t_m = (2 * math.pi) / self.get_parameter("t_m_ang").value
         self.t_m_small = self.get_parameter("t_m_small").value
-        self.t_b = self.get_parameter("t_b").value
+        self.intercept_thres = self.get_parameter("intercept_thres").value
         self.t_rmse = self.get_parameter("t_rmse").value
         self.regress_between_bins = self.get_parameter("regress_between_bins").value
         self.t_d_ground = self.get_parameter("t_d_ground").value
-        self.t_d_max = self.get_parameter("t_d_max").value
         self.cpu_utilisation = self.get_parameter("cpu_utilisation").value
         self.cone_diam = self.get_parameter("cone_diam").value
         self.cone_height = self.get_parameter("cone_height").value
@@ -194,6 +233,65 @@ class LiDARDetectorNode(Node):
         self.numer = self.cone_height * self.cone_diam
         self.denom = 8 * math.tan(self.lidar_vertical_res / 2) * math.tan(self.lidar_horizontal_res / 2)
 
+        self.get_logger().info(
+            "PARAMS: Lidar Range: "
+            + str(self.lidar_range)
+            + "m"
+            + "\t| Delta Alpha: "
+            + str(self.delta_alpha)
+            + "rad"
+            + "\t| Bin Size: "
+            + str(self.bin_size)
+            + "m"
+            + "\t| T_m: "
+            + str(self.t_m)
+            + "rad"
+            + "\t| T_b: "
+            + str(self.intercept_thres)
+            + "m"
+            + "\t| T_rmse: "
+            + str(self.t_rmse)
+            + "m"
+            + "\t| Regress Between Bins: "
+            + str(self.regress_between_bins)
+            + "\t| T_d_ground: "
+            + str(self.t_d_ground)
+            + "m"
+            + "\t| CPU Utilisation: "
+            + str(self.cpu_utilisation)
+            + "\t| Cone Diameter: "
+            + str(self.cone_diam)
+            + "m"
+            + "\t| Cone Height: "
+            + str(self.cone_height)
+            + "m"
+            + "\t| Lidar Height Above Ground: "
+            + str(self.lidar_height_above_ground)
+            + "m"
+            + "\t| Lidar Vertical Resolution: "
+            + str(self.lidar_vertical_res)
+            + "rad"
+            + "\t| Lidar Horizontal Resolution: "
+            + str(self.lidar_horizontal_res)
+            + "rad"
+            + "\t| LHAG Error: "
+            + str(self.lhag_err)
+            + "m"
+            + "\t| HACH Lower Error: "
+            + str(self.hach_lower_err)
+            + "m"
+            + "\t| HACH Upper Error: "
+            + str(self.hach_upper_err)
+            + "m"
+            + "\t| Epsilon: "
+            + str(self.epsilon)
+            + "\t| Min Points: "
+            + str(self.min_points)
+        )
+
+        # START OLD LiDAR processing
+        # START GroundPLane Segmenter LiDAR processing approach
+
     def callback(self, msg: PointCloud2):
         """
         Callback function for when point cloud data is received.
@@ -203,61 +301,84 @@ class LiDARDetectorNode(Node):
         """
         start_time: float = time.perf_counter()
 
+        # Step 1
+
         # Convert PointCloud2 message from LiDAR sensor to numpy array
         dtype_list: list = fields_to_dtype(msg.fields, msg.point_step)  # x, y, z, intensity, ring
         point_cloud: np.ndarray = np.frombuffer(msg.data, dtype_list)
 
+        # Step 2
+
         # Remove points behind car
         point_cloud = point_cloud[point_cloud["x"] > 0]
 
-        # Remove points that are above the height of cones
-        point_cloud = point_cloud[
-            point_cloud["z"] < self.lhag_err * self.lidar_height_above_ground + self.cone_height / 2
-        ]
+        # #Step 3: Remove points above height and create new point cloud
 
-        # 0 = lidar_centre (approx half cone height off ground)
-        # ground = -lidar_height = -0.15
-        # top_crop = cone_height / 2 + lidar_centre = 0.15 + 0 = 0.15
+        # # Remove points that are above the height of cones
+        # # max h = -0.925 + 0.15 + 0.3 = -0.475
+        # point_cloud = point_cloud[
+        #     point_cloud["z"] < self.lidar_height_above_ground + self.lhag_err + self.cone_height
+        # ]
 
-        # create a new pointcloud msg to publish the pointcloud after this step of filtering:
-        new_point_cloud_msg = array_to_pointcloud2(msg, point_cloud, dtype_list)
-        self.point_cloud_publisher_z_filter.publish(new_point_cloud_msg)
+        # # 0 = lidar_centre (approx half cone height off ground)
+        # # ground = -lidar_height = -0.15
+        # # top_crop = cone_height / 2 + lidar_centre = 0.15 + 0 = 0.15
 
-        # Compute point normals
-        point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
+        # # create a new pointcloud msg to publish the pointcloud after this step of filtering:
+        # new_point_cloud_msg = array_to_pointcloud2(msg, point_cloud, dtype_list)
+        # self.point_cloud_publisher_z_filter.publish(new_point_cloud_msg)
 
-        # Remove points that are outside of range or have a norm of 0
-        mask = point_norms <= self.lidar_range  # & (point_norms != 0)
-        point_norms = point_norms[mask]
-        point_cloud = point_cloud[mask]
+        # #Step 4
 
-        # Get segments and prototype points
-        segments, bins = self.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
-        proto_segs_arr, proto_segs, seg_bin_z_ind = self.get_prototype_points(
-            point_cloud["z"], segments, bins, point_norms
-        )
+        # # Compute point normals
+        # point_norms = np.linalg.norm([point_cloud["x"], point_cloud["y"]], axis=0)
 
-        # Extract ground plane
-        ground_plane = self.get_ground_plane_single_core(proto_segs_arr, proto_segs)
+        # #Step 5
 
-        # Label points
-        point_labels, ground_lines_arr = self.label_points(
-            point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane
-        )
-        object_points = point_cloud[point_labels]
-        ground_points = point_cloud[~point_labels]
+        # # Remove points that are outside of of lidar range or min range
+        # mask = (point_norms < self.lidar_range) & (point_norms > self.min_range) # & (point_norms != 0)
+        # point_norms = point_norms[mask]
+        # point_cloud = point_cloud[mask]
 
-        # create a new pointcloud msg to publish the pointcloud after this step of filtering:
+        # #Step 6
+
+        # # Get segments and prototype points
+        # segments, bins = self.get_discretised_positions(point_cloud["x"], point_cloud["y"], point_norms)
+        # proto_segs_arr, proto_segs, seg_bin_z_ind = self.get_prototype_points(
+        #     point_cloud["z"], segments, bins, point_norms
+        # )
+
+        # #Step 7 and 8: Extract gorund lines (from bins and segs)
+        # #and plane (from accumulated groud lines)
+
+        # # Extract ground plane
+        # ground_plane = self.get_ground_plane_single_core(proto_segs_arr, proto_segs)
+
+        # #Step 9
+
+        # # Label points
+        # point_labels, ground_lines_arr = self.label_points(
+        #     point_cloud["z"], segments, bins, seg_bin_z_ind, ground_plane
+        # )
+        # object_points = point_cloud[point_labels]
+        # ground_points = point_cloud[~point_labels]
+
+        # # create a new pointcloud msg to publish the pointcloud after this step of filtering:
+        # new_point_cloud_msg = array_to_pointcloud2(msg, object_points, dtype_list)
+        # self.point_cloud_publisher_objects.publish(new_point_cloud_msg)
         # new_point_cloud_msg = array_to_pointcloud2(msg, ground_points, dtype_list)
         # self.point_cloud_publisher_ground.publish(new_point_cloud_msg)
-        new_point_cloud_msg = array_to_pointcloud2(msg, object_points, dtype_list)
-        self.point_cloud_publisher_ground.publish(new_point_cloud_msg)
 
-        if object_points.size == 0:
-            self.get_logger().info("No objects points detected")
-            return []
+        # if object_points.size == 0:
+        #     self.get_logger().info("No objects points detected")
+        #     return []
+
+        # Step 10: Cluster objects DBScan
 
         object_centers, objects = self.group_points(object_points)
+
+        # Step 11: Reclaim ground points at the base of the objects
+
         (
             obj_segs,
             obj_bins,
@@ -267,6 +388,8 @@ class LiDARDetectorNode(Node):
         ) = self.reconstruct_objects(
             ground_points, segments[~point_labels], bins[~point_labels], object_centers, objects
         )
+
+        # Step 12
 
         cone_locations, cone_points, cone_intensities = self.cone_filter(
             segments,
@@ -291,6 +414,8 @@ class LiDARDetectorNode(Node):
         if len(cone_locations) == 0:
             return
 
+        # Step 13
+
         # Convert cone locations to ConeDetection messages and publish
         detected_cones: list = [cone_msg(cone[0], cone[1]) for cone in cone_locations]
         detection_msg = ConeDetectionStamped(header=msg.header, cones=detected_cones)
@@ -300,6 +425,8 @@ class LiDARDetectorNode(Node):
         cone_points = np.concatenate(cone_points)
         new_point_cloud_msg = array_to_pointcloud2(msg, cone_points, dtype_list)
         self.point_cloud_publisher_cones.publish(new_point_cloud_msg)
+
+        # END OLD Lidar Processing
 
     def get_discretised_positions(self, x, y, point_norms):
         # Calculating the segment index for each point
@@ -360,164 +487,164 @@ class LiDARDetectorNode(Node):
 
     # start and end points are used in visualisation
     # The Incremental Algorithm
-    def get_ground_lines(self, proto_seg_points):
-        estimated_lines = []
-        new_line_points = []
-        lines_created = 0
+    # def get_ground_lines(self, proto_seg_points):
+    #     estimated_lines = []
+    #     new_line_points = []
+    #     lines_created = 0
 
-        idx = 0
-        while idx < len(proto_seg_points):
-            m_new = None
-            b_new = None
+    #     idx = 0
+    #     while idx < len(proto_seg_points):
+    #         m_new = None
+    #         b_new = None
 
-            new_point = proto_seg_points[idx]
-            if len(new_line_points) >= 2:
-                new_line_points.append(new_point)
+    #         new_point = proto_seg_points[idx]
+    #         if len(new_line_points) >= 2:
+    #             new_line_points.append(new_point)
 
-                [m_new, b_new] = tls.fit_line(new_line_points)
+    #             [m_new, b_new] = tls.fit_line(new_line_points)
 
-                m_b_check = abs(m_new) <= self.t_m and (abs(m_new) > self.t_m_small or abs(b_new) <= self.t_b)
-                if not (m_b_check and self.fit_error(m_new, b_new, new_line_points) <= self.t_rmse):
-                    new_line_points.pop()  # Remove the point we just added
+    #             m_b_check = abs(m_new) <= self.t_m and (abs(m_new) > self.t_m_small or abs(b_new) <= self.intercept_thres)
+    #             if not (m_b_check and self.fit_error(m_new, b_new, new_line_points) <= self.t_rmse):
+    #                 new_line_points.pop()  # Remove the point we just added
 
-                    [m_new, b_new] = tls.fit_line(new_line_points)
+    #                 [m_new, b_new] = tls.fit_line(new_line_points)
 
-                    m_b_check = abs(m_new) <= self.t_m and (abs(m_new) > self.t_m_small or abs(b_new) <= self.t_b)
-                    if m_b_check and self.fit_error(m_new, b_new, new_line_points) <= self.t_rmse:
-                        estimated_lines.append(
-                            (
-                                m_new,
-                                b_new,
-                                new_line_points[0],
-                                new_line_points[-1],
-                                self.get_bin(new_line_points[0][0], self.bin_size),
-                            )
-                        )
-                        lines_created += 1
+    #                 m_b_check = abs(m_new) <= self.t_m and (abs(m_new) > self.t_m_small or abs(b_new) <= self.intercept_thres)
+    #                 if m_b_check and self.fit_error(m_new, b_new, new_line_points) <= self.t_rmse:
+    #                     estimated_lines.append(
+    #                         (
+    #                             m_new,
+    #                             b_new,
+    #                             new_line_points[0],
+    #                             new_line_points[-1],
+    #                             self.get_bin(new_line_points[0][0], self.bin_size),
+    #                         )
+    #                     )
+    #                     lines_created += 1
 
-                    new_line_points = []
+    #                 new_line_points = []
 
-                    if self.regress_between_bins:
-                        idx -= 2
-                    else:
-                        idx -= 1
+    #                 if self.regress_between_bins:
+    #                     idx -= 2
+    #                 else:
+    #                     idx -= 1
 
-            else:
-                if (
-                    len(new_line_points) == 0
-                    or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0]))
-                    <= self.t_m
-                ):
-                    new_line_points.append(new_point)
+    #         else:
+    #             if (
+    #                 len(new_line_points) == 0
+    #                 or math.atan((new_point[1] - new_line_points[-1][1]) / (new_point[0] - new_line_points[-1][0]))
+    #                 <= self.t_m
+    #             ):
+    #                 new_line_points.append(new_point)
 
-            idx += 1
+    #         idx += 1
 
-        if len(new_line_points) > 1 and m_new != None and b_new != None:
-            estimated_lines.append(
-                (
-                    m_new,
-                    b_new,
-                    new_line_points[0],
-                    new_line_points[-1],
-                    self.get_bin(new_line_points[0][0], self.bin_size),
-                )
-            )
+    #     if len(new_line_points) > 1 and m_new != None and b_new != None:
+    #         estimated_lines.append(
+    #             (
+    #                 m_new,
+    #                 b_new,
+    #                 new_line_points[0],
+    #                 new_line_points[-1],
+    #                 self.get_bin(new_line_points[0][0], self.bin_size),
+    #             )
+    #         )
 
-        # If no ground lines were identified in segment, return 0
-        if len(estimated_lines) > 0:
-            return estimated_lines
-        else:
-            return 0
+    #     # If no ground lines were identified in segment, return 0
+    #     if len(estimated_lines) > 0:
+    #         return estimated_lines
+    #     else:
+    #         return 0
 
-    def get_ground_plane_single_core(self, proto_segs_arr, proto_segs):
-        # Computing the ground plane
-        ground_plane = np.zeros(self.segment_count, dtype=object)  # should it be vector of dtype, or matrix of nums?
+    # def get_ground_plane_single_core(self, proto_segs_arr, proto_segs):
+    #     # Computing the ground plane
+    #     ground_plane = np.zeros(self.segment_count, dtype=object)  # should it be vector of dtype, or matrix of nums?
 
-        for segment_counter in range(len(proto_segs_arr)):
-            proto_seg_points = proto_segs_arr[segment_counter].tolist()
-            ground_plane[proto_segs[segment_counter]] = self.get_ground_lines(proto_seg_points)
+    #     for segment_counter in range(len(proto_segs_arr)):
+    #         proto_seg_points = proto_segs_arr[segment_counter].tolist()
+    #         ground_plane[proto_segs[segment_counter]] = self.get_ground_lines(proto_seg_points)
 
-        return ground_plane
+    #     return ground_plane
 
-    def map_segments(self, ground_plane):
-        non_zeros = np.flatnonzero(ground_plane)
+    # def map_segments(self, ground_plane):
+    #     non_zeros = np.flatnonzero(ground_plane)
 
-        mask = np.ones(ground_plane.size, dtype=bool)
-        mask[non_zeros] = False
-        zeros = np.arange(ground_plane.size)[mask]
+    #     mask = np.ones(ground_plane.size, dtype=bool)
+    #     mask[non_zeros] = False
+    #     zeros = np.arange(ground_plane.size)[mask]
 
-        for idx in zeros:
-            dists = np.abs(idx - non_zeros)
-            wrap_dists = np.abs(ground_plane.size - dists)
+    #     for idx in zeros:
+    #         dists = np.abs(idx - non_zeros)
+    #         wrap_dists = np.abs(ground_plane.size - dists)
 
-            min_dist = np.min(dists)
-            min_wrap_dist = np.min(wrap_dists)
-            if min_dist <= min_wrap_dist:
-                closest_idx = non_zeros[np.min(np.where(dists == min_dist))]
-            else:
-                closest_idx = non_zeros[np.min(np.where(wrap_dists == min_wrap_dist))]
+    #         min_dist = np.min(dists)
+    #         min_wrap_dist = np.min(wrap_dists)
+    #         if min_dist <= min_wrap_dist:
+    #             closest_idx = non_zeros[np.min(np.where(dists == min_dist))]
+    #         else:
+    #             closest_idx = non_zeros[np.min(np.where(wrap_dists == min_wrap_dist))]
 
-            ground_plane[idx] = ground_plane[closest_idx]
+    #         ground_plane[idx] = ground_plane[closest_idx]
 
-        return ground_plane
+    #     return ground_plane
 
-    def sort_segments(self, segments, seg_bin_z_ind):
-        segments_sorted = segments[seg_bin_z_ind]
+    # def sort_segments(self, segments, seg_bin_z_ind):
+    #     segments_sorted = segments[seg_bin_z_ind]
 
-        # Indicies where segments differ
-        seg_sorted_diff = np.where(segments_sorted[:-1] != segments_sorted[1:])[0] + 1
+    #     # Indicies where segments differ
+    #     seg_sorted_diff = np.where(segments_sorted[:-1] != segments_sorted[1:])[0] + 1
 
-        # Indicies where segments differ (appending first element at 0)
-        seg_sorted_ind = np.empty(seg_sorted_diff.size + 1, dtype=int)
-        seg_sorted_ind[0] = 0
-        seg_sorted_ind[1:] = seg_sorted_diff
+    #     # Indicies where segments differ (appending first element at 0)
+    #     seg_sorted_ind = np.empty(seg_sorted_diff.size + 1, dtype=int)
+    #     seg_sorted_ind[0] = 0
+    #     seg_sorted_ind[1:] = seg_sorted_diff
 
-        return seg_sorted_ind, segments_sorted
+    #     return seg_sorted_ind, segments_sorted
 
-    def label_points(self, point_heights, segments, bins, seg_bin_z_ind, ground_plane):
-        ground_plane = self.map_segments(ground_plane)
+    # def label_points(self, point_heights, segments, bins, seg_bin_z_ind, ground_plane):
+    #     ground_plane = self.map_segments(ground_plane)
 
-        # Get indices where sorted segments differ
-        seg_sorted_ind, segments_sorted = self.sort_segments(segments, seg_bin_z_ind)
+    #     # Get indices where sorted segments differ
+    #     seg_sorted_ind, segments_sorted = self.sort_segments(segments, seg_bin_z_ind)
 
-        ground_lines_arr = np.empty((point_heights.shape[0], 2))
-        for segment_idx in segments_sorted[seg_sorted_ind]:
-            ground_set = ground_plane[segment_idx]
-            seg_eq_idx = segments == segment_idx
-            ground_lines_arr[seg_eq_idx.nonzero()[0], :] = np.array([ground_set[0][0], ground_set[0][1]])
-            # For each line in segment
-            for ground_line in ground_set:
-                curr_bin = ground_line[4]
-                line_ind = (seg_eq_idx & (bins >= curr_bin)).nonzero()[0]
-                ground_lines_arr[line_ind, :] = np.array([ground_line[0], ground_line[1]])
+    #     ground_lines_arr = np.empty((point_heights.shape[0], 2))
+    #     for segment_idx in segments_sorted[seg_sorted_ind]:
+    #         ground_set = ground_plane[segment_idx]
+    #         seg_eq_idx = segments == segment_idx
+    #         ground_lines_arr[seg_eq_idx.nonzero()[0], :] = np.array([ground_set[0][0], ground_set[0][1]])
+    #         # For each line in segment
+    #         for ground_line in ground_set:
+    #             curr_bin = ground_line[4]
+    #             line_ind = (seg_eq_idx & (bins >= curr_bin)).nonzero()[0]
+    #             ground_lines_arr[line_ind, :] = np.array([ground_line[0], ground_line[1]])
 
-        discretised_ground_heights = ((self.bin_size * bins) * ground_lines_arr[:, 0]) + ground_lines_arr[:, 1]
-        point_line_dists = (
-            point_heights - discretised_ground_heights
-        )  # should there be an abs() here? no, read comment below
+    #     discretised_ground_heights = ((self.bin_size * bins) * ground_lines_arr[:, 0]) + ground_lines_arr[:, 1]
+    #     point_line_dists = (
+    #         point_heights - discretised_ground_heights
+    #     )  # should there be an abs() here? no, read comment below
 
-        point_labels = point_line_dists > self.t_d_ground  # if close enough, or simply lower than line
-        return point_labels, ground_lines_arr
+    #     point_labels = point_line_dists > self.t_d_ground  # if close enough, or simply lower than line
+    #     return point_labels, ground_lines_arr
 
-    def group_points(self, object_points):
-        # Cluster object points
-        clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(
-            np.column_stack((object_points["x"], object_points["y"]))
-        )
-        labels = clustering.labels_
+    # def group_points(self, object_points):
+    #     # Cluster object points
+    #     clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(
+    #         np.column_stack((object_points["x"], object_points["y"]))
+    #     )
+    #     labels = clustering.labels_
 
-        # All object ids
-        unq_labels = np.unique(labels)[1:]  # Noise cluster -1 (np.unique sorts)
+    #     # All object ids
+    #     unq_labels = np.unique(labels)[1:]  # Noise cluster -1 (np.unique sorts)
 
-        objects = np.empty(unq_labels.size, dtype=object)
-        object_centers = np.empty((unq_labels.size, 3))
-        for idx, label in enumerate(unq_labels):
-            objects[idx] = object_points[np.where(labels == label)]
-            object_centers[idx] = np.mean(
-                np.column_stack((objects[idx]["x"], objects[idx]["y"], objects[idx]["z"])), axis=0
-            )
+    #     objects = np.empty(unq_labels.size, dtype=object)
+    #     object_centers = np.empty((unq_labels.size, 3))
+    #     for idx, label in enumerate(unq_labels):
+    #         objects[idx] = object_points[np.where(labels == label)]
+    #         object_centers[idx] = np.mean(
+    #             np.column_stack((objects[idx]["x"], objects[idx]["y"], objects[idx]["z"])), axis=0
+    #         )
 
-        return object_centers, objects
+    #     return object_centers, objects
 
     def reconstruct_objects(self, ground_points, ground_segments, ground_bins, object_centers, objects):
         obj_norms = np.linalg.norm(object_centers[:, :2], axis=1)
