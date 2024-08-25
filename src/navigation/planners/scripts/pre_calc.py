@@ -1,6 +1,7 @@
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 import numpy as np
 
+
 def get_planner_cfg():
     cone_sorting_kwargs = {
         "max_n_neighbors": 5,
@@ -38,6 +39,7 @@ def get_planner_cfg():
         "path_calculation_kwargs": path_calculation_kwargs,
         "cone_matching_kwargs": cone_matching_kwargs,
     }
+
 
 pre_track = [
     np.array([]),

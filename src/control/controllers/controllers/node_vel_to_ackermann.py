@@ -35,7 +35,6 @@ class Vel2Ackermann(Node):
     def planner_callback(self, path):
         self.got_plan = True
 
-
     def timer_callback(self):
         if self.initialised:
             return

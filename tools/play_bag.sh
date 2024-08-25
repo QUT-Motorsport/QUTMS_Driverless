@@ -40,7 +40,7 @@ TOPICS=(
     # /slam/car_pose
     # /imu/data
 
-    # RL and SLAM toolbox 
+    # RL and SLAM toolbox
     /velodyne_points
     /lidar/cone_detection
     /vision/cone_detection

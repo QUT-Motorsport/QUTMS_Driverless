@@ -1,7 +1,7 @@
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource, FrontendLaunchDescriptionSource
+from launch.launch_description_sources import FrontendLaunchDescriptionSource, PythonLaunchDescriptionSource
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
@@ -32,11 +32,11 @@ def generate_launch_description():
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
-             ComposableNode(
-                 package="velocity_controller",
-                 plugin="velocity_controller::VelocityController",
-                 name="velocity_controller_node",
-                 parameters=[
+            ComposableNode(
+                package="velocity_controller",
+                plugin="velocity_controller::VelocityController",
+                name="velocity_controller_node",
+                parameters=[
                     get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],

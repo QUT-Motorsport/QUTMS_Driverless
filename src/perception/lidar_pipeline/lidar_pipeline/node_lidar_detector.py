@@ -1,9 +1,9 @@
+import array
 import math
 import time
 
 import numpy as np
 from sklearn.cluster import DBSCAN
-import array
 
 import rclpy
 from rclpy.node import Node
@@ -26,8 +26,8 @@ def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
 
     # remove the dummy fields that were added
     cloud_arr = cloud_arr[
-        [fname for fname, _type in dtype_list if not (
-            fname[:len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]]
+        [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
+    ]
 
     point_cloud_msg.height = 1
     point_cloud_msg.width = cloud_arr.shape[0]
@@ -53,7 +53,8 @@ def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
 
 
 DUMMY_FIELD_PREFIX = "__"
-    
+
+
 def fields_to_dtype(fields, point_step):
     """
     FROM ROS2_NUMPY
@@ -153,7 +154,7 @@ class LiDARDetectorNode(Node):
         self.declare_parameter("lidar_height_above_ground", 0.20)
         self.declare_parameter("lidar_vertical_res_val", 1.25)
         self.declare_parameter("lidar_horizontal_res_val", 0.05)
-        self.declare_parameter("lhag_err", 0.15) ## TIHS IS GOOD
+        self.declare_parameter("lhag_err", 0.15)  ## TIHS IS GOOD
         self.declare_parameter("hach_lower_err", 0.35)
         self.declare_parameter("hach_upper_err", 0.15)
         self.declare_parameter("epsilon", 0.8)

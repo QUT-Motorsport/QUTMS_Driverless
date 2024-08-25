@@ -27,7 +27,6 @@ SBGTranslate::SBGTranslate() : Node("sbg_translator_node") {
     RCLCPP_INFO(this->get_logger(), "---SBG Odom Converter Node Initialised---");
 }
 
-
 double SBGTranslate::filer_yaw(double x, double y) {
     // remove outliers from yaw with a kalman filter
 

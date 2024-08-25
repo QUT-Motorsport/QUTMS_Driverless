@@ -61,7 +61,7 @@ RUN apt-get update && \
         python3-pip
 
 # # install ros requirements
-RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \ 
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep update && rosdep install -y \
         --rosdistro ${ROS_DISTRO} \
         --from-paths sbg_ros2_driver QUTMS_Driverless \
@@ -95,7 +95,7 @@ RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
 COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./tools
 
-# build packages in the driverless workspace 
+# build packages in the driverless workspace
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
     colcon build --symlink-install --packages-up-to roscube_machine qutms_cli_tools
         # qutms_nav2 nav_interfaces lidarslam --cmake-args\
