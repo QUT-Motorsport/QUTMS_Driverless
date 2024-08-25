@@ -19,7 +19,7 @@ GroundPlaneSegmenterNode::GroundPlaneSegmenterNode(const rclcpp::NodeOptions &op
 
     update_params();
 
-    accumulating_cloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    accumulating_cloud = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 
     RCLCPP_INFO(this->get_logger(), "---Ground Plane Segmenter Node Initialised---");
 }
@@ -45,7 +45,7 @@ void GroundPlaneSegmenterNode::update_params() {
 
 void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     // convert msg to pcl point cloud
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*msg, *cloud);
 
     // accumulate point clouds
@@ -56,7 +56,7 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
         return;
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cropped_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cropped_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     crop.setInputCloud(accumulating_cloud);
     crop.setNegative(false);
     crop.filter(*cropped_cloud);
@@ -70,11 +70,11 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
     if (inliers->indices.size() == 0) {
         return;
     } else {
-        pcl::ExtractIndices<pcl::PointXYZ> extract;
+        pcl::ExtractIndices<pcl::PointXYZI> extract;
         extract.setInputCloud(cropped_cloud);
 
         // extract the ground plane
-        pcl::PointCloud<pcl::PointXYZ>::Ptr ground_plane(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ground_plane(new pcl::PointCloud<pcl::PointXYZI>);
         extract.setIndices(inliers);
         extract.setNegative(false);
         extract.filter(*ground_plane);
@@ -85,12 +85,12 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
         pcl_ground_pub->publish(*ground_msg);
 
         // extract everything but the ground plane
-        pcl::PointCloud<pcl::PointXYZ>::Ptr objects(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr objects(new pcl::PointCloud<pcl::PointXYZI>);
         extract.setNegative(true);
         extract.filter(*objects);
 
         // extract everything above the max_z and add it to the objects
-        pcl::PointCloud<pcl::PointXYZ>::Ptr other(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr other(new pcl::PointCloud<pcl::PointXYZI>);
         crop.setNegative(true);
         crop.filter(*other);
         *objects += *other;
@@ -101,7 +101,7 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
         const float C = coefficients->values[2];
         const float D = coefficients->values[3];
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_objects(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_objects(new pcl::PointCloud<pcl::PointXYZI>);
         filtered_objects->header = cloud->header;
 
         for (auto point : objects->points) {

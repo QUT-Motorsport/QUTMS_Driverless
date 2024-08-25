@@ -32,11 +32,11 @@ class GroundPlaneSegmenterNode : public rclcpp::Node {
     int accumulation_min_count;
     double plane_thresh;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr accumulating_cloud;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr accumulating_cloud;
     int accumulation_count = 0;
 
-    pcl::SACSegmentation<pcl::PointXYZ> seg;
-    pcl::PassThrough<pcl::PointXYZ> crop;
+    pcl::SACSegmentation<pcl::PointXYZI> seg;
+    pcl::PassThrough<pcl::PointXYZI> crop;
 };
 
 }  // namespace ground_plane_segmenter
