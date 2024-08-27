@@ -10,15 +10,15 @@ from nav_msgs.msg import Odometry
 
 
 def yaw(quat: Quaternion):
-    # Convert quaternion to euler angles
+    # Convert quaternion to euler angles and return the yaw before processing
     return quat2euler([quat.w, quat.x, quat.y, quat.z])[2]  # yaw
 
-
+    # Convert eulerian to quaternion for processed message publishing
 def orientation(x, y, z):
     new_orientation = euler2quat(x, y, z)
     return Quaternion(w=new_orientation[0], x=new_orientation[1], y=new_orientation[2], z=new_orientation[3])
 
-
+    # Processing eulerian angles
 class OdometryTransformer(Node):
     def __init__(self):
         super().__init__("odometry_transformer")
