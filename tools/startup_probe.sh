@@ -19,7 +19,7 @@ log_service_start_time() {
 }
 
 # Log start times for the specified services
-SERVICES=("network-online.target" "docker.socket" "firewalld.service" "containerd.service" "time-set.target")
+SERVICES=("NetworkManager.service" "systemd-networkd.service" "network-online.target" "docker.socket" "firewalld.service" "containerd.service" "time-set.target")
 for SERVICE in "${SERVICES[@]}"; do
     log_service_start_time $SERVICE &
 done
