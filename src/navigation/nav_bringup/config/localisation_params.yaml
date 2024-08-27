@@ -1,40 +1,76 @@
+# note that these links to the docs show the old ROS 1 param format, but the params are the same
+
 odom_filter_node:
   ros__parameters:
     use_sim_time: false
-    # 1. Set the map_frame, odom_frame, and base_link frames to the appropriate frame names for your system.
-    #     1a. If your system does not have a map_frame, just remove it, and make sure "world_frame" is set to the value of odom_frame.
-    # 2. If you are fusing continuous position data such as wheel encoder odometry, visual odometry, or IMU data, set "world_frame"
-    #    to your odom_frame value. This is the default behavior for robot_localization's state estimation nodes.
-    # 3. If you are fusing global absolute position data that is subject to discrete jumps (e.g., GPS or position updates from landmark
-    #    observations) then:
-    #     3a. Set your "world_frame" to your map_frame value
-    #     3b. MAKE SURE something else is generating the odom->base_link transform. Note that this can even be another state estimation node
-    #         from robot_localization! However, that instance should *not* fuse the global data.
-    map_frame: track               # Defaults to "map" if unspecified
-    odom_frame: odom            # Defaults to "odom" if unspecified
-    base_link_frame: base_footprint  # Defaults to "base_link" ifunspecified
-    world_frame: odom           # Defaults to the value ofodom_frame if unspecified
+    reset_on_time_jump: true
 
-    odom0: zed2i/zed_node/odom
-    odom0_config: [false, false, false,  # x, y, z
-                   false, false, true,  # roll, pitch, yaw
+    debug: False # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#debug
+    debug_out_file: /home/ubuntu/QUTMS/tmp/robot_localization_debug.txt # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#debug-out-file
+
+    frequency: 50.0 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#frequency
+    two_d_mode: true # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#two-d-mode
+    publish_tf: true # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#publish-tf
+    sensor_timeout: 0.1 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-timeout
+    dynamic_process_noise_covariance: true # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#dynamic-process-noise-covariance
+    transform_time_offset: 0.0 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#transform-time-offset
+    transform_timeout: 0.0 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#transform-timeout
+    publish_acceleration: false # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#publish-acceleration
+
+    # frames # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#frame
+    map_frame: track # Defaults to "map" if unspecified
+    odom_frame: odom # Defaults to "odom" if unspecified
+    base_link_frame: base_footprint # Defaults to "base_link" if unspecified
+    world_frame: odom # Defaults to the value ofodom_frame if unspecified
+
+    # sensor configurations (example)
+    # sensor0: sensor/sensor_data # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor
+    # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-config
+    # sensor0_config: [false, false, false,  # x, y, z
+    #                  false, false, true,  # roll, pitch, yaw
+    #                  false, false, false,  # x_dot, y_dot, z_dot
+    #                  false, false, false,  # roll_dot, pitch_dot, yaw_dot
+    #                  false, false, false]  # x_ddot, y_ddot, z_ddot
+    # sensor0_differential: false # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-differential
+    # sensor0_relative: true # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-relative
+    # sensor0_queue_size: 5 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-queue-size
+    # thresholds https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#sensor-threshold
+    # sensor0_pose_rejection_threshold: 0.8
+    # sensor0_twist_rejection_threshold: 0.8
+    # sensor0_linear_acceleration_rejection_threshold: 0.8
+
+    odom0: imu/local_odometry
+    odom0_config: [true, true, false,
+                  false, false, true,
+                  true, true, false,
+                  false, false, false,
+                  false, false, false]
+    odom0_relative: true
+
+    # odom1: sbg_translated/odometry
+    # odom1_config: [false, false, false,
+    #               false, false, true,
+    #               false, false, false,
+    #               false, false, true,
+    #               false, false, false]
+    # odom1_relative: false
+
+    # odom2: zed2i/zed_node/odom
+    # odom2_config: [false, false, false,
+    #                false, false, true,
+    #                false, false, false,
+    #                false, false, false,
+    #                false, false, false]
+    # odom2_relative: true
+
+    # for now, this is just used to have a 2nd point of input so the package can run
+    # even though its all false and not used currently
+    twist0: vehicle/wheel_twist
+    twist0_config: [false, false, false,  # x, y, z
+                   false, false, false,  # roll, pitch, yaw
                    false, false, false,  # x_dot, y_dot, z_dot
                    false, false, false,  # roll_dot, pitch_dot, yaw_dot
                    false, false, false]  # x_ddot, y_ddot, z_ddot
-
-    # twist0: vehicle/wheel_twist
-    # twist0_config: [false, false, false,  # x, y, z
-    #                false, false, false,  # roll, pitch, yaw
-    #                true, false, false,  # x_dot, y_dot, z_dot
-    #                false, false, false,  # roll_dot, pitch_dot, yaw_dot
-    #                false, false, false]  # x_ddot, y_ddot, z_ddot
-
-    odom1: odometry/sbg_ekf
-    odom1_config: [true, true, false,  # x, y, z
-                  false, false, true,  # roll, pitch, yaw
-                  true, true, false,  # x_dot, y_dot, z_dot
-                  false, false, true,  # roll_dot, pitch_dot, yaw_dot
-                  false, false, false]  # x_ddot, y_ddot, z_ddot
 
     # odom2: odometry/gps
     # odom2_config: [true,  true,  false,
@@ -43,11 +79,21 @@ odom_filter_node:
     #               false, false, false,
     #               false, false, false]
 
-    frequency: 50.0
-    two_d_mode: true
-    publish_acceleration: false
-    publish_tf: true
-    sensor_timeout: 0.05
+    # process_noise_covariance: [0.05, 0.05, 0.06, 0.0, 0.0, 0.0,
+    #                            0.05, 0.05, 0.06, 0.0, 0.0, 0.0,
+    #                            0.06, 0.06, 0.1, 0.0, 0.0, 0.0,
+    #                             0.0, 0.0, 0.0, 0.01, 0.0, 0.0,
+    #                             0.0, 0.0, 0.0, 0.0, 0.01, 0.0,
+    #                             0.0, 0.0, 0.0, 0.0, 0.0, 0.01]
+
+    use_control: false # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#use-control
+    control_timeout: 0.2 # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#control-timeout
+    control_config: [true, true, false,  # x_dot, y_dot, z_dot
+                     false, false, true]  # roll_dot, pitch_dot, yaw_dot
+    acceleration_limits: [1.0, 0.0, 0.0,  # x, y, z
+                          0.0, 0.0, 0.2]  # roll, pitch, yaw
+    acceleration_gains: [0.4, 0.0, 0.0,  # x, y, z
+                         0.0, 0.0, 0.05]  # roll, pitch, yaw
 
 navsat_transform_node:
   ros__parameters:

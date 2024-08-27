@@ -28,8 +28,12 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
         "/control/driving_command", QOS_ALL, std::bind(&VelocityController::ackermann_callback, this, _1));
 
     // Velocity updates
-    velocity_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
-        "/vehicle/velocity", QOS_LATEST, std::bind(&VelocityController::velocity_callback, this, _1));
+    // velocity_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
+    //     "/vehicle/velocity", QOS_LATEST, std::bind(&VelocityController::velocity_callback, this, _1));
+
+    // imu updates
+    twist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+        "/imu/velocity", QOS_LATEST, std::bind(&VelocityController::twist_callback, this, _1));
 
     // Control loop -> 10ms so runs at double speed heartbeats are sent at
     controller_timer_ = this->create_wall_timer(std::chrono::milliseconds(loop_ms_),
@@ -37,6 +41,9 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
     accel_pub_ = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
+
+    // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
+    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
 
     // Param callback
     param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
@@ -62,6 +69,14 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
                  max_integral_torque_, histerisis_kickin_ms_, histerisis_reset_ms_);
 }
 
+void VelocityController::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
+    state_ = msg;
+    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->navigation_ready &&
+        msg->mission != driverless_msgs::msg::State::INSPECTION) {
+        motors_enabled_ = true;
+    }
+}
+
 void VelocityController::ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
     target_ackermann_ = msg;
     received_ackermann_ = true;
@@ -70,6 +85,17 @@ void VelocityController::ackermann_callback(const ackermann_msgs::msg::Ackermann
 void VelocityController::velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg) {
     avg_velocity_ = msg->data;
     received_velocity_ = true;
+}
+
+void VelocityController::twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    // get magnitude of linear velocity
+    avg_velocity_ = sqrt(pow(msg->twist.linear.x, 2) + pow(msg->twist.linear.y, 2));
+    received_velocity_ = true;
+
+    // publish velocity
+    std_msgs::msg::Float32::UniquePtr velocity_msg(new std_msgs::msg::Float32());
+    velocity_msg->data = avg_velocity_;
+    velocity_pub_->publish(std::move(velocity_msg));
 }
 
 void VelocityController::controller_callback() {
@@ -128,16 +154,6 @@ void VelocityController::controller_callback() {
     // publish accel
     accel_pub_->publish(std::move(accel_cmd));
     prev_accel_ = accel;
-}
-
-void VelocityController::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
-    state_ = msg;
-    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->navigation_ready &&
-        msg->mission != driverless_msgs::msg::State::INSPECTION) {
-        motors_enabled_ = true;
-    } else {
-        motors_enabled_ = false;
-    }
 }
 
 }  // namespace velocity_controller

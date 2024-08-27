@@ -202,7 +202,7 @@ controller_server:
       lookahead_dist: 4.0  # The lookahead distance to use to find the lookahead point.
       # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
-      lookahead_time: 1.5  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
+      lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
       transform_tolerance: 0.3  # The TF transform tolerance.
       use_velocity_scaled_lookahead_dist: false  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.

@@ -19,6 +19,9 @@ def generate_launch_description():
         parameters=[
             os.path.join(pkg_share, "config/localisation_params.yaml"),
         ],
+        remappings=[
+            ("cmd_vel", "control/nav_cmd_vel"),
+        ],
     )
 
     async_slam_toolbox_node = Node(
@@ -31,6 +34,7 @@ def generate_launch_description():
         ],
         remappings=[
             ("/pose", "/slam/car_pose"),
+            ("/slam_toolbox/graph_visualization", "/slam/graph_visualisation"),
         ],
     )
 
