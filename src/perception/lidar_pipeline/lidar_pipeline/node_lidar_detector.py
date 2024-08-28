@@ -15,8 +15,6 @@ from sensor_msgs.msg import PointCloud2, PointField
 
 from driverless_common.common import QOS_LATEST, FPSHandler
 
-from .library.cy_library import total_least_squares as tls
-
 DUMMY_FIELD_PREFIX = "__"
 
 def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
@@ -28,8 +26,6 @@ def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
 
     # remove the dummy fields that were added
     cloud_arr = cloud_arr[
-        [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
-    ]
         [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
     ]
 
@@ -216,7 +212,7 @@ class LiDARDetectorNode(Node):
         ## FOR VISUALS
         # create pointcloud of all clusters
         cone_clusters = np.concatenate(cone_clusters)
-        new_point_cloud_msg = self.array_to_pointcloud2(msg, cone_clusters, dtype_list)
+        new_point_cloud_msg = array_to_pointcloud2(msg, cone_clusters, dtype_list)
         self.point_cloud_publisher_debug.publish(new_point_cloud_msg)
 
         # Calculate runtime statistics

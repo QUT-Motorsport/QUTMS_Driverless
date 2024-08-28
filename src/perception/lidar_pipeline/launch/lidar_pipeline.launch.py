@@ -15,12 +15,12 @@ def generate_launch_description():
                     os.path.join(get_package_share_path("lidar_pipeline"), "config", "lidar_detector.yaml"),
                 ],
             ),
-            Node(
-                package="ground_plane_segmenter",
-                executable="ground_plane_segmenter_node",
-                parameters=[
-                    os.path.join(get_package_share_path("ground_plane_segmenter"), "config", "ground_plane_segmenter.yaml"),
-                ],
-            ),
+            # Node(
+            #     package="ground_plane_segmenter",
+            #     executable="ground_plane_segmenter_node",
+            #     parameters=[
+            #         os.path.join(get_package_share_path("ground_plane_segmenter"), "config", "ground_plane_segmenter.yaml"),
+            #     ],
+            # ),
         ]
     )

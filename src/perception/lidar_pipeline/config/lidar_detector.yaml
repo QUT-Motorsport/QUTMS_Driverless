@@ -2,7 +2,7 @@ lidar_detector_node:
   ros__parameters:
     log_level: DEBUG
     # Max range of points to process (metres)
-    lidar_range: 35
+    lidar_range: 20
 
     # LiDAR and Cone params
     cone_size: 0.10

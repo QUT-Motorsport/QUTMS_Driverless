@@ -90,10 +90,10 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
         extract.filter(*objects);
 
         // extract everything above the max_z and add it to the objects
-        pcl::PointCloud<pcl::PointXYZI>::Ptr other(new pcl::PointCloud<pcl::PointXYZI>);
-        crop.setNegative(true);
-        crop.filter(*other);
-        *objects += *other;
+        // pcl::PointCloud<pcl::PointXYZI>::Ptr other(new pcl::PointCloud<pcl::PointXYZI>);
+        // crop.setNegative(true);
+        // crop.filter(*other);
+        // *objects += *other;
 
         // filter out any points that are less than plane_thresh from the estimated plane
         const float A = coefficients->values[0];

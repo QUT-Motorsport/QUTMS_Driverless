@@ -1,6 +1,6 @@
 ground_plane_segmenter_node:
   ros__parameters:
-    distance_threshold: 0.1 # Distance threshold for plane segmentation
+    distance_threshold: 0.05 # Distance threshold for plane segmentation
     plane_thresh: 0.05  # Points within this distance of the estimated ground plane are considered part of the ground in meters
     eps_angle: 7.0  # Maximum angle of plane in degrees
     max_z: -0.5  # Ignore points above this height in meters    
