@@ -44,7 +44,7 @@ class EBSTestHandler(ShutdownNode):
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
-        self.declare_parameter("debug", True)
+        self.declare_parameter("debug", False)
 
         if self.get_parameter("debug").value:
             self.debug = True
@@ -63,9 +63,8 @@ class EBSTestHandler(ShutdownNode):
         
         super().state_callback(msg)
         if (
-            msg.state == State.DRIVING
-            and msg.mission == State.TRACKDRIVE
-            and msg.navigation_ready
+            msg.state == State.READY
+            and msg.mission == State.EBS_TEST
             and not self.mission_started
             and self.odom_received
         ):

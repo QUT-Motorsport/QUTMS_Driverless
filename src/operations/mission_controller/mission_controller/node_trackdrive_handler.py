@@ -50,7 +50,7 @@ class TrackdriveHandler(ShutdownNode):
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
         self.declare_parameter("start_following", False)
-        self.declare_parameter("debug", True)
+        self.declare_parameter("debug", False)
 
         if self.get_parameter("start_following").value:
             # start at lap 1
@@ -74,9 +74,8 @@ class TrackdriveHandler(ShutdownNode):
         
         super().state_callback(msg)
         if (
-            msg.state == State.DRIVING
+            msg.state == State.READY
             and msg.mission == State.TRACKDRIVE
-            and msg.navigation_ready
             and not self.mission_started
             and self.odom_received
         ):
