@@ -27,11 +27,6 @@ class MissionControl(Node):
             if target_mission == "ebs_test":
                 command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
 
-            # specific for trackdrive running new planner
-            elif target_mission == "trackdrive":
-                node = target_mission + "_handler_nav_node"
-                command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
-
             else:
                 node = target_mission + "_handler_node"
                 command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]

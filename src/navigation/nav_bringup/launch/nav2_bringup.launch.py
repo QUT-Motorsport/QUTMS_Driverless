@@ -30,10 +30,10 @@ def generate_launch_description():
 
     namespace = LaunchConfiguration("namespace")
     autostart = LaunchConfiguration("autostart")
-    params_file = LaunchConfiguration("params_file")
     log_level = LaunchConfiguration("log_level")
 
-    lifecycle_nodes = ["controller_server", "planner_server", "behavior_server", "bt_navigator"]
+    # lifecycle_nodes = ["controller_server", "planner_server", "behavior_server", "bt_navigator"]
+    lifecycle_nodes = ["controller_server", "behavior_server", "bt_navigator"]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -51,19 +51,8 @@ def generate_launch_description():
 
     # behaviour tree xml file location
     # uncomment the XML you want to test
-    to_pose_bt_xml = os.path.join(
-        get_package_share_directory("nav_bringup"),
-        "behaviour_trees",
-        # 'plan_to_pose.xml')
-        # 'replan_to_pose.xml')
-        # "plan_to_pose_and_follow.xml",
-        #'replan_to_pose_and_follow.xml'
-        "follow_path.xml",
-    )
-
-    through_poses_bt_xml = os.path.join(
-        get_package_share_directory("nav_bringup"), "behaviour_trees", "plan_through_poses_and_follow.xml"
-    )
+    to_pose_bt_xml = os.path.join(bringup_dir, "behaviour_trees", "follow_path.xml")
+    through_poses_bt_xml = os.path.join(bringup_dir, "behaviour_trees", "follow_path.xml")
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -72,6 +61,7 @@ def generate_launch_description():
         "default_nav_through_poses_bt_xml": through_poses_bt_xml,
     }
 
+    params_file = os.path.join(bringup_dir, "config", "nav2_params.yaml")
     configured_params = RewrittenYaml(
         source_file=params_file, root_key=namespace, param_rewrites=param_substitutions, convert_types=True
     )
@@ -79,12 +69,6 @@ def generate_launch_description():
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
 
     declare_namespace_cmd = DeclareLaunchArgument("namespace", default_value="", description="Top-level namespace")
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file",
-        default_value=os.path.join(bringup_dir, "config", "nav2_params.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
-    )
 
     declare_autostart_cmd = DeclareLaunchArgument(
         "autostart", default_value="true", description="Automatically startup the nav2 stack"
@@ -102,15 +86,15 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
                 remappings=remappings,
             ),
-            Node(
-                package="nav2_planner",
-                executable="planner_server",
-                name="planner_server",
-                output="screen",
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=remappings,
-            ),
+            # Node(
+            #     package="nav2_planner",
+            #     executable="planner_server",
+            #     name="planner_server",
+            #     output="screen",
+            #     parameters=[configured_params],
+            #     arguments=["--ros-args", "--log-level", log_level],
+            #     remappings=remappings,
+            # ),
             Node(
                 package="nav2_behaviors",
                 executable="behavior_server",
@@ -148,7 +132,6 @@ def generate_launch_description():
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
-    ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_log_level_cmd)
     # Add the actions to launch all of the navigation nodes

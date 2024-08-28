@@ -5,7 +5,7 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence>
-      <FollowPath path="{path}" controller_id="RegulatedPurePursuit"/>
+      <FollowPath path="{path}" controller_id="TrackdriveRPP"/>
     </PipelineSequence>
   </BehaviorTree>
 </root>
