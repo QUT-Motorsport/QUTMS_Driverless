@@ -29,6 +29,9 @@ class TrackdriveHandler(ShutdownNode):
     goal_offet = 0.1
     path = None
     goal_handle = None
+    debug = False
+
+    controller_id = "TrackdriveRPP"
 
     def __init__(self):
         super().__init__("trackdrive_logic_node")
@@ -154,6 +157,9 @@ class TrackdriveHandler(ShutdownNode):
             self.last_x = track_to_base.transform.translation.x
             self.last_lap_time = time.time()
 
+        if self.laps > 1:
+            self.controller_id = "TrackdriveRPPFast"
+
         if self.laps == 10:
             self.get_logger().info("Trackdrive mission complete")
             # currently only works when vehicle supervisor node is running on-car
@@ -169,7 +175,7 @@ class TrackdriveHandler(ShutdownNode):
         goal_msg = FollowPath.Goal()
         goal_msg.path = path
         # send controller ID in request
-        goal_msg.controller_id = "TrackdriveRPP" # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
+        goal_msg.controller_id = self.controller_id # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
 
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 

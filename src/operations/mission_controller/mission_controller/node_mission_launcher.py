@@ -24,12 +24,8 @@ class MissionControl(Node):
     def callback(self, status: State):
         if status.mission != State.MISSION_NONE and status.state != State.EMERGENCY and not self.mission_launched:
             target_mission = INT_MISSION_TYPE[status.mission].value
-            if target_mission == "ebs_test":
-                command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
-
-            else:
-                node = target_mission + "_handler_node"
-                command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
+            node = target_mission + "_handler_node"
+            command = ["stdbuf", "-o", "L", "ros2", "run", "mission_controller", node]
 
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)

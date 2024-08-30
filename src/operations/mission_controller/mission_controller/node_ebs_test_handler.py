@@ -25,6 +25,7 @@ class EBSTestHandler(ShutdownNode):
     goal_offet = 0.1
     path = None
     goal_handle = None
+    debug = False
 
     def __init__(self):
         super().__init__("ebs_test_logic_node")
@@ -55,7 +56,7 @@ class EBSTestHandler(ShutdownNode):
             self.process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
 
-        self.get_logger().info("---Trackdrive handler node initialised---")
+        self.get_logger().info("---EBS handler node initialised---")
 
     def state_callback(self, msg: State):
         if self.debug:
@@ -69,13 +70,11 @@ class EBSTestHandler(ShutdownNode):
             and self.odom_received
         ):
             self.mission_started = True
-            self.last_lap_time = time.time()
-            self.lap_trig_pub.publish(UInt8(data=0))
 
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
+            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
-            self.get_logger().info("Trackdrive mission started")
+            self.get_logger().info("EBS mission started")
 
     def path_callback(self, msg: Path):
         # receive path and convert to numpy array
@@ -101,30 +100,18 @@ class EBSTestHandler(ShutdownNode):
             self.get_logger().debug("Transform exception: " + str(e))
             return
 
-        if not self.mission_started:
-            self.last_x = track_to_base.transform.translation.x
-            return
-
-        if not abs(track_to_base.transform.translation.y) < 2:
-            self.last_x = track_to_base.transform.translation.x
-            return
-
-        if self.last_x <= self.goal_offet and track_to_base.transform.translation.x >= self.goal_offet:
-            # publish initial pose on first lap
-            if not self.sent_init:
-                init_pose_msg = PoseWithCovarianceStamped()
-                init_pose_msg.header.stamp = track_to_base.header.stamp
-                init_pose_msg.header.frame_id = "track"
-                # convert translation to pose
-                init_pose_msg.pose.pose.position.x = track_to_base.transform.translation.x
-                init_pose_msg.pose.pose.position.y = track_to_base.transform.translation.y
-                init_pose_msg.pose.pose.orientation = track_to_base.transform.rotation
-                # cov diag to square
-                self.init_pose_pub.publish(init_pose_msg)
-                self.sent_init = True
-
-            self.last_x = track_to_base.transform.translation.x
-            self.last_lap_time = time.time()
+        # publish initial pose on first lap
+        if not self.sent_init:
+            init_pose_msg = PoseWithCovarianceStamped()
+            init_pose_msg.header.stamp = track_to_base.header.stamp
+            init_pose_msg.header.frame_id = "track"
+            # convert translation to pose
+            init_pose_msg.pose.pose.position.x = track_to_base.transform.translation.x
+            init_pose_msg.pose.pose.position.y = track_to_base.transform.translation.y
+            init_pose_msg.pose.pose.orientation = track_to_base.transform.rotation
+            # cov diag to square
+            self.init_pose_pub.publish(init_pose_msg)
+            self.sent_init = True
 
     def send_path(self, path: Path):
         # Sends a `NavThroughPoses` action request

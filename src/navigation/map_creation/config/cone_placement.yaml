@@ -1,7 +1,7 @@
 cone_placement_node:
   ros__parameters:
-    view_x: 15.0
-    view_y: 15.0
+    view_x: 25.0
+    view_y: 25.0
     radius: 1.9
-    min_detections: 10
+    min_detections: 6
     use_sim_time: False
