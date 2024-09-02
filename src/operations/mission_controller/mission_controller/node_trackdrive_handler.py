@@ -74,7 +74,7 @@ class TrackdriveHandler(ShutdownNode):
     def state_callback(self, msg: State):
         if self.debug:
             return
-        
+
         super().state_callback(msg)
         if (
             msg.state == State.READY
@@ -175,7 +175,9 @@ class TrackdriveHandler(ShutdownNode):
         goal_msg = FollowPath.Goal()
         goal_msg.path = path
         # send controller ID in request
-        goal_msg.controller_id = self.controller_id # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
+        goal_msg.controller_id = (
+            self.controller_id
+        )  # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
 
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 

@@ -1,5 +1,4 @@
 import array
-import array
 import math
 import time
 
@@ -16,6 +15,7 @@ from sensor_msgs.msg import PointCloud2, PointField
 from driverless_common.common import QOS_LATEST, FPSHandler
 
 DUMMY_FIELD_PREFIX = "__"
+
 
 def array_to_pointcloud2(point_cloud_msg, cloud_arr, dtype_list):
     # The PointCloud2.data setter will create an array.array object for you if you don't
@@ -184,7 +184,7 @@ class LiDARDetectorNode(Node):
         # Step 5
 
         # Remove points that are outside of lidar range or min range
-        mask = (point_norms < self.lidar_range) & (point_norms > self.min_range) # & (point_norms != 0)
+        mask = (point_norms < self.lidar_range) & (point_norms > self.min_range)  # & (point_norms != 0)
         point_norms = point_norms[mask]
         object_points = object_points[mask]
 
@@ -222,7 +222,6 @@ class LiDARDetectorNode(Node):
             throttle_duration_sec=0.5,
         )
 
-
     def group_points(self, object_points):
         # Cluster object points
         clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(
@@ -243,19 +242,18 @@ class LiDARDetectorNode(Node):
 
         return object_centers, objects
 
-
     def cone_filter(self, objects, object_centers):
         # size, filter out clusters with >15 points
         # cluster radius, filter out clusters >0.10m radius
 
         # iterate through clusters
-            # get size of points in cluster
-            # size is number of points in cluster
-            # get radius of cluster
-            # radius is max distance from center to any point
+        # get size of points in cluster
+        # size is number of points in cluster
+        # get radius of cluster
+        # radius is max distance from center to any point
 
-            # if size > 15 or diameter > 0.10
-                # ignore
+        # if size > 15 or diameter > 0.10
+        # ignore
 
         # initialise a mask of all False for each object
         mask = np.zeros(len(objects), dtype=bool)
@@ -263,7 +261,7 @@ class LiDARDetectorNode(Node):
         for i in range(len(objects)):
             if objects[i].size > 15:
                 continue
-            
+
             # object = [[x, y, z, intensity], [x, y, z, intensity], ...
             dists = np.linalg.norm(np.array([objects[i]["x"], objects[i]["y"]]).T - object_centers[i][:2], axis=1)
             # dists = [0.1, 0.2, 0.3, ...]
@@ -279,7 +277,6 @@ class LiDARDetectorNode(Node):
         cone_locations = object_centers[mask]
 
         return cone_clusters, cone_locations
-
 
 
 def main(args=None):
