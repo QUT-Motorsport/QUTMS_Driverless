@@ -56,7 +56,7 @@ void SteeringActuator::as_state_callback(const driverless_msgs::msg::State::Shar
 }
 
 // Get steering angle reading
-void SteeringActuator::steering_angle_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg) {
+void SteeringActuator::steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg) {
     current_steering_angle_ = msg->data;
     if (!steering_ang_received_) steering_ang_received_ = true;
     RCLCPP_INFO_ONCE(this->get_logger(), "Steering angle received");
@@ -109,9 +109,8 @@ void SteeringActuator::can_callback(const driverless_msgs::msg::Can::SharedPtr m
             initial_enc_saved_ = true;
         }
 
-        driverless_msgs::msg::Int32Stamped::UniquePtr enc_msg(new driverless_msgs::msg::Int32Stamped());
-        enc_msg->header.stamp = this->get_clock()->now();
-        enc_msg->data = current_enc_revolutions_;
+        std_msgs::msg::Int32::UniquePtr enc_msg(new std_msgs::msg::Int32());
+        enc_msg->data = -current_enc_revolutions_;
         encoder_pub_->publish(std::move(enc_msg));
     } else if (msg->id == C5E_SRV_ID) {
         // objects returned from sdo read
@@ -255,7 +254,7 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
         "/can/canopen_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1), sensor_cb_opt);
 
     // Create subscriber to topic "steering_angle"
-    steer_ang_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
+    steer_ang_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         "/vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1),
         sensor_cb_opt);
 
@@ -280,7 +279,7 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", QOS_ALL);
 
     // Create publisher to topic "encoder_reading"
-    encoder_pub_ = this->create_publisher<driverless_msgs::msg::Int32Stamped>("/vehicle/encoder_reading", QOS_ALL);
+    encoder_pub_ = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", QOS_ALL);
 
     // Create publisher to topic "steering_state"
     steering_ready_pub_ = this->create_publisher<std_msgs::msg::Bool>("/system/steering_ready", QOS_ALL);

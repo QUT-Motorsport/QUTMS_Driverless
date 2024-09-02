@@ -14,8 +14,8 @@
 #include "canopen.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
-#include "driverless_msgs/msg/float32_stamped.hpp"
-#include "driverless_msgs/msg/int32_stamped.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -136,11 +136,11 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // Creates publishers and subscribers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::Int32Stamped>::SharedPtr encoder_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
-    rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr steer_ang_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
 
     rclcpp::CallbackGroup::SharedPtr sensor_cb_group_;
@@ -175,7 +175,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void configure_c5e();
     void c5e_state_request_callback();
     void as_state_callback(const driverless_msgs::msg::State::SharedPtr msg);
-    void steering_angle_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
+    void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void can_callback(const driverless_msgs::msg::Can::SharedPtr msg);
 

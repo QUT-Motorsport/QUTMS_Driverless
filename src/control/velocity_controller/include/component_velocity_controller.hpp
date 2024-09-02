@@ -5,7 +5,6 @@
 
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "driverless_common/common.hpp"
-#include "driverless_msgs/msg/float32_stamped.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
@@ -55,7 +54,6 @@ class VelocityController : public rclcpp::Node {
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent& event);
     void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
-    void velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void state_callback(const driverless_msgs::msg::State::SharedPtr msg);
 

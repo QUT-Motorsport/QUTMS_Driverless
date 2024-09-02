@@ -76,11 +76,6 @@ void VelocityController::ackermann_callback(const ackermann_msgs::msg::Ackermann
     received_ackermann_ = true;
 }
 
-void VelocityController::velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg) {
-    avg_velocity_ = msg->data;
-    received_velocity_ = true;
-}
-
 void VelocityController::twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
     // get magnitude of linear velocity
     avg_velocity_ = sqrt(pow(msg->twist.linear.x, 2) + pow(msg->twist.linear.y, 2));
