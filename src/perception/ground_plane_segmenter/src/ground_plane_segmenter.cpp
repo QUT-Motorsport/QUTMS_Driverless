@@ -4,10 +4,13 @@
 
 namespace ground_plane_segmenter {
 
-GroundPlaneSegmenterNode::GroundPlaneSegmenterNode(const rclcpp::NodeOptions &options) : Node("ground_plane_segmenter_node", options) {
+GroundPlaneSegmenterNode::GroundPlaneSegmenterNode(const rclcpp::NodeOptions &options)
+    : Node("ground_plane_segmenter_node", options) {
     pcl_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "velodyne_points", rclcpp::SensorDataQoS(), std::bind(&GroundPlaneSegmenterNode::pcl_callback, this, std::placeholders::_1));
-    pcl_ground_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar/ground_plane", rclcpp::SensorDataQoS());
+        "velodyne_points", rclcpp::SensorDataQoS(),
+        std::bind(&GroundPlaneSegmenterNode::pcl_callback, this, std::placeholders::_1));
+    pcl_ground_pub =
+        this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar/ground_plane", rclcpp::SensorDataQoS());
     pcl_objects_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar/objects", rclcpp::SensorDataQoS());
 
     seg.setOptimizeCoefficients(true);

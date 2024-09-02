@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "pcl/filters/extract_indices.h"
+#include "pcl/filters/passthrough.h"
+#include "pcl/segmentation/sac_segmentation.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/qos.hpp"
-#include "pcl/filters/extract_indices.h"
-#include "pcl/segmentation/sac_segmentation.h"
-#include "pcl/filters/passthrough.h"
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 
 namespace ground_plane_segmenter {
 
