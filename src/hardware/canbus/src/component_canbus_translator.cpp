@@ -4,18 +4,6 @@
 
 namespace canbus {
 
-void CANTranslator::update_twist() {
-    geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(
-        new geometry_msgs::msg::TwistWithCovarianceStamped());
-    // use last velocity and steering angle to update twist
-    twist_msg->header.stamp = this->now();
-    twist_msg->header.frame_id = ros_base_frame_;  // PARAMETERISE
-    twist_msg->twist.twist.linear.x = last_velocity_;
-    twist_msg->twist.twist.linear.y = 0.0;
-    twist_msg->twist.twist.angular.z = last_velocity_ * tan(last_steering_angle_) / AXLE_WIDTH;
-    twist_pub_->publish(std::move(twist_msg));
-}
-
 void CANTranslator::canmsg_timer() {
     auto res = can_interface_->rx(this->get_logger(), this->get_clock());
 
@@ -50,11 +38,6 @@ void CANTranslator::canmsg_timer() {
         uint8_t vesc_id = msg->id & 0xFF;
         if (vesc_id < 4) {
             if (vesc_masked_id == VESC_CAN_PACKET_STATUS) {
-                // 3 wheel drive :/
-                if (vesc_id == 1) {
-                    continue;
-                }
-
                 uint8_t data[8];
                 this->copy_data(msg->data, data, 8);
                 // extract and publish RPM
@@ -74,18 +57,16 @@ void CANTranslator::canmsg_timer() {
                 for (int i = 0; i < 4; i++) {
                     av_velocity += wheel_speeds_[i];
                 }
-                av_velocity = av_velocity / 3;
-
-                // publish velocity
-                driverless_msgs::msg::Float32Stamped::UniquePtr vel_msg(new driverless_msgs::msg::Float32Stamped());
-                vel_msg->header.stamp = this->now();
-                vel_msg->header.frame_id = ros_base_frame_;
-                vel_msg->data = av_velocity;
-                last_velocity_ = av_velocity;
-                // velocity_pub_->publish(std::move(vel_msg));
+                av_velocity = av_velocity / 4; // maybe get a vector of x,y here?
 
                 // update twist msg with new velocity
-                update_twist();
+                geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(new geometry_msgs::msg::TwistWithCovarianceStamped());
+                twist_msg->header.stamp = this->now();
+                twist_msg->header.frame_id = ros_base_frame_;
+                twist_msg->twist.twist.linear.x = av_velocity;
+                twist_msg->twist.twist.linear.y = 0.0;
+                twist_msg->twist.twist.angular.z = 0.0;
+                twist_pub_->publish(std::move(twist_msg));
             }
         }
         // Steering Angle
@@ -115,9 +96,7 @@ void CANTranslator::canmsg_timer() {
                 angle_msg->header.stamp = this->now();
                 angle_msg->header.frame_id = ros_base_frame_;
                 angle_msg->data = steering_0;
-                last_steering_angle_ = steering_0;
                 steering_angle_pub_->publish(std::move(angle_msg));
-                update_twist();
             } else {
                 RCLCPP_FATAL(this->get_logger(),
                              "MISMATCH: Steering Angle 0: %i  Steering Angle 1: %i ADC 0: %i ADC 1: %i", steering_0_raw,
@@ -188,9 +167,8 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     // ADD PUBS FOR CAN TOPICS HERE
     // Steering ang
     steering_angle_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/steering_angle", 10);
-    // Vehicle velocity
-    // velocity_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/velocity", 10);
 
+    // Vehicle velocity
     wss_velocity_pub1_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed1", 10);
     wss_velocity_pub2_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed2", 10);
     wss_velocity_pub3_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed3", 10);
