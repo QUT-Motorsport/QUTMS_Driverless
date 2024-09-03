@@ -40,7 +40,7 @@ struct TrackedCone {
     TrackedCone(const driverless_msgs::msg::Cone &cone, const std::string &frame_id, const std::vector<double> &pose) {
         // TODO: offset these with transform lookup
         if (frame_id == "velodyne") {
-            local_x = cone.location.x + 1.65;
+            local_x = cone.location.x - 0.3;
             sensor = "lidar";
         } else {
             local_x = cone.location.x - 0.2;

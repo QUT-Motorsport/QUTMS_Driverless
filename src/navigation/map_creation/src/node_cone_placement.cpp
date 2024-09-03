@@ -13,7 +13,7 @@ ConeAssociation::ConeAssociation() : Node("cone_placement_node") {
 
     // Create publishers
     global_publisher = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("/slam/global_map", 1);
-    local_publisher = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("/slam/local_map", 1);
+    // local_publisher = create_publisher<driverless_msgs::msg::ConeDetectionStamped>("/slam/local_map", 1);
 
     // Initialize TF2 buffer and listener
     tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -79,8 +79,10 @@ void ConeAssociation::callback(const driverless_msgs::msg::ConeDetectionStamped:
     // process detected cones
     // search through the list of TrackedCones and update the location of the cone if it is within a radius
     // if not, add it to the list
-    for (const auto &cone : msg->cones) {
-        findClosestCone(cone, msg->header.frame_id);
+    if (mapping) {
+        for (const auto &cone : msg->cones) {
+            findClosestCone(cone, msg->header.frame_id);
+        }
     }
 
     // if no cones were detected, return
@@ -134,9 +136,9 @@ void ConeAssociation::createConeDetections(const driverless_msgs::msg::ConeDetec
     global_msg->header.stamp = msg.header.stamp;
     global_msg->header.frame_id = "track";
 
-    auto local_msg = std::make_shared<driverless_msgs::msg::ConeDetectionStamped>();
-    local_msg->header.stamp = msg.header.stamp;
-    local_msg->header.frame_id = "base_footprint";
+    // auto local_msg = std::make_shared<driverless_msgs::msg::ConeDetectionStamped>();
+    // local_msg->header.stamp = msg.header.stamp;
+    // local_msg->header.frame_id = "base_footprint";
 
     for (const auto &cone : track) {
         // ensure that the cone has been detected enough
@@ -156,22 +158,22 @@ void ConeAssociation::createConeDetections(const driverless_msgs::msg::ConeDetec
 
         global_msg->cones_with_cov.push_back(*cone_with_cov);
 
-        if (cone.local_x < 0 || cone.local_x > view_x || cone.local_y < -view_y || cone.local_y > view_y) {
-            continue;
-        }
+        // if (cone.local_x < 0 || cone.local_x > view_x || cone.local_y < -view_y || cone.local_y > view_y) {
+        //     continue;
+        // }
 
-        auto local_cone_msg = cone.local_cone_as_msg();
-        local_msg->cones.push_back(local_cone_msg);
+        // auto local_cone_msg = cone.local_cone_as_msg();
+        // local_msg->cones.push_back(local_cone_msg);
 
-        auto local_cone_with_cov = std::make_shared<driverless_msgs::msg::ConeWithCovariance>();
-        local_cone_with_cov->cone = local_cone_msg;
-        local_cone_with_cov->covariance = cone.cov_as_msg();
+        // auto local_cone_with_cov = std::make_shared<driverless_msgs::msg::ConeWithCovariance>();
+        // local_cone_with_cov->cone = local_cone_msg;
+        // local_cone_with_cov->covariance = cone.cov_as_msg();
 
-        local_msg->cones_with_cov.push_back(*local_cone_with_cov);
+        // local_msg->cones_with_cov.push_back(*local_cone_with_cov);
     }
 
     global_publisher->publish(*global_msg);
-    local_publisher->publish(*local_msg);
+    // local_publisher->publish(*local_msg);
 }
 };  // namespace map_creation
 

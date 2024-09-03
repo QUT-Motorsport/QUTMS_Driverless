@@ -43,7 +43,7 @@ RUN mkdir -p /home/${USERNAME}/driverless_ws/src && \
 WORKDIR /home/$USERNAME/driverless_ws
 USER ${USERNAME}
 
-RUN git clone -b ros-install-dockerfile https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
+RUN git clone https://github.com/QUT-Motorsport/QUTMS_Driverless.git \
         --recurse-submodules
 
 RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
@@ -97,15 +97,7 @@ COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./tools
 
 # build packages in the driverless workspace
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
-    colcon build --symlink-install --packages-up-to roscube_machine qutms_cli_tools
-        # qutms_nav2 nav_interfaces lidarslam --cmake-args\
-        # ' -DOPENGL_gl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so' \
-        # ' -DOPENGL_opengl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so' \
-        # ' -DOPENGL_glu_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLU.so' \
-        # ' -DOPENGL_egl_LIBRARY=/usr/lib/x86_64-linux-gnu/libEGL.so' \
-        # ' -DOPENGL_glx_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLX.so' \
-        # ' -DOPENGL_INCLUDE_DIR=/usr/include/GL' \
-        # ' -DEGL_INCLUDE_DIR=/usr/include/EGL'
+    colcon build --symlink-install --packages-up-to roscube_machine
 
 RUN python3 src/navigation/planners/scripts/pre_calc.py
 
@@ -115,6 +107,6 @@ RUN rm -rf ./src ./tools
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
 
-RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/${USERNAME}/.bashrc
-RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/${USERNAME}/.bashrc
+# RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/${USERNAME}/.bashrc
+# RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/${USERNAME}/.bashrc
 RUN echo 'export ROS_DOMAIN_ID=69' >> /home/${USERNAME}/.bashrc

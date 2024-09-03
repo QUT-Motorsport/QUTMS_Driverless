@@ -45,7 +45,7 @@ slam_toolbox_node:
     scan_buffer_maximum_scan_distance: 10.0  # Maximum distance of a scan from the pose before removing the scan from the buffer
 
     link_match_minimum_response_fine: 0.1  # The threshold link matching algorithm response for fine resolution to pass
-    link_scan_maximum_distance: 0.5  # Maximum distance between linked scans to be valid
+    link_scan_maximum_distance: 5.0  # Maximum distance between linked scans to be valid
     loop_search_maximum_distance: 1.0  # Maximum threshold of distance for scans to be considered for loop closure
     do_loop_closing: true  # Whether to do loop closure
 

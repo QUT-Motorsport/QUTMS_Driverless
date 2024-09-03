@@ -26,8 +26,7 @@ setup(
             "mission_launcher_node = mission_controller.node_mission_launcher:main",
             "inspection_handler_node = mission_controller.node_inspection_handler:main",
             "trackdrive_handler_node = mission_controller.node_trackdrive_handler:main",
-            "trackdrive_handler_lifecycle = mission_controller.lifecycle_trackdrive_handler:main",
-            "trackdrive_handler_nav_node = mission_controller.node_trackdrive_handler_nav:main",
+            "ebs_test_handler_node = mission_controller.node_ebs_test_handler:main",
         ],
     },
 )

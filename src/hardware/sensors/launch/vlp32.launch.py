@@ -11,28 +11,15 @@ import yaml
 def generate_launch_description():
     # Copied from: https://github.com/ros-drivers/velodyne/blob/galactic-devel/velodyne/launch/velodyne-all-nodes-VLP32C-launch.py
     driver_params_file = str(get_package_share_path("sensors") / "config" / "VLP32C.yaml")
-    velodyne_driver_node = launch_ros.actions.Node(
-        package="velodyne_driver", executable="velodyne_driver_node", output="both", parameters=[driver_params_file]
-    )
 
     transform_params_file = os.path.join(get_package_share_path("sensors") / "config" / "VLP32C.yaml")
     with open(transform_params_file, "r") as f:
         transform_params = yaml.safe_load(f)["velodyne_transform_node"]["ros__parameters"]
     transform_params["calibration"] = str(get_package_share_path("sensors") / "config" / "VLP32C-calibration.yaml")
-    velodyne_transform_node = launch_ros.actions.Node(
-        package="velodyne_pointcloud",
-        executable="velodyne_transform_node",
-        output="both",
-        parameters=[transform_params],
-    )
 
     laserscan_params_file = str(get_package_share_path("sensors") / "config" / "VLP32C.yaml")
-    velodyne_laserscan_node = launch_ros.actions.Node(
-        package="velodyne_laserscan",
-        executable="velodyne_laserscan_node",
-        output="both",
-        parameters=[laserscan_params_file],
-    )
+
+    gps_params_file = str(get_package_share_path("ground_plane_segmenter") / "config" / "ground_plane_segmenter.yaml")
 
     container = ComposableNodeContainer(
         name="velodyne_container",
@@ -59,6 +46,13 @@ def generate_launch_description():
                 plugin="velodyne_laserscan::VelodyneLaserScan",
                 name="velodyne_laserscan_node",
                 parameters=[laserscan_params_file],
+                extra_arguments=[{"use_intra_process_comms": True}],
+            ),
+            ComposableNode(
+                package="ground_plane_segmenter",
+                plugin="ground_plane_segmenter::GroundPlaneSegmenterNode",
+                name="ground_plane_segmenter_node",
+                parameters=[gps_params_file],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
         ],

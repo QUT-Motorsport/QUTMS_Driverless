@@ -12,6 +12,8 @@
     <depend>driverless_msgs</depend>
     <depend>driverless_common</depend>
 
+    <depend>ground_plane_segmenter</depend>
+
     <export>
         <build_type>ament_python</build_type>
     </export>

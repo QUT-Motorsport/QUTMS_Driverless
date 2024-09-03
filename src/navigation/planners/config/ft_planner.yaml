@@ -16,7 +16,7 @@ ft_planner_node:
     mpc_path_length: 20
     mpc_prediction_horizon: 40
 
-    min_track_width: 4.0
+    min_track_width: 3.0
     max_search_range: 5
     max_search_angle: 50
     matches_should_be_monotonic: True

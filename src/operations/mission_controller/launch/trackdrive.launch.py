@@ -10,10 +10,6 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription(
         [
-            # Node(
-            #     package="sbg_translator",
-            #     executable="sbg_translator_node",
-            # ),
             Node(
                 package="odom_transformer",
                 executable="odom_transformer_node",
@@ -26,8 +22,8 @@ def generate_launch_description():
                     {
                         "target_frame": "velodyne",
                         "transform_tolerance": 0.01,
-                        "min_height": 0.0,
-                        "max_height": 1.0,
+                        "min_height": -1.0,
+                        "max_height": -0.5,
                         "angle_min": -1.5708,
                         "angle_max": 1.5708,
                         "angle_increment": 0.004363,  # M_PI/720 degrees
@@ -54,13 +50,6 @@ def generate_launch_description():
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                 ],
             ),
-            # Node(
-            #     package="pure_pursuit_cpp",
-            #     executable="pure_pursuit_node",
-            #     parameters=[
-            #         get_package_share_path("pure_pursuit_cpp") / "config" / "pure_pursuit_cpp.yaml",
-            #     ],
-            # ),
             Node(
                 package="controllers",
                 executable="vel_to_ackermann_node",
