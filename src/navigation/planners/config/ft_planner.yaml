@@ -3,7 +3,7 @@ ft_planner_node:
     max_n_neighbors: 5
     max_dist: 6.5
     max_dist_to_first: 6.0
-    max_length: 12
+    max_length: 20
     threshold_directional_angle: 30
     threshold_absolute_angle: 55
     use_unknown_cones: True
@@ -16,7 +16,7 @@ ft_planner_node:
     mpc_path_length: 20
     mpc_prediction_horizon: 40
 
-    min_track_width: 3.0
+    min_track_width: 3.5
     max_search_range: 5
     max_search_angle: 50
     matches_should_be_monotonic: True

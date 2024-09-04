@@ -13,7 +13,7 @@ def convert_trans_rot_vel_to_steering_angle(vel, omega, wheelbase):
         return 0.0
 
     radius = vel / omega
-    return atan(wheelbase / radius) * (180 / pi) * 5
+    return atan(wheelbase / radius) * (180 / pi) * 4
 
 
 class Vel2Ackermann(Node):

@@ -45,7 +45,7 @@ void ConeAssociation::state_callback(const driverless_msgs::msg::State::SharedPt
     // we have finished mapping
     if (msg->lap_count > 0 && mapping) {
         RCLCPP_INFO_ONCE(get_logger(), "Lap completed, mapping completed");
-        // mapping = false;
+        mapping = false;
     }
 }
 

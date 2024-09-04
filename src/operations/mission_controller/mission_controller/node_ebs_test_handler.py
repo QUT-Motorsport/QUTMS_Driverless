@@ -22,9 +22,7 @@ class EBSTestHandler(ShutdownNode):
     mission_started = False
     odom_received = False
     sent_init = False
-    goal_offet = 0.1
     path = None
-    goal_handle = None
     debug = False
 
     def __init__(self):
@@ -54,7 +52,7 @@ class EBSTestHandler(ShutdownNode):
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
-            self.get_logger().info("Trackdrive mission started")
+            self.get_logger().info("EBS mission started")
 
         self.get_logger().info("---EBS handler node initialised---")
 
@@ -64,7 +62,7 @@ class EBSTestHandler(ShutdownNode):
 
         super().state_callback(msg)
         if (
-            msg.state == State.READY
+            (msg.state == State.READY or msg.state == State.DRIVING)
             and msg.mission == State.EBS_TEST
             and not self.mission_started
             and self.odom_received
@@ -100,7 +98,7 @@ class EBSTestHandler(ShutdownNode):
             self.get_logger().debug("Transform exception: " + str(e))
             return
 
-        # publish initial pose on first lap
+        # publish initial pose
         if not self.sent_init:
             init_pose_msg = PoseWithCovarianceStamped()
             init_pose_msg.header.stamp = track_to_base.header.stamp

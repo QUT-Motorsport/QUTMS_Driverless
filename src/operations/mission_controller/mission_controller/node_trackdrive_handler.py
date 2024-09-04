@@ -21,14 +21,12 @@ from driverless_common.shutdown_node import ShutdownNode
 class TrackdriveHandler(ShutdownNode):
     mission_started = False
     odom_received = False
-    crossed_start = False
     sent_init = False
     laps = 0
     last_lap_time = 0.0
     last_x = 0.0
-    goal_offet = 0.1
     path = None
-    goal_handle = None
+    in_box = True
     debug = False
 
     controller_id = "TrackdriveRPP"
@@ -55,11 +53,6 @@ class TrackdriveHandler(ShutdownNode):
         self.declare_parameter("start_following", False)
         self.declare_parameter("debug", False)
 
-        if self.get_parameter("start_following").value:
-            # start at lap 1
-            self.get_logger().warn("---DEBUG MODE ENABLED---")
-            self.crossed_start = True
-
         if self.get_parameter("debug").value:
             self.debug = True
             self.get_logger().warn("---DEBUG MODE ENABLED---")
@@ -77,7 +70,7 @@ class TrackdriveHandler(ShutdownNode):
 
         super().state_callback(msg)
         if (
-            msg.state == State.READY
+            (msg.state == State.READY or msg.state == State.DRIVING)
             and msg.mission == State.TRACKDRIVE
             and not self.mission_started
             and self.odom_received
@@ -109,57 +102,61 @@ class TrackdriveHandler(ShutdownNode):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
+        if not self.mission_started:
+            return
+
         try:
             track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
             self.get_logger().debug("Transform exception: " + str(e))
             return
 
-        if not self.mission_started:
-            self.last_x = track_to_base.transform.translation.x
-            return
+        # publish initial pose
+        if not self.sent_init:
+            init_pose_msg = PoseWithCovarianceStamped()
+            init_pose_msg.header.stamp = track_to_base.header.stamp
+            init_pose_msg.header.frame_id = "track"
+            # convert translation to pose
+            init_pose_msg.pose.pose.position.x = track_to_base.transform.translation.x
+            init_pose_msg.pose.pose.position.y = track_to_base.transform.translation.y
+            init_pose_msg.pose.pose.orientation = track_to_base.transform.rotation
+            # cov diag to square
+            self.init_pose_pub.publish(init_pose_msg)
+            self.sent_init = True
 
-        if not abs(track_to_base.transform.translation.y) < 2:
-            self.last_x = track_to_base.transform.translation.x
-            return
+        # we start at 0,0
+        # once we cross out of x < 2, we can start counting laps
+        # if we cross back into x == -2, begin checking for lap completion
+        # lap completion is when we cross x == 2 again
 
-        if self.last_x <= self.goal_offet and track_to_base.transform.translation.x >= self.goal_offet:
-            if not self.crossed_start:
-                self.crossed_start = True
-                self.last_lap_time = time.time()
-                self.get_logger().info("Crossed start line")
-                # will need to go around again to reset last x
+        # check if we are within the bounds of the start line width (approx 2m)
+        # and we are also within the distance of the finish line
+        if abs(track_to_base.transform.translation.x) < 2 and abs(track_to_base.transform.translation.y) < 2:
+            self.in_box = True
+            self.get_logger().info(f"In the starting box", throttle_duration_sec=1)
+
+        # if we are in box, we need to leave the box before we can start counting laps
+        if self.in_box:
+            if track_to_base.transform.translation.x < 2:
                 self.last_x = track_to_base.transform.translation.x
                 return
+            
+            # we have left the box
+            self.get_logger().info(f"Crossed start line in {time.time() - self.last_lap_time:.2f}s")
 
-            if not (time.time() - self.last_lap_time > 3):  # seconds at least between laps
-                # will need to go around again to reset last x
-                self.last_x = track_to_base.transform.translation.x
-                return
-
-            self.laps += 1
-            self.lap_trig_pub.publish(UInt8(data=self.laps))
-            self.get_logger().info(f"Lap {self.laps} completed")
-
-            # publish initial pose on first lap
-            if self.laps == 1 and not self.sent_init:
-                init_pose_msg = PoseWithCovarianceStamped()
-                init_pose_msg.header.stamp = track_to_base.header.stamp
-                init_pose_msg.header.frame_id = "track"
-                # convert translation to pose
-                init_pose_msg.pose.pose.position.x = track_to_base.transform.translation.x
-                init_pose_msg.pose.pose.position.y = track_to_base.transform.translation.y
-                init_pose_msg.pose.pose.orientation = track_to_base.transform.rotation
-                # cov diag to square
-                self.init_pose_pub.publish(init_pose_msg)
-                self.sent_init = True
-
+            self.in_box = False
             self.last_x = track_to_base.transform.translation.x
             self.last_lap_time = time.time()
 
+            self.laps += 1
+            self.lap_trig_pub.publish(UInt8(data=self.laps-1))
+            self.get_logger().info(f"Lap {self.laps} completed")
+
+        # we have finished lap "1"
         if self.laps > 1:
             self.controller_id = "TrackdriveRPPFast"
 
+        # we have finished lap "10"
         if self.laps == 10:
             self.get_logger().info("Trackdrive mission complete")
             # currently only works when vehicle supervisor node is running on-car

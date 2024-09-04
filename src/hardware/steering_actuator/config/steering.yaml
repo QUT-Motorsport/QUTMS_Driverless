@@ -8,13 +8,13 @@
 steering_actuator_node:
   ros__parameters:
     velocity: 5000
-    velocity_centering: 20
+    velocity_centering: 100
     acceleration: 1000
-    acceleration_centering: 50
+    acceleration_centering: 100
     centre_range: 2.0
     centre_angle: -8.0
     settling_iter: 50
-    max_position: 7500
+    max_position: 8200
     Kp: 10.0
     Ki: 0.0
     Kd: 0.0
