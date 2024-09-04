@@ -106,7 +106,7 @@ def make_path_msg(points) -> Path:
             th_change = th_change + 2 * pi
 
         pose = PoseStamped()
-        pose.header.frame_id = "track"
+        pose.header.frame_id = "base_footprint"
         pose.pose.position.x = points[i][0]
         pose.pose.position.y = points[i][1]
         pose.pose.position.z = 0.0
@@ -120,7 +120,7 @@ def make_path_msg(points) -> Path:
     # Add the first path point to the end of the list to complete the loop
     # poses.append(poses[0])
     path_msg = Path()
-    path_msg.header.frame_id = "track"
+    path_msg.header.frame_id = "base_footprint"
     path_msg.poses = poses
     return path_msg
 
@@ -178,7 +178,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         super().__init__("ft_planner_node")
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "/slam/global_map", self.map_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.map_callback, QOS_LATEST)
         self.create_timer(1 / 10, self.planning_callback)
 
         self.tf_buffer = Buffer()
@@ -302,6 +302,9 @@ class FaSTTUBeBoundaryExtractor(Node):
                 map_to_base.transform.rotation.z,
             ]
         )[2]
+
+        car_position = np.array([0.0, 0.0])
+        car_direction = 0.0
 
         # split track into conetypes
         unknown_cones = np.array([])
