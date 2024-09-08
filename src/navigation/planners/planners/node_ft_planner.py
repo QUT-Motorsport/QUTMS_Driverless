@@ -1,7 +1,6 @@
-from math import atan2, cos, pi, sin, sqrt
+from math import pi
 import time
 
-import cv2
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 import numpy as np
 import scipy.interpolate as scipy_interpolate
@@ -18,41 +17,9 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped, State
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import MapMetaData, OccupancyGrid, Path
 
-from driverless_common.common import QOS_LATEST, angle, dist, fast_dist, midpoint, wrap_to_pi
-from driverless_common.draw import draw_map
+from driverless_common.common import QOS_LATEST, angle, midpoint
 
 from typing import List, Tuple
-
-pre_track = [
-    np.array([]),
-    np.array(
-        [
-            [2.0613708496093754, 12.062088012695312],
-            [2.248870849609375, 15.124588012695314],
-            [1.6238708496093752, 3.812088012695313],
-            [2.811370849609375, 18.499588012695312],
-            [1.9988708496093752, 9.624588012695312],
-        ]
-    ),
-    np.array(
-        [
-            [-0.688629150390625, 12.499588012695314],
-            [-0.626129150390625, 14.999588012695314],
-            [-0.313629150390625, 19.124588012695316],
-            [-1.5011291503906252, 4.187088012695313],
-            [-0.9386291503906252, 9.374588012695312],
-        ]
-    ),
-    np.array([]),
-    np.array(
-        [
-            [1.873870849609375, 6.187088012695313],
-            [-1.188629150390625, 6.3745880126953125],
-            [1.7488708496093752, 5.6245880126953125],
-            [-1.251129150390625, 5.9370880126953125],
-        ]
-    ),
-]
 
 
 def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree=3, s=0) -> Tuple[list, list]:
@@ -90,7 +57,7 @@ def approximate_b_spline_path(x: list, y: list, n_path_points: int, degree=3, s=
     return spline_x, spline_y
 
 
-def make_path_msg(points) -> Path:
+def make_path_msg(points, frame) -> Path:
     spline_len = len(points)
     poses: List[PoseStamped] = []  # target spline poses
     for i in range(spline_len):
@@ -106,7 +73,7 @@ def make_path_msg(points) -> Path:
             th_change = th_change + 2 * pi
 
         pose = PoseStamped()
-        pose.header.frame_id = "base_footprint"
+        pose.header.frame_id = frame
         pose.pose.position.x = points[i][0]
         pose.pose.position.y = points[i][1]
         pose.pose.position.z = 0.0
@@ -120,7 +87,7 @@ def make_path_msg(points) -> Path:
     # Add the first path point to the end of the list to complete the loop
     # poses.append(poses[0])
     path_msg = Path()
-    path_msg.header.frame_id = "base_footprint"
+    path_msg.header.frame_id = frame
     path_msg.poses = poses
     return path_msg
 
@@ -170,15 +137,19 @@ def get_occupancy_grid(blue_points, yellow_points, header):
 
 
 class FaSTTUBeBoundaryExtractor(Node):
-    following = False
     current_track = None
     spline_const = 10  # number of points per cone
 
     def __init__(self):
         super().__init__("ft_planner_node")
 
+        self.declare_parameter("topic_name", "/lidar/cone_detection")
+        self.declare_parameter("target_frame", "base_footprint")
+        self.topic_name = self.get_parameter("topic_name").value
+        self.target_frame = self.get_parameter("target_frame").value
+
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "/lidar/cone_detection", self.map_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, self.topic_name, self.detection_callback, QOS_LATEST)
         self.create_timer(1 / 10, self.planning_callback)
 
         self.tf_buffer = Buffer()
@@ -189,28 +160,18 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.yellow_bound_pub = self.create_publisher(Path, "/planning/yellow_bounds", 1)
         self.planned_path_pub = self.create_publisher(Path, "/planning/midline_path", 1)
 
-        map_qos = QoSProfile(
-            reliability=QoSReliabilityPolicy.RELIABLE,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1,
-            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-        )
-        self.map_pub = self.create_publisher(OccupancyGrid, "/planning/boundary_grid", map_qos)
-        self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
-
-        self.declare_parameter("start_following", False)
-        if self.get_parameter("start_following").value:
-            self.following = True
-            self.get_logger().warn("---DEBUG MODE ENABLED---")
+        # map_qos = QoSProfile(
+        #     reliability=QoSReliabilityPolicy.RELIABLE,
+        #     history=QoSHistoryPolicy.KEEP_LAST,
+        #     depth=1,
+        #     durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+        # )
+        # self.map_pub = self.create_publisher(OccupancyGrid, "/planning/boundary_grid", map_qos)
+        # self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
-        init_plan_calcs = self.path_planner.calculate_path_in_global_frame(
-            pre_track, np.array([0.0, 0.0]), 0.0, return_intermediate_results=True
-        )
-        self.get_logger().info("Initialised planner calcs")
-
-        self.get_logger().info("---Ordered path planner node initalised---")
+        self.get_logger().info(f"---Ordered path planner node initalised with {self.topic_name}, {self.target_frame}---")
 
     def get_planner_cfg(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)
@@ -277,8 +238,8 @@ class FaSTTUBeBoundaryExtractor(Node):
             "cone_matching_kwargs": cone_matching_kwargs,
         }
 
-    def map_callback(self, track_msg: ConeDetectionStamped):
-        self.get_logger().debug("Received map")
+    def detection_callback(self, track_msg: ConeDetectionStamped):
+        self.get_logger().debug("Received detections")
         self.current_track = track_msg
 
     def planning_callback(self):
@@ -382,24 +343,22 @@ class FaSTTUBeBoundaryExtractor(Node):
                 mid_points.append(midpoint([yx[i], yy[i]], [bx[i], by[i]]))
 
             # publish bounds
-            blue_bound_msg = make_path_msg(blue_points)
+            blue_bound_msg = make_path_msg(blue_points, self.target_frame)
             self.blue_bound_pub.publish(blue_bound_msg)
 
-            yellow_bound_msg = make_path_msg(yellow_points)
+            yellow_bound_msg = make_path_msg(yellow_points, self.target_frame)
             self.yellow_bound_pub.publish(yellow_bound_msg)
         except Exception as e:
             self.get_logger().warn("Cant calculate bounds, error" + str(e), throttle_duration_sec=1)
 
         # publish midpoints
-        mid_bound_msg = make_path_msg(mid_points)
-        # self.planned_path_pub.publish(mid_bound_msg)
-        self.planned_path_pub.publish(make_path_msg(path[:, 1:3]))
+        self.planned_path_pub.publish(make_path_msg(path[:, 1:3], self.target_frame))
 
         ## Create occupancy grid of interpolated bounds
-        map = get_occupancy_grid(blue_points, yellow_points, self.current_track.header)
-        self.current_map = map
-        self.map_pub.publish(self.current_map)
-        self.map_meta_pub.publish(self.current_map.info)
+        # map = get_occupancy_grid(blue_points, yellow_points, self.current_track.header)
+        # self.current_map = map
+        # self.map_pub.publish(self.current_map)
+        # self.map_meta_pub.publish(self.current_map.info)
 
 
 def main(args=None):

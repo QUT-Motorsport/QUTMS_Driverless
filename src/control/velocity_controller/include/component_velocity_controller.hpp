@@ -53,17 +53,16 @@ class VelocityController : public rclcpp::Node {
         std::make_shared<ackermann_msgs::msg::AckermannDriveStamped>();
     float prev_accel_ = 0;
 
-   public:
-    VelocityController(const rclcpp::NodeOptions& options);
-
     void update_parameters(const rcl_interfaces::msg::ParameterEvent& event);
-
     void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void velocity_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
     void twist_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void state_callback(const driverless_msgs::msg::State::SharedPtr msg);
 
     void controller_callback();
+
+   public:
+    VelocityController(const rclcpp::NodeOptions& options);
 };
 
 }  // namespace velocity_controller

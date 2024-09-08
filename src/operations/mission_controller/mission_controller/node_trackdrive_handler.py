@@ -54,8 +54,11 @@ class TrackdriveHandler(ShutdownNode):
         self.declare_parameter("debug", False)
 
         if self.get_parameter("debug").value:
-            self.debug = True
             self.get_logger().warn("---DEBUG MODE ENABLED---")
+
+            self.mission_started = True
+            self.last_lap_time = time.time()
+            self.lap_trig_pub.publish(UInt8(data=0))
 
             command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "trackdrive.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
@@ -65,9 +68,6 @@ class TrackdriveHandler(ShutdownNode):
         self.get_logger().info("---Trackdrive handler node initialised---")
 
     def state_callback(self, msg: State):
-        if self.debug:
-            return
-
         super().state_callback(msg)
         if (
             (msg.state == State.READY or msg.state == State.DRIVING)
@@ -89,10 +89,23 @@ class TrackdriveHandler(ShutdownNode):
         # if self.path is not None:
         #     return
         self.get_logger().info(f"Spline Path Recieved - length: {len(msg.poses)}", once=True)
-        self.send_path(msg)
+
+        # Sends a `NavThroughPoses` action request
+        while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
+            self.get_logger().info("'NavigateThroughPoses' action server not available, waiting...")
+
+        goal_msg = FollowPath.Goal()
+        goal_msg.path = msg
+        # send controller ID in request
+        goal_msg.controller_id = (
+            self.controller_id
+        )  # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
+
+        send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 
     def odom_callback(self, msg: Odometry):
         """Ensure the SBG EKF has settled and we get odom msgs before starting the mission"""
+        ## THIS SHOULD BE LOGIC BASED ON SBG EKF STATUS
 
         if not self.odom_received:
             self.odom_received = True
@@ -163,20 +176,6 @@ class TrackdriveHandler(ShutdownNode):
             # TODO: sort out vehicle states for eventual environment agnostic operation
             shutdown_msg = Shutdown(finished_engage_ebs=True)
             self.shutdown_pub.publish(shutdown_msg)
-
-    def send_path(self, path: Path):
-        # Sends a `NavThroughPoses` action request
-        while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
-            self.get_logger().info("'NavigateThroughPoses' action server not available, waiting...")
-
-        goal_msg = FollowPath.Goal()
-        goal_msg.path = path
-        # send controller ID in request
-        goal_msg.controller_id = (
-            self.controller_id
-        )  # nav2_params.yaml, controller_server, controller_plugins: ["TrackdriveRPP", "EBSTestRPP"]
-
-        send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 
 
 def main(args=None):

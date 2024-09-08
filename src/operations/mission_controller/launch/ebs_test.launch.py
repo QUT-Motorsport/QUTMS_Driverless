@@ -23,20 +23,13 @@ def generate_launch_description():
             ),
             # mapping/planning
             Node(
-                package="map_creation",
-                executable="cone_placement_node",
-                parameters=[
-                    get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
-                ],
-            ),
-            Node(
                 package="planners",
                 executable="ft_planner_node",
                 parameters=[
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                     {
-                        "target_frame": "track",
-                        "topic_name": "slam/global_map",
+                        "target_frame": "base_footprint",
+                        "topic_name": "lidar/cone_detection",
                     }
                 ],
             ),
@@ -49,7 +42,7 @@ def generate_launch_description():
             Node(
                 package="controllers",
                 executable="vel_to_ackermann_node",
-                parameters=[{"Kp": 4.0}], # specific for Trackdrive
+                parameters=[{"Kp": 2.0}]  # specific for EBS test
             ),
         ]
     )

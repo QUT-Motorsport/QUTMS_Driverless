@@ -5,22 +5,9 @@ from rclpy.node import Node
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Path
-
-
-def convert_trans_rot_vel_to_steering_angle(vel, omega, wheelbase):
-    if omega == 0 or vel == 0:
-        return 0.0
-
-    radius = vel / omega
-    return atan(wheelbase / radius) * (180 / pi) * 4 ## MAKE THIS A PARAM
 
 
 class Vel2Ackermann(Node):
-    wheelbase = 1.5  # taken from sim config - measured on car
-    initialised = False
-    got_plan = False
-
     def __init__(self):
         super().__init__("nav_cmd_translator")
 
@@ -28,17 +15,21 @@ class Vel2Ackermann(Node):
 
         self.drive_pub = self.create_publisher(AckermannDriveStamped, "/control/driving_command", 1)
 
+        self.declare_parameter("Kp", 4.0)
+        self.declare_parameter("wheelbase", 1.5)
+        self.Kp = self.get_parameter("Kp").value
+        self.wheelbase = self.get_parameter("wheelbase").value
+
         self.get_logger().info("---Nav2 control interpreter initalised---")
 
     def cmd_callback(self, twist_msg: Twist):
-        self.initialised = True
-
         vel = twist_msg.linear.x
-        steering = convert_trans_rot_vel_to_steering_angle(
-            vel,
-            twist_msg.angular.z,
-            self.wheelbase,
-        )
+
+        if twist_msg.angular.z == 0 or vel == 0:
+            steering = 0.0
+        else:
+            radius = vel / twist_msg.angular.z
+            atan(self.wheelbase / radius) * (180 / pi) * self.Kp ## MAKE THIS A PARAM
 
         msg = AckermannDriveStamped()
         # make time for msg id
