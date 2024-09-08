@@ -41,26 +41,26 @@ slam_toolbox_node:
     minimum_travel_distance: 0.1  # Minimum distance of travel before processing a new scan
     minimum_travel_heading: 0.1  # Minimum changing in heading to justify an update
 
-    scan_buffer_size: 20  # The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
-    scan_buffer_maximum_scan_distance: 30.0  # Maximum distance of a scan from the pose before removing the scan from the buffer
+    scan_buffer_size: 1000  # The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
+    scan_buffer_maximum_scan_distance: 50.0  # Maximum distance of a scan from the pose before removing the scan from the buffer
 
-    link_match_minimum_response_fine: 0.1  # The threshold link matching algorithm response for fine resolution to pass
-    link_scan_maximum_distance: 5.0  # Maximum distance between linked scans to be valid
-    loop_search_maximum_distance: 3.0  # Maximum threshold of distance for scans to be considered for loop closure
+    link_match_minimum_response_fine: 1.0  # The threshold link matching algorithm response for fine resolution to pass
+    link_scan_maximum_distance: 10.0  # Maximum distance between linked scans to be valid
+    loop_search_maximum_distance: 10.0  # Maximum threshold of distance for scans to be considered for loop closure
     do_loop_closing: true  # Whether to do loop closure
 
-    loop_match_minimum_chain_size: 10  # The minimum chain length of scans to look for loop closure
-    loop_match_maximum_variance_coarse: 3.0  # The threshold variance in coarse search to pass to refine
-    loop_match_minimum_response_coarse: 0.35  # The threshold response of the loop closure algorithm in coarse search to pass to refine
-    loop_match_minimum_response_fine: 0.45  # The threshold response of the loop closure algorithm in fine search to pass to refine
+    loop_match_minimum_chain_size: 30  # The minimum chain length of scans to look for loop closure
+    loop_match_maximum_variance_coarse: 5.0  # The threshold variance in coarse search to pass to refine
+    loop_match_minimum_response_coarse: 1.5  # The threshold response of the loop closure algorithm in coarse search to pass to refine
+    loop_match_minimum_response_fine: 0.5  # The threshold response of the loop closure algorithm in fine search to pass to refine
 
     correlation_search_space_dimension: 2.5  # Search grid size to do scan correlation over
-    correlation_search_space_resolution: 0.05  # Search grid resolution to do scan correlation over
-    correlation_search_space_smear_deviation: 0.1  # Amount of multimodal smearing to smooth out responses
+    correlation_search_space_resolution: 0.3  # Search grid resolution to do scan correlation over
+    correlation_search_space_smear_deviation: 0.15  # Amount of multimodal smearing to smooth out responses
 
     loop_search_space_dimension: 8.0  # Size of the search grid over the loop closure algorithm
-    loop_search_space_resolution: 0.1  # Amount of multimodal smearing to smooth out responses
-    loop_search_space_smear_deviation: 0.1  # A penalty to apply to a matched scan as it differs from the odometric pose
+    loop_search_space_resolution: 1.0  # Amount of multimodal smearing to smooth out responses
+    loop_search_space_smear_deviation: 0.9  # A penalty to apply to a matched scan as it differs from the odometric pose
 
     distance_variance_penalty: 0.5  # A penalty to apply to a matched scan as it differs from the odometric pose
     angle_variance_penalty: 0.6  # A penalty to apply to a matched scan as it differs from the odometric pose
