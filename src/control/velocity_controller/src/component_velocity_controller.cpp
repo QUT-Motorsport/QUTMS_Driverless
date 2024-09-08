@@ -64,9 +64,7 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
     this->get_parameter("min_time_to_max_accel_sec", min_time_to_max_accel_sec_);
     max_accel_per_tick_ = loop_ms_ / (1000 * min_time_to_max_accel_sec_);
 
-    RCLCPP_DEBUG(this->get_logger(),
-                 "Kp: %f Ki: %f max_integral_torque: %f histerisis_kickin_ms: %f histerisis_reset_ms: %f", Kp_, Ki_,
-                 max_integral_torque_, histerisis_kickin_ms_, histerisis_reset_ms_);
+    RCLCPP_INFO(this->get_logger(), "Kp: %f, max_accel_per_tick: %f", Kp_, max_accel_per_tick_);
 }
 
 void VelocityController::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
