@@ -34,11 +34,11 @@ def generate_launch_description():
                 executable="ft_planner_node",
                 parameters=[
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
-                    {
-                        "target_frame": "track",
-                        "topic_name": "slam/global_map",
-                    }
                 ],
+                ros_arguments=[
+                    "-p", "topic_name:=slam/global_map",
+                    "-p", "target_frame:=track",
+                ]
             ),
             # guidance/control
             IncludeLaunchDescription(

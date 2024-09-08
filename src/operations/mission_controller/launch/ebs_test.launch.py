@@ -27,11 +27,11 @@ def generate_launch_description():
                 executable="ft_planner_node",
                 parameters=[
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
-                    {
-                        "target_frame": "base_footprint",
-                        "topic_name": "lidar/cone_detection",
-                    }
                 ],
+                ros_arguments=[
+                    "-p", "topic_name:=lidar/cone_detection",
+                    "-p", "target_frame:=base_footprint",
+                ]
             ),
             # guidance/control
             IncludeLaunchDescription(

@@ -264,8 +264,9 @@ class FaSTTUBeBoundaryExtractor(Node):
             ]
         )[2]
 
-        car_position = np.array([0.0, 0.0])
-        car_direction = 0.0
+        if self.target_frame == "base_footprint":
+            car_position = np.array([0.0, 0.0])
+            car_direction = 0.0
 
         # split track into conetypes
         unknown_cones = np.array([])

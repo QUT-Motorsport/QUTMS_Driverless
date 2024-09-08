@@ -46,7 +46,7 @@ def generate_launch_description():
         ("/tf_static", "tf_static"),
         ("cmd_vel", "control/nav_cmd_vel"),
         ("plan", "planning/midline_path"),
-        ("map", "planning/boundary_grid"),
+        ("map", "slam/occupancy_grid"),
     ]
 
     # behaviour tree xml file location

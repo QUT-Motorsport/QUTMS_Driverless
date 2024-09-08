@@ -42,7 +42,7 @@ class EBSTestHandler(ShutdownNode):
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
-        self.declare_parameter("debug", True)
+        self.declare_parameter("debug", False)
 
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
