@@ -231,29 +231,29 @@ controller_server:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 4.5  # The desired maximum linear velocity to use.
       lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
-      # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
-      # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
+      min_lookahead_dist: 5.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
+      max_lookahead_dist: 7.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
       transform_tolerance: 0.3  # The TF transform tolerance.
-      use_velocity_scaled_lookahead_dist: false  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
-      min_approach_linear_velocity: 3.0  # The minimum velocity threshold to apply when approaching the goal.
-      approach_velocity_scaling_dist: 1.0  # Integrated distance from end of transformed path at which to start applying velocity scaling.
+      use_velocity_scaled_lookahead_dist: true  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
+      min_approach_linear_velocity: 4.5  # The minimum velocity threshold to apply when approaching the goal.
+      approach_velocity_scaling_dist: 0.1  # Integrated distance from end of transformed path at which to start applying velocity scaling.
       use_collision_detection: false  # Whether to enable collision detection.
       # max_allowed_time_to_collision_up_to_carrot: 2.0  # The time to project a velocity command to check for collisions when use_collision_detection is true.
-      use_regulated_linear_velocity_scaling: false  # Whether to use the regulated features for curvature.
+      use_regulated_linear_velocity_scaling: true  # Whether to use the regulated features for curvature.
       use_cost_regulated_linear_velocity_scaling: false  # Whether to use the regulated features for proximity to obstacles.
       cost_scaling_dist: 1.0  # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled.
-      cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
-      inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
+      # cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
+      # inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
         # The value should be exactly the same for accurately computing distance from obstacles using the inflated cell values
-      regulated_linear_scaling_min_radius: 0.9  # The turning radius for which the regulation features are triggered.
-      regulated_linear_scaling_min_speed: 0.25  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
-      use_fixed_curvature_lookahead: false  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
-      curvature_lookahead_dist: 1.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
+      regulated_linear_scaling_min_radius: 5.0  # The turning radius for which the regulation features are triggered.
+      regulated_linear_scaling_min_speed: 2.5  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
+      use_fixed_curvature_lookahead: true  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
+      curvature_lookahead_dist: 2.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
       use_rotate_to_heading: false  # Whether to enable rotating to rough heading and goal orientation when using holonomic planners.
       # rotate_to_heading_min_angle: 0.785  # The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if use_rotate_to_heading is enabled.
-      max_angular_accel: 6.0  # Maximum allowable angular acceleration while rotating to heading, if enabled.
+      # max_angular_accel: 6.0  # Maximum allowable angular acceleration while rotating to heading, if enabled.
       max_robot_pose_search_dist: 20.0  # Maximum integrated distance along the path to bound the search for the closest pose to the robot.
       use_interpolation: false  # Enables interpolation between poses on the path for lookahead point selection. Helps sparse paths to avoid inducing discontinuous commanded velocities.
 
@@ -263,7 +263,7 @@ controller_server:
       lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
       # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
-      lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
+      # lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
       transform_tolerance: 0.6  # The TF transform tolerance.
       use_velocity_scaled_lookahead_dist: false  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
@@ -273,14 +273,14 @@ controller_server:
       # max_allowed_time_to_collision_up_to_carrot: 2.0  # The time to project a velocity command to check for collisions when use_collision_detection is true.
       use_regulated_linear_velocity_scaling: false  # Whether to use the regulated features for curvature.
       use_cost_regulated_linear_velocity_scaling: false  # Whether to use the regulated features for proximity to obstacles.
-      cost_scaling_dist: 1.0  # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled.
-      cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
-      inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
+      # cost_scaling_dist: 1.0  # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled.
+      # cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
+      # inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
         # The value should be exactly the same for accurately computing distance from obstacles using the inflated cell values
-      regulated_linear_scaling_min_radius: 0.9  # The turning radius for which the regulation features are triggered.
-      regulated_linear_scaling_min_speed: 0.25  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
+      # regulated_linear_scaling_min_radius: 0.9  # The turning radius for which the regulation features are triggered.
+      # regulated_linear_scaling_min_speed: 0.25  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
       use_fixed_curvature_lookahead: false  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
-      curvature_lookahead_dist: 1.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
+      # curvature_lookahead_dist: 1.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
       use_rotate_to_heading: false  # Whether to enable rotating to rough heading and goal orientation when using holonomic planners.
       # rotate_to_heading_min_angle: 0.785  # The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if use_rotate_to_heading is enabled.
       # max_angular_accel: 1.0  # Maximum allowable angular acceleration while rotating to heading, if enabled.
