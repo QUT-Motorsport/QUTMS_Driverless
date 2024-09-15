@@ -248,7 +248,8 @@ def generate_launch_description():
         package="controller_manager",
         executable="ros2_control_node",
         output="both",
-        parameters=[robot_description, robot_controllers],
+        parameters=[robot_controllers],
+        remappings=[("~/robot_description", "/robot_description")],
     )
     robot_state_pub_node = Node(
         package="robot_state_publisher",
@@ -270,6 +271,19 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
 
+    # Delay loading and activation of `ros2_control_node` after start of robot_state_pub_node
+    delay_ros2_control_node_spawner_after_robot_state_pub_node = RegisterEventHandler(
+        event_handler=OnProcessStart(
+            target_action=robot_state_pub_node,
+            on_start=[
+                TimerAction(
+                    period=1.0,
+                    actions=[control_node],
+                ),
+            ],
+        )
+    )
+
     # Delay loading and activation of `joint_state_broadcaster` after start of ros2_control_node
     delay_joint_state_broadcaster_spawner_after_ros2_control_node = RegisterEventHandler(
         event_handler=OnProcessStart(
@@ -286,9 +300,9 @@ def generate_launch_description():
     return LaunchDescription(
         declared_arguments
         + [
-            control_node,
             robot_state_pub_node,
             rviz_node,
+            delay_ros2_control_node_spawner_after_robot_state_pub_node,
             delay_joint_state_broadcaster_spawner_after_ros2_control_node,
             OpaqueFunction(
                 function=launch_spawners,
