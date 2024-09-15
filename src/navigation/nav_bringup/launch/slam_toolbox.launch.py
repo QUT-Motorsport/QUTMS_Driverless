@@ -36,16 +36,17 @@ def generate_launch_description():
         ],
     )
 
-    pointcloud_to_laserscan_node = Node(
-        package='pointcloud_to_laserscan', 
-        executable='pointcloud_to_laserscan_node',
-        output='screen',
-        parameters=[
-            os.path.join(pkg_share, 'config/pointcloud_to_laserscan_params.yaml'),
-        ],
-        remappings=[('cloud_in', '/lidar/cone_points'),
-                    ('scan', '/lidar/converted_2D_scan')],
-    ),
+    pointcloud_to_laserscan_node = (
+        Node(
+            package="pointcloud_to_laserscan",
+            executable="pointcloud_to_laserscan_node",
+            output="screen",
+            parameters=[
+                os.path.join(pkg_share, "config/pointcloud_to_laserscan_params.yaml"),
+            ],
+            remappings=[("cloud_in", "/lidar/cone_points"), ("scan", "/lidar/converted_2D_scan")],
+        ),
+    )
 
     return launch.LaunchDescription(
         [

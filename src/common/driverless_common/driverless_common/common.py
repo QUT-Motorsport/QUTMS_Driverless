@@ -1,11 +1,12 @@
 from math import atan2, sqrt
 import time
-from geometry_msgs.msg import Quaternion
-from transforms3d.euler import quat2euler, euler2quat
 
 import numpy as np
+from transforms3d.euler import euler2quat, quat2euler
 
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
+
+from geometry_msgs.msg import Quaternion
 
 from typing import List, Tuple
 
@@ -105,10 +106,11 @@ def yaw(quat: Quaternion):
     """
     Retrieve yaw from quaternion
     * param quat: quaternion
-    * return: yaw in rads    
+    * return: yaw in rads
     """
 
     return quat2euler([quat.w, quat.x, quat.y, quat.z])[2]  # yaw
+
 
 def orientation(x, y, z):
     """
@@ -121,6 +123,7 @@ def orientation(x, y, z):
 
     new_orientation = euler2quat(x, y, z)
     return Quaternion(w=new_orientation[0], x=new_orientation[1], y=new_orientation[2], z=new_orientation[3])
+
 
 class FPSHandler:
     def __init__(self):
