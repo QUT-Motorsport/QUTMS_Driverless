@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <ros2_control name="qev-3d" type="system">
+        <hardware>
+            <plugin>mock_components/GenericSystem</plugin>
+            <param name="calculate_dynamics">true</param>
+        </hardware>
+        <joint name="rear_left_wheel_joint">
+            <command_interface name="acceleration">
+            </command_interface>
+            <!-- <state_interface name="position">
+                <param name="initial_value">0</param>
+            </state_interface> -->
+            <state_interface name="velocity">
+                <param name="initial_value">0</param>
+            </state_interface>
+        </joint>
+        <joint name="rear_right_wheel_joint">
+            <command_interface name="acceleration">
+            </command_interface>
+            <!-- <state_interface name="position">
+                <param name="initial_value">0</param>
+            </state_interface> -->
+            <state_interface name="velocity">
+                <param name="initial_value">0</param>
+            </state_interface>
+        </joint>
+        <joint name="virtual_steering_hinge_joint">
+            <command_interface name="position">
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0</param>
+            </state_interface>
+        </joint>
+    </ros2_control>
+</robot>

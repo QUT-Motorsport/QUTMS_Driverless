@@ -37,49 +37,74 @@
   <!-- Wheels -->
   <xacro:macro name="wheels">
     <!-- Wheel description -->
-    <xacro:macro name="wheel" params="lr_prefix fr_prefix">
+    <xacro:macro name="wheel" params="lr_prefix fr_prefix wheel_material:=black">
       <link name="${lr_prefix}_${fr_prefix}_wheel">
         <visual>
           <origin xyz="0 0 0" rpy="${degrees_90} 0 0"/>
           <geometry>
             <cylinder radius="${wheel_diameter / 2}" length="${wheel_width}"/>
           </geometry>
-          <material name="black"/>
+          <material name="${wheel_material}"/>
         </visual>
       </link>
     </xacro:macro>
 
     <!-- Front and rear wheel descriptions -->
     <!-- Description of how a front wheel is connected to the chassis -->
-    <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
+    <xacro:macro name="front_wheel" params="lr_prefix lr_reflect wheel_material:=black movable:=false">
       <link name="${lr_prefix}_steering_hinge"/>
+      <xacro:if value="${movable}">
+        <joint name="${lr_prefix}_steering_hinge_joint" type="revolute">
+          <origin xyz="${wheelbase / 2}
+                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
+                      0"
+                  rpy="0 0 0"/>
+          <parent link="${chassis_link}"/>
+          <child link="${lr_prefix}_steering_hinge"/>
+          <axis xyz="0 0 1"/>
+          <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:if>
+      <xacro:unless value="${movable}">
+        <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
+          <origin xyz="${wheelbase / 2}
+                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
+                      0"
+                  rpy="0 0 0"/>
+          <parent link="${chassis_link}"/>
+          <child link="${lr_prefix}_steering_hinge"/>
+          <axis xyz="0 0 1"/>
+          <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:unless>
 
-      <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
-        <origin xyz="${wheelbase / 2}
-                     ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
-        <parent link="${chassis_link}"/>
-        <child link="${lr_prefix}_steering_hinge"/>
-        <axis xyz="0 0 1"/>
-        <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
-      </joint>
+      <xacro:if value="${movable}">
+        <joint name="front_${lr_prefix}_wheel_joint" type="continuous">
+          <origin xyz="0 0 0"
+                  rpy="0 0 0"/>
+          <parent link="${lr_prefix}_steering_hinge"/>
+          <child link="${lr_prefix}_front_wheel"/>
+          <axis xyz="0 1 0"/>
+          <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:if>
+      <xacro:unless value="${movable}">
+        <joint name="front_${lr_prefix}_wheel_joint" type="fixed">
+          <origin xyz="0 0 0"
+                  rpy="0 0 0"/>
+          <parent link="${lr_prefix}_steering_hinge"/>
+          <child link="${lr_prefix}_front_wheel"/>
+          <axis xyz="0 1 0"/>
+          <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:unless>
 
-      <joint name="front_${lr_prefix}_wheel_joint" type="fixed">
-        <origin xyz="0 0 0"
-                rpy="0 0 0"/>
-        <parent link="${lr_prefix}_steering_hinge"/>
-        <child link="${lr_prefix}_front_wheel"/>
-        <axis xyz="0 1 0"/>
-        <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
-      </joint>
-
-      <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front"/>
+      <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front" wheel_material="${wheel_material}"/>
     </xacro:macro>
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
-      <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
+      <joint name="rear_${lr_prefix}_wheel_joint" type="continuous">
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
                      0"
@@ -96,8 +121,10 @@
     <!-- Add the wheels -->
     <xacro:front_wheel lr_prefix="left" lr_reflect="1"/>
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
+    <!-- Virtual front wheel to abstract single steering control -->
+    <xacro:front_wheel lr_prefix="virtual" lr_reflect="0" wheel_material="invisible" movable="true"/>
 
-    <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
-    <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
+    <xacro:rear_wheel lr_prefix="left" lr_reflect="1"/>
+    <xacro:rear_wheel lr_prefix="right" lr_reflect="-1"/>
   </xacro:macro>
 </robot>

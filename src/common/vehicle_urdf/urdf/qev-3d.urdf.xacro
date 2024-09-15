@@ -24,6 +24,10 @@
     <color rgba="0.88 0.36 0.035 1"/>
   </material>
 
+  <material name="invisible">
+    <color rgba="0.0 0.0 0.0 0.0"/>
+  </material>
+
   <!-- Vehicle include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
   <!-- Chassis of the car -->
@@ -36,5 +40,8 @@
   <xacro:velodyne parent="${chassis_link}" name="velodyne">
     <origin xyz="-0.3 0.0 0.85" rpy="0 0 0"/>
   </xacro:velodyne>
+
+  <!-- ros2_control include -->
+  <xacro:include filename="$(find vehicle_urdf)/urdf/ros2_control.urdf.xacro"/>
 
 </robot>
