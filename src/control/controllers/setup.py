@@ -20,7 +20,6 @@ setup(
     entry_points={
         "console_scripts": [
             "sine = controllers.node_sine:main",
-            "point_fitting2 = controllers.node_point_fitting2:main",
             "vel_to_ackermann_node = controllers.node_vel_to_ackermann:main",
         ],
     },
