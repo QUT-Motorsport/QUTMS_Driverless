@@ -19,6 +19,7 @@
 #include "interface.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/float64.hpp"
 
 using std::placeholders::_1;
 
@@ -58,6 +59,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub2_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub3_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub4_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr wheel_position_pub_;
     std::vector<rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr> wheel_speed_pubs_;
 
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;

@@ -34,6 +34,7 @@ void CANTranslator::canmsg_timer() {
 
         // CAN TRANSLATION OPTIONS
         // Wheel speed velocity
+        // Wheel position
         uint32_t vesc_masked_id = (msg->id & ~0xFF) >> 8;
         uint8_t vesc_id = msg->id & 0xFF;
         if (vesc_id < 4) {
@@ -66,6 +67,25 @@ void CANTranslator::canmsg_timer() {
                 twist_msg->twist.twist.linear.y = 0.0;
                 twist_msg->twist.twist.angular.z = 0.0;
                 twist_pub_->publish(std::move(twist_msg));
+            }
+
+            else if (vesc_masked_id == VESC_CAN_PACKET_STATUS_4) {
+                uint8_t data[8];
+                this->copy_data(msg->data, data, 8);
+                // Extract and publish position (in rads)
+                float mosfetTemperature;
+                float motorTemperature;
+                float inputCurrent;
+                float pidPos;
+                Parse_VESC_CANPacketStatus4(data, &mosfetTemperature, &motorTemperature, &inputCurrent, &pidPos);
+
+                // TODO: pidPos data processing here
+                // Convert float pidPos in degrees to double position in rads
+                double position = static_cast<double>(pidPos) * (M_PI / 180.0);
+
+                std_msgs::msg::Float64::UniquePtr position_msg(new std_msgs::msg::Float64());
+                position_msg->data = position;
+                wheel_position_pub_->publish(std::move(position_msg));
             }
         }
         // Steering Angle
@@ -162,6 +182,9 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     // ADD PUBS FOR CAN TOPICS HERE
     // Steering ang
     steering_angle_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
+
+    // Wheel position
+    wheel_position_pub_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position", 10);
 
     // Wheel velocity
     wss_velocity_pub1_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed1", 10);

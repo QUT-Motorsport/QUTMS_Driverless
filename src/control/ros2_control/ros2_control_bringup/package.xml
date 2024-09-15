@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>ros2_control_bringup</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Bringup Package for ros2_control</description>
   <maintainer email="team@qutmotorsport.com">Walden Leung</maintainer>
   <license>MIT</license>
