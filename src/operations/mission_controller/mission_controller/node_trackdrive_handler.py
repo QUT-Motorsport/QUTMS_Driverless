@@ -153,7 +153,7 @@ class TrackdriveHandler(ShutdownNode):
             if track_to_base.transform.translation.x < 2:
                 self.last_x = track_to_base.transform.translation.x
                 return
-            
+
             # we have left the box
             self.get_logger().info(f"Crossed start line in {time.time() - self.last_lap_time:.2f}s")
 
@@ -162,7 +162,7 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
 
             self.laps += 1
-            self.lap_trig_pub.publish(UInt8(data=self.laps-1))
+            self.lap_trig_pub.publish(UInt8(data=self.laps - 1))
             self.get_logger().info(f"Lap {self.laps} completed")
 
         # we have finished lap "1"

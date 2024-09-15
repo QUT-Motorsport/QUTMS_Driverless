@@ -57,10 +57,11 @@ void CANTranslator::canmsg_timer() {
                 for (int i = 0; i < 4; i++) {
                     av_velocity += wheel_speeds_[i];
                 }
-                av_velocity = av_velocity / 4; // maybe get a vector of x,y here?
+                av_velocity = av_velocity / 4;  // maybe get a vector of x,y here?
 
                 // update twist msg with new velocity
-                geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(new geometry_msgs::msg::TwistWithCovarianceStamped());
+                geometry_msgs::msg::TwistWithCovarianceStamped::UniquePtr twist_msg(
+                    new geometry_msgs::msg::TwistWithCovarianceStamped());
                 twist_msg->header.stamp = this->now();
                 twist_msg->header.frame_id = ros_base_frame_;
                 twist_msg->twist.twist.linear.x = av_velocity;

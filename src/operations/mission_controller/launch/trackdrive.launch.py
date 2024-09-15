@@ -36,9 +36,11 @@ def generate_launch_description():
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                 ],
                 ros_arguments=[
-                    "-p", "topic_name:=slam/global_map",
-                    "-p", "target_frame:=track",
-                ]
+                    "-p",
+                    "topic_name:=slam/global_map",
+                    "-p",
+                    "target_frame:=track",
+                ],
             ),
             # guidance/control
             IncludeLaunchDescription(
@@ -49,7 +51,7 @@ def generate_launch_description():
             Node(
                 package="controllers",
                 executable="vel_to_ackermann_node",
-                parameters=[{"Kp": 4.0}], # specific for Trackdrive
+                parameters=[{"Kp": 4.0}],  # specific for Trackdrive
             ),
         ]
     )

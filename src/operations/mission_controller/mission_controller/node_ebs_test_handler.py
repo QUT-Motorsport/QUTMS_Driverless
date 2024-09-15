@@ -49,7 +49,17 @@ class EBSTestHandler(ShutdownNode):
 
             self.mission_started = True
 
-            command = ["stdbuf", "-o", "L", "ros2", "param", "set", "velocity_controller_node", "min_time_to_max_accel_sec", "2.0"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "param",
+                "set",
+                "velocity_controller_node",
+                "min_time_to_max_accel_sec",
+                "2.0",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
             command = ["stdbuf", "-o", "L", "ros2", "param", "set", "steering_actuator_node", "max_position", "2000"]
@@ -71,7 +81,17 @@ class EBSTestHandler(ShutdownNode):
             and self.odom_received
         ):
 
-            command = ["stdbuf", "-o", "L", "ros2", "param", "set", "velocity_controller_node", "min_time_to_max_accel_sec", "2.0"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "param",
+                "set",
+                "velocity_controller_node",
+                "min_time_to_max_accel_sec",
+                "2.0",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             command = ["stdbuf", "-o", "L", "ros2", "param", "set", "steering_actuator_node", "max_position", "2000"]

@@ -29,9 +29,11 @@ def generate_launch_description():
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                 ],
                 ros_arguments=[
-                    "-p", "topic_name:=lidar/cone_detection",
-                    "-p", "target_frame:=base_footprint",
-                ]
+                    "-p",
+                    "topic_name:=lidar/cone_detection",
+                    "-p",
+                    "target_frame:=base_footprint",
+                ],
             ),
             # guidance/control
             IncludeLaunchDescription(
@@ -42,7 +44,7 @@ def generate_launch_description():
             Node(
                 package="controllers",
                 executable="vel_to_ackermann_node",
-                parameters=[{"Kp": 2.0}]  # specific for EBS test
+                parameters=[{"Kp": 2.0}],  # specific for EBS test
             ),
         ]
     )

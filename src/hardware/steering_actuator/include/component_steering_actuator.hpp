@@ -171,7 +171,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // time to reset node if no state received
     std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
 
-    void update_parameters(const rcl_interfaces::msg::ParameterEvent& event);
+    void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
     void c5e_state_request_callback();
     void as_state_callback(const driverless_msgs::msg::State::SharedPtr msg);

@@ -4,7 +4,7 @@
 
 namespace steering_actuator {
 
-void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEvent& event) {
+void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEvent &event) {
     (void)event;
 
     current_velocity_ = this->get_parameter("velocity").as_int();

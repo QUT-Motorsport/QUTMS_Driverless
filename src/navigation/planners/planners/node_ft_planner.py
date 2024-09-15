@@ -171,7 +171,9 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
-        self.get_logger().info(f"---Ordered path planner node initalised with {self.topic_name}, {self.target_frame}---")
+        self.get_logger().info(
+            f"---Ordered path planner node initalised with {self.topic_name}, {self.target_frame}---"
+        )
 
     def get_planner_cfg(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)

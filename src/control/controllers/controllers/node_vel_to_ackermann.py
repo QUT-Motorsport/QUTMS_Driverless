@@ -29,7 +29,7 @@ class Vel2Ackermann(Node):
             steering = 0.0
         else:
             radius = vel / twist_msg.angular.z
-            atan(self.wheelbase / radius) * (180 / pi) * self.Kp ## MAKE THIS A PARAM
+            atan(self.wheelbase / radius) * (180 / pi) * self.Kp  ## MAKE THIS A PARAM
 
         msg = AckermannDriveStamped()
         # make time for msg id
