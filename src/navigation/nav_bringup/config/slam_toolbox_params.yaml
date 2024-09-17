@@ -20,7 +20,7 @@ slam_toolbox_node:
     scan_queue_size: 1  # The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
     use_map_saver: false  # Instantiate the map saver service and self-subscribe to the map topic
     # map_start_pose: [0.0, 0.0, 0.0]  # Pose to start pose-graph mapping/localization in, if available
-    debug_logging: true  # Change logger to debug
+    debug_logging: false  # Change logger to debug
     throttle_scans: 1  # Number of scans to throttle in synchronous mode
     transform_publish_period: 0.05  # The map to odom transform publish period. 0 will not publish transforms
     map_update_interval: 2.0  # Interval to update the 2D occupancy map for other applications / visualization

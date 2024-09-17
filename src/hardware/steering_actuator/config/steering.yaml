@@ -14,7 +14,7 @@ steering_actuator_node:
     centre_range: 2.0
     centre_angle: -8.0
     settling_iter: 50
-    max_position: 2000
+    max_position: 8500
     Kp: 10.0
     Ki: 0.0
     Kd: 0.0

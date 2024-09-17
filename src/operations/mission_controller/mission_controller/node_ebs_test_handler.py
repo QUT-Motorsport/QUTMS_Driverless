@@ -62,10 +62,28 @@ class EBSTestHandler(ShutdownNode):
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = ["stdbuf", "-o", "L", "ros2", "param", "set", "steering_actuator_node", "max_position", "2000"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "param",
+                "set",
+                "steering_actuator_node",
+                "max_position",
+                "2000",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "launch",
+                "mission_controller",
+                "ebs_test.launch.py",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("EBS mission started")
