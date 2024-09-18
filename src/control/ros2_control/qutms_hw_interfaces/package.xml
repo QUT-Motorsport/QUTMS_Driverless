@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>qutms_hw_interfaces</name>
+  <version>0.0.0</version>
+  <description>QUTMS hardware interfaces for ros2_control</description>
+  <maintainer email="team@qutmotorsport.com">Walden Leung</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <buildtool_depend>ament_cmake_gmock</buildtool_depend>
+
+  <depend>ackermann_msgs</depend>
+
+  <depend>driverless_msgs</depend>
+
+  <depend>hardware_interface</depend>
+
+  <depend>pluginlib</depend>
+
+  <depend>rclcpp</depend>
+
+  <depend>rclcpp_lifecycle</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
