@@ -5,4 +5,4 @@ velocity_controller_node:
       max_integral_torque: 0.0
       histerisis_kickin_ms: 0.0
       histerisis_reset_ms: 0.0
-      min_time_to_max_accel_sec: 6.0
+      min_time_to_max_accel_sec: 7.0

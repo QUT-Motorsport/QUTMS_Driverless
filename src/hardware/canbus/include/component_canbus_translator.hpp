@@ -54,7 +54,6 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr steering_angle_pub_;
-    // rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr velocity_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub1_;
     rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub2_;
@@ -72,13 +71,10 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
 
     // class variables for sensor data
     float wheel_speeds_[4];
-    float last_velocity_;
-    float last_steering_angle_;
 
     std::vector<rclcpp::Time> last_canopen_times_{canopen_ids.size(), rclcpp::Time(0)};
     std::vector<rclcpp::Time> last_can_times_{can_names.size(), rclcpp::Time(0)};
 
-    void update_twist();
     void canmsg_timer();
     void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const;
 

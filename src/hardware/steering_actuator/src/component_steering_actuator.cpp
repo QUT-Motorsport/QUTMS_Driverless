@@ -4,6 +4,22 @@
 
 namespace steering_actuator {
 
+void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEvent &event) {
+    (void)event;
+
+    current_velocity_ = this->get_parameter("velocity").as_int();
+    current_acceleration_ = this->get_parameter("acceleration").as_int();
+    centre_range_ = this->get_parameter("centre_range").as_double();
+    centre_angle_ = this->get_parameter("centre_angle").as_double();
+    settling_iter_ = this->get_parameter("settling_iter").as_int();
+    max_position_ = this->get_parameter("max_position").as_int();
+    Kp_ = this->get_parameter("Kp").as_double();
+    Ki_ = this->get_parameter("Ki").as_double();
+    Kd_ = this->get_parameter("Kd").as_double();
+
+    RCLCPP_INFO(this->get_logger(), "max_position %d", max_position_);
+}
+
 void SteeringActuator::configure_c5e() {
     this->send_steering_data(PROFILE_VELOCITY, (uint8_t *)&current_velocity_, 4);
     this->send_steering_data(PROFILE_ACCELERATION, (uint8_t *)&current_acceleration_, 4);
@@ -227,16 +243,6 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     this->declare_parameter<float>("Ki", 0.0);
     this->declare_parameter<float>("Kd", 0.0);
 
-    centre_range_ = this->get_parameter("centre_range").as_double();
-    centre_angle_ = this->get_parameter("centre_angle").as_double();
-    settling_iter_ = this->get_parameter("settling_iter").as_int();
-    max_position_ = this->get_parameter("max_position").as_int();
-    Kp_ = this->get_parameter("Kp").as_double();
-    Ki_ = this->get_parameter("Ki").as_double();
-    Kd_ = this->get_parameter("Kd").as_double();
-    current_velocity_ = this->get_parameter("velocity").as_int();
-    current_acceleration_ = this->get_parameter("acceleration").as_int();
-
     sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     control_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     auto sensor_cb_opt = rclcpp::SubscriptionOptions();
@@ -278,6 +284,11 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
 
     // Create publisher to topic "steering_state"
     steering_ready_pub_ = this->create_publisher<std_msgs::msg::Bool>("/system/steering_ready", QOS_ALL);
+
+    // Param callback
+    param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+    param_cb_handle_ = param_event_handler_->add_parameter_event_callback(
+        std::bind(&SteeringActuator::update_parameters, this, std::placeholders::_1));
 
     RCLCPP_INFO(this->get_logger(), "---Steering Actuator Node Initialised---");
 }

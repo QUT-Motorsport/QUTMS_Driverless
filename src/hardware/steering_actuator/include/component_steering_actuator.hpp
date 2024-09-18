@@ -146,6 +146,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::CallbackGroup::SharedPtr sensor_cb_group_;
     rclcpp::CallbackGroup::SharedPtr control_cb_group_;
 
+    std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler_;
+    std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle_;
+
     // params
     double Kp_, Ki_, Kd_, centre_range_, centre_angle_;
     int settling_iter_, max_position_;
@@ -168,6 +171,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // time to reset node if no state received
     std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
 
+    void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
     void c5e_state_request_callback();
     void as_state_callback(const driverless_msgs::msg::State::SharedPtr msg);

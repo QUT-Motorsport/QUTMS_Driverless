@@ -69,6 +69,13 @@ class OdometryTransformer(Node):
         # Adjust the orientation to be relative to the initial heading
         local_odom.pose.pose.orientation = orientation(0, 0, relative_heading)
         local_odom.twist = msg.twist
+        # Adjust the linear velocity to be relative to the initial heading
+        local_odom.twist.twist.linear.x = -(
+            msg.twist.twist.linear.x * cos(relative_heading) + msg.twist.twist.linear.y * sin(relative_heading)
+        )
+        local_odom.twist.twist.linear.y = -msg.twist.twist.linear.x * sin(
+            relative_heading
+        ) + msg.twist.twist.linear.y * cos(relative_heading)
 
         self.publisher.publish(local_odom)
 

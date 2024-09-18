@@ -62,6 +62,10 @@ def generate_launch_description():
                 executable="rosboard_node",
             ),
             Node(
+                package="foxglove_bridge",
+                executable="foxglove_bridge",
+            ),
+            Node(
                 package="driverless_common",
                 executable="display",
             ),
@@ -97,11 +101,6 @@ def generate_launch_description():
                     ("base_frame", "base_footprint"),
                     ("display_car", "false"),
                 ],
-            ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("roscube_machine") / "launch" / "foxglove.launch.py")
-                ),
             ),
         ]
     )
