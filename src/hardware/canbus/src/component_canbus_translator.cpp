@@ -81,11 +81,11 @@ void CANTranslator::canmsg_timer() {
 
                 // TODO: pidPos data processing here
                 // Convert float pidPos in degrees to double position in rads
-                double position = static_cast<double>(pidPos) * (M_PI / 180.0);
+                wheel_positions_[vesc_id] = static_cast<double>(pidPos) * (M_PI / 180.0);
 
                 std_msgs::msg::Float64::UniquePtr position_msg(new std_msgs::msg::Float64());
-                position_msg->data = position;
-                wheel_position_pub_->publish(std::move(position_msg));
+                position_msg->data = wheel_positions_[vesc_id];
+                wheel_position_pubs_[vesc_id]->publish(std::move(position_msg));
             }
         }
         // Steering Angle
@@ -184,7 +184,14 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     steering_angle_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
 
     // Wheel position
-    wheel_position_pub_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position", 10);
+    wss_position_pub1_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position1", 10);
+    wss_position_pub2_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position2", 10);
+    wss_position_pub3_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position3", 10);
+    wss_position_pub4_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/wheel_position4", 10);
+    wheel_position_pubs_.push_back(wss_position_pub1_);
+    wheel_position_pubs_.push_back(wss_position_pub2_);
+    wheel_position_pubs_.push_back(wss_position_pub3_);
+    wheel_position_pubs_.push_back(wss_position_pub4_);
 
     // Wheel velocity
     wss_velocity_pub1_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed1", 10);
