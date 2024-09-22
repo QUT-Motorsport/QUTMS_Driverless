@@ -31,7 +31,7 @@
             <param name="joint_type">driving</param>
         </joint> -->
         <joint name="rear_virtual_wheel_joint">
-            <command_interface name="acceleration">
+            <command_interface name="effort">
             </command_interface>
             <state_interface name="position">
                 <param name="initial_value">0</param>
