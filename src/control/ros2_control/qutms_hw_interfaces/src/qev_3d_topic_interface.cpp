@@ -32,7 +32,13 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
 
     // Create ros Node to publish and subscribe to topics
     rclcpp::NodeOptions options;
-    options.arguments({"--ros-args", "-r", "__node:=qev_3d_topic_interface_" + info_.name});
+    std::string node_name;
+    if (info_.name == "qev-3d") {
+        node_name = "qev_3d";
+    } else {
+        node_name = info_.name;
+    }
+    options.arguments({"--ros-args", "-r", "__node:=qev_3d_topic_interface_" + node_name});
 
     node_ = rclcpp::Node::make_shared("_", options);
 
@@ -41,18 +47,21 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
         if (available_joints.find(joint_cfg.name) != available_joints.end()) {
             hw_interfaces_[joint_cfg.name] = Joint(joint_cfg.name, joint_cfg.parameters.find("joint_type")->second);
             for (auto command_interface : joint_cfg.command_interfaces) {
-                hw_interfaces_[joint_cfg.name].command_interfaces.push_back(*command_interface.name.c_str());
+                hw_interfaces_[joint_cfg.name].command_interfaces.emplace_back(command_interface.name);
                 if (command_interface.data_type != "") {
                     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr publisher =
                         node_->create_publisher<std_msgs::msg::Float64>(command_interface.data_type, rclcpp::QoS(1));
-                    hw_interfaces_[joint_cfg.name].command_publishers.emplace_back(PublisherWrapper(publisher));
+                    hw_interfaces_[joint_cfg.name].command_publishers.emplace_back(publisher);
                 } else {
-                    hw_interfaces_[joint_cfg.name].command_publishers.emplace_back(nullptr);
+                    hw_interfaces_[joint_cfg.name].command_publishers.emplace_back(std::nullopt);
                 }
             }
             for (auto state_interface : joint_cfg.state_interfaces) {
-                hw_interfaces_[joint_cfg.name].state_interfaces.push_back(*state_interface.name.c_str());
-                // SubscriberWrapper subscriber;
+                RCLCPP_INFO(rclcpp::get_logger("qev_3d_topic_interface"), "Joint '%s' has state interface '%s'",
+                            joint_cfg.name.c_str(), state_interface.name.c_str());
+                // char state_interface_name[state_interface.name.size() + 1];
+                // strcpy(state_interface_name, state_interface.name.c_str());
+                hw_interfaces_[joint_cfg.name].state_interfaces.emplace_back(state_interface.name);
                 if (state_interface.data_type != "") {
                     if (state_interface.data_type == hardware_interface::HW_IF_POSITION) {
                         if (joint_cfg.parameters.find("joint_type")->second == "driving") {
@@ -61,16 +70,14 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
                                 [this, joint_cfg](const std_msgs::msg::Float64::SharedPtr msg) {
                                     hw_interfaces_[joint_cfg.name].state.position = msg->data;
                                 });
-                            hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(
-                                SubscriberWrapper(subscriber));
+                            hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(subscriber);
                         } else {
                             auto subscriber = node_->create_subscription<std_msgs::msg::Float32>(
                                 state_interface.data_type, rclcpp::SensorDataQoS(),
                                 [this, joint_cfg](const std_msgs::msg::Float32::SharedPtr msg) {
                                     hw_interfaces_[joint_cfg.name].state.position = msg->data;
                                 });
-                            hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(
-                                SubscriberWrapper(subscriber));
+                            hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(subscriber);
                         }
                     } else if (state_interface.data_type == hardware_interface::HW_IF_VELOCITY) {
                         auto subscriber = node_->create_subscription<std_msgs::msg::Float64>(
@@ -78,24 +85,24 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
                             [this, joint_cfg](const std_msgs::msg::Float64::SharedPtr msg) {
                                 hw_interfaces_[joint_cfg.name].state.velocity = msg->data;
                             });
-                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(SubscriberWrapper(subscriber));
+                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(subscriber);
                     } else if (state_interface.data_type == hardware_interface::HW_IF_ACCELERATION) {
                         auto subscriber = node_->create_subscription<std_msgs::msg::Float64>(
                             state_interface.data_type, rclcpp::SensorDataQoS(),
                             [this, joint_cfg](const std_msgs::msg::Float64::SharedPtr msg) {
                                 hw_interfaces_[joint_cfg.name].state.acceleration = msg->data;
                             });
-                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(SubscriberWrapper(subscriber));
+                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(subscriber);
                     } else if (state_interface.data_type == hardware_interface::HW_IF_EFFORT) {
                         auto subscriber = node_->create_subscription<std_msgs::msg::Float64>(
                             state_interface.data_type, rclcpp::SensorDataQoS(),
                             [this, joint_cfg](const std_msgs::msg::Float64::SharedPtr msg) {
                                 hw_interfaces_[joint_cfg.name].state.effort = msg->data;
                             });
-                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(SubscriberWrapper(subscriber));
+                        hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(subscriber);
                     }
                 } else {
-                    hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(nullptr);
+                    hw_interfaces_[joint_cfg.name].state_subscribers.emplace_back(std::nullopt);
                 }
             }
         } else {
@@ -148,42 +155,23 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_configure(
 std::vector<hardware_interface::StateInterface> Qev3dTopicInterface::export_state_interfaces() {
     std::vector<hardware_interface::StateInterface> state_interfaces;
     for (auto& joint : hw_interfaces_) {
-        // for (auto& interface : available_joints.find(joint.second.joint_name)->second[1]) {
-        //     if (&interface == hardware_interface::HW_IF_POSITION) {
-        //         state_interfaces.emplace_back(hardware_interface::StateInterface(joint.second.joint_name, &interface,
-        //                                                                          &joint.second.state.position));
-        //     } else if (&interface == hardware_interface::HW_IF_VELOCITY) {
-        //         state_interfaces.emplace_back(hardware_interface::StateInterface(joint.second.joint_name, &interface,
-        //                                                                          &joint.second.state.velocity));
-        //     } else if (&interface == hardware_interface::HW_IF_ACCELERATION) {
-        //         state_interfaces.emplace_back(hardware_interface::StateInterface(joint.second.joint_name, &interface,
-        //                                                                          &joint.second.state.acceleration));
-        //     } else if (&interface == hardware_interface::HW_IF_EFFORT) {
-        //         state_interfaces.emplace_back(
-        //             hardware_interface::StateInterface(joint.second.joint_name, &interface,
-        //             &joint.second.state.effort));
-        //     } else {
-        //         RCLCPP_WARN(rclcpp::get_logger("qev_3d_topic_interface"),
-        //                     "State interface '%d' is not supported for joint '%s'. Skipping", interface,
-        //                     joint.second.joint_name.c_str());
-        //     }
-        // }
-        for (char& state_interface : joint.second.state_interfaces) {
-            if (&state_interface == hardware_interface::HW_IF_POSITION) {
+        for (std::string state_interface : joint.second.state_interfaces) {
+            RCLCPP_INFO(rclcpp::get_logger("qev_3d_topic_interface"), "State interface: %s", state_interface.c_str());
+            if (state_interface == hardware_interface::HW_IF_POSITION) {
                 state_interfaces.emplace_back(hardware_interface::StateInterface(
                     joint.second.joint_name, hardware_interface::HW_IF_POSITION, &joint.second.state.position));
-            } else if (&state_interface == hardware_interface::HW_IF_VELOCITY) {
+            } else if (state_interface == hardware_interface::HW_IF_VELOCITY) {
                 state_interfaces.emplace_back(hardware_interface::StateInterface(
                     joint.second.joint_name, hardware_interface::HW_IF_VELOCITY, &joint.second.state.velocity));
-            } else if (&state_interface == hardware_interface::HW_IF_ACCELERATION) {
+            } else if (state_interface == hardware_interface::HW_IF_ACCELERATION) {
                 state_interfaces.emplace_back(hardware_interface::StateInterface(
                     joint.second.joint_name, hardware_interface::HW_IF_ACCELERATION, &joint.second.state.acceleration));
-            } else if (&state_interface == hardware_interface::HW_IF_EFFORT) {
+            } else if (state_interface == hardware_interface::HW_IF_EFFORT) {
                 state_interfaces.emplace_back(hardware_interface::StateInterface(
                     joint.second.joint_name, hardware_interface::HW_IF_EFFORT, &joint.second.state.effort));
             } else {
                 RCLCPP_WARN(rclcpp::get_logger("qev_3d_topic_interface"),
-                            "State interface '%s' is not supported for joint '%s'. Skipping", &state_interface,
+                            "State interface '%s' is not supported for joint '%s'. Skipping", state_interface.c_str(),
                             joint.second.joint_name.c_str());
             }
         }
@@ -218,27 +206,27 @@ std::vector<hardware_interface::CommandInterface> Qev3dTopicInterface::export_co
         //                     joint_interface.second.joint_name.c_str());
         //     }
         // }
-        for (char& command_interface : joint_interface.second.command_interfaces) {
-            if (&command_interface == hardware_interface::HW_IF_POSITION) {
+        for (std::string command_interface : joint_interface.second.command_interfaces) {
+            if (command_interface == hardware_interface::HW_IF_POSITION) {
                 command_interfaces.emplace_back(hardware_interface::CommandInterface(
                     joint_interface.second.joint_name, hardware_interface::HW_IF_POSITION,
                     &joint_interface.second.command.position));
-            } else if (&command_interface == hardware_interface::HW_IF_VELOCITY) {
+            } else if (command_interface == hardware_interface::HW_IF_VELOCITY) {
                 command_interfaces.emplace_back(hardware_interface::CommandInterface(
                     joint_interface.second.joint_name, hardware_interface::HW_IF_VELOCITY,
                     &joint_interface.second.command.velocity));
-            } else if (&command_interface == hardware_interface::HW_IF_ACCELERATION) {
+            } else if (command_interface == hardware_interface::HW_IF_ACCELERATION) {
                 command_interfaces.emplace_back(hardware_interface::CommandInterface(
                     joint_interface.second.joint_name, hardware_interface::HW_IF_ACCELERATION,
                     &joint_interface.second.command.acceleration));
-            } else if (&command_interface == hardware_interface::HW_IF_EFFORT) {
+            } else if (command_interface == hardware_interface::HW_IF_EFFORT) {
                 command_interfaces.emplace_back(hardware_interface::CommandInterface(
                     joint_interface.second.joint_name, hardware_interface::HW_IF_EFFORT,
                     &joint_interface.second.command.effort));
             } else {
                 RCLCPP_WARN(rclcpp::get_logger("qev_3d_topic_interface"),
-                            "Command interface '%s' is not supported for joint '%s'. Skipping", &command_interface,
-                            joint_interface.second.joint_name.c_str());
+                            "Command interface '%s' is not supported for joint '%s'. Skipping",
+                            command_interface.c_str(), joint_interface.second.joint_name.c_str());
             }
         }
     }
@@ -276,40 +264,62 @@ hardware_interface::return_type Qev3dTopicInterface::read(const rclcpp::Time& /*
     return hardware_interface::return_type::OK;
 }
 
+void publishMessage(const MessageTypeVariant& msg_var, const PublisherVariant& publisher_) {
+    using T = std::decay_t<decltype(msg_var)>;
+    if (std::is_same<T, std_msgs::msg::Float64>::value) {
+        std_msgs::msg::Float64 msg = std::get<std_msgs::msg::Float64>(msg_var);
+        rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr pub =
+            std::get<rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr>(publisher_);
+        pub->publish(msg);
+    } else if (std::is_same<T, std_msgs::msg::Float32>::value) {
+        std_msgs::msg::Float32 msg = std::get<std_msgs::msg::Float32>(msg_var);
+        rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pub =
+            std::get<rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr>(publisher_);
+        pub->publish(msg);
+    }
+}
+
 hardware_interface::return_type Qev3dTopicInterface::write(const rclcpp::Time& /*time*/,
                                                            const rclcpp::Duration& /*period*/) {
     if (last_status_.state == driverless_msgs::msg::State::DRIVING) {
-        ackermann_msgs::msg::AckermannDriveStamped ackermann_msg;
-        ackermann_msg.header.stamp = node_->now();
-        ackermann_msg.header.frame_id = "base_footprint";
-        ackermann_msg.drive.steering_angle = static_cast<float>(hw_interfaces_[steering_joint_].command.position);
-        ackermann_msg.drive.speed = static_cast<float>(hw_interfaces_[driving_joint_].command.effort);
-        ackermann_pub_->publish(ackermann_msg);
-
+        float steering_angle_cmd = 0.0;
+        float velocity_cmd = 0.0;
         for (auto& joint : hw_interfaces_) {
             for (size_t i = 0; i < joint.second.command_interfaces.size(); i++) {
-                int j = static_cast<int>(i);
                 qutms_hw_interfaces::MessageTypeVariant msg;
-                if (&joint.second.command_interfaces[j] == hardware_interface::HW_IF_POSITION) {
+                if (joint.second.command_interfaces[i] == hardware_interface::HW_IF_POSITION &&
+                    joint.second.joint_type == "steering") {
+                    msg = std_msgs::msg::Float32();
+                    std::get<std_msgs::msg::Float32>(msg).data = static_cast<float>(joint.second.command.position);
+                    steering_angle_cmd = std::get<std_msgs::msg::Float32>(msg).data;
+                } else if (joint.second.command_interfaces[i] == hardware_interface::HW_IF_POSITION &&
+                           joint.second.joint_type == "driving") {
                     msg = std_msgs::msg::Float64();
                     std::get<std_msgs::msg::Float64>(msg).data = joint.second.command.position;
-                } else if (&joint.second.command_interfaces[j] == hardware_interface::HW_IF_VELOCITY) {
-                    msg = std_msgs::msg::Float32();
-                    std::get<std_msgs::msg::Float32>(msg).data = joint.second.command.velocity;
-                } else if (&joint.second.command_interfaces[j] == hardware_interface::HW_IF_ACCELERATION) {
-                    msg = std_msgs::msg::Float32();
-                    std::get<std_msgs::msg::Float32>(msg).data = joint.second.command.acceleration;
-                } else if (&joint.second.command_interfaces[j] == hardware_interface::HW_IF_EFFORT) {
-                    msg = std_msgs::msg::Float32();
-                    std::get<std_msgs::msg::Float32>(msg).data = joint.second.command.effort;
+                } else if (joint.second.command_interfaces[i] == hardware_interface::HW_IF_VELOCITY) {
+                    msg = std_msgs::msg::Float64();
+                    std::get<std_msgs::msg::Float64>(msg).data = joint.second.command.velocity;
+                } else if (joint.second.command_interfaces[i] == hardware_interface::HW_IF_ACCELERATION) {
+                    msg = std_msgs::msg::Float64();
+                    std::get<std_msgs::msg::Float64>(msg).data = joint.second.command.acceleration;
+                } else if (joint.second.command_interfaces[i] == hardware_interface::HW_IF_EFFORT) {
+                    msg = std_msgs::msg::Float64();
+                    std::get<std_msgs::msg::Float64>(msg).data = joint.second.command.effort;
+                    velocity_cmd = static_cast<float>(std::get<std_msgs::msg::Float64>(msg).data);
                 } else {
                     continue;
                 }
-                if (joint.second.command_publishers[j]) {
-                    joint.second.command_publishers[j]->publish(msg);
+                if (joint.second.command_publishers[i].has_value()) {
+                    publishMessage(msg, joint.second.command_publishers[i].value());
                 }
             }
         }
+        ackermann_msgs::msg::AckermannDriveStamped ackermann_msg;
+        ackermann_msg.header.stamp = node_->now();
+        ackermann_msg.header.frame_id = "base_footprint";
+        ackermann_msg.drive.steering_angle = steering_angle_cmd;
+        ackermann_msg.drive.speed = velocity_cmd;
+        ackermann_pub_->publish(ackermann_msg);
     }
 
     return hardware_interface::return_type::OK;

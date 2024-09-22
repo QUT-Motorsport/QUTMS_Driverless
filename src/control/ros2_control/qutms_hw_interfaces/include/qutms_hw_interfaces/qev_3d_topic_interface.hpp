@@ -68,60 +68,13 @@ struct Joint {
 
     std::string joint_name;
     std::string joint_type;
-    std::vector<char> command_interfaces;
+    std::vector<std::string> command_interfaces;
     // Currently unused: For future use
-    std::vector<std::optional<PublisherWrapper>> command_publishers;
-    std::vector<char> state_interfaces;
-    std::vector<std::optional<SubscriberWrapper>> state_subscribers;
+    std::vector<std::optional<PublisherVariant>> command_publishers;
+    std::vector<std::string> state_interfaces;
+    std::vector<std::optional<SubscriberVariant>> state_subscribers;
     JointValue state;
     JointValue command;
-};
-
-class PublisherWrapper {
-   public:
-    template <typename T>
-    PublisherWrapper(typename rclcpp::Publisher<T>::SharedPtr publisher) : publisher_(publisher) {}
-
-    void publish(const MessageTypeVariant& msgVariant) {
-        std::visit(
-            [this](auto& msg) {
-                using MsgType = std::decay_t<decltype(msg)>;
-                if (auto pub =
-                        std::get_if<typename rclcpp::Publisher<typename std::decay<decltype(msg)>::type>::SharedPtr>(
-                            &publisher_)) {
-                    (*pub)->publish(msg);
-                }
-            },
-            msgVariant);
-    }
-
-   private:
-    std::variant<rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr,
-                 rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr,
-                 rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr,
-                 rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr>
-        publisher_;
-};
-
-class SubscriberWrapper {
-   public:
-    template <typename T>
-    SubscriberWrapper(typename rclcpp::Subscription<T>::SharedPtr subscriber) : subscriber_(std::move(subscriber)) {}
-
-    // MessageTypeVariant handle_message(const MessageTypeVariant& msgVariant){
-    //     std::visit([this](auto& msg){
-    //         using MsgType = std::decay_t<decltype(msg)>;
-    //         if (auto sub = std::get_if<rclcpp::Subscription<MsgType>::SharedPtr>(&subscriber_)){
-    //             return msg;
-    //         }
-    //     }, msgVariant);
-    // }
-   private:
-    std::variant<rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr,
-                 rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr,
-                 rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr,
-                 rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr>
-        subscriber_;
 };
 
 class Qev3dTopicInterface : public hardware_interface::SystemInterface {
@@ -154,32 +107,7 @@ class Qev3dTopicInterface : public hardware_interface::SystemInterface {
     std::vector<double> hw_commands_;
     std::vector<double> hw_states_;
 
-    // Definition for joints that are configured for this interface
-    // Format:
-    // {
-    //   (joint_name,
-    //   {
-    //    {
-    //      command_interfaces(Unlimited Unique)->
-    //      {
-    //        position/velocity/acceleration/effort/custom_interface
-    //      }
-    //    },
-    //    {
-    //      state_interfaces(Unlimited Unique)->
-    //      {
-    //        position/velocity/acceleration/effort/custom_interface
-    //      },
-    //    },
-    //    {Joint_type(1 Unique)->{steering/drive/other}}
-    //   }),
-    // const std::map<std::string, std::vector<std::vector<char>>> available_joints = {
-    //     {"virtual_steering_hinge_joint",
-    //      {{hardware_interface::HW_IF_POSITION}, {hardware_interface::HW_IF_POSITION}, {"steering"}}},
-    //     {"virtual_rear_wheel_joint", {{hardware_interface::HW_IF_EFFORT},
-    //                                   {hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY},
-    //                                   {"drive"}}}};
-    const std::set<std::string> available_joints = {"virtual_steering_hinge_joint", "virtual_rear_wheel_joint"};
+    const std::set<std::string> available_joints = {"virtual_steering_hinge_joint", "rear_virtual_wheel_joint"};
     std::map<std::string, Joint> hw_interfaces_;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr status_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr velocity_sub_;
