@@ -103,19 +103,33 @@
     </xacro:macro>
 
     <!-- Description of how a rear wheel is connected to the chassis -->
-    <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
-      <joint name="rear_${lr_prefix}_wheel_joint" type="continuous">
-        <origin xyz="${-1 * wheelbase / 2}
-                     ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
-        <parent link="${chassis_link}"/>
-        <child link="${lr_prefix}_rear_wheel"/>
-        <axis xyz="0 1 0"/>
-        <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
-      </joint>
+    <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect wheel_material:=black movable:=false">
+      <xacro:if value="${movable}">
+        <joint name="rear_${lr_prefix}_wheel_joint" type="continuous">
+          <origin xyz="${-1 * wheelbase / 2}
+                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
+                      0"
+                  rpy="0 0 0"/>
+          <parent link="${chassis_link}"/>
+          <child link="${lr_prefix}_rear_wheel"/>
+          <axis xyz="0 1 0"/>
+          <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:if>
+      <xacro:unless value="${movable}">
+        <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
+          <origin xyz="${-1 * wheelbase / 2}
+                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
+                      0"
+                  rpy="0 0 0"/>
+          <parent link="${chassis_link}"/>
+          <child link="${lr_prefix}_rear_wheel"/>
+          <axis xyz="0 1 0"/>
+          <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
+        </joint>
+      </xacro:unless>
 
-      <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="rear"/>
+      <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="rear" wheel_material="${wheel_material}"/>
     </xacro:macro>
 
     <!-- Add the wheels -->
@@ -126,5 +140,7 @@
 
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1"/>
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1"/>
+    <!-- Virtual rear wheel to abstract single drive control -->
+    <xacro:rear_wheel lr_prefix="virtual" lr_reflect="0" wheel_material="invisible" movable="true"/>
   </xacro:macro>
 </robot>

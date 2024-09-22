@@ -25,6 +25,8 @@
 
   <exec_depend>tricycle_steering_controller</exec_depend>
 
+  <exec_depend>bicycle_steering_controller</exec_depend>
+
   <exec_depend>ros2_controllers_test_nodes</exec_depend>
 
   <exec_depend>rviz2</exec_depend>

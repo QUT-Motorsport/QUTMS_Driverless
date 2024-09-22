@@ -2,16 +2,18 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <ros2_control name="qev-3d" type="system">
         <hardware>
-            <plugin>mock_components/GenericSystem</plugin>
-            <param name="calculate_dynamics">true</param>
+            <plugin>qutms_hw_interfaces/Qev3dTopicInterface</plugin>
+            <!-- <plugin>mock_components/GenericSystem</plugin> -->
+            <!-- <param name="calculate_dynamics">true</param> -->
             <param name="ackermann_pub_topic">/vehicle/ackermann_cmd</param>
         </hardware>
-        <joint name="rear_left_wheel_joint">
+        <!-- For Future Tricycle Drive use -->
+        <!-- <joint name="rear_left_wheel_joint">
             <command_interface name="acceleration">
             </command_interface>
-            <!-- <state_interface name="position">
+            <state_interface name="position">
                 <param name="initial_value">0</param>
-            </state_interface> -->
+            </state_interface>
             <state_interface name="velocity">
                 <param name="initial_value">0</param>
             </state_interface>
@@ -20,14 +22,14 @@
         <joint name="rear_right_wheel_joint">
             <command_interface name="acceleration">
             </command_interface>
-            <!-- <state_interface name="position">
+            <state_interface name="position">
                 <param name="initial_value">0</param>
-            </state_interface> -->
+            </state_interface>
             <state_interface name="velocity">
                 <param name="initial_value">0</param>
             </state_interface>
             <param name="joint_type">driving</param>
-        </joint>
+        </joint> -->
         <joint name="rear_virtual_wheel_joint">
             <command_interface name="acceleration">
             </command_interface>

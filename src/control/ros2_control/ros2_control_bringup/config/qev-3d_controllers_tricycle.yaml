@@ -6,7 +6,7 @@ controller_manager:
       type: joint_state_broadcaster/JointStateBroadcaster
 
     ackermann_steering_controller:
-      type: bicycle_steering_controller/BicycleSteeringController
+      type: tricycle_steering_controller/TricycleSteeringController
 
     drive_pid_controller:
       type: pid_controller/PidController
@@ -21,7 +21,7 @@ joint_state_broadcaster:
 
 ackermann_steering_controller:
   ros__parameters:
-    type: bicycle_steering_controller/BicycleSteeringController
+    type: tricycle_steering_controller/TricycleSteeringController
     reference_timeout: 2.0
     in_chained_mode: true
     front_steering: true
@@ -29,20 +29,21 @@ ackermann_steering_controller:
     velocity_rolling_window_size: 10
     position_feedback: false
     use_stamped_vel: true
-    rear_wheels_names: [drive_pid_controller/rear_virtual_wheel_joint]
+    rear_wheels_names: [drive_pid_controller/rear_right_wheel_joint, drive_pid_controller/rear_left_wheel_joint]
     front_wheels_names: [steering_pid_controller/virtual_steering_hinge_joint]
-    rear_wheels_state_names: [rear_virtual_wheel_joint]
+    rear_wheels_state_names: [rear_right_wheel_joint, rear_left_wheel_joint]
     front_wheels_state_names: [virtual_steering_hinge_joint]
     wheelbase: 1.580
     wheel_track: 1.4
-    front_wheel_radius: 0.2032
-    rear_wheel_radius: 0.2032
+    front_wheels_radius: 0.2032
+    rear_wheels_radius: 0.2032
 
 drive_pid_controller:
   ros__parameters:
     type: pid_controller/PidController
     dof_names:
-      - rear_virtual_wheel_joint
+      - rear_right_wheel_joint
+      - rear_left_wheel_joint
 
     command_interface: acceleration
 
