@@ -55,6 +55,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr av_position_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub1_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub2_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub3_;

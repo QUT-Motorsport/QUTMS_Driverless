@@ -4,6 +4,7 @@
         <hardware>
             <plugin>mock_components/GenericSystem</plugin>
             <param name="calculate_dynamics">true</param>
+            <param name="ackermann_pub_topic">/vehicle/ackermann_cmd</param>
         </hardware>
         <joint name="rear_left_wheel_joint">
             <command_interface name="acceleration">
@@ -14,6 +15,7 @@
             <state_interface name="velocity">
                 <param name="initial_value">0</param>
             </state_interface>
+            <param name="joint_type">driving</param>
         </joint>
         <joint name="rear_right_wheel_joint">
             <command_interface name="acceleration">
@@ -24,13 +26,32 @@
             <state_interface name="velocity">
                 <param name="initial_value">0</param>
             </state_interface>
+            <param name="joint_type">driving</param>
+        </joint>
+        <joint name="rear_virtual_wheel_joint">
+            <command_interface name="acceleration">
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0</param>
+                <!-- Custom params not implemented in ROS Humble. Co-opting unused param instead -->
+                <param name="data_type">/vehicle/rw_position</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0</param>
+                <!-- Custom params not implemented in ROS Humble. Co-opting unused param instead -->
+                <param name="data_type">/vehicle/velocity</param>
+            </state_interface>
+            <param name="joint_type">driving</param>
         </joint>
         <joint name="virtual_steering_hinge_joint">
             <command_interface name="position">
             </command_interface>
             <state_interface name="position">
                 <param name="initial_value">0</param>
+                <!-- Custom params not implemented in ROS Humble. Co-opting unused param instead -->
+                <param name="data_type">/vehicle/steering_angle</param>
             </state_interface>
+            <param name="joint_type">steering</param>
         </joint>
     </ros2_control>
 </robot>

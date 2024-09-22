@@ -86,6 +86,18 @@ void CANTranslator::canmsg_timer() {
                 std_msgs::msg::Float64::UniquePtr position_msg(new std_msgs::msg::Float64());
                 position_msg->data = wheel_positions_[vesc_id];
                 wheel_position_pubs_[vesc_id]->publish(std::move(position_msg));
+
+                if (vesc_id > 2) {
+                    double av_position = 0;
+                    for (int i = 2; i < 4; i++) {
+                        av_position += wheel_positions_[i];
+                    }
+                    av_position = av_position / 2;
+
+                    // Publish msg with virtual center wheel position
+                    std_msgs::msg::Float64::UniquePtr virtual_rear_wheel_position(new std_msgs::msg::Float64());
+                    virtual_rear_wheel_position->data = av_position;
+                }
             }
         }
         // Steering Angle
@@ -192,6 +204,8 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     wheel_position_pubs_.push_back(wss_position_pub2_);
     wheel_position_pubs_.push_back(wss_position_pub3_);
     wheel_position_pubs_.push_back(wss_position_pub4_);
+    // Average rear wheel position
+    av_position_pub_ = this->create_publisher<std_msgs::msg::Float64>("/vehicle/rw_position", 10);
 
     // Wheel velocity
     wss_velocity_pub1_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed1", 10);
