@@ -44,9 +44,9 @@ drive_pid_controller:
     dof_names:
       - rear_virtual_wheel_joint
 
-    command_interface: acceleration
+    command_interface: effort
 
-    reference_and_state_interfaces: ["velocity"]
+    reference_and_state_interfaces: ["position", "velocity"]
 
     gains:
       rear_right_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}

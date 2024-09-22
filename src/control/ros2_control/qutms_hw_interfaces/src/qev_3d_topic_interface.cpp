@@ -46,6 +46,9 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
     for (const hardware_interface::ComponentInfo& joint_cfg : info_.joints) {
         if (available_joints.find(joint_cfg.name) != available_joints.end()) {
             hw_interfaces_[joint_cfg.name] = Joint(joint_cfg.name, joint_cfg.parameters.find("joint_type")->second);
+
+            // Create publishers and subscribers for each joint using URDF parameters,
+            // creating null optionals if no data type is provided
             for (auto command_interface : joint_cfg.command_interfaces) {
                 hw_interfaces_[joint_cfg.name].command_interfaces.emplace_back(command_interface.name);
                 if (command_interface.data_type != "") {
@@ -56,11 +59,9 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
                     hw_interfaces_[joint_cfg.name].command_publishers.emplace_back(std::nullopt);
                 }
             }
+            // Create subscribers based on data type, and joint type and saved in vector of optionals.
+            // If no data type is provided, create a null optional
             for (auto state_interface : joint_cfg.state_interfaces) {
-                RCLCPP_INFO(rclcpp::get_logger("qev_3d_topic_interface"), "Joint '%s' has state interface '%s'",
-                            joint_cfg.name.c_str(), state_interface.name.c_str());
-                // char state_interface_name[state_interface.name.size() + 1];
-                // strcpy(state_interface_name, state_interface.name.c_str());
                 hw_interfaces_[joint_cfg.name].state_interfaces.emplace_back(state_interface.name);
                 if (state_interface.data_type != "") {
                     if (state_interface.data_type == hardware_interface::HW_IF_POSITION) {
@@ -119,7 +120,8 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
         return default_value;
     };
 
-    // Setup publisher and subscribers based on configured parameters or configuration
+    // Setup publisher and subscribers that cannot be correlated to a single joint
+    // based on configured parameters or default values
     ackermann_pub_ = node_->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>(
         get_hardware_parameter("ackermann_topic", "vehicle/ackermann_cmd"), rclcpp::QoS(1));
     status_sub_ = node_->create_subscription<driverless_msgs::msg::State>(
@@ -135,11 +137,6 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_init(const hardware_i
     //     get_hardware_parameter("steering_angle_topic", "/steering_angle"), rclcpp::SensorDataQoS(),
     //     [this](const std_msgs::msg::Float32::SharedPtr steering_angle) { last_steering_angle_ = *steering_angle; });
 
-    // Get Driving joint name (Bicycle)
-    // driving_joint_ = get_hardware_parameter("driving_joint", "virtual_rear_wheel_joint");
-    // Get Steering joint name (Bicycle)
-    // steering_joint_ = get_hardware_parameter("steering_joint", "virtual_steering_hinge_joint");
-
     RCLCPP_INFO(rclcpp::get_logger("qev_3d_topic_interface"), "QEV3D Hardware Interface has been initialized");
 
     return CallbackReturn::SUCCESS;
@@ -152,6 +149,21 @@ hardware_interface::CallbackReturn Qev3dTopicInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
+/**
+ * @brief Exports the state interfaces for the Qev3dTopicInterface.
+ *
+ * This function iterates over the hardware interfaces and exports the state interfaces
+ * (Pointer to the state vector elements of the joint struct) for each joint.
+ * It supports the following state interfaces:
+ * - Position
+ * - Velocity
+ * - Acceleration
+ * - Effort
+ *
+ * If a state interface is not supported, a warning is logged.
+ *
+ * @return A vector of hardware_interface::StateInterface objects representing the state interfaces.
+ */
 std::vector<hardware_interface::StateInterface> Qev3dTopicInterface::export_state_interfaces() {
     std::vector<hardware_interface::StateInterface> state_interfaces;
     for (auto& joint : hw_interfaces_) {
@@ -180,32 +192,23 @@ std::vector<hardware_interface::StateInterface> Qev3dTopicInterface::export_stat
     return state_interfaces;
 }
 
+/**
+ * @brief Exports the command interfaces for the Qev3dTopicInterface.
+ *
+ * This function iterates over the hardware interfaces and exports the command interfaces
+ * (Pointer to the command vector elements of the joint struct) for each joint.
+ * It supports the following state interfaces:
+ * - Position
+ * - Velocity
+ * - Acceleration
+ * - Effort
+ * If a command interface is not supported, a warning is logged.
+ *
+ * @return A vector of hardware_interface::CommandInterface objects representing the exported command interfaces.
+ */
 std::vector<hardware_interface::CommandInterface> Qev3dTopicInterface::export_command_interfaces() {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
     for (auto& joint_interface : hw_interfaces_) {
-        // for (auto& interface : available_joints.find(joint_interface.second.joint_name)->second[0]) {
-        //     if (&interface == hardware_interface::HW_IF_POSITION) {
-        //         command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //             joint_interface.second.joint_name, hardware_interface::HW_IF_POSITION,
-        //             &joint_interface.second.command.position));
-        //     } else if (&interface == hardware_interface::HW_IF_VELOCITY) {
-        //         command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //             joint_interface.second.joint_name, hardware_interface::HW_IF_VELOCITY,
-        //             &joint_interface.second.command.velocity));
-        //     } else if (&interface == hardware_interface::HW_IF_ACCELERATION) {
-        //         command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //             joint_interface.second.joint_name, hardware_interface::HW_IF_ACCELERATION,
-        //             &joint_interface.second.command.acceleration));
-        //     } else if (&interface == hardware_interface::HW_IF_EFFORT) {
-        //         command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //             joint_interface.second.joint_name, hardware_interface::HW_IF_EFFORT,
-        //             &joint_interface.second.command.effort));
-        //     } else {
-        //         RCLCPP_WARN(rclcpp::get_logger("qev_3d_topic_interface"),
-        //                     "Command interface '%d' is not supported for joint '%s'. Skipping", interface,
-        //                     joint_interface.second.joint_name.c_str());
-        //     }
-        // }
         for (std::string command_interface : joint_interface.second.command_interfaces) {
             if (command_interface == hardware_interface::HW_IF_POSITION) {
                 command_interfaces.emplace_back(hardware_interface::CommandInterface(
@@ -264,6 +267,7 @@ hardware_interface::return_type Qev3dTopicInterface::read(const rclcpp::Time& /*
     return hardware_interface::return_type::OK;
 }
 
+// Publishes the message to the publisher based on the message type
 void publishMessage(const MessageTypeVariant& msg_var, const PublisherVariant& publisher_) {
     using T = std::decay_t<decltype(msg_var)>;
     if (std::is_same<T, std_msgs::msg::Float64>::value) {
@@ -279,6 +283,15 @@ void publishMessage(const MessageTypeVariant& msg_var, const PublisherVariant& p
     }
 }
 
+/**
+ * @brief Writes commands to the hardware interface.
+ *
+ * This function iterates over the hardware interfaces and publishes the appropriate command messages
+ * based on the type of command interface (position, velocity, or acceleration).
+ * It also fuses steering and driving commands into an AckermannDriveStamped message and publishes it.
+ *
+ * @return hardware_interface::return_type The result of the write operation.
+ */
 hardware_interface::return_type Qev3dTopicInterface::write(const rclcpp::Time& /*time*/,
                                                            const rclcpp::Duration& /*period*/) {
     if (last_status_.state == driverless_msgs::msg::State::DRIVING) {
