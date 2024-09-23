@@ -301,13 +301,13 @@
       # Magnetometer calibration data (raw buffer)
       log_mag_calib: 0
       # GPS velocities from primary or secondary GPS receiver
-      log_gps1_vel: 0
+      log_gps1_vel: 10001
       # GPS positions from primary or secondary GPS receiver
-      log_gps1_pos: 0
+      log_gps1_pos: 10001
       # GPS true heading from dual antenna system
-      log_gps1_hdt: 0
+      log_gps1_hdt: 10001
       # GPS 1 raw data for post processing.
-      log_gps1_raw: 0
+      log_gps1_raw: 10001
       # Provides odometer velocity
       log_odo_vel: 0
       # Event A/B/C/D Event markers sent when events are detected on a sync in pin
