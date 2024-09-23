@@ -23,6 +23,8 @@
 
   <exec_depend>pid_controller</exec_depend>
 
+  <exec_depend>qutms_hw_interfaces</exec_depend>
+
   <exec_depend>tricycle_steering_controller</exec_depend>
 
   <exec_depend>bicycle_steering_controller</exec_depend>
