@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from math import sqrt, pi
+from math import pi, sqrt
 
+from driverless_msgs.msg import Cone
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
-
-from driverless_msgs.msg import Cone
 
 from driverless_common.common import angle, orientation, wrap_to_pi
 
@@ -33,12 +32,13 @@ class Point:
 
     def __repr__(self) -> str:
         print(f"({self.x}, {self.y})")
-    
+
     def __getitem__(self, index: int) -> float:
         return self.to_tuple()[index]
 
     def to_tuple(self) -> tuple:
         return (self.x, self.y)
+
 
 def dist(a: Point, b: Point) -> float:
     return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
@@ -50,6 +50,7 @@ def cone_to_point(cone: Cone) -> Point:
         cone.location.y,
     )
 
+
 def points_to_path(points: list[Point], header: Header) -> Path:
     spline_len = len(points)
     poses: list[PoseStamped] = []  # target spline poses
@@ -59,7 +60,7 @@ def points_to_path(points: list[Point], header: Header) -> Path:
             th_change = angle(points[i], points[i + 1])
         elif i == spline_len - 1:
             th_change = angle(points[i], points[0])
-        th_change = wrap_to_pi(th_change) # keep between 360
+        th_change = wrap_to_pi(th_change)  # keep between 360
 
         pose = PoseStamped()
         pose.header = header
