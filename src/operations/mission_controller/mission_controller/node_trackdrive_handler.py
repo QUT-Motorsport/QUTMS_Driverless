@@ -144,7 +144,7 @@ class TrackdriveHandler(ShutdownNode):
 
         # check if we are within the bounds of the start line width (approx 2m)
         # and we are also within the distance of the finish line
-        if abs(track_to_base.transform.translation.x) < 2 and abs(track_to_base.transform.translation.y) < 2:
+        if abs(track_to_base.transform.translation.x) < 2 and abs(track_to_base.transform.translation.y) < 3:
             self.in_box = True
             self.get_logger().info(f"In the starting box", throttle_duration_sec=1)
 

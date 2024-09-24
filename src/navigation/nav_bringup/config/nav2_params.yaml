@@ -205,7 +205,7 @@ controller_server:
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       # lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
-      transform_tolerance: 0.6  # The TF transform tolerance.
+      transform_tolerance: 0.4  # The TF transform tolerance.
       use_velocity_scaled_lookahead_dist: false  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
       min_approach_linear_velocity: 3.0  # The minimum velocity threshold to apply when approaching the goal.
       approach_velocity_scaling_dist: 1.0  # Integrated distance from end of transformed path at which to start applying velocity scaling.
@@ -247,8 +247,8 @@ controller_server:
       # cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
       # inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
         # The value should be exactly the same for accurately computing distance from obstacles using the inflated cell values
-      regulated_linear_scaling_min_radius: 5.0  # The turning radius for which the regulation features are triggered.
-      regulated_linear_scaling_min_speed: 2.5  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
+      regulated_linear_scaling_min_radius: 7.0  # The turning radius for which the regulation features are triggered.
+      regulated_linear_scaling_min_speed: 3.0  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
       use_fixed_curvature_lookahead: true  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
       curvature_lookahead_dist: 2.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
       use_rotate_to_heading: false  # Whether to enable rotating to rough heading and goal orientation when using holonomic planners.
