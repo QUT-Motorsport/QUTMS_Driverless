@@ -2,14 +2,10 @@ from math import degrees, pi, sin
 
 import rclpy
 from rclpy.node import Node
-from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 
-from driverless_common.shutdown_node import ShutdownNode
-
-
-class SineController(ShutdownNode):
+class SineController(Node):
     count = 0
     interval = 0.02
     pub_interval = 0.05
