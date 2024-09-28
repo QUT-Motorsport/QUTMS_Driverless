@@ -12,8 +12,9 @@ from transforms3d.euler import euler2quat, quat2euler
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
+import diagnostic_updater
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import MapMetaData, OccupancyGrid, Path
 
@@ -170,6 +171,16 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
+
+        self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
+        self.diagnostic_updater.setHardwareID('none')
+        self.diagnostic_pub = (
+            diagnostic_updater.TopicDiagnostic(
+                '/planning/midline_path', self.diagnostic_updater,
+                diagnostic_updater.FrequencyStatusParam({'min': 5, 'max': 10}, 1, 10),
+                diagnostic_updater.TimeStampStatusParam(0.5),
+            )
+        )
 
         self.get_logger().info(
             f"---Ordered path planner node initalised with {self.topic_name}, {self.target_frame}---"
@@ -362,6 +373,8 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.current_map = map
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
+
+        self.diagnostic_pub.tick(self.current_track.header.stamp)
 
 
 def main(args=None):
