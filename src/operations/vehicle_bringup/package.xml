@@ -12,8 +12,13 @@
     <!-- Messages -->
     <depend>driverless_msgs</depend>
     <depend>lifecycle_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>nav_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>diagnostic_msgs</depend>
     <!-- Custom packages -->
     <depend>driverless_common</depend>
+    <depend>QUTMS_Embedded_Common</depend>
 
     <export>
         <build_type>ament_python</build_type>
