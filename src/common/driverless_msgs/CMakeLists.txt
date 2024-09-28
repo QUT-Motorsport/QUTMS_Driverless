@@ -24,6 +24,8 @@ set(msg_files
   "msg/ConeWithCovariance.msg"
   "msg/Shutdown.msg"
   "msg/State.msg"
+  "msg/AVStateStamped.msg"
+  "msg/ROSStateStamped.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
