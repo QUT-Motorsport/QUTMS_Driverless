@@ -20,7 +20,7 @@ slam_toolbox_node:
     scan_queue_size: 1  # The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
     use_map_saver: false  # Instantiate the map saver service and self-subscribe to the map topic
     # map_start_pose: [0.0, 0.0, 0.0]  # Pose to start pose-graph mapping/localization in, if available
-    debug_logging: true  # Change logger to debug
+    debug_logging: false  # Change logger to debug
     throttle_scans: 1  # Number of scans to throttle in synchronous mode
     transform_publish_period: 0.05  # The map to odom transform publish period. 0 will not publish transforms
     map_update_interval: 2.0  # Interval to update the 2D occupancy map for other applications / visualization
@@ -34,40 +34,44 @@ slam_toolbox_node:
     tf_buffer_duration: 0.2  # Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode
     stack_size_to_use: 500000000 # 500MB  # The number of bytes to reset the stack size to, to enable serialization/deserialization of files
 
-    # Matcher Parameters
+    # General Parameters
     use_scan_matching: true  # Whether to use scan matching to refine odometric pose
     use_scan_barycenter: false  # Whether to use the barycenter or scan pose
 
     minimum_travel_distance: 0.1  # Minimum distance of travel before processing a new scan
     minimum_travel_heading: 0.1  # Minimum changing in heading to justify an update
 
-    scan_buffer_size: 1500  # The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
-    scan_buffer_maximum_scan_distance: 30.0  # Maximum distance of a scan from the pose before removing the scan from the buffer
+    scan_buffer_size: 1000 # approx 500 in pit track, 800 in skidpad track # The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
+    scan_buffer_maximum_scan_distance: 200.0  # increasing improves scan matching # Maximum distance of a scan from the pose before removing the scan from the buffer
 
-    link_match_minimum_response_fine: 2.0  # The threshold link matching algorithm response for fine resolution to pass
-    link_scan_maximum_distance: 20.0  # Maximum distance between linked scans to be valid
+    link_match_minimum_response_fine: 0.2  # The threshold link matching algorithm response for fine resolution to pass
+    link_scan_maximum_distance: 5.0  # Maximum distance between linked scans to be valid
+
     loop_search_maximum_distance: 20.0  # Maximum threshold of distance for scans to be considered for loop closure
     do_loop_closing: true  # Whether to do loop closure
 
-    loop_match_minimum_chain_size: 30  # The minimum chain length of scans to look for loop closure
-    loop_match_maximum_variance_coarse: 2.0  # The threshold variance in coarse search to pass to refine
-    loop_match_minimum_response_coarse: 0.6  # The threshold response of the loop closure algorithm in coarse search to pass to refine
-    loop_match_minimum_response_fine: 0.3  # The threshold response of the loop closure algorithm in fine search to pass to refine
+    loop_match_minimum_chain_size: 400  # The minimum chain length of scans to look for loop closure
+    loop_match_maximum_variance_coarse: 10.0  # The threshold variance in coarse search to pass to refine
+    loop_match_minimum_response_coarse: 2.0  # The threshold response of the loop closure algorithm in coarse search to pass to refine
+    loop_match_minimum_response_fine: 0.6  # The threshold response of the loop closure algorithm in fine search to pass to refine
 
+    # Correlation Parameters - Correlation Parameters
     correlation_search_space_dimension: 2.5  # Search grid size to do scan correlation over
     correlation_search_space_resolution: 0.3  # Search grid resolution to do scan correlation over
     correlation_search_space_smear_deviation: 0.15  # Amount of multimodal smearing to smooth out responses
 
-    loop_search_space_dimension: 3.0  # Size of the search grid over the loop closure algorithm
+    # Correlation Parameters - Loop Closure Parameters
+    loop_search_space_dimension: 4.0  # increasing improves scan matching # Size of the search grid over the loop closure algorithm
     loop_search_space_resolution: 1.0  # Amount of multimodal smearing to smooth out responses
     loop_search_space_smear_deviation: 0.9  # A penalty to apply to a matched scan as it differs from the odometric pose
 
-    distance_variance_penalty: 0.5  # A penalty to apply to a matched scan as it differs from the odometric pose
-    angle_variance_penalty: 0.4  # A penalty to apply to a matched scan as it differs from the odometric pose
+    # Scan Matcher Parameters
+    distance_variance_penalty: 0.9  # increasing improves scan matching # A penalty to apply to a matched scan as it differs from the odometric pose
+    angle_variance_penalty: 0.6  # increasing improves scan matching # A penalty to apply to a matched scan as it differs from the odometric pose
 
-    fine_search_angle_offset: 0.00349  # Range of angles to test for fine scan matching
-    coarse_search_angle_offset: 0.349  # Range of angles to test for coarse scan matching
-    coarse_angle_resolution: 0.0349  # Resolution of angles over the Offset range to test in scan matching
-    minimum_angle_penalty: 0.9  # Smallest penalty an angle can have to ensure the size doesn't blow up
-    minimum_distance_penalty: 0.5  # Smallest penalty a scan can have to ensure the size doesn't blow up
+    fine_search_angle_offset: 0.00700  # increasing improves scan matching # Range of angles to test for fine scan matching
+    coarse_search_angle_offset: 0.700  # increasing improves scan matching # Range of angles to test for coarse scan matching
+    coarse_angle_resolution: 0.0700  # increasing improves scan matching # Resolution of angles over the Offset range to test in scan matching
+    minimum_angle_penalty: 0.3  # decreasing improves scan matching # Smallest penalty an angle can have to ensure the size doesn't blow up
+    minimum_distance_penalty: 0.3  # decreasing improves scan matching # Smallest penalty a scan can have to ensure the size doesn't blow up
     use_response_expansion: true  # Whether to automatically increase the search grid size if no viable match is found
