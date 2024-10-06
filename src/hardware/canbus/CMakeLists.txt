@@ -17,19 +17,23 @@ add_compile_definitions(QUTMS_CAN_VCU)
 add_compile_definitions(QUTMS_CAN_RES)
 add_compile_definitions(QUTMS_CAN_SW)
 add_compile_definitions(QUTMS_CAN_EBS)
+add_compile_definitions(QUTMS_CAN_AV)
 
 include_directories(
   include
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Inc
   ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/
   ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
 )
 
 set (SOURCES
   src/SocketCAN.cpp
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
+  src/steering_actuator.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_AV.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VCU.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VESC.c
   ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
+  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/canopen.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )

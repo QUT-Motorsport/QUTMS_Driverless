@@ -1,9 +1,15 @@
 #ifndef CANBUS__COMPONENT_CANBUS_TRANSLATOR_HPP_
 #define CANBUS__COMPONENT_CANBUS_TRANSLATOR_HPP_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <algorithm>
 #include <bitset>
+#include <chrono>
 #include <iostream>
+#include <map>
+#include <string>
 
 #include "CAN_DVL.h"
 #include "CAN_RES.h"
@@ -13,12 +19,17 @@
 #include "QUTMS_can.h"
 #include "SocketCAN.hpp"
 #include "can_interface.hpp"
+#include "canopen.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
+#include "driverless_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "interface.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/int32.hpp"
+#include "steering_actuator.hpp"
 
 using std::placeholders::_1;
 
@@ -40,13 +51,15 @@ std::vector<std::string> canopen_names = {"RES_BOOT_UP_ID", "RES_HEARTBEAT_ID", 
                                           "C5E_EMCY_ID",    "C5E_STATUS_ID",    "C5E_SRV_ID"};
 std::vector<std::string> can_names = {"SW_Heartbeat_ID", "EBS_CTRL_Heartbeat_ID", "VCU_TransmitSteering_ID"};
 
-class CANTranslator : public rclcpp::Node, public CanInterface {
+// class CANTranslator : public rclcpp::Node, public CanInterface {
+class CANTranslator : steering_actuator::SteeringActuator, public CanInterface {
    private:
     // can connection queue retrieval timer
     rclcpp::TimerBase::SharedPtr timer_;
 
     // subscriber
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr can_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steering_cmd_sub_;
 
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
@@ -62,6 +75,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
 
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
     rclcpp::CallbackGroup::SharedPtr sub_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr steer_cb_group_;
 
     std::string ros_base_frame_;
 
@@ -75,7 +89,8 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     std::vector<rclcpp::Time> last_can_times_{can_names.size(), rclcpp::Time(0)};
 
     void canmsg_timer();
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const;
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const override;
+    void steering_callback(const std_msgs::msg::Float32::SharedPtr msg) const;
 
    public:
     CANTranslator(const rclcpp::NodeOptions& options);

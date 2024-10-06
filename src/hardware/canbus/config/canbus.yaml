@@ -3,3 +3,16 @@ canbus_translator_node:
       interface_name: "socketcan" # "tritium"
       interface: "can0" # "192.168.2.125"  # socketcan or tritium can
       base_frame: "base_footprint"
+      # Steering Related Params
+      velocity: 5000
+      velocity_centering: 100
+      acceleration: 1000
+      acceleration_centering: 100
+      rough_centre_range: 10.0
+      centre_range: 2.0
+      centre_angle: -8.0
+      settling_iter: 50
+      max_position: 8500
+      Kp: 10.0
+      Ki: 0.0
+      Kd: 0.0
