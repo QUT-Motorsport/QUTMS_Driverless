@@ -1,6 +1,7 @@
 from math import pi
 import time
 
+import diagnostic_updater
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 import numpy as np
 import scipy.interpolate as scipy_interpolate
@@ -12,7 +13,6 @@ from transforms3d.euler import euler2quat, quat2euler
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
-import diagnostic_updater
 
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import PoseStamped
@@ -173,13 +173,12 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
         self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
-        self.diagnostic_updater.setHardwareID('none')
-        self.diagnostic_pub = (
-            diagnostic_updater.TopicDiagnostic(
-                '/planning/midline_path', self.diagnostic_updater,
-                diagnostic_updater.FrequencyStatusParam({'min': 5, 'max': 10}, 1, 10),
-                diagnostic_updater.TimeStampStatusParam(0.5),
-            )
+        self.diagnostic_updater.setHardwareID("none")
+        self.diagnostic_pub = diagnostic_updater.TopicDiagnostic(
+            "/planning/midline_path",
+            self.diagnostic_updater,
+            diagnostic_updater.FrequencyStatusParam({"min": 5, "max": 10}, 1, 10),
+            diagnostic_updater.TimeStampStatusParam(0.5),
         )
 
         self.get_logger().info(

@@ -5,7 +5,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Shutdown, ROSStateStamped, AVStateStamped
+from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
 
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
@@ -35,7 +35,8 @@ class InspectionHandler(ShutdownNode):
         super().av_state_callback(msg)
         if (
             (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
-            and not self.mission_started and self.good_to_go
+            and not self.mission_started
+            and self.good_to_go
         ):
             self.mission_started = True
             self.start_time = time.time()

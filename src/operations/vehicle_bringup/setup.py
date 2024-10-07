@@ -13,7 +13,7 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name), glob("launch/*.launch.py")),
-        ("share/" + package_name + "/"+os.path.join(os.path.dirname(__file__)), ["package.xml"]),
+        ("share/" + package_name + "/" + os.path.join(os.path.dirname(__file__)), ["package.xml"]),
         # (os.path.join("share", package_name), glob("/../../hardware/QUTMS_Embedded_Common/QUTMS.dbc")),
     ],
     install_requires=["setuptools"],

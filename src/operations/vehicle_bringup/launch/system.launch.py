@@ -64,9 +64,9 @@ def generate_launch_description():
             #     package="sbg_driver",
             #     executable="sbg_device",
             #     output="screen",
-                # parameters=[
-                #     get_package_share_path("sensors") / "config" / "ellipse_D.yaml"
-                # ],
+            # parameters=[
+            #     get_package_share_path("sensors") / "config" / "ellipse_D.yaml"
+            # ],
             # ),
             IncludeLaunchDescription(
                 launch_description_source=PythonLaunchDescriptionSource(

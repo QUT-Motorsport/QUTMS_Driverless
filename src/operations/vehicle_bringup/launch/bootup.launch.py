@@ -8,8 +8,4 @@ def generate_launch_description():
         executable="vehicle_supervisor_node",
     )
 
-    return LaunchDescription(
-        [
-            vehicle_supervisor_node
-        ]
-    )
+    return LaunchDescription([vehicle_supervisor_node])
