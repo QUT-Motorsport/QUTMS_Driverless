@@ -31,7 +31,6 @@ def generate_launch_description():
             os.path.join(pkg_share, "config/slam_toolbox_params.yaml"),
         ],
         remappings=[
-            ("/pose", "/slam/car_pose"),
             ("/slam_toolbox/graph_visualization", "/slam/graph_visualisation"),
         ],
     )

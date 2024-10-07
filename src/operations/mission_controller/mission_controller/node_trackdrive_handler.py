@@ -163,7 +163,7 @@ class TrackdriveHandler(ShutdownNode):
 
             self.laps += 1
             self.lap_trig_pub.publish(UInt8(data=self.laps - 1))
-            self.get_logger().info(f"Lap {self.laps} completed")
+            self.get_logger().info(f"Lap {self.laps-1} completed")
 
         # we have finished lap "1"
         if self.laps > 1:

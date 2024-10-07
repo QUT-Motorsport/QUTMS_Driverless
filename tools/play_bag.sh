@@ -22,7 +22,7 @@ REMAPPINGS=(
 TOPICS=(
     /imu/odometry # needed for RL
     /vehicle/wheel_twist # needed for RL
-    # /velodyne_points
+    # /lidar/objects
     /lidar/converted_2D_scan
     /lidar/cone_detection
     # /debug_markers/lidar_markers
