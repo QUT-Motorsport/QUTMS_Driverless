@@ -42,7 +42,7 @@ typedef enum c5e_object_id {
 } c5e_object_id_t;
 
 // name enum for IDs
-std::map<uint16_t, std::string> c5e_object_names = {
+const std::map<uint16_t, std::string> c5e_object_names = {
     {HOME_OFFSET, "Home offset"},
     {MOTION_PROFILE_TYPE, "Motion profile type"},
     {PROFILE_VELOCITY, "Profile velocity"},
@@ -96,7 +96,7 @@ typedef enum c5e_state_id {
 } c5e_state_id_t;
 
 // State Map Definitions
-std::map<uint16_t, c5e_state> states = {
+const std::map<uint16_t, c5e_state> states = {
     {NRTSO, {"Not ready to switch on", 0b0000000001001111, NRTSO, 0b0000}},
     {SOD, {"Switch on disabled", 0b0000000001001111, SOD, 0b0000}},
     {RTSO, {"Ready to switch on", 0b0000000001101111, RTSO, 0b0110}},
@@ -118,19 +118,23 @@ const uint16_t TRIGGER_MOTION = 0b00010000;
 const uint16_t FAULT_RESET = 0b10000000;
 
 // Print state function
-c5e_state parse_state(uint16_t status_word) {
-    for (const auto &[key, actuator_state] : states) {
-        if ((status_word & actuator_state.mask) == actuator_state.state_id) {
-            return actuator_state;
-        }
-    }
-    return states[F];
-}
+c5e_state parse_state(uint16_t status_word);
+// c5e_state parse_state(uint16_t status_word) {
+//     for (const auto &[key, actuator_state] : states) {
+//         if ((status_word & actuator_state.mask) == actuator_state.state_id) {
+//             return actuator_state;
+//         }
+//     }
+//     // return states[F];
+//     return states.at(F);
+// }
 
 driverless_msgs::msg::Can::UniquePtr _d_2_f(uint32_t id, bool is_extended, uint8_t *data, uint8_t dlc);
 
-class SteeringActuator : public virtual rclcpp::Node {
+class SteeringActuator {
    private:
+    rclcpp::Node::SharedPtr node;
+
     // Creates
     rclcpp::TimerBase::SharedPtr steering_update_timer_;
     rclcpp::TimerBase::SharedPtr state_request_timer_;
@@ -154,8 +158,10 @@ class SteeringActuator : public virtual rclcpp::Node {
     double Kp_, Ki_, Kd_, centre_range_, centre_angle_;
     int settling_iter_, max_position_;
 
-    c5e_state desired_state_ = states[RTSO];
-    c5e_state current_state_ = states[NRTSO];
+    // c5e_state desired_state_ = states[RTSO];
+    // c5e_state current_state_ = states[NRTSO];
+    c5e_state desired_state_ = states.at(RTSO);
+    c5e_state current_state_ = states.at(NRTSO);
     uint16_t control_method_ = MODE_RELATIVE;
     bool motor_enabled_ = false;
     uint8_t centre_stage_ = 0;
@@ -169,16 +175,15 @@ class SteeringActuator : public virtual rclcpp::Node {
     int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity_;
     uint32_t current_acceleration_;
+    std::function<void(driverless_msgs::msg::Can::SharedPtr)> can_callback_;
 
     // time to reset node if no state received
     std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
 
    public:
-    virtual ~SteeringActuator() = default;
-
-    virtual void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
-        RCLCPP_WARN(this->get_logger(), "CAN message id %d received. callback not implemented", msg->id);
-    }
+    // virtual void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const {
+    //     RCLCPP_WARN(this->get_logger(), "CAN message id %d received. callback not implemented", msg->id);
+    // }
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
@@ -192,8 +197,9 @@ class SteeringActuator : public virtual rclcpp::Node {
     void target_position(int32_t target);
     void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size);
     void read_steering_data(uint16_t obj_index);
+    void declare_can_callback(std::function<void(driverless_msgs::msg::Can::SharedPtr)> callback);
 
-    SteeringActuator(const rclcpp::NodeOptions &options);
+    SteeringActuator(rclcpp::Node::SharedPtr node_);
 };
 
 }  // namespace steering_actuator

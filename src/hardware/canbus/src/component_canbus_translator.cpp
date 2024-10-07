@@ -20,7 +20,7 @@ void CANTranslator::canmsg_timer() {
             // int age_ms = (this->now().nanoseconds() - last_canopen_times[canopen_index].nanoseconds()) / 1e6;
             // RCLCPP_INFO(this->get_logger(), "Received %s, age: %d", canopen_names[canopen_index].c_str(), age_ms);
             // last_canopen_times[canopen_index] = this->now();
-            steer_can_callback(std::move(msg));
+            this->steering_actuator_.steer_can_callback(std::move(msg));
             canopen_pub_->publish(std::move(msg));
             return;
         }
@@ -94,7 +94,7 @@ void CANTranslator::canmsg_timer() {
             std_msgs::msg::Float32::UniquePtr angle_msg(new std_msgs::msg::Float32());
             if (abs(steering_0 - steering_1) < 10) {
                 angle_msg->data = steering_0;
-                steering_angle_callback(std::move(angle_msg));
+                this->steering_actuator_.steering_angle_callback(std::move(angle_msg));
                 steering_angle_pub_->publish(std::move(angle_msg));
             } else {
                 RCLCPP_FATAL(this->get_logger(),
@@ -137,9 +137,11 @@ bool CANTranslator::set_interface() {
     return true;
 }
 
-CANTranslator::CANTranslator(const rclcpp::NodeOptions &options)
-    : Node("canbus_translator_node", options), SteeringActuator(options) {
+CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_translator_node", options) {
     ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
+    // steering_actuator::SteeringActuator steering_actuator_ =
+    // steering_actuator::SteeringActuator(this->shared_from_this());
+    steering_actuator_.declare_can_callback(std::bind(&CANTranslator::canmsg_callback, this, std::placeholders::_1));
 
     // set can interface
     if (!set_interface()) {
@@ -163,7 +165,8 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options)
     can_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
         "/can/canbus_carbound", QOS_ALL, std::bind(&CANTranslator::canmsg_callback, this, _1), sub_opt);
     steering_cmd_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/can/steering_cmd", QOS_LATEST, std::bind(&CANTranslator::steering_target_callback, this, _1), steer_opt);
+        "/can/steering_cmd", QOS_LATEST,
+        std::bind(&steering_actuator::SteeringActuator::steering_target_callback, &steering_actuator_, _1), steer_opt);
     // publish can messages to ROS system
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", QOS_ALL);
     canopen_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canopen_rosbound", QOS_ALL);

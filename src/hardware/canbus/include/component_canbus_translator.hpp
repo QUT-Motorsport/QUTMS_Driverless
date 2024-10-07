@@ -51,9 +51,11 @@ std::vector<std::string> canopen_names = {"RES_BOOT_UP_ID", "RES_HEARTBEAT_ID", 
                                           "C5E_EMCY_ID",    "C5E_STATUS_ID",    "C5E_SRV_ID"};
 std::vector<std::string> can_names = {"SW_Heartbeat_ID", "EBS_CTRL_Heartbeat_ID", "VCU_TransmitSteering_ID"};
 
-// class CANTranslator : public rclcpp::Node, public CanInterface {
-class CANTranslator : steering_actuator::SteeringActuator, public CanInterface {
+class CANTranslator : public rclcpp::Node, public CanInterface {
    private:
+    steering_actuator::SteeringActuator steering_actuator_ =
+        steering_actuator::SteeringActuator(this->shared_from_this());
+
     // can connection queue retrieval timer
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -89,12 +91,12 @@ class CANTranslator : steering_actuator::SteeringActuator, public CanInterface {
     std::vector<rclcpp::Time> last_can_times_{can_names.size(), rclcpp::Time(0)};
 
     void canmsg_timer();
-    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const override;
+    void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const;
     void steering_callback(const std_msgs::msg::Float32::SharedPtr msg) const;
 
    public:
     CANTranslator(const rclcpp::NodeOptions& options);
-    ~CANTranslator() override;
+    ~CANTranslator();
 
     bool set_interface();
 };
