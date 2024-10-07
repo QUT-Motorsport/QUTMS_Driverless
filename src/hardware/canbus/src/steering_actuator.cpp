@@ -26,15 +26,15 @@ driverless_msgs::msg::Can::UniquePtr _d_2_f(uint32_t id, bool is_extended, uint8
 void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEvent &event) {
     (void)event;
 
-    current_velocity_ = this->node->get_parameter("velocity").as_int();
-    current_acceleration_ = this->node->get_parameter("acceleration").as_int();
-    centre_range_ = this->node->get_parameter("centre_range").as_double();
-    centre_angle_ = this->node->get_parameter("centre_angle").as_double();
-    settling_iter_ = this->node->get_parameter("settling_iter").as_int();
-    max_position_ = this->node->get_parameter("max_position").as_int();
-    Kp_ = this->node->get_parameter("Kp").as_double();
-    Ki_ = this->node->get_parameter("Ki").as_double();
-    Kd_ = this->node->get_parameter("Kd").as_double();
+    current_velocity_ = this->node->get_parameter("steering.velocity").as_int();
+    current_acceleration_ = this->node->get_parameter("steering.acceleration").as_int();
+    centre_range_ = this->node->get_parameter("steering.centre_range").as_double();
+    centre_angle_ = this->node->get_parameter("steering.centre_angle").as_double();
+    settling_iter_ = this->node->get_parameter("steering.settling_iter").as_int();
+    max_position_ = this->node->get_parameter("steering.max_position").as_int();
+    Kp_ = this->node->get_parameter("steering.Kp").as_double();
+    Ki_ = this->node->get_parameter("steering.Ki").as_double();
+    Kd_ = this->node->get_parameter("steering.Kd").as_double();
 
     RCLCPP_INFO(this->node->get_logger(), "max_position %d", max_position_);
 }
@@ -60,8 +60,8 @@ void SteeringActuator::c5e_state_request_callback() {
 }
 
 // Check State to enable or disable motor
-void SteeringActuator::as_state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
-    if (msg->state == driverless_msgs::msg::State::DRIVING || msg->state == driverless_msgs::msg::State::ACTIVATE_EBS) {
+void SteeringActuator::as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
+    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING) {
         // Enable motor
         motor_enabled_ = true;
     } else {
@@ -204,8 +204,8 @@ void SteeringActuator::pre_op_centering() {
     // Stage 3: Save offset and configure c5e for driving profile
     if (centre_stage_ == 0) {
         RCLCPP_INFO_ONCE(this->node->get_logger(), "Center->stage 0");
-        current_velocity_ = this->node->get_parameter("velocity").as_int();
-        current_acceleration_ = this->node->get_parameter("acceleration").as_int();
+        current_velocity_ = this->node->get_parameter("steering.velocity").as_int();
+        current_acceleration_ = this->node->get_parameter("steering.acceleration").as_int();
         control_method_ = MODE_ABSOLUTE;
         this->configure_c5e();
         if (current_steering_angle_ > centre_angle_) {
@@ -225,8 +225,8 @@ void SteeringActuator::pre_op_centering() {
         return;
     } else if (centre_stage_ == 2) {
         RCLCPP_INFO_ONCE(this->node->get_logger(), "Center->stage 2");
-        current_velocity_ = this->node->get_parameter("velocity_centering").as_int();
-        current_acceleration_ = this->node->get_parameter("acceleration_centering").as_int();
+        current_velocity_ = this->node->get_parameter("steering.velocity_centering").as_int();
+        current_acceleration_ = this->node->get_parameter("steering.acceleration_centering").as_int();
         control_method_ = MODE_RELATIVE;
         this->configure_c5e();
 
@@ -251,8 +251,8 @@ void SteeringActuator::pre_op_centering() {
         offset_ = initial_enc_ - current_enc_revolutions_;
         centred_ = true;
         // save offset and configure c5e for different motion profile
-        current_velocity_ = this->node->get_parameter("velocity").as_int();
-        current_acceleration_ = this->node->get_parameter("acceleration").as_int();
+        current_velocity_ = this->node->get_parameter("steering.velocity").as_int();
+        current_acceleration_ = this->node->get_parameter("steering.acceleration").as_int();
         control_method_ = MODE_ABSOLUTE;
         RCLCPP_INFO_ONCE(this->node->get_logger(), "Centered->stage 3, offset: %d", offset_);
         this->configure_c5e();
@@ -302,19 +302,19 @@ void SteeringActuator::declare_can_callback(std::function<void(driverless_msgs::
 SteeringActuator::SteeringActuator(rclcpp::Node::SharedPtr node_) {
     node = node_;
     // Steering parameters
-    this->node->declare_parameter<int>("velocity", 10000);
-    this->node->declare_parameter<int>("velocity_centering", 100);
-    this->node->declare_parameter<int>("acceleration", 2000);
-    this->node->declare_parameter<int>("acceleration_centering", 100);
-    this->node->declare_parameter<float>("rough_centre_range", 10.0);
-    this->node->declare_parameter<float>("centre_range", 5.0);
-    this->node->declare_parameter<float>("centre_angle", -2.0);
-    this->node->declare_parameter<int>("settling_iter", 20);
-    this->node->declare_parameter<int>("max_position", 7500);
+    this->node->declare_parameter<int>("steering.velocity", 10000);
+    this->node->declare_parameter<int>("steering.velocity_centering", 100);
+    this->node->declare_parameter<int>("steering.acceleration", 2000);
+    this->node->declare_parameter<int>("steering.acceleration_centering", 100);
+    this->node->declare_parameter<float>("steering.rough_centre_range", 10.0);
+    this->node->declare_parameter<float>("steering.centre_range", 5.0);
+    this->node->declare_parameter<float>("steering.centre_angle", -2.0);
+    this->node->declare_parameter<int>("steering.settling_iter", 20);
+    this->node->declare_parameter<int>("steering.max_position", 7500);
     // PID controller parameters
-    this->node->declare_parameter<double>("Kp", 1.0);
-    this->node->declare_parameter<float>("Ki", 0.0);
-    this->node->declare_parameter<float>("Kd", 0.0);
+    this->node->declare_parameter<double>("steering.Kp", 1.0);
+    this->node->declare_parameter<float>("steering.Ki", 0.0);
+    this->node->declare_parameter<float>("steering.Kd", 0.0);
 
     sensor_cb_group_ = this->node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     control_cb_group_ = this->node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -324,8 +324,8 @@ SteeringActuator::SteeringActuator(rclcpp::Node::SharedPtr node_) {
     control_cb_opt.callback_group = control_cb_group_;
 
     // Create subscriber to topic AS status
-    state_sub_ = this->node->create_subscription<driverless_msgs::msg::State>(
-        "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, std::placeholders::_1),
+    state_sub_ = this->node->create_subscription<driverless_msgs::msg::AVStateStamped>(
+        "/system/av_state", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, std::placeholders::_1),
         control_cb_opt);
 
     steering_update_timer_ = this->node->create_wall_timer(

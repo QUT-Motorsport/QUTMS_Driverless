@@ -12,6 +12,7 @@
 #include "can_interface.hpp"
 #include "canopen.hpp"
 #include "driverless_common/common.hpp"
+#include "driverless_msgs/msg/av_state_stamped.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -143,7 +144,7 @@ class SteeringActuator {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
-    rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::AVStateStamped>::SharedPtr state_sub_;
     // rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
@@ -188,7 +189,7 @@ class SteeringActuator {
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
     void c5e_state_request_callback();
-    void as_state_callback(const driverless_msgs::msg::State::SharedPtr msg);
+    void as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg);
     void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void steering_target_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void steer_can_callback(const driverless_msgs::msg::Can::SharedPtr msg);
