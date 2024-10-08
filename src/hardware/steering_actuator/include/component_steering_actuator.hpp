@@ -13,6 +13,7 @@
 #include "can_interface.hpp"
 #include "canopen.hpp"
 #include "driverless_common/common.hpp"
+#include "driverless_msgs/msg/av_state_stamped.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "driverless_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -138,10 +139,12 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr steering_publisher_;
     rclcpp::Subscription<driverless_msgs::msg::State>::SharedPtr state_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::AVStateStamped>::SharedPtr av_state_subscriber_;
 
     rclcpp::CallbackGroup::SharedPtr sensor_cb_group_;
     rclcpp::CallbackGroup::SharedPtr control_cb_group_;
@@ -167,12 +170,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity_;
     uint32_t current_acceleration_;
+    uint8_t current_mode_;   // store current AV mode and state
+    uint8_t current_state_;  // store current state
 
     // time to reset node if no state received
     std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
+    void av_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg);
     void c5e_state_request_callback();
     void as_state_callback(const driverless_msgs::msg::State::SharedPtr msg);
     void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);

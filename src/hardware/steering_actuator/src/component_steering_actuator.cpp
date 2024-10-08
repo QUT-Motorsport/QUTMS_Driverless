@@ -227,6 +227,31 @@ void SteeringActuator::read_steering_data(uint16_t obj_index) {
     can_pub_->publish(std::move(_d_2_f(id, 0, out, sizeof(out))));
 }
 
+// Callback function for AVState messages
+void SteeringActuator::av_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
+    current_mode_ = msg->mode;
+    current_state_ = msg->state;
+
+    RCLCPP_INFO(this->get_logger(), "AV State received: mode=%d, state=%d", current_mode_, current_state_);
+
+    // Decide what steering value to publish
+    std_msgs::msg::Int32 steering_msg;
+    if (current_mode_ == driverless_msgs::msg::AVStateStamped::AUTONOMOUS &&
+        current_state_ == driverless_msgs::msg::AVStateStamped::DRIVING) {
+        // Call the existing function to compute and send steering via CAN
+        // Assuming `current_velocity_` contains a relevant steering value that needs to be sent
+        this->send_steering_data(PROFILE_VELOCITY, (uint8_t *)&current_velocity_, 4);
+
+        // Publish the same steering value using ROS topic (as an Int32 msg)
+        steering_msg.data = static_cast<int32_t>(current_velocity_);
+    } else {
+        // Set steering to 0 (idle state) if not in driving mode
+        steering_msg.data = 0;
+    }
+
+    steering_publisher_->publish(steering_msg);
+}
+
 SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("steering_actuator_node", options) {
     // Steering parameters
     this->declare_parameter<int>("velocity", 10000);
@@ -248,6 +273,13 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     sensor_cb_opt.callback_group = sensor_cb_group_;
     auto control_cb_opt = rclcpp::SubscriptionOptions();
     control_cb_opt.callback_group = control_cb_group_;
+
+    // Subscriber to AV State
+    av_state_subscriber_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
+        "system/av_state", 10, std::bind(&SteeringController::av_state_callback, this, std::placeholders::_1));
+
+    //  Publisher for steering control
+    steering_publisher_ = this->create_publisher<std_msgs::msg::Int32>("steering_control", 10);
 
     // Create subscriber to topic "canbus_rosbound"
     canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
