@@ -2,8 +2,11 @@ from math import atan2, sqrt
 import time
 
 import numpy as np
+from transforms3d.euler import euler2quat, quat2euler
 
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
+
+from geometry_msgs.msg import Quaternion
 
 from typing import List, Tuple
 
@@ -97,6 +100,29 @@ def midpoint(p1: List[float], p2: List[float]) -> Tuple[float]:
     * return: x,y tuple of midpoint coord
     """
     return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
+
+
+def yaw(quat: Quaternion):
+    """
+    Retrieve yaw from quaternion
+    * param quat: quaternion
+    * return: yaw in rads
+    """
+
+    return quat2euler([quat.w, quat.x, quat.y, quat.z])[2]  # yaw
+
+
+def orientation(x, y, z):
+    """
+    Create a quaternion from euler angles
+    * param x: roll
+    * param y: pitch
+    * param z: yaw
+    * return: quaternion
+    """
+
+    new_orientation = euler2quat(x, y, z)
+    return Quaternion(w=new_orientation[0], x=new_orientation[1], y=new_orientation[2], z=new_orientation[3])
 
 
 class FPSHandler:

@@ -13,12 +13,8 @@
 #include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
-#include "driverless_msgs/msg/driving_dynamics1.hpp"
-#include "driverless_msgs/msg/float32_stamped.hpp"
-#include "driverless_msgs/msg/res.hpp"
 #include "driverless_msgs/msg/shutdown.hpp"
 #include "driverless_msgs/msg/state.hpp"
-#include "driverless_msgs/msg/system_status.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -51,7 +47,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr control_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Shutdown>::SharedPtr shutdown_sub_;
-    rclcpp::Subscription<driverless_msgs::msg::Float32Stamped>::SharedPtr steering_angle_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steering_angle_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr velocity_sub_;
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr lap_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr steering_ready_sub_;
@@ -59,9 +55,6 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<driverless_msgs::msg::State>::SharedPtr state_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::RES>::SharedPtr res_status_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::DrivingDynamics1>::SharedPtr logging_drivingDynamics1_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::SystemStatus>::SharedPtr logging_systemStatus_pub_;
 
     rclcpp::CallbackGroup::SharedPtr sensor_cb_group_;
     rclcpp::CallbackGroup::SharedPtr ctrl_cb_group_;
@@ -75,7 +68,7 @@ class ASSupervisor : public rclcpp::Node, public CanInterface {
     void canopen_callback(const driverless_msgs::msg::Can::SharedPtr msg);
     void can_callback(const driverless_msgs::msg::Can::SharedPtr msg);
     void velocity_callback(const std_msgs::msg::Float32::SharedPtr msg);
-    void steering_angle_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg);
+    void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void control_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void lap_counter_callback(const std_msgs::msg::UInt8::SharedPtr msg);
     void steering_state_callback(const std_msgs::msg::Bool::SharedPtr msg);

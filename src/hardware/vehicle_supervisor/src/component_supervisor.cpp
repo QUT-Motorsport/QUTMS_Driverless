@@ -29,14 +29,6 @@ void ASSupervisor::canopen_callback(const driverless_msgs::msg::Can::SharedPtr m
         RCLCPP_DEBUG(this->get_logger(), "RES Status: [SW, BT]: %i, %i -- [EST]: %i, -- [RAD_QUAL]: %i",
                      this->RES_status.sw_k2, this->RES_status.bt_k3, this->RES_status.estop,
                      this->RES_status.radio_quality);
-        // // publish RES status
-        // driverless_msgs::msg::RES res_msg;
-        // res_msg.sw_k2 = this->RES_status.sw_k2;
-        // res_msg.bt_k3 = this->RES_status.bt_k3;
-        // res_msg.estop = this->RES_status.estop;
-        // res_msg.radio_quality = this->RES_status.radio_quality;
-        // res_msg.loss_of_signal_shutdown_notice = this->RES_status.loss_of_signal_shutdown_notice;
-        // this->res_status_pub_->publish(res_msg);
         this->res_alive = 1;
     }
 }
@@ -79,7 +71,7 @@ void ASSupervisor::velocity_callback(const std_msgs::msg::Float32::SharedPtr msg
     this->DVL_drivingDynamics1._fields.speed_actual = (int8_t)msg->data;
 }
 
-void ASSupervisor::steering_angle_callback(const driverless_msgs::msg::Float32Stamped::SharedPtr msg) {
+void ASSupervisor::steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg) {
     this->last_steering_angle = msg->data;
     this->DVL_drivingDynamics1._fields.steering_angle_actual = (int8_t)msg->data;
 }
@@ -172,18 +164,6 @@ void ASSupervisor::dataLogger_timer_callback() {
     this->can_pub_->publish(
         std::move(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data))));
 
-    driverless_msgs::msg::SystemStatus systemStatus_ROSmsg;
-    systemStatus_ROSmsg.as_state = this->DVL_systemStatus._fields.AS_state;
-    systemStatus_ROSmsg.ebs_state = this->DVL_systemStatus._fields.EBS_state;
-    systemStatus_ROSmsg.ami_state = this->DVL_systemStatus._fields.AMI_state;
-    systemStatus_ROSmsg.steering_state = this->DVL_systemStatus._fields.steering_state;
-    systemStatus_ROSmsg.service_brake_state = this->DVL_systemStatus._fields.service_brake_state;
-    systemStatus_ROSmsg.lap_counter = this->DVL_systemStatus._fields.lap_counter;
-    systemStatus_ROSmsg.cones_count_actual = this->DVL_systemStatus._fields.cones_count_actual;
-    systemStatus_ROSmsg.cones_count_all = this->DVL_systemStatus._fields.cones_count_all;
-
-    this->logging_systemStatus_pub_->publish(systemStatus_ROSmsg);
-
     // very small delay between messages
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
@@ -191,18 +171,6 @@ void ASSupervisor::dataLogger_timer_callback() {
     auto drivingDynamics1Msg = Compose_DVL_DrivingDynamics1(&this->DVL_drivingDynamics1);
     this->can_pub_->publish(std::move(
         this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data))));
-
-    driverless_msgs::msg::DrivingDynamics1 drivingDynamics1_ROSmsg;
-    drivingDynamics1_ROSmsg.speed_actual = this->DVL_drivingDynamics1._fields.speed_actual;
-    drivingDynamics1_ROSmsg.speed_target = this->DVL_drivingDynamics1._fields.speed_target;
-    drivingDynamics1_ROSmsg.steering_angle_actual = this->DVL_drivingDynamics1._fields.steering_angle_actual;
-    drivingDynamics1_ROSmsg.steering_angle_target = this->DVL_drivingDynamics1._fields.steering_angle_target;
-    drivingDynamics1_ROSmsg.brake_hydr_actual = this->DVL_drivingDynamics1._fields.brake_hydr_actual;
-    drivingDynamics1_ROSmsg.brake_hydr_target = this->DVL_drivingDynamics1._fields.brake_hydr_target;
-    drivingDynamics1_ROSmsg.motor_moment_actual = this->DVL_drivingDynamics1._fields.motor_moment_actual;
-    drivingDynamics1_ROSmsg.motor_moment_target = this->DVL_drivingDynamics1._fields.motor_moment_target;
-
-    this->logging_drivingDynamics1_pub_->publish(drivingDynamics1_ROSmsg);
 }
 
 void ASSupervisor::run_fsm() {
@@ -413,7 +381,7 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions &options, std::string name)
         "/can/canopen_rosbound", QOS_ALL, std::bind(&ASSupervisor::canopen_callback, this, _1), sensor_opt);
 
     // Steering sub
-    this->steering_angle_sub_ = this->create_subscription<driverless_msgs::msg::Float32Stamped>(
+    this->steering_angle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
         "/vehicle/steering_angle", QOS_LATEST, std::bind(&ASSupervisor::steering_angle_callback, this, _1), sensor_opt);
 
     // Velocity sub
@@ -449,19 +417,12 @@ ASSupervisor::ASSupervisor(const rclcpp::NodeOptions &options, std::string name)
         std::chrono::milliseconds(100), std::bind(&ASSupervisor::dataLogger_timer_callback, this), timer_cb_group_);
 
     // Publishers
-    this->logging_drivingDynamics1_pub_ =
-        this->create_publisher<driverless_msgs::msg::DrivingDynamics1>("/data_logger/drivingDynamics1", 10);
-    this->logging_systemStatus_pub_ =
-        this->create_publisher<driverless_msgs::msg::SystemStatus>("/data_logger/systemStatus", 10);
 
     // Outgoing CAN
     this->can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", 10);
 
     // State pub
     this->state_pub_ = this->create_publisher<driverless_msgs::msg::State>("/system/as_status", 10);
-
-    // RES status pub
-    // this->res_status_pub_ = this->create_publisher<driverless_msgs::msg::RES>("/system/res_status", 10);
 
     RCLCPP_INFO(this->get_logger(), "---Vehicle Supervisor Node Initialised---");
 }

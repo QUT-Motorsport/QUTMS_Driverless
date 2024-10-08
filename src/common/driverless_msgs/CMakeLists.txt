@@ -22,17 +22,8 @@ set(msg_files
   "msg/Cone.msg"
   "msg/ConeDetectionStamped.msg"
   "msg/ConeWithCovariance.msg"
-  "msg/DebugMsg.msg"
-  "msg/DoubleMatrix.msg"
-  "msg/DrivingDynamics1.msg"
-  "msg/Float32Stamped.msg"
-  "msg/Int32Stamped.msg"
-  "msg/PathPoint.msg"
-  "msg/PathStamped.msg"
-  "msg/RES.msg"
   "msg/Shutdown.msg"
   "msg/State.msg"
-  "msg/SystemStatus.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

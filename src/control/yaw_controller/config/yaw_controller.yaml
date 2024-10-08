@@ -1,9 +1,0 @@
-yaw_controller_node:
-  ros__parameters:
-    target_velocity: 11.0
-    Kp_yaw: 0.0
-    Ki_yaw: 0.0
-    Kp_yaw_rate: 200.0
-    Ki_yaw_rate: 1.0
-    max_integral_steering: 20.0
-    integral_kickin: 0.01

@@ -20,11 +20,6 @@ setup(
     entry_points={
         "console_scripts": [
             "sine = controllers.node_sine:main",
-            "reactive_control_node = controllers.node_reactive_control:main",
-            "reactive_control_lifecycle = controllers.lifecycle_reactive_control:main",
-            "point_fitting = controllers.node_point_fitting:main",
-            "vector_spline = controllers.node_vector_spline:main",
-            "point_fitting2 = controllers.node_point_fitting2:main",
             "vel_to_ackermann_node = controllers.node_vel_to_ackermann:main",
         ],
     },

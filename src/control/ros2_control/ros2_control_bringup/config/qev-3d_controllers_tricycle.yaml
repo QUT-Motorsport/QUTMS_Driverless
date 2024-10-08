@@ -1,0 +1,67 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    ackermann_steering_controller:
+      type: tricycle_steering_controller/TricycleSteeringController
+
+    drive_pid_controller:
+      type: pid_controller/PidController
+
+    steering_pid_controller:
+      type: pid_controller/PidController
+
+joint_state_broadcaster:
+  ros__parameters:
+    type: joint_state_broadcaster/JointStateBroadcaster
+    extra_joints: [front_virtual_wheel_joint]
+
+ackermann_steering_controller:
+  ros__parameters:
+    type: tricycle_steering_controller/TricycleSteeringController
+    reference_timeout: 2.0
+    in_chained_mode: true
+    front_steering: true
+    open_loop: false
+    velocity_rolling_window_size: 10
+    position_feedback: false
+    use_stamped_vel: true
+    rear_wheels_names: [drive_pid_controller/rear_right_wheel_joint, drive_pid_controller/rear_left_wheel_joint]
+    front_wheels_names: [steering_pid_controller/virtual_steering_hinge_joint]
+    rear_wheels_state_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    front_wheels_state_names: [virtual_steering_hinge_joint]
+    wheelbase: 1.580
+    wheel_track: 1.4
+    front_wheels_radius: 0.2032
+    rear_wheels_radius: 0.2032
+
+drive_pid_controller:
+  ros__parameters:
+    type: pid_controller/PidController
+    dof_names:
+      - rear_right_wheel_joint
+      - rear_left_wheel_joint
+
+    command_interface: acceleration
+
+    reference_and_state_interfaces: ["velocity"]
+
+    gains:
+      rear_right_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
+      rear_left_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
+
+steering_pid_controller:
+  ros__parameters:
+    type: pid_controller/PidController
+    dof_names:
+      - virtual_steering_hinge_joint
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    gains:
+      joint1: {p: 1.0, i: 2.0, d: 10.0, i_clamp_max: 5.0, i_clamp_min: -5.0}

@@ -26,9 +26,6 @@ include_directories(
 )
 
 set (SOURCES
-  src/tcp_client.cpp
-  src/udp_client.cpp
-  src/TritiumCAN.cpp
   src/SocketCAN.cpp
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
   ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
@@ -55,12 +52,6 @@ ament_target_dependencies(socket_translator_node
   "rclcpp"
 )
 
-add_executable(tritium_translator_node src/node_tritium_translator.cpp)
-target_link_libraries(tritium_translator_node canbus_translator_component)
-ament_target_dependencies(tritium_translator_node
-  "rclcpp"
-)
-
 install(TARGETS
   canbus_translator_component
   ARCHIVE DESTINATION lib
@@ -68,7 +59,7 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 install(TARGETS
-  socket_translator_node tritium_translator_node
+  socket_translator_node
   DESTINATION lib/${PROJECT_NAME})
 
 # config folder
