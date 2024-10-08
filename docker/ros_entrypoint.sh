@@ -4,6 +4,7 @@
 # echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/developer/.bashrc
 # echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml' >> /home/developer/.bashrc
 echo 'export ROS_DOMAIN_ID=69' >> /home/developer/.bashrc
+echo 'export QUTMS_WS=~/driverless_ws' >> /home/developer/.bashrc
 
 # export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
 # export CYCLONEDDS_URI="file:///home/developer/driverless_ws/src/machines/roscube_machine/cyclonedds.xml"

@@ -16,8 +16,8 @@ from std_msgs.msg import Bool, UInt8
 
 from driverless_common.status_constants import INT_MISSION_TYPE
 
-# can_bus = can.Bus('can0', bustype='socketcan')
-can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
+can_bus = can.interface.Bus('can0', bustype='socketcan')
+# can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
 dbc_path = get_package_share_path("QUTMS_Embedded_Common") / "QUTMS_Embedded_Common" / "QUTMS.dbc"
 db = cantools.database.load_file(dbc_path)
 
@@ -42,7 +42,7 @@ class VehicleSupervisor(Node):
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
         self.create_subscription(DiagnosticArray, "diagnostics", self.diagnostics_callback, 1)
 
-        self.create_timer(0.001, self.send_callback)
+        # self.create_timer(0.001, self.send_callback)
         self.create_timer(0.001, self.timer_callback)
 
         # publishers

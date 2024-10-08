@@ -13,6 +13,7 @@
     <depend>driverless_common</depend>
 
     <depend>ground_plane_segmenter</depend>
+    <depend>pointcloud-to-laserscan</depend>
 
     <export>
         <build_type>ament_python</build_type>
