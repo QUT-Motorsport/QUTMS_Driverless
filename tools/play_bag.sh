@@ -3,52 +3,31 @@
 source install/setup.bash
 
 # use clock from bag as sim time and start paused
-BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_05_21-05_25_56_mcap --clock -p"
-# BAG_CMD="ros2 bag play /mnt/e/rosbag2_2024_05_15-05_27_12 --clock -p"
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_11-05_28_15/ --clock -p"
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_18-05_47_36/ --clock -p" # pushed aroud
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-03_24_19/ --clock -p" # lidar on roll hoop test
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_04_46/ --clock -p" # half lap
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_18_42/ --clock -p" # other half of lap
+BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43/ --clock -p" # 2.5 laps
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-06_08_59/ --clock -p" # 1 lap, loop close crashing
 
-# list of topics we want to play
+REMAPPINGS=(
+    # /tf:=/tf_old
+    # /tf_static:=/tf_static_old
+    # /slam/occupancy_grid:=/slam/occupancy_grid_old
+    # /slam/car_pose:=/slam/car_pose_old
+    # /odom/filtered:=/odom/filtered_old
+)
+
 TOPICS=(
-    # Lidar and boundary mapping tuning
-
-    # /lidar/cone_detection
-    # /slam/global_map
-    # /scan
-    # /velodyne_points
-    # /zed2i/zed_node/left_raw/image_raw_color
-    # /zed2i/zed_node/left_raw/camera_info
-    # /zed2i/zed_node/right_raw/image_raw_color
-    # /zed2i/zed_node/right_raw/camera_info
-    # /tf
-    # /tf_static
-    # /system/as_status
-    # /zed2i/zed_node/odom
-    # /odometry/sbg_ekf
-    # /imu/odometry
-
-    # 3D lidar slam testing
-
-    # /zed2i/zed_node/odom
-    # /velodyne_points
-    # /odometry/sbg_ekf
-    # /tf_static
-    # /imu/data
-    # /scan
-
-    # VD data
-
-    # /vehicle/steering_angle
-    # /slam/car_pose
-    # /imu/data
-
-    # RL and SLAM toolbox
-    /velodyne_points
+    /imu/odometry # needed for RL
+    /vehicle/wheel_twist # needed for RL
+    # /lidar/objects
+    /lidar/converted_2D_scan
     /lidar/cone_detection
-    /vision/cone_detection
-    # /scan
-    /imu/odometry
-    /imu/data
-
-
+    # /debug_markers/lidar_markers
+    /system/as_status # needed for lap = 0 in mapping
+    # /imu/nav_sat_fix # for visual
 )
 
 # remap these topics if you are running programs which output to the same topic names

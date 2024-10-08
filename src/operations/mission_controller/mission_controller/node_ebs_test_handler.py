@@ -99,6 +99,8 @@ class EBSTestHandler(ShutdownNode):
             and self.odom_received
         ):
 
+            self.mission_started = True
+
             command = [
                 "stdbuf",
                 "-o",
