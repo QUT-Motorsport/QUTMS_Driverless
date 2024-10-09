@@ -177,5 +177,5 @@ def main(args=None):
     rclpy.init(args=args)
     node = EBSTestHandler()
     rclpy.spin(node)
-    # node.destroy_node()
+    node.destroy_node()
     rclpy.shutdown()

@@ -2,38 +2,19 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="velodyne" params="*origin parent name">
     <!-- base frame to velodyne base -->
-    <joint name="${name}_base_mount_joint" type="fixed">
+      <joint name="${name}_base_mount_joint" type="fixed">
       <xacro:insert_block name="origin" />
       <parent link="${parent}"/>
-      <child link="${name}_base_link"/>
-    </joint>
-
-    <link name="${name}_base_link">
-      <visual>
-        <geometry>
-          <mesh filename="file://$(find vehicle_urdf)/meshes/VLP16_base_1.dae" />
-        </geometry>
-      </visual>
-      <visual>
-        <geometry>
-          <mesh filename="file://$(find vehicle_urdf)/meshes/VLP16_base_2.dae" />
-        </geometry>
-      </visual>
-    </link>
-
-    <!-- velodyne base to velodyne scan -->
-    <joint name="${name}_base_scan_joint" type="fixed" >
-      <origin xyz="0 0 0.0377" rpy="0 0 0" />
-      <parent link="${name}_base_link" />
       <child link="${name}"/>
     </joint>
 
     <link name="${name}">
       <visual>
-        <origin xyz="0 0 -0.0377" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file://$(find vehicle_urdf)/meshes/VLP16_scan.dae" />
+          <cylinder radius="0.0516" length="0.0717"/>
         </geometry>
+        <material name="black"/>
       </visual>
     </link>
   </xacro:macro>
