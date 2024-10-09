@@ -173,7 +173,7 @@ class LiDARDetectorNode(Node):
         # Step 1
 
         # Convert PointCloud2 message from LiDAR sensor to numpy array
-        dtype_list: list = fields_to_dtype(msg.fields, msg.point_step)  # x, y, z, intensity, ring
+        dtype_list: list = fields_to_dtype(msg.fields, msg.point_step)  # x, y, z, intensity, ringr
         object_points: np.ndarray = np.frombuffer(msg.data, dtype_list)
 
         # Step 4
