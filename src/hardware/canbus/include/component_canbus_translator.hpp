@@ -12,14 +12,13 @@
 #include "CAN_VESC.h"
 #include "QUTMS_can.h"
 #include "SocketCAN.hpp"
-#include "TritiumCAN.hpp"
 #include "can_interface.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/can.hpp"
-#include "driverless_msgs/msg/float32_stamped.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "interface.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 using std::placeholders::_1;
 
@@ -53,13 +52,13 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr steering_angle_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub1_;
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub2_;
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub3_;
-    rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr wss_velocity_pub4_;
-    std::vector<rclcpp::Publisher<driverless_msgs::msg::Float32Stamped>::SharedPtr> wheel_speed_pubs_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub1_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub2_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub3_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr wss_velocity_pub4_;
+    std::vector<rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr> wheel_speed_pubs_;
 
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
     rclcpp::CallbackGroup::SharedPtr sub_cb_group_;

@@ -24,7 +24,6 @@
     <depend>vehicle_supervisor</depend>
     <depend>terminal_control</depend>
     <depend>planners</depend>
-    <depend>pure_pursuit_cpp</depend>
     <depend>map_creation</depend>
     <depend>nav_bringup</depend>
     <depend>sensors</depend>
@@ -32,7 +31,6 @@
     <depend>lidar_pipeline</depend>
     <depend>velocity_controller</depend>
     <depend>mission_controller</depend>
-    <depend>sbg_translator</depend>
     <depend>odom_transformer</depend>
 
     <exec_depend>ros2launch</exec_depend>

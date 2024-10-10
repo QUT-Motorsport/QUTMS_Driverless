@@ -47,9 +47,7 @@ void CANTranslator::canmsg_timer() {
                 Parse_VESC_CANPacketStatus(data, &rpm, &current, &duty);
 
                 wheel_speeds_[vesc_id] = (rpm / (21.0 * 4.50)) * M_PI * WHEEL_DIAMETER / 60;
-                driverless_msgs::msg::Float32Stamped::UniquePtr speed_msg(new driverless_msgs::msg::Float32Stamped());
-                speed_msg->header.stamp = this->now();
-                speed_msg->header.frame_id = ros_base_frame_;  // could change to wheel frame
+                std_msgs::msg::Float32::UniquePtr speed_msg(new std_msgs::msg::Float32());
                 speed_msg->data = wheel_speeds_[vesc_id];
                 wheel_speed_pubs_[vesc_id]->publish(std::move(speed_msg));
 
@@ -92,10 +90,8 @@ void CANTranslator::canmsg_timer() {
             double steering_0 = steering_0_raw / 10.0;
             double steering_1 = steering_1_raw / 10.0;
 
-            driverless_msgs::msg::Float32Stamped::UniquePtr angle_msg(new driverless_msgs::msg::Float32Stamped());
+            std_msgs::msg::Float32::UniquePtr angle_msg(new std_msgs::msg::Float32());
             if (abs(steering_0 - steering_1) < 10) {
-                angle_msg->header.stamp = this->now();
-                angle_msg->header.frame_id = ros_base_frame_;
                 angle_msg->data = steering_0;
                 steering_angle_pub_->publish(std::move(angle_msg));
             } else {
@@ -123,8 +119,6 @@ bool CANTranslator::set_interface() {
 
     if (interface_name == "socketcan") {
         can_interface_ = std::make_shared<SocketCAN>();
-    } else if (interface_name == "tritium") {
-        can_interface_ = std::make_shared<TritiumCAN>();
     } else {
         RCLCPP_ERROR(this->get_logger(), "Invalid interface_name: %s", interface_name.c_str());
         return false;
@@ -167,13 +161,13 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
 
     // ADD PUBS FOR CAN TOPICS HERE
     // Steering ang
-    steering_angle_pub_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/steering_angle", 10);
+    steering_angle_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/steering_angle", 10);
 
-    // Vehicle velocity
-    wss_velocity_pub1_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed1", 10);
-    wss_velocity_pub2_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed2", 10);
-    wss_velocity_pub3_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed3", 10);
-    wss_velocity_pub4_ = this->create_publisher<driverless_msgs::msg::Float32Stamped>("/vehicle/wheel_speed4", 10);
+    // Wheel velocity
+    wss_velocity_pub1_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed1", 10);
+    wss_velocity_pub2_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed2", 10);
+    wss_velocity_pub3_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed3", 10);
+    wss_velocity_pub4_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/wheel_speed4", 10);
     wheel_speed_pubs_.push_back(wss_velocity_pub1_);
     wheel_speed_pubs_.push_back(wss_velocity_pub2_);
     wheel_speed_pubs_.push_back(wss_velocity_pub3_);
