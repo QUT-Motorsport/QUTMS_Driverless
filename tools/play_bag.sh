@@ -8,8 +8,9 @@ source install/setup.bash
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-03_24_19/ --clock -p" # lidar on roll hoop test
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_04_46/ --clock -p" # half lap
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_18_42/ --clock -p" # other half of lap
-BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43/ --clock -p" # 2.5 laps
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43/ --clock -p" # 2.5 laps
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-06_08_59/ --clock -p" # 1 lap, loop close crashing
+BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-02_16_55/ --clock -p" # ebs test run
 
 REMAPPINGS=(
     # /tf:=/tf_old
