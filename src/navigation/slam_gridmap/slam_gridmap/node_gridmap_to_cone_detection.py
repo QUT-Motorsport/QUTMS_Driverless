@@ -1,19 +1,12 @@
-# import ros2 libraries
-# other python modules
 import numpy as np
 from sklearn.cluster import DBSCAN
 
 import rclpy
 from rclpy.node import Node
-from rclpy.publisher import Publisher
 
-# import custom message libraries
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
-
-# OccupancyGridUpdate
-
 
 # node class object that gets created
 def cone_msg(x: float, y: float) -> Cone:
@@ -43,12 +36,8 @@ class SLAMDetectorNode(Node):
         # any publishers for messages to topics go here
         self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/slam/cone_detection", 1)
 
-        # any extra initialisation of class variables go here
-
     # function that is called each time the subscriber reads a new message on the topic
     def grid_callback(self, map_message: OccupancyGrid):
-        print("GRID RECIEVED")
-        # do stuff
         gridmap_info = map_message.info
         map_width = gridmap_info.width
         map_height = gridmap_info.height
@@ -90,17 +79,6 @@ class SLAMDetectorNode(Node):
         detection_msg = ConeDetectionStamped(header=map_message.header, cones=detected_cones)
         self.detection_publisher.publish(detection_msg)
 
-        print(detection_msg)
-        print(gridmap_info)
-
-        # do stuffs
-        # publishing_variable = Message_Type2()
-        # publishing_variable.property = another_variable
-        # self.publisher_name.publish(publishing_variable)
-        print("MAP CREATED")
-
-
-# main run when script is started in the terminal
 def main(args=None):
     # begin ros node
     rclpy.init(args=args)
