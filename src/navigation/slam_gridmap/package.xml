@@ -4,7 +4,7 @@
   <name>slam_gridmap</name>
   <version>1.0.0</version>
   <description>real-time SLAM cone detection operating on gridmaps</description>
-  <maintainer email="team@qutmotorsport.com">yurikun1033</maintainer>
+  <maintainer email="team@qutmotorsport.com">Claudia Kiss</maintainer>
   <license>MIT</license>
 
   <depend>rclpy</depend>

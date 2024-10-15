@@ -12,12 +12,12 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="yurikun1033",
+    maintainer="Claudia Kiss",
     maintainer_email="team@qutmotorsport.com",
     description="real-time SLAM cone detection operating on gridmaps",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["gridmap_to_code_detection = slam_gridmap.node_gridmap_to_code_detection:main"],
+        "console_scripts": ["gridmap_to_cone_detection_node = slam_gridmap.node_gridmap_to_cone_detection:main"],
     },
 )

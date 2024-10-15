@@ -24,7 +24,7 @@
     <depend>vehicle_supervisor</depend>
     <depend>terminal_control</depend>
     <depend>planners</depend>
-    <depend>map_creation</depend>
+    <depend>slam_gridmap</depend>
     <depend>nav_bringup</depend>
     <depend>sensors</depend>
     <depend>driverless_common</depend>
@@ -32,6 +32,7 @@
     <depend>velocity_controller</depend>
     <depend>mission_controller</depend>
     <depend>odom_transformer</depend>
+    <depend>sbg_driver</depend>
 
     <exec_depend>ros2launch</exec_depend>
 
