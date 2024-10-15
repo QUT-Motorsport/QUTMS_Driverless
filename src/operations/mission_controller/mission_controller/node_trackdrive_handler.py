@@ -121,7 +121,7 @@ class TrackdriveHandler(ShutdownNode):
         try:
             track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
-            self.get_logger().debug("Transform exception: " + str(e))
+            self.get_logger().warn("Transform exception: " + str(e))
             return
 
         # publish initial pose

@@ -37,6 +37,8 @@ class SLAMDetectorNode(Node):
         # any publishers for messages to topics go here
         self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/slam/cone_detection", 1)
 
+        self.get_logger().info("---Gridmap to Cone Detection node initialised---")
+
     # function that is called each time the subscriber reads a new message on the topic
     def grid_callback(self, map_message: OccupancyGrid):
         gridmap_info = map_message.info
@@ -49,22 +51,34 @@ class SLAMDetectorNode(Node):
         gridmap_data = map_message.data
         map_2d = np.array(gridmap_data).reshape((map_height, map_width))
 
-        point_coords = []
-        for row in range(map_height):
-            for col in range(map_width):
-                cell = map_2d[row, col]
-                if cell == 100:
-                    point_coords.append((col + gridmap_origin_x * 10, (row + gridmap_origin_y * 10)))
-        point_coords = np.array(point_coords)
+        # point_coords = []
+        # for row in range(map_height):
+        #     for col in range(map_width):
+        #         cell = map_2d[row, col]
+        #         if cell == 100:
+        #             point_coords.append((col + gridmap_origin_x * 10, (row + gridmap_origin_y * 10)))
 
-        if point_coords == []:
+        # convert row, col checks to a numpy operation (faster)
+        cone_indices = np.where(map_2d == 100) # Get the indices of the cones
+        point_coords = np.column_stack((cone_indices[1] + gridmap_origin_x * 10, cone_indices[0] + gridmap_origin_y * 10))
+
+        # check if there are any cones
+        if len(point_coords) == 0:
             return
 
-        # Cluster object points
-        self.epsilon = 7
-        self.min_points = 4
+        # check if its actually a 1D array (only one cone), if so, make it 2D
+        if point_coords.ndim == 1:
+            point_coords = np.expand_dims(point_coords, axis=0)
 
-        clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(point_coords)
+        # Cluster object points
+        if len(point_coords) < 20:  # if we're close to start, we havent seen many cones
+            epsilon = 3
+            min_points = 1
+        else:
+            epsilon = 7
+            min_points = 3
+
+        clustering = DBSCAN(eps=epsilon, min_samples=min_points).fit(point_coords)
         labels = clustering.labels_
 
         unq_labels = np.unique(labels)[1:]  # Noise cluster -1 (np.unique sorts)
@@ -73,7 +87,10 @@ class SLAMDetectorNode(Node):
         object_centers = np.empty((unq_labels.size, 2))
         for idx, label in enumerate(unq_labels):
             objects[idx] = point_coords[np.where(labels == label)]
-            object_centers[idx] = np.mean(np.column_stack((objects[idx][0], objects[idx][1])), axis=1)
+            if objects[idx].size == 2: # If only one point in cluster
+                object_centers[idx] = objects[idx][0]
+            else:  # multiple points, get the mean
+                object_centers[idx] = np.mean(np.column_stack((objects[idx][0], objects[idx][1])), axis=1)
 
         if len(object_centers) == 0:
             return
