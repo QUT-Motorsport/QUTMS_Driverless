@@ -8,6 +8,7 @@ from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
 
+
 # node class object that gets created
 def cone_msg(x: float, y: float) -> Cone:
     """
@@ -56,6 +57,9 @@ class SLAMDetectorNode(Node):
                     point_coords.append((col + gridmap_origin_x * 10, (row + gridmap_origin_y * 10)))
         point_coords = np.array(point_coords)
 
+        if point_coords == []:
+            return
+
         # Cluster object points
         self.epsilon = 7
         self.min_points = 4
@@ -78,6 +82,7 @@ class SLAMDetectorNode(Node):
         detected_cones: list = [cone_msg(cone[0], cone[1]) for cone in object_centers]
         detection_msg = ConeDetectionStamped(header=map_message.header, cones=detected_cones)
         self.detection_publisher.publish(detection_msg)
+
 
 def main(args=None):
     # begin ros node
