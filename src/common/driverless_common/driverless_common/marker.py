@@ -12,6 +12,7 @@ BIG_HEIGHT = 1.5
 SMALL_HEIGHT = 1.0
 MAX_NUM_CONES = 500
 
+
 def marker_array_from_cone_detection(detection: ConeDetectionStamped, covariance: bool = False) -> MarkerArray:
     if covariance:  # is a cone with covariance list
         cones: List[Cone] = []

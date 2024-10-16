@@ -52,6 +52,7 @@ class DisplayDetections(Node):
         if self.slam_mkr_publisher.get_subscription_count() != 0:
             self.slam_mkr_publisher.publish(marker_array_from_cone_detection(msg))
 
+
 def main():
     rclpy.init()
     node = DisplayDetections()
