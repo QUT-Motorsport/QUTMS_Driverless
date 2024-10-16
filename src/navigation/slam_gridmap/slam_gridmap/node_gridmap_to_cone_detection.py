@@ -37,10 +37,15 @@ class SLAMDetectorNode(Node):
         # any publishers for messages to topics go here
         self.detection_publisher = self.create_publisher(ConeDetectionStamped, "/slam/cone_detection", 1)
 
+        self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+
         self.get_logger().info("---Gridmap to Cone Detection node initialised---")
 
     # function that is called each time the subscriber reads a new message on the topic
     def grid_callback(self, map_message: OccupancyGrid):
+        self.get_logger().debug(
+            f"Received {map_message.info.width}x{map_message.info.height} gridmap message", throttle_duration_sec=1
+        )
         gridmap_info = map_message.info
         map_width = gridmap_info.width
         map_height = gridmap_info.height
@@ -59,8 +64,10 @@ class SLAMDetectorNode(Node):
         #             point_coords.append((col + gridmap_origin_x * 10, (row + gridmap_origin_y * 10)))
 
         # convert row, col checks to a numpy operation (faster)
-        cone_indices = np.where(map_2d == 100) # Get the indices of the cones
-        point_coords = np.column_stack((cone_indices[1] + gridmap_origin_x * 10, cone_indices[0] + gridmap_origin_y * 10))
+        cone_indices = np.where(map_2d == 100)  # Get the indices of the cones
+        point_coords = np.column_stack(
+            (cone_indices[1] + gridmap_origin_x * 10, cone_indices[0] + gridmap_origin_y * 10)
+        )
 
         # check if there are any cones
         if len(point_coords) == 0:
@@ -87,11 +94,12 @@ class SLAMDetectorNode(Node):
         object_centers = np.empty((unq_labels.size, 2))
         for idx, label in enumerate(unq_labels):
             objects[idx] = point_coords[np.where(labels == label)]
-            if objects[idx].size == 2: # If only one point in cluster
+            if objects[idx].size == 2:  # If only one point in cluster
                 object_centers[idx] = objects[idx][0]
             else:  # multiple points, get the mean
                 object_centers[idx] = np.mean(np.column_stack((objects[idx][0], objects[idx][1])), axis=1)
 
+        self.get_logger().debug(f"Detected {len(object_centers)} cones", throttle_duration_sec=1)
         if len(object_centers) == 0:
             return
 
