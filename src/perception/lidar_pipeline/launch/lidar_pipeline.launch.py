@@ -19,6 +19,7 @@ def generate_launch_description():
     pointcloud_to_laserscan_node = Node(
         package="pointcloud_to_laserscan",
         executable="pointcloud_to_laserscan_node",
+        name="pointcloud_to_laserscan_node",
         output="screen",
         parameters=[
             os.path.join(pkg_share, "config", "laserscan_params.yaml"),
