@@ -33,6 +33,7 @@
     <depend>mission_controller</depend>
     <depend>odom_transformer</depend>
     <depend>sbg_driver</depend>
+    <depend>map_creation</depend>
 
     <exec_depend>ros2launch</exec_depend>
 

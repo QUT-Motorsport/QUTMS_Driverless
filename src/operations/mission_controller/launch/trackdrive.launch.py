@@ -22,13 +22,13 @@ def generate_launch_description():
                 )
             ),
             # mapping/planning
-            # Node(
-            #     package="map_creation",
-            #     executable="cone_placement_node",
-            #     parameters=[
-            #         get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
-            #     ],
-            # ),
+            Node(
+                package="map_creation",
+                executable="cone_placement_node",
+                parameters=[
+                    get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
+                ],
+            ),
             Node(
                 package="slam_gridmap",
                 executable="gridmap_to_cone_detection_node",
@@ -41,7 +41,7 @@ def generate_launch_description():
                 ],
                 ros_arguments=[
                     "-p",
-                    "topic_name:=slam/cone_detection",
+                    "topic_name:=slam/global_map",
                     "-p",
                     "target_frame:=track",
                 ],

@@ -170,7 +170,7 @@ class TrackdriveHandler(ShutdownNode):
             self.controller_id = "TrackdriveRPPFast"
 
         # we have finished lap "10"
-        if self.laps == 10:
+        if self.laps == 11:
             self.get_logger().info("Trackdrive mission complete")
             # currently only works when vehicle supervisor node is running on-car
             # TODO: sort out vehicle states for eventual environment agnostic operation
