@@ -36,7 +36,7 @@ class OdometryTransformer(Node):
 
         self.publisher = self.create_publisher(Odometry, "imu/local_odometry", 10)
 
-        self.get_logger().info("---Gridmap to Cone Detection node initialised---")
+        self.get_logger().info("---Odom transformer node initialised---")
 
     def odometry_callback(self, msg: Odometry):
         if not self.initialised:
