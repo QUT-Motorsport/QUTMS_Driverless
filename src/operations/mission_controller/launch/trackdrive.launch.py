@@ -30,6 +30,10 @@ def generate_launch_description():
                 ],
             ),
             Node(
+                package="slam_gridmap",
+                executable="gridmap_to_cone_detection_node",
+            ),
+            Node(
                 package="planners",
                 executable="ft_planner_node",
                 parameters=[

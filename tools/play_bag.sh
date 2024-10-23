@@ -8,8 +8,9 @@ source install/setup.bash
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-03_24_19/ --clock -p" # lidar on roll hoop test
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_04_46/ --clock -p" # half lap
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_18_42/ --clock -p" # other half of lap
-BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43/ --clock -p" # 2.5 laps
+BAG_CMD="ros2 bag play -s mcap src/rosbag2_2024_10_17-01_36_17 -p" # 2.5 laps
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-06_08_59/ --clock -p" # 1 lap, loop close crashing
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-02_16_55/ --clock -p" # ebs test run
 
 REMAPPINGS=(
     # /tf:=/tf_old
@@ -20,14 +21,14 @@ REMAPPINGS=(
 )
 
 TOPICS=(
-    /imu/odometry # needed for RL
-    /vehicle/wheel_twist # needed for RL
-    # /lidar/objects
-    /lidar/converted_2D_scan
-    /lidar/cone_detection
-    # /debug_markers/lidar_markers
-    /system/as_status # needed for lap = 0 in mapping
-    # /imu/nav_sat_fix # for visual
+    # /imu/odometry # needed for RL
+    # /vehicle/wheel_twist # needed for RL
+    # # /lidar/objects
+    # /lidar/converted_2D_scan
+    # /lidar/cone_detection
+    # # /debug_markers/lidar_markers
+    # /system/as_status # needed for lap = 0 in mapping
+    # # /imu/nav_sat_fix # for visual
 )
 
 # remap these topics if you are running programs which output to the same topic names

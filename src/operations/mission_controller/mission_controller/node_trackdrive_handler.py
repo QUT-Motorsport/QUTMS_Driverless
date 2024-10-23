@@ -121,7 +121,7 @@ class TrackdriveHandler(ShutdownNode):
         try:
             track_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time(seconds=0))
         except TransformException as e:
-            self.get_logger().debug("Transform exception: " + str(e))
+            self.get_logger().warn("Transform exception: " + str(e))
             return
 
         # publish initial pose
@@ -170,7 +170,7 @@ class TrackdriveHandler(ShutdownNode):
             self.controller_id = "TrackdriveRPPFast"
 
         # we have finished lap "10"
-        if self.laps == 10:
+        if self.laps == 11:
             self.get_logger().info("Trackdrive mission complete")
             # currently only works when vehicle supervisor node is running on-car
             # TODO: sort out vehicle states for eventual environment agnostic operation

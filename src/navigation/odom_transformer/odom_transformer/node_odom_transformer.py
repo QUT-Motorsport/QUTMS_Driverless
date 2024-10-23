@@ -36,6 +36,8 @@ class OdometryTransformer(Node):
 
         self.publisher = self.create_publisher(Odometry, "imu/local_odometry", 10)
 
+        self.get_logger().info("---Odom transformer node initialised---")
+
     def odometry_callback(self, msg: Odometry):
         if not self.initialised:
             self.initial_easting = msg.pose.pose.position.x
