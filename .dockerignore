@@ -1,6 +1,9 @@
 *
 !bags/
 !src/
+!build/
+!log/
+!install/
 !tools/
 !docker/
 !csv_data/
