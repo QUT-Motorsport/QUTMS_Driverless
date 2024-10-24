@@ -15,10 +15,10 @@ def generate_launch_description():
                 package="odom_transformer",
                 executable="odom_transformer_node",
             ),
-            # localisation
+            # nav_stack
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(get_package_share_path("nav_bringup"), "launch", "slam_toolbox.launch.py")
+                    os.path.join(get_package_share_path("nav_bringup"), "launch", "nav_stack_bringup.launch.py")
                 )
             ),
             # mapping/planning
@@ -30,8 +30,11 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="slam_gridmap",
-                executable="gridmap_to_cone_detection_node",
+                package="map_creation",
+                executable="cone_placement_node",
+                parameters=[
+                    get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
+                ],
             ),
             Node(
                 package="planners",
@@ -39,23 +42,12 @@ def generate_launch_description():
                 parameters=[
                     get_package_share_path("planners") / "config" / "ft_planner.yaml",
                 ],
-                ros_arguments=[
-                    "-p",
-                    "topic_name:=slam/global_map",
-                    "-p",
-                    "target_frame:=track",
-                ],
             ),
-            # guidance/control
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(get_package_share_path("nav_bringup"), "launch", "nav2_bringup.launch.py")
-                )
-            ),
+            # control translation
             Node(
                 package="controllers",
                 executable="vel_to_ackermann_node",
-                parameters=[{"Kp": 2.0}],  # specific for EBS test
+                parameters=[{"Kp": 4.0}],  # specific for Trackdrive
             ),
         ]
     )

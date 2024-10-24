@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>vehicle_bringup</name>
+    <version>0.0.0</version>
+    <description>Vehicle operations and supervisor</description>
+    <maintainer email="team@qutmotorsport.com">Alastair Bradford, Walden Leung, Alex Bradbury</maintainer>
+    <license>MIT</license>
+
+    <exec_depend>ros2launch</exec_depend>
+
+    <exec_depend>rosbag2_storage_mcap</exec_depend>
+    <exec_depend>rmw_cyclonedds_cpp</exec_depend>
+    <exec_depend>foxglove_bridge</exec_depend>
+    <exec_depend>rosboard</exec_depend>
+
+    <!-- Custom packages -->
+    <depend>driverless_common</depend>
+
+    <exec_depend>controllers</exec_depend>
+    <exec_depend>steering_actuator</exec_depend>
+    <exec_depend>canbus</exec_depend>
+    <exec_depend>planners</exec_depend>
+    <exec_depend>slam_gridmap</exec_depend>
+    <exec_depend>map_creation</exec_depend>
+    <exec_depend>nav_bringup</exec_depend>
+    <exec_depend>perception_bringup</exec_depend>
+    <exec_depend>velocity_controller</exec_depend>
+
+    <export>
+        <build_type>ament_python</build_type>
+    </export>
+</package>

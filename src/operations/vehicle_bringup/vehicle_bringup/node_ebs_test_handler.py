@@ -10,16 +10,18 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 
-from driverless_msgs.msg import Shutdown, State
+from driverless_msgs.msg import Shutdown, ROSStateStamped, AVStateStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from nav_msgs.msg import Odometry, Path
+from nav_msgs.msg import Path
 
-from driverless_common.shutdown_node import ShutdownNode
+from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
 class EBSTestHandler(ShutdownNode):
     mission_started = False
-    odom_received = False
+    good_to_go = False
+    process = None
+
     sent_init = False
     path = None
     debug = False
@@ -27,9 +29,10 @@ class EBSTestHandler(ShutdownNode):
     def __init__(self):
         super().__init__("ebs_test_logic_node")
 
-        self.create_subscription(State, "system/as_status", self.state_callback, 1)
+        # subscribers
+        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
-        self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
 
         self.create_timer((1 / 20), self.timer_callback)
         self.tf_buffer = Buffer()
@@ -90,16 +93,12 @@ class EBSTestHandler(ShutdownNode):
 
         self.get_logger().info("---EBS handler node initialised---")
 
-    def state_callback(self, msg: State):
+    def av_state_callback(self, msg: AVStateStamped):
         super().state_callback(msg)
         if (
-            (msg.state == State.READY or msg.state == State.DRIVING)
-            and msg.mission == State.EBS_TEST
-            and not self.mission_started
-            and self.odom_received
+            (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
+            and not self.mission_started and self.good_to_go
         ):
-
-            self.mission_started = True
 
             command = [
                 "stdbuf",
@@ -113,14 +112,18 @@ class EBSTestHandler(ShutdownNode):
                 "2.0",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
+            cmd = Popen(command)
             command = ["stdbuf", "-o", "L", "ros2", "param", "set", "steering_actuator_node", "max_position", "2000"]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "ebs_test.launch.py"]
+            cmd = Popen(command)
+            command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "ebs_test.launch.py"]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("EBS mission started")
+
+    def ros_state_callback(self, msg: ROSStateStamped):
+        if msg.good_to_go:
+            self.good_to_go = True
 
     def path_callback(self, msg: Path):
         # receive path and convert to numpy array
@@ -140,14 +143,6 @@ class EBSTestHandler(ShutdownNode):
         )
 
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
-
-    def odom_callback(self, msg: Odometry):
-        """Ensure the SBG EKF has settled and we get odom msgs before starting the mission"""
-        ## THIS SHOULD BE LOGIC BASED ON SBG EKF STATUS
-
-        if not self.odom_received:
-            self.odom_received = True
-            self.get_logger().info("Odometry received")
 
     def timer_callback(self):
         # check if car has crossed the finish line (0,0)
@@ -177,5 +172,5 @@ def main(args=None):
     rclpy.init(args=args)
     node = EBSTestHandler()
     rclpy.spin(node)
-    node.destroy_node()
+    # node.destroy_node()
     rclpy.shutdown()

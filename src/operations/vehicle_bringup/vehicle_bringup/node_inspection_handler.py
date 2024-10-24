@@ -5,39 +5,48 @@ import rclpy
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 
-from driverless_msgs.msg import Shutdown, State
+from driverless_msgs.msg import Shutdown, ROSStateStamped, AVStateStamped
 
-from driverless_common.common import QOS_LATEST
-from driverless_common.shutdown_node import ShutdownNode
+from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
-class InspectionHandler(Node):
+class InspectionHandler(ShutdownNode):
     mission_started = False
-    start_time = 0.0
+    good_to_go = False
     process = None
+
+    start_time = 0.0
 
     def __init__(self):
         super().__init__("inspection_logic_node")
+
+        # subscribers
+        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
+
         self.timer = self.create_timer(1.0, self.timer_callback)
-        self.reset_sub = self.create_subscription(State, "/system/as_status", self.state_callback, QOS_LATEST)
+
+        # publishers
         self.shutdown_pub: Publisher = self.create_publisher(Shutdown, "/system/shutdown", 1)
 
         self.get_logger().info("---Inspection handler node initialised---")
 
-    def state_callback(self, msg: State):
-        # super().state_callback(msg)
+    def av_state_callback(self, msg: AVStateStamped):
+        super().av_state_callback(msg)
         if (
-            msg.state == State.DRIVING
-            and msg.mission == State.INSPECTION
-            and msg.navigation_ready
-            and not self.mission_started
+            (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
+            and not self.mission_started and self.good_to_go
         ):
             self.mission_started = True
             self.start_time = time.time()
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "mission_controller", "inspection.launch.py"]
+            command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "inspection.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
+
+    def ros_state_callback(self, msg: ROSStateStamped):
+        if msg.good_to_go:
+            self.good_to_go = True
 
     def timer_callback(self):
         if self.mission_started and time.time() - self.start_time > 30:
