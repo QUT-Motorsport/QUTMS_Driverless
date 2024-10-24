@@ -10,7 +10,7 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 
-from driverless_msgs.msg import Shutdown, ROSStateStamped, AVStateStamped
+from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
@@ -74,7 +74,8 @@ class TrackdriveHandler(ShutdownNode):
         super().av_state_callback(msg)
         if (
             (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
-            and not self.mission_started and self.good_to_go
+            and not self.mission_started
+            and self.good_to_go
         ):
             self.mission_started = True
             self.last_lap_time = time.time()

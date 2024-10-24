@@ -45,52 +45,34 @@ def generate_launch_description():
         output="both",
     )
 
+    display_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("vehicle_bringup") / "launch" / "displays.launch.py")
+        ),
+    )
+
+    urdf_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py")
+        ),
+        launch_arguments=[
+            ("urdf_model", "qev-3d.urdf.xacro"),
+            ("base_frame", "base_footprint"),
+            ("display_car", "false"),
+        ],
+    )
+
+    perception_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("perception_bringup") / "launch" / "perception.launch.py")
+        ),
+    )
+
     return LaunchDescription(
         [
             scs_container,
-            Node(
-                package="rosboard",
-                executable="rosboard_node",
-            ),
-            Node(
-                package="foxglove_bridge",
-                executable="foxglove_bridge",
-            ),
-            Node(
-                package="driverless_common",
-                executable="display",
-            ),
-            # Node(
-            #     package="sbg_driver",
-            #     executable="sbg_device",
-            #     output="screen",
-                # parameters=[
-                #     get_package_share_path("sensors") / "config" / "ellipse_D.yaml"
-                # ],
-            # ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(
-                        get_package_share_path("lidar_pipeline") / "launch" / "lidar_pipeline.launch.py"
-                    )
-                ),
-            ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(get_package_share_path("sensors") / "launch" / "vlp32.launch.py")
-                ),
-            ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(
-                        get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py"
-                    )
-                ),
-                launch_arguments=[
-                    ("urdf_model", "qev-3d.urdf.xacro"),
-                    ("base_frame", "base_footprint"),
-                    ("display_car", "false"),
-                ],
-            ),
+            display_launch,
+            urdf_launch,
+            perception_launch,
         ]
     )

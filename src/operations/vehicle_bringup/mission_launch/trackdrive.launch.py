@@ -10,12 +10,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription(
         [
-            # odom
-            Node(
-                package="odom_transformer",
-                executable="odom_transformer_node",
-            ),
-            # nav_stack
+            # nav2 stack
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(get_package_share_path("nav_bringup"), "launch", "nav_stack_bringup.launch.py")
@@ -30,11 +25,8 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="map_creation",
-                executable="cone_placement_node",
-                parameters=[
-                    get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
-                ],
+                package="slam_gridmap",
+                executable="gridmap_to_cone_detection_node",
             ),
             Node(
                 package="planners",
