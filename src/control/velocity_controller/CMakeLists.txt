@@ -14,15 +14,24 @@ find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 
+add_compile_definitions(QUTMS_CAN_AV)
+
 include_directories(
   include
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/include
   ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
+)
+
+set (SOURCES
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_AV.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/can_interface.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )
 
 # ROS 2 components
-add_library(velocity_controller_component SHARED src/component_velocity_controller.cpp)
+add_library(velocity_controller_component SHARED src/component_velocity_controller.cpp ${SOURCES})
 ament_target_dependencies(velocity_controller_component
   "rclcpp"
   "rclcpp_components"
