@@ -1,5 +1,4 @@
 import os
-from os.path import isfile, join
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -18,19 +17,19 @@ def process_xacro(context, *args, **kwargs):
     base_frame = get_argument(context, "base_frame")
     display_car = get_argument(context, "display_car")
 
-    xacro_path = join(
+    xacro_path = os.path.join(
         get_package_share_directory("vehicle_urdf"),
         "urdf",
         urdf_model,
     )
-    urdf_path = join(
+    urdf_path = os.path.join(
         get_package_share_directory("vehicle_urdf"),
         "urdf",
         "processed.urdf",
     )
 
     # remove old file and create new one
-    if isfile(urdf_path):
+    if os.path.isfile(urdf_path):
         os.remove(urdf_path)
         os.mknod(urdf_path)
 
