@@ -5,6 +5,7 @@ from rclpy.node import Node
 
 from ackermann_msgs.msg import AckermannDriveStamped
 
+
 class SineController(Node):
     count = 0
     interval = 0.02
