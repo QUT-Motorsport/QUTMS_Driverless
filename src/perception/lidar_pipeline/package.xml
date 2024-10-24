@@ -8,11 +8,18 @@
     <license>MIT</license>
 
     <depend>rclpy</depend>
+
+    <!-- Messages -->
     <depend>sensor_msgs</depend>
+    <depend>geometry_msgs</depend>
     <depend>driverless_msgs</depend>
+
+    <!-- Custom packages -->
     <depend>driverless_common</depend>
 
-    <depend>ground_plane_segmenter</depend>
+    <!-- Python -->
+    <depend>python3-numpy</depend>
+    <depend>python3-sklearn</depend>
 
     <export>
         <build_type>ament_python</build_type>

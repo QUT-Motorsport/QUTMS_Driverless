@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>perception_bringup</name>
+    <version>0.0.0</version>
+    <description>Perception pipeline bringup package - drivers, scan, and cone processors</description>
+    <maintainer email="team@qutmotorsport.com">Alastair Bradford</maintainer>
+    <license>MIT</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <exec_depend>ros2launch</exec_depend>
+
+    <exec_depend>velodyne_driver</exec_depend>
+    <exec_depend>ground_plane_segmenter</exec_depend>
+    <exec_depend>pointcloud_to_laserscan</exec_depend>
+
+    <!-- Custom packages -->
+    <exec_depend>lidar_pipeline</exec_depend>
+
+    <!-- Python -->
+    <depend>python3-yaml</depend>
+    <!-- <depend>python3-pycurl</depend> -->
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
