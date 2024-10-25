@@ -367,7 +367,9 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
 
-        self.diagnostic_pub.tick(self.current_track.header.stamp)
+        # convert stamp time to nanosecs
+        stamp_float = self.current_track.header.stamp.sec + self.current_track.header.stamp.nanosec * 1e-9
+        self.diagnostic_pub.tick(stamp_float)
 
 
 def main(args=None):

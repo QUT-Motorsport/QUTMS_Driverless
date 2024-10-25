@@ -147,7 +147,7 @@ class ConeAssociation : public rclcpp::Node {
     std::vector<TrackedCone> track;
     std::chrono::time_point<std::chrono::system_clock> last_time{std::chrono::system_clock::now()};
 
-    bool mapping{false};
+    bool mapping{true};
 
     double view_x;
     double view_y;

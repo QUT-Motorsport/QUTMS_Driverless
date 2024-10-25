@@ -6,35 +6,33 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    display_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("vehicle_bringup") / "displays.launch.py")
+        ),
+    )
+
+    urdf_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py")
+        ),
+        launch_arguments=[
+            ("urdf_model", "qev-3d.urdf.xacro"),
+            ("base_frame", "base_footprint"),
+            ("display_car", "false"),
+        ],
+    )
+
+    sbg_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("nav_bringup") / "launch" / "sbg.launch.py")
+        ),
+    )
+
     return LaunchDescription(
         [
-            Node(
-                package="rosboard",
-                executable="rosboard_node",
-            ),
-            Node(
-                package="foxglove_bridge",
-                executable="foxglove_bridge",
-            ),
-            Node(
-                package="driverless_common",
-                executable="display",
-            ),
-            # Node(
-            #     package="mission_controller",
-            #     executable="mission_launcher_node",
-            # ),
-            IncludeLaunchDescription(
-                launch_description_source=PythonLaunchDescriptionSource(
-                    launch_file_path=str(
-                        get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py"
-                    )
-                ),
-                launch_arguments=[
-                    ("urdf_model", "qev-3d.urdf.xacro"),
-                    ("base_frame", "base_footprint"),
-                    ("display_car", "false"),
-                ],
-            ),
+            display_launch,
+            urdf_launch,
+            sbg_launch,
         ]
     )

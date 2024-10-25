@@ -54,7 +54,7 @@ class TrackdriveHandler(ShutdownNode):
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
-        self.declare_parameter("debug", False)
+        self.declare_parameter("debug", True)
 
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")

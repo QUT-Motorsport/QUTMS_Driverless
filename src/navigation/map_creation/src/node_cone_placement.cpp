@@ -35,13 +35,9 @@ ConeAssociation::ConeAssociation() : Node("cone_placement_node") {
                 min_detections);
 }
 
+// TODO:
+// CHANGE THIS STATE FUNCTION TO LISTEN TO NEW STATE MSG OR MAKE LIFECYCLE
 void ConeAssociation::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
-    // we haven't started driving yet
-    // if (msg->state == driverless_msgs::msg::State::DRIVING && msg->lap_count == 0) {
-    if (msg->lap_count == 0) {
-        mapping = true;
-    }
-
     // we have finished mapping
     if (msg->lap_count > 0 && mapping) {
         RCLCPP_INFO_ONCE(get_logger(), "Lap completed, mapping completed");

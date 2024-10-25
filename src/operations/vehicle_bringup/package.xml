@@ -30,6 +30,7 @@
     <!-- Custom packages -->
     <depend>driverless_common</depend>
 
+    <exec_depend>vehicle_urdf</exec_depend>
     <exec_depend>controllers</exec_depend>
     <exec_depend>steering_actuator</exec_depend>
     <exec_depend>canbus</exec_depend>
