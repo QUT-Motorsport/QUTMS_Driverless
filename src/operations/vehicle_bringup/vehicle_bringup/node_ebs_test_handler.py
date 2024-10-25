@@ -93,7 +93,7 @@ class EBSTestHandler(ShutdownNode):
         self.get_logger().info("---EBS handler node initialised---")
 
     def av_state_callback(self, msg: AVStateStamped):
-        super().state_callback(msg)
+        super().av_state_callback(msg)
         if (
             (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
             and not self.mission_started

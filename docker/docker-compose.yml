@@ -50,7 +50,7 @@ services:
         <<: *devices
         <<: *network
         <<: *interactive
-        command: ros2 launch vehicle_bringup vehicle.launch.py
+        command: ros2 launch vehicle_bringup bootup.launch.py
 
     panda_terminal:
         build:

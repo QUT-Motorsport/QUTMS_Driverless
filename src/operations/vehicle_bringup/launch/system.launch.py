@@ -1,6 +1,6 @@
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import FrontendLaunchDescriptionSource, PythonLaunchDescriptionSource
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
@@ -47,7 +47,7 @@ def generate_launch_description():
 
     display_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
-            launch_file_path=str(get_package_share_path("vehicle_bringup") / "launch" / "displays.launch.py")
+            launch_file_path=str(get_package_share_path("vehicle_bringup") / "displays.launch.py")
         ),
     )
 
@@ -68,11 +68,14 @@ def generate_launch_description():
         ),
     )
 
+    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
+
     return LaunchDescription(
         [
             scs_container,
             display_launch,
             urdf_launch,
             perception_launch,
+            stdout_linebuf_envvar,
         ]
     )

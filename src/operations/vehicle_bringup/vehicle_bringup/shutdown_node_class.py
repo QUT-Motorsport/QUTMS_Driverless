@@ -16,7 +16,7 @@ class ShutdownNode(Node):
         self.reset_sub = self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, QOS_LATEST)
 
     def av_state_callback(self, msg: AVStateStamped):
-        if msg.state in [AVStateStamped.NOT_READY, AVStateStamped.END]:
+        if msg.state in [AVStateStamped.END]:
             if self.mission_process is not None:
                 self.mission_process.send_signal(signal.SIGINT)
                 self.get_logger().error("Interrupted process")

@@ -33,17 +33,13 @@ class InspectionHandler(ShutdownNode):
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
-        if (
-            (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
-            and not self.mission_started
-            and self.good_to_go
-        ):
+        if msg.state == AVStateStamped.DRIVING and not self.mission_started and self.good_to_go:
             self.mission_started = True
             self.start_time = time.time()
             command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "inspection.launch.py"]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
-            self.get_logger().info("Trackdrive mission started")
+            self.get_logger().info("Inspection mission started")
 
     def ros_state_callback(self, msg: ROSStateStamped):
         if msg.good_to_go:

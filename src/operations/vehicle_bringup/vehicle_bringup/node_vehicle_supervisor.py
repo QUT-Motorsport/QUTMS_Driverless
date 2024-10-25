@@ -16,22 +16,24 @@ from std_msgs.msg import Bool, UInt8
 
 from driverless_common.status_constants import INT_MISSION_TYPE
 
+can_bus = can.interface.Bus("can0", bustype="socketcan")
+# can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
+dbc_path = get_package_share_path("QUTMS_Embedded_Common") / "QUTMS_Embedded_Common" / "QUTMS.dbc"
+db = cantools.database.load_file(dbc_path)
+
 
 class VehicleSupervisor(Node):
     system_started: bool = False
     system_process = None
     mission_launched: bool = False
     mission_process = None
+    finished: bool = False
 
     ros_state = ROSStateStamped()
+    av_state = AVStateStamped()
 
     def __init__(self):
         super().__init__("vehicle_supervisor_node")
-
-        # self.can_bus = can.interface.Bus("can0", bustype="socketcan")
-        self.can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
-        dbc_path = get_package_share_path("QUTMS_Embedded_Common") / "QUTMS_Embedded_Common" / "QUTMS.dbc"
-        self.db = cantools.database.load_file(dbc_path)
 
         # subscribers
         self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
@@ -49,7 +51,7 @@ class VehicleSupervisor(Node):
         self.ros_state_pub = self.create_publisher(ROSStateStamped, "system/ros_state", 1)
 
         self.reader = can.BufferedReader()
-        self.notifier = can.Notifier(self.can_bus, [self.reader], 0.1)
+        self.notifier = can.Notifier(can_bus, [self.reader], 0.1)
 
         self.get_logger().info("---Mission control node initialised---")
 
@@ -60,16 +62,18 @@ class VehicleSupervisor(Node):
             self.ros_state.sbg_operational
             and self.ros_state.lidar_operational
             and self.ros_state.planning
-            and self.ros_state.steering_ctrl
+            # and self.ros_state.steering_ctrl
             and not self.ros_state.finished
         ):
+            self.ros_state.good_to_go = True
+        elif self.av_state.mission == AVStateStamped.INSPECTION and not self.ros_state.finished:
             self.ros_state.good_to_go = True
         else:
             self.ros_state.good_to_go = False
         self.ros_state_pub.publish(self.ros_state)
 
         # publish ROS state to CAN
-        ros_state_message = self.db.get_message_by_name("ROS_State")
+        ros_state_message = db.get_message_by_name("ROS_State")
         data = ros_state_message.encode(
             {
                 "ROS_State_Steering": self.ros_state.steering_ctrl,
@@ -83,27 +87,29 @@ class VehicleSupervisor(Node):
                 "ROS_State_Cones_Mapped": self.ros_state.mapped_cones,
             }
         )
-        message = can.Message(arbitration_id=ros_state_message.frame_id, data=data)
-        self.can_bus.send(message)
+        try:
+            message = can.Message(arbitration_id=ros_state_message.frame_id, data=data)
+            can_bus.send(message)
+        except can.CanOperationError:
+            self.get_logger().error("Waiting for CAN bus to be available", throttle_duration_sec=1)
 
         # incoming messages for AV state
         while not self.reader.buffer.empty():
             message = self.reader.get_message()
-            if message.arbitration_id != self.db.get_message_by_name("AV_State").frame_id:
+            if message.arbitration_id != db.get_message_by_name("AV_State").frame_id:
                 continue  # ignore messages that are not AV state
 
-            msg_signals = self.db.decode_message(message.arbitration_id, message.data)
+            msg_signals = db.decode_message(message.arbitration_id, message.data)
 
             # publish AV state to ROS
-            av_state_msg = AVStateStamped()
-            av_state_msg.header.stamp = self.get_clock().now().to_msg()
-            av_state_msg.mode = msg_signals["AV_State_Mode"]
-            av_state_msg.mission = msg_signals["AV_State_Mission"]
-            av_state_msg.state = msg_signals["AV_State_Status"]
-            self.av_state_pub.publish(av_state_msg)
+            self.av_state.header.stamp = self.get_clock().now().to_msg()
+            self.av_state.mode = msg_signals["AV_State_Mode"]
+            self.av_state.mission = msg_signals["AV_State_Mission"]
+            self.av_state.state = msg_signals["AV_State_Status"]
+            self.av_state_pub.publish(self.av_state)
 
             # start system if in autonomous mode
-            if av_state_msg.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
+            if self.av_state.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
                 command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
                 self.get_logger().info(f"Command: {' '.join(command)}")
                 self.system_process = Popen(command)
@@ -113,10 +119,10 @@ class VehicleSupervisor(Node):
             # start mission if in autonomous mode and mission is not none
             if (
                 self.system_started
-                and av_state_msg.mission != AVStateStamped.MISSION_NONE
+                and self.av_state.mission != AVStateStamped.MISSION_NONE
                 and not self.mission_launched
             ):
-                target_mission = INT_MISSION_TYPE[av_state_msg.mission].value
+                target_mission = INT_MISSION_TYPE[self.av_state.mission].value
                 node = target_mission + "_handler_node"
                 command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
 
@@ -125,14 +131,11 @@ class VehicleSupervisor(Node):
                 self.get_logger().info("Mission started: " + target_mission)
                 self.mission_launched = True
 
-            # close mission if mission is none or mission is finished
-            if (
-                av_state_msg.mission == AVStateStamped.MISSION_NONE or av_state_msg.state == AVStateStamped.END
-            ) and self.mission_launched:
+            # close mission if mission is finished
+            if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
                 self.get_logger().warn("Closing mission")
                 self.mission_process.send_signal(signal.SIGINT)
-                self.mission_process = None
-                self.mission_launched = False
+                self.finished = True
 
     def diagnostics_callback(self, msg: DiagnosticArray):
         if "velodyne_driver_node" in msg.status[0].name and msg.status[0].level == 0:
@@ -168,8 +171,8 @@ def main(args=None):
     node = VehicleSupervisor()
     rclpy.spin(node)
     # shut down processes
-    node.system_process.terminate()
-    node.mission_process.terminate()
+    # node.system_process.terminate()
+    # node.mission_process.terminate()
     node.can_bus.shutdown()
     node.destroy_node()
     rclpy.shutdown()

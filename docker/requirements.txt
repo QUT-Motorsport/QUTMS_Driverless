@@ -1,3 +1,5 @@
+python-can
+cantools
 colour
 colorama
 cython

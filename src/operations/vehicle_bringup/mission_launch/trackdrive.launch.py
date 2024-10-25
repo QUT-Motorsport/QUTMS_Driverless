@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -41,5 +41,6 @@ def generate_launch_description():
                 executable="vel_to_ackermann_node",
                 parameters=[{"Kp": 4.0}],  # specific for Trackdrive
             ),
+            SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
         ]
     )

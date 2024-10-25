@@ -1,4 +1,5 @@
 from launch import LaunchDescription
+from launch.actions import SetEnvironmentVariable
 from launch_ros.actions import Node
 
 
@@ -24,24 +25,24 @@ def generate_launch_description():
             {"certfile": ""},
             {"keyfile": ""},
             {
-                "topic_whitelist": [
-                    "/rosout",
-                    "/tf",
-                    "/tf_static",
-                    "/diagnostics",
-                    "/control/driving_command",
-                    "/system/as_status",
-                    "/slam/occupancy_grid",
-                    "/vehicle/velocity",
-                    "/vehicle/steering_angle",
-                    "/debug_markers/slam_markers",
-                    "/debug_markers/lidar_markers",
-                    "/planning/yellow_bounds",
-                    "/planning/blue_bounds",
-                    "/planning/midline_path",
-                    "/slam/graph_visualisation",
-                    "/local_costmap/published_footprint",
-                ]
+                # "topic_whitelist": [
+                #     "/rosout",
+                #     "/tf",
+                #     "/tf_static",
+                #     "/diagnostics",
+                #     "/control/driving_command",
+                #     "/system/as_status",
+                #     "/slam/occupancy_grid",
+                #     "/vehicle/velocity",
+                #     "/vehicle/steering_angle",
+                #     "/debug_markers/slam_markers",
+                #     "/debug_markers/lidar_markers",
+                #     "/planning/yellow_bounds",
+                #     "/planning/blue_bounds",
+                #     "/planning/midline_path",
+                #     "/slam/graph_visualisation",
+                #     "/local_costmap/published_footprint",
+                # ]
             },
             {"param_whitelist": [".*"]},
             {"service_whitelist": [".*"]},
@@ -70,10 +71,13 @@ def generate_launch_description():
         ],
     )
 
+    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
+
     return LaunchDescription(
         [
             rosboard_node,
             display_node,
             foxglove_node,
+            stdout_linebuf_envvar,
         ]
     )
