@@ -1,16 +1,26 @@
 version: "3.9"
 
 services:
-  # Base image containing dependencies.
-  panda_terminal:
+  # Base image containing dependencies
+  base:
+    image: driverless:base
     build:
       context: ../../
-      dockerfile: ./QUTMS_Driverless/docker/Dockerfile
+      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.base
       args:
         ROS_DISTRO: humble
-        USERNAME: developer
-        UID: 1000
-        GID: 1000
+      target: base
+  # Overlay image containing the QUTMS workspace and user
+  panda_terminal:
+    image: driverless:terminal
+    build:
+      context: ../../
+      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.overlay
+      args:
+        USERNAME: ${USERNAME}
+        UID: ${UID}
+        GID: ${GID}
+      target: overlay
     # Interactive shell
     stdin_open: true
     tty: true
@@ -29,18 +39,19 @@ services:
       - /dev/shm:/dev/shm
       - /dev/sbg:/dev/sbg
       # Allows graphical programs in the container.
-      - $HOME/.Xauthority:/home/developer/.Xauthority
+      - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
       # Mount the workspace folders (some with read-write permissions)
-      - ../src:/home/developer/driverless_ws/src
-      - ../tools:/home/developer/driverless_ws/tools
-      - ../../bags:/home/developer/driverless_ws/bags:rw
-      - ../../build:/home/developer/driverless_ws/build:rw
-      - ../../log:/home/developer/driverless_ws/log:rw
-      - ../../install:/home/developer/driverless_ws/install:rw
-      - ../../slam_toolbox:/home/developer/driverless_ws/slam_toolbox
-      - ../../sbg_ros2_driver:/home/developer/driverless_ws/sbg_ros2_driver
+      - ../../QUTMS_Driverless/src:/home/${USERNAME}/QUTMS/QUTMS_Driverless/src
+      - ../../QUTMS_Driverless/tools:/home/${USERNAME}/QUTMS/QUTMS_Driverless/tools
+      - ../../bags:/home/${USERNAME}/QUTMS/bags
+      - ../../build:/home/${USERNAME}/QUTMS/build
+      - ../../log:/home/${USERNAME}/QUTMS/log
+      - ../../install:/home/${USERNAME}/QUTMS/install
+      - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
+      - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
       - /dev/dri:/dev/dri
+    # Start the terminal
     command: /bin/bash
 
   # Launch bringup
