@@ -15,6 +15,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
 
+from std_srvs.srv import SetBool
+
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
@@ -22,6 +24,8 @@ class TrackdriveHandler(ShutdownNode):
     mission_started = False
     good_to_go = False
     process = None
+    debug = False
+    record: bool = False
 
     sent_init = False
     laps = 0
@@ -29,7 +33,6 @@ class TrackdriveHandler(ShutdownNode):
     last_x = 0.0
     path = None
     in_box = True
-    debug = False
 
     controller_id = "TrackdriveRPP"
 
@@ -45,6 +48,9 @@ class TrackdriveHandler(ShutdownNode):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+        # create recording service
+        self.create_service(SetBool, "system/record", self.record_callback)
+
         # publishers
         self.shutdown_pub = self.create_publisher(Shutdown, "system/shutdown", 1)
         self.lap_trig_pub = self.create_publisher(UInt8, "system/laps_completed", 1)
@@ -54,7 +60,7 @@ class TrackdriveHandler(ShutdownNode):
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
-        self.declare_parameter("debug", True)
+        self.declare_parameter("debug", False)
 
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
@@ -63,12 +69,27 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "trackdrive.launch.py"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "launch",
+                "vehicle_bringup",
+                "trackdrive.launch.py",
+                f"record:={self.record}",
+            ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
+
+    def record_callback(self, request, response):
+        self.record = request.data
+        response.success = True
+        self.get_logger().info(f"Recording set to {self.record}")
+        return response
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
@@ -81,7 +102,16 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "trackdrive.launch.py"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "launch",
+                "vehicle_bringup",
+                "trackdrive.launch.py",
+                f"record:={self.record}",
+            ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("Trackdrive mission started")

@@ -55,10 +55,10 @@ def generate_launch_description():
             {
                 "capabilities": [
                     # "clientPublish",
-                    # "parameters",
-                    # "parametersSubscribe",
-                    # "services",
-                    "connectionGraph",
+                    "parameters",
+                    "parametersSubscribe",
+                    "services",
+                    # "connectionGraph",
                     # "assets",
                 ]
             },
@@ -75,9 +75,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            stdout_linebuf_envvar,
             rosboard_node,
             display_node,
             foxglove_node,
-            stdout_linebuf_envvar,
         ]
     )

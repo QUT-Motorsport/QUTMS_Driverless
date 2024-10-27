@@ -72,10 +72,10 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            stdout_linebuf_envvar,
             scs_container,
             display_launch,
             urdf_launch,
             perception_launch,
-            stdout_linebuf_envvar,
         ]
     )

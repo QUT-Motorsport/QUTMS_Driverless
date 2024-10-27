@@ -14,6 +14,8 @@ from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 
+from std_srvs.srv import SetBool
+
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
@@ -21,10 +23,11 @@ class EBSTestHandler(ShutdownNode):
     mission_started = False
     good_to_go = False
     process = None
+    debug = False
+    record: bool = False
 
     sent_init = False
     path = None
-    debug = False
 
     def __init__(self):
         super().__init__("ebs_test_logic_node")
@@ -37,6 +40,9 @@ class EBSTestHandler(ShutdownNode):
         self.create_timer((1 / 20), self.timer_callback)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # create recording service
+        self.create_service(SetBool, "system/record", self.record_callback)
 
         # publishers
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
@@ -85,6 +91,7 @@ class EBSTestHandler(ShutdownNode):
                 "launch",
                 "mission_controller",
                 "ebs_test.launch.py",
+                f"record:={self.record}",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
@@ -113,10 +120,29 @@ class EBSTestHandler(ShutdownNode):
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = ["stdbuf", "-o", "L", "ros2", "param", "set", "steering_actuator_node", "max_position", "2000"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "param",
+                "set",
+                "steering_actuator_node",
+                "max_position",
+                "2000",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "ebs_test.launch.py"]
+            command = [
+                "stdbuf",
+                "-o",
+                "L",
+                "ros2",
+                "launch",
+                "vehicle_bringup",
+                "ebs_test.launch.py",
+                f"record:={self.record}",
+            ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("EBS mission started")
