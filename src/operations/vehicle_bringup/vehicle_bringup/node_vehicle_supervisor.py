@@ -54,6 +54,8 @@ class VehicleSupervisor(Node):
             self.create_client(SetBool, "launch/trackdrive"),
         ]
 
+        self.system_launch_cli = self.create_client(SetBool, "launch/system")
+
         self.create_timer(0.001, self.timer_callback)
 
         # publishers
@@ -65,10 +67,17 @@ class VehicleSupervisor(Node):
 
         self.get_logger().info("---Mission control node initialised---")
 
-    def send_request(self, mission: int, request: bool):
+    def send_mission_request(self, mission: int, request_val: bool):
         request = SetBool.Request()
-        request.data = request
+        request.data = request_val
         self.future = self.srv_list[mission].call_async(request)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
+
+    def send_system_request(self, request_val: bool):
+        request = SetBool.Request()
+        request.data = request_val
+        self.future = self.system_launch_cli.call_async(request)
         rclpy.spin_until_future_complete(self, self.future)
         return self.future.result()
 
@@ -127,11 +136,13 @@ class VehicleSupervisor(Node):
 
             # start system if in autonomous mode
             if self.av_state.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
-                command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.system_process = Popen(command)
-                self.get_logger().info("Autnomous System started")
-                self.system_started = True
+                # command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
+                # self.get_logger().info(f"Command: {' '.join(command)}")
+                # self.system_process = Popen(command)
+                # self.get_logger().info("Autnomous System started")
+                result = self.send_system_request(True)
+                if result.success:
+                    self.system_started = True
 
             # start mission if in autonomous mode and mission is not none
             if (
@@ -147,7 +158,7 @@ class VehicleSupervisor(Node):
                 # self.get_logger().info(f"Command: {' '.join(command)}")
                 # self.mission_process = Popen(command)
                 # self.get_logger().info("Mission started: " + target_mission)
-                result = self.send_request(2, True)
+                result = self.send_mission_request(2, True)
                 if result.success:
                     self.mission_launched = True
 

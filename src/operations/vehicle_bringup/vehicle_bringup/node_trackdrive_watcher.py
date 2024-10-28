@@ -6,7 +6,7 @@ from rclpy.node import Node
 from std_srvs.srv import SetBool
 
 
-class EBSWatcher(Node):
+class NodeWatcher(Node):
     def __init__(self):
         super().__init__("trackdrive_watcher")
         self.srv = self.create_service(SetBool, "launch/trackdrive", self.ebs_callback)
@@ -32,7 +32,7 @@ class EBSWatcher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = EBSWatcher()
+    node = NodeWatcher()
     try:
         rclpy.spin(node)
     except SystemExit:
