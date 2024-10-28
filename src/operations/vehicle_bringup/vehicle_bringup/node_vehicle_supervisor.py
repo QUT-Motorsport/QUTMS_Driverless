@@ -14,6 +14,8 @@ from driverless_msgs.msg import AVStateStamped, ConeDetectionStamped, ROSStateSt
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, UInt8
 
+from std_srvs.srv import SetBool
+
 from driverless_common.status_constants import INT_MISSION_TYPE
 
 can_bus = can.interface.Bus("can0", bustype="socketcan")
@@ -44,6 +46,14 @@ class VehicleSupervisor(Node):
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
         self.create_subscription(DiagnosticArray, "diagnostics", self.diagnostics_callback, 1)
 
+        self.srv_list = [
+            None,
+            None,
+            self.create_client(SetBool, "launch/inspection"),
+            self.create_client(SetBool, "launch/ebs"),
+            self.create_client(SetBool, "launch/trackdrive"),
+        ]
+
         self.create_timer(0.001, self.timer_callback)
 
         # publishers
@@ -54,6 +64,13 @@ class VehicleSupervisor(Node):
         self.notifier = can.Notifier(can_bus, [self.reader], 0.1)
 
         self.get_logger().info("---Mission control node initialised---")
+
+    def send_request(self, mission: int, request: bool):
+        request = SetBool.Request()
+        request.data = request
+        self.future = self.srv_list[mission].call_async(request)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
 
     def timer_callback(self):
         # consolidate current ROS state
@@ -123,14 +140,16 @@ class VehicleSupervisor(Node):
                 and not self.mission_launched
                 and self.ros_state.steering_ctrl
             ):
-                target_mission = INT_MISSION_TYPE[self.av_state.mission].value
-                node = target_mission + "_handler_node"
-                command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
+                # target_mission = INT_MISSION_TYPE[self.av_state.mission].value
+                # node = target_mission + "_handler_node"
+                # command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
 
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.mission_process = Popen(command)
-                self.get_logger().info("Mission started: " + target_mission)
-                self.mission_launched = True
+                # self.get_logger().info(f"Command: {' '.join(command)}")
+                # self.mission_process = Popen(command)
+                # self.get_logger().info("Mission started: " + target_mission)
+                result = self.send_request(2, True)
+                if result.success:
+                    self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:

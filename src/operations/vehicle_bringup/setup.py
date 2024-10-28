@@ -28,6 +28,9 @@ setup(
             "inspection_handler_node = vehicle_bringup.node_inspection_handler:main",
             "trackdrive_handler_node = vehicle_bringup.node_trackdrive_handler:main",
             "ebs_test_handler_node = vehicle_bringup.node_ebs_test_handler:main",
+            "ebs_watcher_node = vehicle_bringup.node_ebs_watcher:main",
+            "trackdrive_watcher_node = vehicle_bringup.node_trackdrive_watcher:main",
+            "inspection_watcher_node = vehicle_bringup.node_inspection_watcher:main",
         ],
     },
 )
