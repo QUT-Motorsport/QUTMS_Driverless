@@ -68,8 +68,7 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
 void VelocityController::av_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
     state_ = msg;
     // enabled if driving and not in inspection mission
-    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_ &&
-        msg->mission != driverless_msgs::msg::AVStateStamped::INSPECTION) {
+    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_) {
         motors_enabled_ = true;
     }
 }
@@ -141,9 +140,13 @@ void VelocityController::controller_callback() {
         accel = -1;
     }
 
+    if (state_->mission == driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        accel = 0.11;  // THIS COULD BE A PARAM, TODO
+    }
+
     // create control ackermann based off desired and calculated acceleration
     Torque_Request_t torque_request;
-    torque_request.torque = accel;
+    torque_request.torque = accel * 100;  // convert to percentage
     auto torque_heartbeat = Compose_Torque_Request_Heartbeat(&torque_request);
     this->can_pub_->publish(
         std::move(this->_d_2_f(torque_heartbeat.id, true, torque_heartbeat.data, sizeof(torque_heartbeat.data))));
