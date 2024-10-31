@@ -19,7 +19,6 @@ services:
       args:
         USERNAME: ${USERNAME}
         UID: ${UID}
-        GID: ${GID}
       target: overlay
     # Interactive shell
     stdin_open: true
@@ -43,12 +42,13 @@ services:
       # Mount the workspace folders (some with read-write permissions)
       - ../../QUTMS_Driverless/src:/home/${USERNAME}/QUTMS/QUTMS_Driverless/src
       - ../../QUTMS_Driverless/tools:/home/${USERNAME}/QUTMS/QUTMS_Driverless/tools
+      - ../../roslogs:/home/${USERNAME}/QUTMS/roslogs
       - ../../bags:/home/${USERNAME}/QUTMS/bags
       - ../../build:/home/${USERNAME}/QUTMS/build
       - ../../log:/home/${USERNAME}/QUTMS/log
       - ../../install:/home/${USERNAME}/QUTMS/install
-      - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
-      - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
+      # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
+      # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
       - /dev/dri:/dev/dri
     # Start the terminal

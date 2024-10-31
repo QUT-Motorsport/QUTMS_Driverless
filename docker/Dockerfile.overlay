@@ -2,11 +2,9 @@ FROM driverless:base as overlay
 
 ARG USERNAME
 ARG UID
-# dialout group is used for compatability with mac
 ARG GID=dialout
 
 # create user and set no password required
-RUN groupadd --gid $GID $USERNAME
 RUN useradd \
         -r \
         -m \
@@ -18,23 +16,27 @@ RUN useradd \
     echo ${USERNAME}:${USERNAME} | chpasswd && \
     echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
 
-USER ${USERNAME}
 WORKDIR /home/${USERNAME}/QUTMS
 
+RUN mv /tmp/slam_toolbox ./slam_toolbox
+RUN mv /tmp/sbg_ros2_driver ./sbg_ros2_driver
 
 # ==============================================================================
 #                          Build and initialise ROS 2
 # ==============================================================================
 
+USER ${USERNAME}
+
 COPY ./QUTMS_Driverless/src/navigation/planners/scripts/pre_calc.py ./pre_calc.py
 RUN python3 pre_calc.py
 
 COPY ./QUTMS_Driverless/docker/cyclonedds.xml ./cyclonedds.xml
-ENV CYCLONEDDS_URI=file:///home/${USERNAME}/QUTMS/cyclonedds.xml 
+ENV CYCLONEDDS_URI=file:///home/${USERNAME}/QUTMS/cyclonedds.xml
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV ROS_DOMAIN_ID=69
 ENV QUTMS_WS=/home/${USERNAME}/QUTMS
 ENV USER=${USERNAME}
+ENV ROS_LOG_DIR=/home/${USERNAME}/QUTMS/roslogs
 
 COPY ./QUTMS_Driverless/docker/ros_entrypoint.sh ./ros_entrypoint.sh
 ENTRYPOINT ["./ros_entrypoint.sh"]
