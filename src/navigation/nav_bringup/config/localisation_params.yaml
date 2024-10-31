@@ -40,7 +40,7 @@ odom_filter_node:
     # sensor0_twist_rejection_threshold: 0.8
     # sensor0_linear_acceleration_rejection_threshold: 0.8
 
-    odom0: imu/local_odometry
+    odom0: imu/odometry
     odom0_config: [true, true, false,
                   false, false, true,
                   true, true, false,
