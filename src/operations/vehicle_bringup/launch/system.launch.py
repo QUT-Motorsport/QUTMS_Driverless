@@ -47,7 +47,7 @@ def generate_launch_description():
 
     display_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
-            launch_file_path=str(get_package_share_path("vehicle_bringup") / "displays.launch.py")
+            launch_file_path=str(get_package_share_path("vehicle_bringup") / "launch" / "displays.launch.py")
         ),
     )
 

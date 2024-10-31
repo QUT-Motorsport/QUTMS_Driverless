@@ -11,7 +11,7 @@
 
     <exec_depend>ros2launch</exec_depend>
 
-    <exec_depend>velodyne_driver</exec_depend>
+    <exec_depend>velodyne</exec_depend>
     <exec_depend>ground_plane_segmenter</exec_depend>
     <exec_depend>pointcloud_to_laserscan</exec_depend>
 

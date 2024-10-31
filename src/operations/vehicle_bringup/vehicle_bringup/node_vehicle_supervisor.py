@@ -121,6 +121,7 @@ class VehicleSupervisor(Node):
                 self.system_started
                 and self.av_state.mission != AVStateStamped.MISSION_NONE
                 and not self.mission_launched
+                and self.ros_state.steering_ctrl
             ):
                 target_mission = INT_MISSION_TYPE[self.av_state.mission].value
                 node = target_mission + "_handler_node"
