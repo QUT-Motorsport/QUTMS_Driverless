@@ -1,9 +1,15 @@
 from launch import LaunchDescription
-from launch.actions import SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    use_zenoh_bridge = LaunchConfiguration("use_zenoh_bridge")
+
+    use_zenoh_bridge_arg = DeclareLaunchArgument("use_zenoh_bridge", default_value="True")
+
     rosboard_node = Node(
         package="rosboard",
         executable="rosboard_node",
@@ -14,10 +20,15 @@ def generate_launch_description():
         executable="display",
     )
 
+    zenoh_node = Node(
+        package="zenoh_bridge_ros2dds", executable="zenoh_bridge_ros2dds", condition=IfCondition(use_zenoh_bridge)
+    )
+
     foxglove_node = Node(
         package="foxglove_bridge",
         executable="foxglove_bridge",
         output="screen",
+        condition=UnlessCondition(use_zenoh_bridge),
         parameters=[
             {"port": 8765},
             {"address": "0.0.0.0"},
@@ -76,8 +87,10 @@ def generate_launch_description():
     return LaunchDescription(
         [
             stdout_linebuf_envvar,
+            use_zenoh_bridge_arg,
             rosboard_node,
             display_node,
             foxglove_node,
+            zenoh_node,
         ]
     )
