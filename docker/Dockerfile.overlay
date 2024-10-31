@@ -20,6 +20,7 @@ WORKDIR /home/${USERNAME}/QUTMS
 
 RUN mv /tmp/slam_toolbox ./slam_toolbox
 RUN mv /tmp/sbg_ros2_driver ./sbg_ros2_driver
+RUN mv /tmp/zenoh-plugin-ros2dds ./zenoh-plugin-ros2dds
 
 # ==============================================================================
 #                          Build and initialise ROS 2
