@@ -20,7 +20,9 @@ def generate_launch_description():
     )
 
     system_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_path("nav_bringup"), "launch", "system.launch.py"))
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "system.launch.py")
+        )
     )
 
     launch_system_on_watcher_exit = RegisterEventHandler(
@@ -31,7 +33,9 @@ def generate_launch_description():
     )
 
     mission_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_path("vehicle_bringup"), "mission.launch.py"))
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "mission.launch.py")
+        )
     )
 
     sbg_launch = IncludeLaunchDescription(

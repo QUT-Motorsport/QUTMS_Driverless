@@ -72,6 +72,6 @@ def generate_launch_description():
             grid_to_cone_node,
             planner_node,
             ackermann_control_node,
-            ros2_bag_node,
+            # ros2_bag_node,
         ]
     )

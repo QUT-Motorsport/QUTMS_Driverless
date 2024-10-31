@@ -78,8 +78,10 @@ class VehicleSupervisor(Node):
         request = SetBool.Request()
         request.data = request_val
         self.future = self.system_launch_cli.call_async(request)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
+        # rclpy.spin_until_future_complete(self, self.future)
+        time.sleep(0.5)
+        self.system_launch_cli.remove_pending_request(self.future)
+        return True
 
     def timer_callback(self):
         # consolidate current ROS state
@@ -140,9 +142,7 @@ class VehicleSupervisor(Node):
                 # self.get_logger().info(f"Command: {' '.join(command)}")
                 # self.system_process = Popen(command)
                 # self.get_logger().info("Autnomous System started")
-                result = self.send_system_request(True)
-                if result.success:
-                    self.system_started = True
+                self.system_started = self.send_system_request(True)
 
             # start mission if in autonomous mode and mission is not none
             if (
@@ -151,16 +151,17 @@ class VehicleSupervisor(Node):
                 and not self.mission_launched
                 and self.ros_state.steering_ctrl
             ):
-                # target_mission = INT_MISSION_TYPE[self.av_state.mission].value
-                # node = target_mission + "_handler_node"
-                # command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
+                target_mission = INT_MISSION_TYPE[self.av_state.mission].value
+                node = target_mission + "_handler_node"
+                command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
 
-                # self.get_logger().info(f"Command: {' '.join(command)}")
-                # self.mission_process = Popen(command)
-                # self.get_logger().info("Mission started: " + target_mission)
-                result = self.send_mission_request(2, True)
-                if result.success:
-                    self.mission_launched = True
+                self.get_logger().info(f"Command: {' '.join(command)}")
+                self.mission_process = Popen(command)
+                self.get_logger().info("Mission started: " + target_mission)
+                self.mission_launched = True
+                # result = self.send_mission_request(2, True)
+                # if result.success:
+                #     self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:

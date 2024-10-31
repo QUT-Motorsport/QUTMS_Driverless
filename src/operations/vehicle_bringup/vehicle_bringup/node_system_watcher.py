@@ -36,7 +36,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except SystemExit:
-        rclpy.logging.get_logger("system_watcher").info("System launched")
+        rclpy.logging.get_logger("system_watcher").info("System watcher exited successfully")
     node.destroy_node()
     rclpy.shutdown()
 
