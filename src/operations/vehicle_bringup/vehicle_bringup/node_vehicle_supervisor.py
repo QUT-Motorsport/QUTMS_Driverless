@@ -40,7 +40,7 @@ class VehicleSupervisor(Node):
         # subscribers
         self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
         self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.lidar_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "slam/global_map", self.map_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.map_callback, 1)
         self.create_subscription(Bool, "system/steering_ready", self.steering_callback, 1)
         self.create_subscription(Shutdown, "system/shutdown", self.shutdown_callback, 1)
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
@@ -189,10 +189,10 @@ class VehicleSupervisor(Node):
         self.ros_state.sbg_operational = True
 
     def lidar_callback(self, msg: ConeDetectionStamped):
-        self.ros_state.identified_cones = len(msg.cones_with_cov)
+        self.ros_state.identified_cones = len(msg.cones)
 
     def map_callback(self, msg: ConeDetectionStamped):
-        self.ros_state.mapped_cones = len(msg.cones_with_cov)
+        self.ros_state.mapped_cones = len(msg.cones)
 
     def laps_callback(self, msg: UInt8):
         self.ros_state.lap_count = msg.data
