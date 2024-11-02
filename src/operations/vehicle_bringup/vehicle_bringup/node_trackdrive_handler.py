@@ -65,6 +65,7 @@ class TrackdriveHandler(ShutdownNode):
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
+            self.laps = 1  # skip lap 0
             self.mission_started = True
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
