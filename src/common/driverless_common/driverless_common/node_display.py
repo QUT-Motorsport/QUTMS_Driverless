@@ -7,7 +7,8 @@ from rclpy.publisher import Publisher
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from driverless_msgs.msg import ConeDetectionStamped
-from visualization_msgs.msg import MarkerArray
+from geometry_msgs.msg import PointStamped
+from visualization_msgs.msg import Marker, MarkerArray
 
 from driverless_common.common import QOS_LATEST
 from driverless_common.marker import marker_array_from_cone_detection
@@ -33,9 +34,13 @@ class DisplayDetections(Node):
         # steering angle target sub
         self.create_subscription(AckermannDriveStamped, "control/driving_command", self.steering_callback, QOS_LATEST)
 
+        # lookahead point for foxglove...
+        self.create_subscription(PointStamped, "lookahead_point", self.lookahead_callback, QOS_LATEST)
+
         # marker pubs
         self.lidar_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "debug_markers/lidar_markers", 1)
         self.slam_mkr_publisher: Publisher = self.create_publisher(MarkerArray, "debug_markers/slam_markers", 1)
+        self.lookahead_mkr_publisher: Publisher = self.create_publisher(Marker, "debug_markers/lookahead_marker", 1)
 
         self.get_logger().info("---Common visualisation node initialised---")
 
@@ -51,6 +56,21 @@ class DisplayDetections(Node):
     def slam_callback(self, msg: ConeDetectionStamped):
         if self.slam_mkr_publisher.get_subscription_count() != 0:
             self.slam_mkr_publisher.publish(marker_array_from_cone_detection(msg))
+
+    def lookahead_callback(self, msg: PointStamped):
+        if self.lookahead_mkr_publisher.get_subscription_count() != 0:
+            mkr = Marker()
+            mkr.header = msg.header
+            mkr.type = Marker.SPHERE
+            mkr.action = Marker.ADD
+            mkr.pose.position = msg.point
+            mkr.pose.orientation.w = 1.0
+            mkr.scale.x = 0.25
+            mkr.scale.y = 0.25
+            mkr.scale.z = 0.25
+            mkr.color.r = 1.0
+            mkr.color.a = 1.0
+            self.lookahead_mkr_publisher.publish(mkr)
 
 
 def main():
