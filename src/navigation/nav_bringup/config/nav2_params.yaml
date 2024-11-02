@@ -4,6 +4,8 @@
     global_frame: track
     local_frame: odom
     robot_base_frame: base_footprint
+    # odom_topic: odometry/filtered  # this is actually quite noisy and often drops to 0 m/s for some reason
+    odom_topic: imu/odometry  # use imu's odom instead of filtered
     # robot_radius: 1.0
     footprint: "[ [1.7, 0.9], [1.7, -0.9], [-1.2, -0.9], [-1.2, 0.9] ]"
 
@@ -80,7 +82,7 @@ global_costmap:
       publish_frequency: 1.0
       resolution: 0.1
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]  # layers are not used in control (no collision checking currently)
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -110,10 +112,10 @@ local_costmap:
       update_frequency: 10.0
       publish_frequency: 10.0
       rolling_window: true
-      width: 10
-      height: 10
+      width: 30
+      height: 30
       resolution: 0.1
-      plugins: ["voxel_layer", "inflation_layer"]
+      plugins: ["voxel_layer", "inflation_layer"]  # layers are not used in control (no collision checking currently)
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 1.0
@@ -230,25 +232,26 @@ controller_server:
     TrackdriveRPPFast:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 5.0  # The desired maximum linear velocity to use.
-      lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
+      # lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
       min_lookahead_dist: 4.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
-      max_lookahead_dist: 10.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
+      max_lookahead_dist: 12.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       lookahead_time: 3.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
       transform_tolerance: 0.3  # The TF transform tolerance.
       use_velocity_scaled_lookahead_dist: true  # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
-      min_approach_linear_velocity: 4.5  # The minimum velocity threshold to apply when approaching the goal.
-      approach_velocity_scaling_dist: 2.0  # Integrated distance from end of transformed path at which to start applying velocity scaling.
+      min_approach_linear_velocity: 3.5  # The minimum velocity threshold to apply when approaching the goal.
+      approach_velocity_scaling_dist: 0.1  # Integrated distance from end of transformed path at which to start applying velocity scaling.
+        # as close to zero as possible in case of high curvature
       use_collision_detection: false  # Whether to enable collision detection.
       # max_allowed_time_to_collision_up_to_carrot: 2.0  # The time to project a velocity command to check for collisions when use_collision_detection is true.
       use_regulated_linear_velocity_scaling: true  # Whether to use the regulated features for curvature.
       use_cost_regulated_linear_velocity_scaling: false  # Whether to use the regulated features for proximity to obstacles.
-      cost_scaling_dist: 1.0  # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled.
+      # cost_scaling_dist: 1.0  # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled.
       # cost_scaling_gain: 1.0  # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist.
       # inflation_cost_scaling_factor: 0.5  # The value of cost_scaling_factor set for the inflation layer in the local costmap.
         # The value should be exactly the same for accurately computing distance from obstacles using the inflated cell values
-      regulated_linear_scaling_min_radius: 5.0  # The turning radius for which the regulation features are triggered.
-      regulated_linear_scaling_min_speed: 3.5  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
+      regulated_linear_scaling_min_radius: 12.0  # The turning radius for which the regulation features are triggered.
+      regulated_linear_scaling_min_speed: 3.0  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
       use_fixed_curvature_lookahead: true  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
       curvature_lookahead_dist: 10.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
       use_rotate_to_heading: false  # Whether to enable rotating to rough heading and goal orientation when using holonomic planners.
