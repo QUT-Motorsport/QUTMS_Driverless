@@ -1,22 +1,11 @@
 version: "2.3"
 
-
 # ==============================================================================
 #                                 Components
 # ==============================================================================
 
 x-user: &user
     user: ${USERNAME?USERNAME env var not set! Use the Makefile}
-
-x-volumes-roscube: &volumes-roscube
-    volumes:
-        - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
-        - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../tools:/home/${USERNAME}/driverless_ws/tools
-        - ../../bags:/home/${USERNAME}/driverless_ws/bags
-        # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
-        - /dev/shm:/dev/shm
-        - /dev/sbg:/dev/sbg
 
 x-volumes-panda: &volumes-panda
     volumes:
@@ -27,16 +16,6 @@ x-volumes-panda: &volumes-panda
         # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
         - /dev/shm:/dev/shm
         - /dev/sbg:/dev/sbg
-
-x-volumes-jetson: &volumes-jetson
-    volumes:
-        # see x-volumes-roscube above for explanation of this
-        - /dev/shm:/dev/shm
-        # mount in X11 stuff for display
-        - /tmp/.X11-unix:/tmp/.X11-unix
-        - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../tools:/home/${USERNAME}/driverless_ws/tools
-        - ../bags:/home/${USERNAME}/driverless_ws/bags
 
 x-devices: &devices
     devices:
@@ -54,73 +33,11 @@ x-interactive: &interactive
 x-visible: &visible
     tty: true
 
-x-jetson-extras: &jetson-extras
-    runtime: nvidia
-
-
 # ==============================================================================
 #                       Services (Targets in the Makefile)
 # ==============================================================================
 
 services:
-    jetson:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.jetson_newer
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-jetson
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        <<: *jetson-extras
-        command: ros2 launch jetson_machine machine.launch.py
-
-    jetson_terminal:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.jetson_newer
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-jetson
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        <<: *jetson-extras
-        command: bash
-
-    roscube:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.roscube
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-roscube
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: ros2 launch roscube_machine machine.launch.py
-
-    roscube_terminal:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.roscube
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-roscube
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
-
     panda:
         build:
             context: ../
@@ -133,7 +50,7 @@ services:
         <<: *devices
         <<: *network
         <<: *interactive
-        command: ros2 launch roscube_machine machine.launch.py
+        command: ros2 launch vehicle_bringup bootup.launch.py
 
     panda_terminal:
         build:

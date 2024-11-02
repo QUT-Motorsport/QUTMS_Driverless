@@ -1,6 +1,6 @@
 /**: # stack-wide parameters
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: false
     global_frame: track
     local_frame: odom
     robot_base_frame: base_footprint
