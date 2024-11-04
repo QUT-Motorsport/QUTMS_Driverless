@@ -1,6 +1,11 @@
+import os
 from subprocess import Popen
 import time
 
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import AnyLaunchDescriptionSource
 from nav2_msgs.action import FollowPath
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -17,6 +22,7 @@ from std_msgs.msg import UInt8
 
 from std_srvs.srv import SetBool
 
+from vehicle_bringup.ros2_launch_parent_class import Ros2LaunchParent
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
@@ -62,6 +68,8 @@ class TrackdriveHandler(ShutdownNode):
 
         self.declare_parameter("debug", False)
 
+        self.launch_parent = Ros2LaunchParent()
+
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
@@ -69,18 +77,31 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            command = [
-                "stdbuf",
-                "-o",
-                "L",
-                "ros2",
-                "launch",
-                "vehicle_bringup",
-                "trackdrive.launch.py",
-                f"record:={self.record}",
-            ]
-            self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            # command = [
+            #     "stdbuf",
+            #     "-o",
+            #     "L",
+            #     "ros2",
+            #     "launch",
+            #     "vehicle_bringup",
+            #     "trackdrive.launch.py",
+            #     f"record:={self.record}",
+            # ]
+            # self.get_logger().info(f"Command: {' '.join(command)}")
+            # self.process = Popen(command)
+            launch_description = LaunchDescription(
+                [
+                    IncludeLaunchDescription(
+                        AnyLaunchDescriptionSource(
+                            os.path.join(
+                                get_package_share_directory("vehicle_bringup"), "mission_launch", "trackdrive.launch.py"
+                            )
+                        ),
+                        launch_arguments={"record": self.record}.items(),
+                    )
+                ]
+            )
+            self.launch_parent.start(launch_description)
             self.get_logger().info("Trackdrive mission started")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
@@ -102,18 +123,31 @@ class TrackdriveHandler(ShutdownNode):
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
-            command = [
-                "stdbuf",
-                "-o",
-                "L",
-                "ros2",
-                "launch",
-                "vehicle_bringup",
-                "trackdrive.launch.py",
-                f"record:={self.record}",
-            ]
-            self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            # command = [
+            #     "stdbuf",
+            #     "-o",
+            #     "L",
+            #     "ros2",
+            #     "launch",
+            #     "vehicle_bringup",
+            #     "trackdrive.launch.py",
+            #     f"record:={self.record}",
+            # ]
+            # self.get_logger().info(f"Command: {' '.join(command)}")
+            # self.process = Popen(command)
+            launch_description = LaunchDescription(
+                [
+                    IncludeLaunchDescription(
+                        AnyLaunchDescriptionSource(
+                            os.path.join(
+                                get_package_share_directory("vehicle_bringup"), "mission_launch", "trackdrive.launch.py"
+                            )
+                        ),
+                        launch_arguments={"record": self.record}.items(),
+                    )
+                ]
+            )
+            self.launch_parent.start(launch_description)
             self.get_logger().info("Trackdrive mission started")
 
     def ros_state_callback(self, msg: ROSStateStamped):
@@ -202,6 +236,7 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info("Trackdrive mission complete")
             # currently only works when vehicle supervisor node is running on-car
             # TODO: sort out vehicle states for eventual environment agnostic operation
+            self.launch_parent.shutdown()
             shutdown_msg = Shutdown(finished_engage_ebs=True)
             self.shutdown_pub.publish(shutdown_msg)
 

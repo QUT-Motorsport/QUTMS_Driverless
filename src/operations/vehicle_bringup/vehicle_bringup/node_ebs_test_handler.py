@@ -1,6 +1,11 @@
+import os
 from subprocess import Popen
 import time
 
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import AnyLaunchDescriptionSource, PythonLaunchDescriptionSource
 from nav2_msgs.action import FollowPath
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -16,7 +21,9 @@ from nav_msgs.msg import Path
 
 from std_srvs.srv import SetBool
 
-from vehicle_bringup.shutdown_node_class import ShutdownNode
+from vehicle_bringup.shutdown_node_class import Ros2LaunchParent, ShutdownNode
+
+# from ros2_launch_parent_class import Ros2LaunchParent
 
 
 class EBSTestHandler(ShutdownNode):
@@ -42,7 +49,7 @@ class EBSTestHandler(ShutdownNode):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # create recording service
-        self.create_service(SetBool, "system/record", self.record_callback)
+        # self.create_service(SetBool, "system/record", self.record_callback)
 
         # publishers
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
@@ -51,6 +58,8 @@ class EBSTestHandler(ShutdownNode):
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
         self.declare_parameter("debug", False)
+
+        self.launch_parent = Ros2LaunchParent()
 
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
@@ -83,18 +92,34 @@ class EBSTestHandler(ShutdownNode):
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = [
-                "stdbuf",
-                "-o",
-                "L",
-                "ros2",
-                "launch",
-                "mission_controller",
-                "ebs_test.launch.py",
-                f"record:={self.record}",
-            ]
-            self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
+            # command = [
+            #     "stdbuf",
+            #     "-o",
+            #     "L",
+            #     "ros2",
+            #     "launch",
+            #     "mission_controller",
+            #     "ebs_test.launch.py",
+            #     f"record:={self.record}",
+            # ]
+            # self.get_logger().info(f"Running Command: {' '.join(command)}")
+            # self.process = Popen(command)
+            launch_description = LaunchDescription(
+                [
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource(
+                            os.path.join(
+                                get_package_share_directory("vehicle_bringup"), "mission_launch", "ebs_test.launch.py"
+                            )
+                        ),
+                        launch_arguments={
+                            "record": str(self.record),
+                        }.items(),
+                    )
+                ]
+            )
+            self.launch_parent.start(launch_description)
+
             self.get_logger().info("EBS mission started")
 
         self.get_logger().info("---EBS handler node initialised---")
@@ -133,18 +158,31 @@ class EBSTestHandler(ShutdownNode):
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
-            command = [
-                "stdbuf",
-                "-o",
-                "L",
-                "ros2",
-                "launch",
-                "vehicle_bringup",
-                "ebs_test.launch.py",
-                f"record:={self.record}",
-            ]
-            self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
+            # command = [
+            #     "stdbuf",
+            #     "-o",
+            #     "L",
+            #     "ros2",
+            #     "launch",
+            #     "vehicle_bringup",
+            #     "ebs_test.launch.py",
+            #     f"record:={self.record}",
+            # ]
+            # self.get_logger().info(f"Running Command: {' '.join(command)}")
+            # self.process = Popen(command)
+            launch_description = LaunchDescription(
+                [
+                    IncludeLaunchDescription(
+                        AnyLaunchDescriptionSource(
+                            os.path.join(
+                                get_package_share_directory("vehicle_bringup"), "mission_launch", "ebs_test.launch.py"
+                            )
+                        ),
+                        launch_arguments={"record": self.record}.items(),
+                    )
+                ]
+            )
+            self.launch_parent.start(launch_description)
             self.get_logger().info("EBS mission started")
 
     def ros_state_callback(self, msg: ROSStateStamped):
