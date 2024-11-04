@@ -25,22 +25,22 @@ def generate_launch_description():
         executable="trackdrive_watcher_node",
     )
 
-    inspection_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "inspection.launch.py")
-        )
+    inspection_launch = Node(
+        package="vehicle_bringup",
+        executable="inspection_handler_node",
+        output="both",
     )
 
-    ebs_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "ebs.launch.py")
-        )
+    ebs_launch = Node(
+        package="vehicle_bringup",
+        executable="ebs_test_handler_node",
+        output="both",
     )
 
-    trackdrive_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "trackdrive.launch.py")
-        )
+    trackdrive_launch = Node(
+        package="vehicle_bringup",
+        executable="trackdrive_handler_node",
+        output="both",
     )
 
     launch_inspection_on_watcher_exit = RegisterEventHandler(
