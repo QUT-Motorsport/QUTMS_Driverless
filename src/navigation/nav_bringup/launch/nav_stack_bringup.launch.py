@@ -51,7 +51,7 @@ def generate_launch_description():
         executable="component_container_isolated",
         parameters=[configured_params, {"use_sim_time": use_sim_time, "autostart": autostart}],
         arguments=["--ros-args", "--log-level", log_level],
-        output="screen",
+        output="both",
     )
 
     localisation_launch = IncludeLaunchDescription(

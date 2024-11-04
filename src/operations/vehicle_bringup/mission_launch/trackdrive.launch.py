@@ -26,10 +26,12 @@ def generate_launch_description():
         parameters=[
             get_package_share_path("map_creation") / "config" / "cone_placement.yaml",
         ],
+        output="both",
     )
     grid_to_cone_node = Node(
         package="slam_gridmap",
         executable="gridmap_to_cone_detection_node",
+        output="both",
     )
     planner_node = Node(
         package="planners",
@@ -37,12 +39,14 @@ def generate_launch_description():
         parameters=[
             get_package_share_path("planners") / "config" / "ft_planner.yaml",
         ],
+        output="both",
     )
     # control translation
     ackermann_control_node = Node(
         package="controllers",
         executable="vel_to_ackermann_node",
         parameters=[{"Kp": 4.0}],  # specific for Trackdrive
+        output="both",
     )
 
     # recording

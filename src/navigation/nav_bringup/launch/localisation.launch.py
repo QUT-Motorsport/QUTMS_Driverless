@@ -29,7 +29,7 @@ def generate_launch_description():
         package="robot_localization",
         executable="ekf_node",
         name="odom_filter_node",
-        output="screen",
+        output="both",
         parameters=[localisation_params_file, {"use_sim_time": use_sim_time}],
         remappings=[
             ("cmd_vel", "control/nav_cmd_vel"),
@@ -42,7 +42,7 @@ def generate_launch_description():
         package="slam_toolbox",
         executable="async_slam_toolbox_node",
         name="slam_toolbox_node",
-        output="screen",
+        output="both",
         namespace=namespace,
         parameters=[slam_params_file, {"use_sim_time": use_sim_time}],
         remappings=[
