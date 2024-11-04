@@ -2,22 +2,19 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>telem_bringup</name>
-  <version>0.0.0</version>
-  <description>Bringup for telemetry</description>
+  <version>1.0.0</version>
+  <description>Bringup package for telemetry</description>
   <maintainer email="team@qutmotorsport.com">Walden Leung</maintainer>
   <license>MIT</license>
 
   <exec_depend>ros2launch</exec_depend>
 
-  <depend>zenoh_bridge_ros2dds</depend>
-  <depend>foxglove_bridge</depend>
+  <exec_depend>foxglove_bridge</exec_depend>
+  <exec_depend>zenoh_bridge_ros2dds</exec_depend>
 
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <export>
-    <build_type>ament_python</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
