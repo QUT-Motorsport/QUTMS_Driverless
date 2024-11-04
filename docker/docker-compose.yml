@@ -1,67 +1,60 @@
-version: "2.3"
-
-# ==============================================================================
-#                                 Components
-# ==============================================================================
-
-x-user: &user
-    user: ${USERNAME?USERNAME env var not set! Use the Makefile}
-
-x-volumes-panda: &volumes-panda
-    volumes:
-        - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
-        - ../src:/home/${USERNAME}/driverless_ws/src
-        - ../tools:/home/${USERNAME}/driverless_ws/tools
-        - ../../bags:/home/${USERNAME}/driverless_ws/bags
-        # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
-        - /dev/shm:/dev/shm
-        - /dev/sbg:/dev/sbg
-
-x-devices: &devices
-    devices:
-       - /dev/dri:/dev/dri
-
-x-network: &network
-    network_mode: "host"
-    privileged: true
-    pid: "host"
-
-x-interactive: &interactive
-    stdin_open: true
-    tty: true
-
-x-visible: &visible
-    tty: true
-
-# ==============================================================================
-#                       Services (Targets in the Makefile)
-# ==============================================================================
+version: "3.9"
 
 services:
-    panda:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.panda
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-panda
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: ros2 launch vehicle_bringup bootup.launch.py
+  # Base image containing dependencies
+  base:
+    image: driverless:base
+    build:
+      context: ../../
+      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.base
+      args:
+        ROS_DISTRO: humble
+      target: base
+  # Overlay image containing the QUTMS workspace and user
+  panda_terminal:
+    image: driverless:terminal
+    build:
+      context: ../../
+      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.overlay
+      args:
+        USERNAME: ${USERNAME}
+        UID: ${UID}
+      target: overlay
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    pid: host
+    # Needed to display graphical applications
+    privileged: true
+    environment:
+      # Allows graphical programs in the container.
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
+      - /dev/shm:/dev/shm
+      - /dev/sbg:/dev/sbg
+      # Allows graphical programs in the container.
+      - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
+      # Mount the workspace folders (some with read-write permissions)
+      - ../../QUTMS_Driverless/src:/home/${USERNAME}/QUTMS/QUTMS_Driverless/src
+      - ../../QUTMS_Driverless/tools:/home/${USERNAME}/QUTMS/QUTMS_Driverless/tools
+      - ../../roslogs:/home/${USERNAME}/QUTMS/roslogs
+      - ../../bags:/home/${USERNAME}/QUTMS/bags
+      - ../../build:/home/${USERNAME}/QUTMS/build
+      - ../../log:/home/${USERNAME}/QUTMS/log
+      - ../../install:/home/${USERNAME}/QUTMS/install
+      # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
+      # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
+    devices:
+      - /dev/dri:/dev/dri
+    # Start the terminal
+    command: /bin/bash
 
-    panda_terminal:
-        build:
-            context: ../
-            dockerfile: ./docker/Dockerfile.panda
-            args:
-                USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
-                HOST_UID: ${HOST_UID?HOST_UID env var not set! Use the Makefile}
-        <<: *volumes-panda
-        <<: *user
-        <<: *devices
-        <<: *network
-        <<: *interactive
-        command: bash
+  # Launch bringup
+  panda:
+    extends: panda_terminal
+    command: ros2 launch vehicle_bringup bootup.launch.py

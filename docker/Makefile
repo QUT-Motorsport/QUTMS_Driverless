@@ -1,7 +1,8 @@
 .PHONY: all help build run panda_srv
 
-export USERNAME=developer
-export HOST_UID=$(shell id -u)
+export USERNAME=$(shell whoami)
+export UID=$(shell id -u)
+export GID=$(shell id -g)
 
 # UNLESS YOU ARE UPDATING THE MAKEFILE FUNCTIONALITY
 # This file should rarely need to be touched.

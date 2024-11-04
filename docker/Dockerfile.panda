@@ -89,7 +89,16 @@ RUN echo "test -f /home/${USERNAME}/driverless_ws/install/setup.bash && source /
 
 # copy in source
 COPY --chown=${USERNAME}:${HOST_GROUP} ./src/ ./src
-COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./tools
+# COPY --chown=${USERNAME}:${HOST_GROUP} ./build/ ./build
+# COPY --chown=${USERNAME}:${HOST_GROUP} ./log/ ./log
+# COPY --chown=${USERNAME}:${HOST_GROUP} ./install/ ./install
+# COPY --chown=${USERNAME}:${HOST_GROUP} ./tools/ ./QUTMS_Driverless/tools
+
+# COPY --chown=${USERNAME}:${HOST_GROUP} tools/qutms_cli_tools/qutms_cli_tools/build.sh build.sh
+# COPY --chown=${USERNAME}:${HOST_GROUP} tools/qutms_cli_tools/qutms_cli_tools/format.sh format.sh
+# COPY --chown=${USERNAME}:${HOST_GROUP} tools/qutms_cli_tools/qutms_cli_tools/launch.sh launch.sh
+# COPY --chown=${USERNAME}:${HOST_GROUP} tools/qutms_cli_tools/qutms_cli_tools/pull.sh pull.sh
+# COPY --chown=${USERNAME}:${HOST_GROUP} tools/qutms_cli_tools/qutms_cli_tools/record.sh record.sh
 
 # build packages in the driverless workspace
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
@@ -98,7 +107,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash; \
 RUN python3 src/navigation/planners/scripts/pre_calc.py
 
 # delete source
-RUN rm -rf ./src ./tools
+RUN rm -rf ./src
 
 COPY ./docker/ros_entrypoint.sh /ros_entrypoint.sh
 ENTRYPOINT ["/ros_entrypoint.sh"]
@@ -108,7 +117,9 @@ COPY ./docker/cyclonedds.xml ./cyclonedds.xml
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV CYCLONEDDS_URI=file:///home/developer/driverless_ws/cyclonedds.xml
 ENV ROS_DOMAIN_ID=69
+ENV QUTMS_WS=~/driverless_ws
 
 RUN echo 'export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"' >> /home/${USERNAME}/.bashrc
 RUN echo 'export CYCLONEDDS_URI=file:///home/developer/driverless_ws/cyclonedds.xml' >> /home/${USERNAME}/.bashrc
 RUN echo 'export ROS_DOMAIN_ID=69' >> /home/${USERNAME}/.bashrc
+RUN echo 'export QUTMS_WS=~/driverless_ws' >> /home/${USERNAME}/.bashrc
