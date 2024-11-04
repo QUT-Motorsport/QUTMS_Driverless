@@ -25,6 +25,7 @@ COPY ./QUTMS_Driverless/src /tmp/src
 
 RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
 RUN git clone https://github.com/SteveMacenski/slam_toolbox.git
+RUN git clone https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds.git
 # specific commit for slam_toolbox that builds with humble and lifecycle nodes
 RUN cd slam_toolbox && git checkout a3442d2f6824ff058fab0cb0a635e7a454294855 && cd ..
 
