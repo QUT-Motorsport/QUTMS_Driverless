@@ -68,7 +68,7 @@ class VehicleSupervisor(Node):
         self.get_logger().info("---Mission control node initialised---")
 
     def send_mission_request(self, mission: int, request_val: bool):
-        assert type(mission)==int
+        assert type(mission) == int
         request = SetBool.Request()
         request.data = request_val
         self.future = self.srv_list[mission].call_async(request)
@@ -164,7 +164,7 @@ class VehicleSupervisor(Node):
                 self.get_logger().info("Mission started: " + target_mission)
                 self.mission_launched = self.send_mission_request(self.av_state.mission, True)
                 # if result.success:
-                    # self.mission_launched = True
+                # self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
