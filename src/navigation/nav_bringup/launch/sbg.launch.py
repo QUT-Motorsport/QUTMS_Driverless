@@ -14,13 +14,14 @@ def generate_launch_description():
         package="sbg_driver",
         executable="sbg_device",
         name="sbg_driver_node",
-        output="screen",
+        output="both",
         parameters=[sbg_config],
     )
 
     odom_transformer_node = Node(
         package="odom_transformer",
         executable="odom_rotater_node",
+        output="both",
     )
 
     return LaunchDescription(

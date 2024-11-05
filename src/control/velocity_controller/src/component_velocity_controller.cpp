@@ -141,7 +141,7 @@ void VelocityController::controller_callback() {
     }
 
     if (state_->mission == driverless_msgs::msg::AVStateStamped::INSPECTION) {
-        accel = 0.11;  // THIS COULD BE A PARAM, TODO
+        accel = 0.10;  // THIS COULD BE A PARAM, TODO
     }
 
     // create control ackermann based off desired and calculated acceleration

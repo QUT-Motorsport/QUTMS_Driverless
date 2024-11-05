@@ -14,6 +14,8 @@ from driverless_msgs.msg import AVStateStamped, ConeDetectionStamped, ROSStateSt
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, UInt8
 
+from std_srvs.srv import SetBool
+
 from driverless_common.status_constants import INT_MISSION_TYPE
 
 can_bus = can.interface.Bus("can0", bustype="socketcan")
@@ -44,6 +46,16 @@ class VehicleSupervisor(Node):
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
         self.create_subscription(DiagnosticArray, "diagnostics", self.diagnostics_callback, 1)
 
+        self.srv_list = [
+            None,
+            None,
+            self.create_client(SetBool, "launch/inspection"),
+            self.create_client(SetBool, "launch/ebs"),
+            self.create_client(SetBool, "launch/trackdrive"),
+        ]
+
+        self.system_launch_cli = self.create_client(SetBool, "launch/system")
+
         self.create_timer(0.001, self.timer_callback)
 
         # publishers
@@ -54,6 +66,25 @@ class VehicleSupervisor(Node):
         self.notifier = can.Notifier(can_bus, [self.reader], 0.1)
 
         self.get_logger().info("---Mission control node initialised---")
+
+    def send_mission_request(self, mission: int, request_val: bool):
+        assert type(mission) == int
+        request = SetBool.Request()
+        request.data = request_val
+        self.future = self.srv_list[mission].call_async(request)
+        # rclpy.spin_until_future_complete(self, self.future)
+        time.sleep(0.5)
+        self.system_launch_cli.remove_pending_request(self.future)
+        return True
+
+    def send_system_request(self, request_val: bool):
+        request = SetBool.Request()
+        request.data = request_val
+        self.future = self.system_launch_cli.call_async(request)
+        # rclpy.spin_until_future_complete(self, self.future)
+        time.sleep(0.5)
+        self.system_launch_cli.remove_pending_request(self.future)
+        return True
 
     def timer_callback(self):
         # consolidate current ROS state
@@ -110,11 +141,11 @@ class VehicleSupervisor(Node):
 
             # start system if in autonomous mode
             if self.av_state.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
-                command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.system_process = Popen(command)
-                self.get_logger().info("Autnomous System started")
-                self.system_started = True
+                # command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
+                # self.get_logger().info(f"Command: {' '.join(command)}")
+                # self.system_process = Popen(command)
+                # self.get_logger().info("Autnomous System started")
+                self.system_started = self.send_system_request(True)
 
             # start mission if in autonomous mode and mission is not none
             if (
@@ -124,13 +155,16 @@ class VehicleSupervisor(Node):
                 and self.ros_state.steering_ctrl
             ):
                 target_mission = INT_MISSION_TYPE[self.av_state.mission].value
-                node = target_mission + "_handler_node"
-                command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
+                # node = target_mission + "_handler_node"
+                # command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
 
-                self.get_logger().info(f"Command: {' '.join(command)}")
-                self.mission_process = Popen(command)
+                # self.get_logger().info(f"Command: {' '.join(command)}")
+                # self.mission_process = Popen(command)
+                # self.mission_launched = True
                 self.get_logger().info("Mission started: " + target_mission)
-                self.mission_launched = True
+                self.mission_launched = self.send_mission_request(self.av_state.mission, True)
+                # if result.success:
+                # self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
