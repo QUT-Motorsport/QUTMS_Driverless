@@ -140,6 +140,7 @@ def get_occupancy_grid(blue_points, yellow_points, header):
 class FaSTTUBeBoundaryExtractor(Node):
     current_track = None
     spline_const = 10  # number of points per cone
+    initial_planning = True
 
     def __init__(self):
         super().__init__("ft_planner_node")
@@ -150,7 +151,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.base_frame = self.get_parameter("base_frame").value
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, "slam/global_map", self.detection_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
         self.create_timer(1 / 10, self.planning_callback)
 
         self.tf_buffer = Buffer()
@@ -250,13 +251,11 @@ class FaSTTUBeBoundaryExtractor(Node):
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detections")
-        self.current_track = track_msg
-
-    def planning_callback(self):
-        if self.current_track is None or len(self.current_track.cones) == 0:
-            self.get_logger().warn("No track data received", throttle_duration_sec=1)
+        if not self.initial_planning:
+            self.current_track = track_msg
             return
 
+    def planning_callback(self):
         try:
             # TODO: parameterise these frames?
             map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
@@ -273,6 +272,39 @@ class FaSTTUBeBoundaryExtractor(Node):
                 map_to_base.transform.rotation.z,
             ]
         )[2]
+
+        if car_position[0] < 0.5 and self.initial_planning:
+            # make a cone detection stamped msg from pre-track list
+            points = [
+                [12.062088012695312, 2.0613708496093754],
+                [15.124588012695314, 2.248870849609375],
+                [3.812088012695313, 1.6238708496093752],
+                [18.499588012695312, 2.811370849609375],
+                [9.624588012695312, 1.9988708496093752],
+                [12.499588012695314, -0.688629150390625],
+                [14.999588012695314, -0.626129150390625],
+                [19.124588012695316, -0.313629150390625],
+                [4.187088012695313, -1.5011291503906252],
+                [9.374588012695312, -0.9386291503906252],
+                [6.187088012695313, 1.873870849609375],
+                [6.3745880126953125, -1.188629150390625],
+                [5.6245880126953125, 1.7488708496093752],
+                [5.9370880126953125, -1.251129150390625],
+            ]
+
+            self.current_track = ConeDetectionStamped()
+            for point in points:
+                cone = Cone()
+                cone.location.x = point[0]
+                cone.location.y = point[1]
+                cone.color = Cone.UNKNOWN
+                self.current_track.cones.append(cone)
+        else:
+            self.initial_planning = False
+
+        if self.current_track is None or len(self.current_track.cones) == 0:
+            self.get_logger().warn("No track data received", throttle_duration_sec=1)
+            return
 
         # split track into conetypes
         unknown_cones = np.array([])

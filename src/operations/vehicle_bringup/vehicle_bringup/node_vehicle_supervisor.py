@@ -91,8 +91,8 @@ class VehicleSupervisor(Node):
         self.ros_state.header.stamp = self.get_clock().now().to_msg()
         if (
             self.ros_state.sbg_operational
-            and self.ros_state.lidar_operational
-            and self.ros_state.planning
+            # and self.ros_state.lidar_operational
+            # and self.ros_state.planning
             # and self.ros_state.steering_ctrl
             and not self.ros_state.finished
         ):
