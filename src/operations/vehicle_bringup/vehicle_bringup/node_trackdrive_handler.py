@@ -26,6 +26,7 @@ class TrackdriveHandler(ShutdownNode):
     process = None
     debug = False
     record: bool = False
+    released = False
 
     sent_init = False
     laps = 0
@@ -117,14 +118,19 @@ class TrackdriveHandler(ShutdownNode):
             self.process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
 
+        if msg.state == AVStateStamped.DRIVING and not self.released:
+            time.sleep(3)
+            self.released = True
+            self.get_logger().info("RELEASED BRAKES")
+
     def ros_state_callback(self, msg: ROSStateStamped):
         if msg.good_to_go:
             self.good_to_go = True
 
     def path_callback(self, msg: Path):
         # receive path and convert to numpy array
-        # if self.path is not None:
-        #     return
+        if not self.released:
+            return
         self.get_logger().info(f"Spline Path Recieved - length: {len(msg.poses)}", once=True)
 
         # Sends a `NavThroughPoses` action request

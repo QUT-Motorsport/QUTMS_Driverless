@@ -58,14 +58,22 @@ void SteeringActuator::as_state_callback(const driverless_msgs::msg::AVStateStam
 // Get steering angle reading
 void SteeringActuator::steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg) {
     current_steering_angle_ = msg->data;
-    if (!steering_ang_received_) steering_ang_received_ = true;
+    if (!steering_ang_received_) {
+        steering_ang_received_ = true;
+        if (current_steering_angle_ > centre_angle_) {
+            offset_ = int32_t(-86.45 * current_steering_angle_ - 398.92);
+        } else {
+            offset_ = int32_t(-94.58 * current_steering_angle_ - 83.79);
+        }
+    }
+
     RCLCPP_INFO_ONCE(this->get_logger(), "Steering angle received");
     RCLCPP_DEBUG(this->get_logger(), "Current angle: %f", msg->data);
 }
 
 // Get desired steering angle to update steering
 void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-    if (!motor_enabled_ || !centred_) return;
+    if (!motor_enabled_) return;
 
     double requested_steering_angle = msg->drive.steering_angle;
     // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "Requested angle: %f",
@@ -242,6 +250,10 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     this->declare_parameter<float>("Ki", 0.0);
     this->declare_parameter<float>("Kd", 0.0);
 
+    current_velocity_ = this->get_parameter("velocity").as_int();
+    current_acceleration_ = this->get_parameter("acceleration").as_int();
+    control_method_ = MODE_ABSOLUTE;
+
     sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     control_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     auto sensor_cb_opt = rclcpp::SubscriptionOptions();
@@ -267,8 +279,8 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     state_sub_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
         "system/av_state", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1), control_cb_opt);
 
-    steering_update_timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(50), std::bind(&SteeringActuator::pre_op_centering, this), sensor_cb_group_);
+    // steering_update_timer_ = this->create_wall_timer(
+    //     std::chrono::milliseconds(50), std::bind(&SteeringActuator::pre_op_centering, this), sensor_cb_group_);
 
     // Create state request and config timers
     state_request_timer_ =

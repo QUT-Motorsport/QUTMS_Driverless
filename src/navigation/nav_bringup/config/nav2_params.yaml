@@ -231,7 +231,7 @@ controller_server:
 
     TrackdriveRPPFast:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 5.0  # The desired maximum linear velocity to use.
+      desired_linear_vel: 4.5  # The desired maximum linear velocity to use.
       # lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
       min_lookahead_dist: 4.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       max_lookahead_dist: 12.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
@@ -253,7 +253,7 @@ controller_server:
       regulated_linear_scaling_min_radius: 12.0  # The turning radius for which the regulation features are triggered.
       regulated_linear_scaling_min_speed: 3.0  # The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature.
       use_fixed_curvature_lookahead: true  # Enable fixed lookahead for curvature detection. Useful for systems with long lookahead.
-      curvature_lookahead_dist: 10.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
+      curvature_lookahead_dist: 8.0  # Distance to lookahead to determine curvature for velocity regulation purposes if use_fixed_curvature_lookahead is enabled.
       use_rotate_to_heading: false  # Whether to enable rotating to rough heading and goal orientation when using holonomic planners.
       # rotate_to_heading_min_angle: 0.785  # The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if use_rotate_to_heading is enabled.
       # max_angular_accel: 6.0  # Maximum allowable angular acceleration while rotating to heading, if enabled.

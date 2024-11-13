@@ -92,6 +92,6 @@ def generate_launch_description():
             rosboard_node,
             display_node,
             foxglove_node,
-            zenoh_node,
+            # zenoh_node,
         ]
     )
