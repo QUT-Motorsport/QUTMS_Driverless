@@ -41,8 +41,8 @@ void SteeringActuator::c5e_state_request_callback() {
 }
 
 // Check State to enable or disable motor
-void SteeringActuator::as_state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
-    if (msg->state == driverless_msgs::msg::State::DRIVING || msg->state == driverless_msgs::msg::State::ACTIVATE_EBS) {
+void SteeringActuator::as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
+    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING) {
         // Enable motor
         motor_enabled_ = true;
     } else {
@@ -251,21 +251,21 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
 
     // Create subscriber to topic "canbus_rosbound"
     canopen_sub_ = this->create_subscription<driverless_msgs::msg::Can>(
-        "/can/canopen_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1), sensor_cb_opt);
+        "can/canopen_rosbound", QOS_ALL, std::bind(&SteeringActuator::can_callback, this, _1), sensor_cb_opt);
 
     // Create subscriber to topic "steering_angle"
     steer_ang_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-        "/vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1),
+        "vehicle/steering_angle", QOS_ALL, std::bind(&SteeringActuator::steering_angle_callback, this, _1),
         sensor_cb_opt);
 
     // Create subscriber to topic "driving_command"
     ackermann_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-        "/control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1),
+        "control/driving_command", QOS_ALL, std::bind(&SteeringActuator::driving_command_callback, this, _1),
         control_cb_opt);
 
     // Create subscriber to topic AS status
-    state_sub_ = this->create_subscription<driverless_msgs::msg::State>(
-        "/system/as_status", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1), control_cb_opt);
+    state_sub_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
+        "system/av_state", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1), control_cb_opt);
 
     steering_update_timer_ = this->create_wall_timer(
         std::chrono::milliseconds(50), std::bind(&SteeringActuator::pre_op_centering, this), sensor_cb_group_);
@@ -276,13 +276,13 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
                                 std::bind(&SteeringActuator::c5e_state_request_callback, this), control_cb_group_);
 
     // Create publisher to topic "canbus_carbound"
-    can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_carbound", QOS_ALL);
+    can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("can/canbus_carbound", QOS_ALL);
 
     // Create publisher to topic "encoder_reading"
-    encoder_pub_ = this->create_publisher<std_msgs::msg::Int32>("/vehicle/encoder_reading", QOS_ALL);
+    encoder_pub_ = this->create_publisher<std_msgs::msg::Int32>("vehicle/encoder_reading", QOS_ALL);
 
     // Create publisher to topic "steering_state"
-    steering_ready_pub_ = this->create_publisher<std_msgs::msg::Bool>("/system/steering_ready", QOS_ALL);
+    steering_ready_pub_ = this->create_publisher<std_msgs::msg::Bool>("system/steering_ready", QOS_ALL);
 
     // Param callback
     param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);

@@ -18,6 +18,8 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["gridmap_to_cone_detection_node = slam_gridmap.node_gridmap_to_cone_detection:main"],
+        "console_scripts": [
+            "gridmap_to_cone_detection_node = slam_gridmap.node_gridmap_to_cone_detection:main",
+        ],
     },
 )

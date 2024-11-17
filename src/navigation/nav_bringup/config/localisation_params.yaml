@@ -4,6 +4,7 @@ odom_filter_node:
   ros__parameters:
     use_sim_time: false
     reset_on_time_jump: true
+    disabled_at_startup: false
 
     debug: False # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#debug
     debug_out_file: /home/ubuntu/QUTMS/tmp/robot_localization_debug.txt # https://docs.ros.org/en/noetic/api/robot_localization/html/state_estimation_nodes.html#debug-out-file
@@ -39,7 +40,7 @@ odom_filter_node:
     # sensor0_twist_rejection_threshold: 0.8
     # sensor0_linear_acceleration_rejection_threshold: 0.8
 
-    odom0: imu/local_odometry
+    odom0: imu/odometry
     odom0_config: [true, true, false,
                   false, false, true,
                   true, true, false,
@@ -47,37 +48,22 @@ odom_filter_node:
                   false, false, false]
     odom0_relative: true
 
-    # odom1: sbg_translated/odometry
-    # odom1_config: [false, false, false,
+    # odom0: imu/odometry
+    # odom0_config: [false, false, false,
     #               false, false, true,
     #               false, false, false,
     #               false, false, true,
     #               false, false, false]
-    # odom1_relative: false
-
-    # odom2: zed2i/zed_node/odom
-    # odom2_config: [false, false, false,
-    #                false, false, true,
-    #                false, false, false,
-    #                false, false, false,
-    #                false, false, false]
-    # odom2_relative: true
+    # odom0_relative: true
 
     # for now, this is just used to have a 2nd point of input so the package can run
     # even though its all false and not used currently
     twist0: vehicle/wheel_twist
     twist0_config: [false, false, false,  # x, y, z
                    false, false, false,  # roll, pitch, yaw
-                   True, false, false,  # x_dot, y_dot, z_dot
+                   true, false, false,  # x_dot, y_dot, z_dot
                    false, false, false,  # roll_dot, pitch_dot, yaw_dot
                    false, false, false]  # x_ddot, y_ddot, z_ddot
-
-    # odom2: odometry/gps
-    # odom2_config: [true,  true,  false,
-    #               false, false, false,
-    #               false, false, false,
-    #               false, false, false,
-    #               false, false, false]
 
     # process_noise_covariance: [0.05, 0.05, 0.06, 0.0, 0.0, 0.0,
     #                            0.05, 0.05, 0.06, 0.0, 0.0, 0.0,

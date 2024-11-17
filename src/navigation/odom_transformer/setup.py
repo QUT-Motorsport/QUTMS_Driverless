@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "odom_transformer_node = odom_transformer.node_odom_transformer:main",
+            "odom_rotater_node = odom_transformer.node_odom_rotater:main",
         ],
     },
 )

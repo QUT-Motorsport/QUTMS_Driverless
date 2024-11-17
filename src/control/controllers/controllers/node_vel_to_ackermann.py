@@ -24,6 +24,8 @@ class Vel2Ackermann(Node):
 
     def cmd_callback(self, twist_msg: Twist):
         vel = twist_msg.linear.x
+        if vel > 3.5:
+            self.Kp = 2.7
 
         if twist_msg.angular.z == 0 or vel == 0:
             steering = 0.0

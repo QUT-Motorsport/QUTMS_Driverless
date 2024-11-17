@@ -19,27 +19,29 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
         RCLCPP_ERROR(this->get_logger(), "Please provide parameters!");
     }
 
-    // State updates
-    state_sub_ = this->create_subscription<driverless_msgs::msg::State>(
-        "/system/as_status", QOS_LATEST, std::bind(&VelocityController::state_callback, this, _1));
+    // State updates (these could be in a msg filter)
+    av_state_sub_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
+        "system/av_state", QOS_LATEST, std::bind(&VelocityController::av_state_callback, this, _1));
+    ros_state_sub_ = this->create_subscription<driverless_msgs::msg::ROSStateStamped>(
+        "system/ros_state", QOS_LATEST, std::bind(&VelocityController::ros_state_callback, this, _1));
 
     // Ackermann
     ackermann_sub_ = this->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-        "/control/driving_command", QOS_ALL, std::bind(&VelocityController::ackermann_callback, this, _1));
+        "control/driving_command", QOS_ALL, std::bind(&VelocityController::ackermann_callback, this, _1));
 
     // imu updates
     twist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-        "/imu/velocity", QOS_LATEST, std::bind(&VelocityController::twist_callback, this, _1));
+        "imu/velocity", QOS_LATEST, std::bind(&VelocityController::twist_callback, this, _1));
 
     // Control loop -> 10ms so runs at double speed heartbeats are sent at
     controller_timer_ = this->create_wall_timer(std::chrono::milliseconds(loop_ms_),
                                                 std::bind(&VelocityController::controller_callback, this));
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
-    accel_pub_ = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("/control/accel_command", 10);
+    can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("can/canbus_carbound", 10);
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
-    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("/vehicle/velocity", 10);
+    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/velocity", 10);
 
     // Param callback
     param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
@@ -63,12 +65,16 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
     RCLCPP_INFO(this->get_logger(), "Kp: %f, max_accel_per_tick: %f", Kp_, max_accel_per_tick_);
 }
 
-void VelocityController::state_callback(const driverless_msgs::msg::State::SharedPtr msg) {
+void VelocityController::av_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
     state_ = msg;
-    if (msg->state == driverless_msgs::msg::State::DRIVING && msg->navigation_ready &&
-        msg->mission != driverless_msgs::msg::State::INSPECTION) {
+    // enabled if driving and not in inspection mission
+    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_) {
         motors_enabled_ = true;
     }
+}
+
+void VelocityController::ros_state_callback(const driverless_msgs::msg::ROSStateStamped::SharedPtr msg) {
+    g2g_ = msg->good_to_go;
 }
 
 void VelocityController::ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
@@ -134,14 +140,17 @@ void VelocityController::controller_callback() {
         accel = -1;
     }
 
-    // create control ackermann based off desired and calculated acceleration
-    ackermann_msgs::msg::AckermannDriveStamped::UniquePtr accel_cmd(new ackermann_msgs::msg::AckermannDriveStamped());
-    accel_cmd->header.stamp = this->now();
-    accel_cmd->drive = target_ackermann_->drive;
-    accel_cmd->drive.acceleration = accel;
+    if (state_->mission == driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        accel = 0.10;  // THIS COULD BE A PARAM, TODO
+    }
 
-    // publish accel
-    accel_pub_->publish(std::move(accel_cmd));
+    // create control ackermann based off desired and calculated acceleration
+    Torque_Request_t torque_request;
+    torque_request.torque = accel * 100;  // convert to percentage
+    auto torque_heartbeat = Compose_Torque_Request_Heartbeat(&torque_request);
+    this->can_pub_->publish(
+        std::move(this->_d_2_f(torque_heartbeat.id, true, torque_heartbeat.data, sizeof(torque_heartbeat.data))));
+
     prev_accel_ = accel;
 }
 

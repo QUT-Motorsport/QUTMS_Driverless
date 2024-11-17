@@ -4,16 +4,18 @@
     <name>canbus</name>
     <version>0.0.0</version>
     <description>canbus management node</description>
-    <maintainer email="qutmotorsport.team@gmail.com">Thomas Fraser, Alistair English</maintainer>
+    <maintainer email="team@qutmotorsport.com">Thomas Fraser, Alistair English</maintainer>
     <license>MIT</license>
 
+    <depend>rclcpp</depend>
+
     <!-- Messages -->
+    <depend>std_msgs</depend>
     <depend>driverless_msgs</depend>
+    <!-- Packages -->
+    <depend>QUTMS_Embedded_Common</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-
-    <test_depend>ament_lint_auto</test_depend>
-    <test_depend>ament_lint_common</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>

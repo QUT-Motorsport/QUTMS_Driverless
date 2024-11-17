@@ -1,6 +1,7 @@
 from math import pi
 import time
 
+import diagnostic_updater
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 import numpy as np
 import scipy.interpolate as scipy_interpolate
@@ -13,7 +14,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
-from driverless_msgs.msg import Cone, ConeDetectionStamped, State
+from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import MapMetaData, OccupancyGrid, Path
 
@@ -139,17 +140,18 @@ def get_occupancy_grid(blue_points, yellow_points, header):
 class FaSTTUBeBoundaryExtractor(Node):
     current_track = None
     spline_const = 10  # number of points per cone
+    initial_planning = True
 
     def __init__(self):
         super().__init__("ft_planner_node")
 
-        self.declare_parameter("topic_name", "/lidar/cone_detection")
-        self.declare_parameter("target_frame", "base_footprint")
-        self.topic_name = self.get_parameter("topic_name").value
-        self.target_frame = self.get_parameter("target_frame").value
+        self.declare_parameter("map_frame", "track")
+        self.declare_parameter("base_frame", "base_footprint")
+        self.map_frame = self.get_parameter("map_frame").value
+        self.base_frame = self.get_parameter("base_frame").value
 
         # sub to track for all cone locations relative to car start point
-        self.create_subscription(ConeDetectionStamped, self.topic_name, self.detection_callback, QOS_LATEST)
+        self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
         self.create_timer(1 / 10, self.planning_callback)
 
         self.tf_buffer = Buffer()
@@ -171,9 +173,16 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
-        self.get_logger().info(
-            f"---Ordered path planner node initalised with {self.topic_name}, {self.target_frame}---"
+        self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
+        self.diagnostic_updater.setHardwareID("none")
+        self.diagnostic_pub = diagnostic_updater.TopicDiagnostic(
+            "/planning/midline_path",
+            self.diagnostic_updater,
+            diagnostic_updater.FrequencyStatusParam({"min": 5, "max": 10}, 1, 10),
+            diagnostic_updater.TimeStampStatusParam(0.5),
         )
+
+        self.get_logger().info("---Planner node initalised---")
 
     def get_planner_cfg(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)
@@ -242,16 +251,14 @@ class FaSTTUBeBoundaryExtractor(Node):
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detections")
-        self.current_track = track_msg
-
-    def planning_callback(self):
-        if self.current_track is None or len(self.current_track.cones) == 0:
-            self.get_logger().warn("No track data received", throttle_duration_sec=1)
+        if not self.initial_planning:
+            self.current_track = track_msg
             return
 
+    def planning_callback(self):
         try:
             # TODO: parameterise these frames?
-            map_to_base = self.tf_buffer.lookup_transform("track", "base_footprint", rclpy.time.Time())
+            map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
             return
@@ -266,9 +273,38 @@ class FaSTTUBeBoundaryExtractor(Node):
             ]
         )[2]
 
-        if self.target_frame == "base_footprint":
-            car_position = np.array([0.0, 0.0])
-            car_direction = 0.0
+        if car_position[0] < 0.5 and self.initial_planning:
+            # make a cone detection stamped msg from pre-track list
+            points = [
+                [12.062088012695312, 2.0613708496093754],
+                [15.124588012695314, 2.248870849609375],
+                [3.812088012695313, 1.6238708496093752],
+                [18.499588012695312, 2.811370849609375],
+                [9.624588012695312, 1.9988708496093752],
+                [12.499588012695314, -0.688629150390625],
+                [14.999588012695314, -0.626129150390625],
+                [19.124588012695316, -0.313629150390625],
+                [4.187088012695313, -1.5011291503906252],
+                [9.374588012695312, -0.9386291503906252],
+                [6.187088012695313, 1.873870849609375],
+                [6.3745880126953125, -1.188629150390625],
+                [5.6245880126953125, 1.7488708496093752],
+                [5.9370880126953125, -1.251129150390625],
+            ]
+
+            self.current_track = ConeDetectionStamped()
+            for point in points:
+                cone = Cone()
+                cone.location.x = point[0]
+                cone.location.y = point[1]
+                cone.color = Cone.UNKNOWN
+                self.current_track.cones.append(cone)
+        else:
+            self.initial_planning = False
+
+        if self.current_track is None or len(self.current_track.cones) == 0:
+            self.get_logger().warn("No track data received", throttle_duration_sec=1)
+            return
 
         # split track into conetypes
         unknown_cones = np.array([])
@@ -346,22 +382,26 @@ class FaSTTUBeBoundaryExtractor(Node):
                 mid_points.append(midpoint([yx[i], yy[i]], [bx[i], by[i]]))
 
             # publish bounds
-            blue_bound_msg = make_path_msg(blue_points, self.target_frame)
+            blue_bound_msg = make_path_msg(blue_points, self.map_frame)
             self.blue_bound_pub.publish(blue_bound_msg)
 
-            yellow_bound_msg = make_path_msg(yellow_points, self.target_frame)
+            yellow_bound_msg = make_path_msg(yellow_points, self.map_frame)
             self.yellow_bound_pub.publish(yellow_bound_msg)
         except Exception as e:
             self.get_logger().warn("Cant calculate bounds, error" + str(e), throttle_duration_sec=1)
 
         # publish midpoints
-        self.planned_path_pub.publish(make_path_msg(path[:, 1:3], self.target_frame))
+        self.planned_path_pub.publish(make_path_msg(path[:, 1:3], self.map_frame))
 
         ## Create occupancy grid of interpolated bounds
         # map = get_occupancy_grid(blue_points, yellow_points, self.current_track.header)
         # self.current_map = map
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
+
+        # convert stamp time to nanosecs
+        stamp_float = self.current_track.header.stamp.sec + self.current_track.header.stamp.nanosec * 1e-9
+        self.diagnostic_pub.tick(stamp_float)
 
 
 def main(args=None):

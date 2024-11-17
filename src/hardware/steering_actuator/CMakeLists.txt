@@ -14,13 +14,13 @@ find_package(rclcpp_components REQUIRED)
 
 include_directories(
   include
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/include/
   ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
 )
 
 set (SOURCES
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/canopen.cpp
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/canopen.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/can_interface.cpp
 )
 
 # ROS 2 components

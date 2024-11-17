@@ -1,7 +1,6 @@
 [submodule "src/common/rosboard/rosboard"]
 	path = src/common/rosboard/rosboard
 	url = https://github.com/dheera/rosboard.git
-[submodule "src/hardware/QUTMS_Embedded_Common"]
-	path = src/hardware/QUTMS_Embedded_Common
+[submodule "src/common/QUTMS_Embedded_Common/QUTMS_Embedded_Common"]
+	path = src/common/QUTMS_Embedded_Common/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
-	branch = comp22

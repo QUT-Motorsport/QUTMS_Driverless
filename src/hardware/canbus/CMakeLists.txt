@@ -20,16 +20,16 @@ add_compile_definitions(QUTMS_CAN_EBS)
 
 include_directories(
   include
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include/
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/include/
   ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
 )
 
 set (SOURCES
   src/SocketCAN.cpp
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VESC.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VCU.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VESC.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/can_interface.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )

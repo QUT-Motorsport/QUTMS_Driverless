@@ -7,16 +7,17 @@
     <maintainer email="team@qutmotorsport.com">Calvin Johnson</maintainer>
     <license>MIT</license>
 
+    <depend>rclcpp</depend>
+
     <!-- Messages -->
     <depend>ackermann_msgs</depend>
     <depend>nav_msgs</depend>
     <depend>rcl_interfaces</depend>
     <depend>driverless_msgs</depend>
+    <!-- Packages -->
+    <depend>QUTMS_Embedded_Common</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-
-    <test_depend>ament_lint_auto</test_depend>
-    <test_depend>ament_lint_common</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>
