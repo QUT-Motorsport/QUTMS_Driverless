@@ -29,6 +29,7 @@ class VelocityController : public rclcpp::Node, public CanInterface {
     float histerisis_reset_ms_ = 0;
     float min_time_to_max_accel_sec_ = 0;
     float max_accel_per_tick_ = 0;
+    int loop_ms_ = 20;
 
     float integral_error_ = 0;
 
@@ -41,11 +42,10 @@ class VelocityController : public rclcpp::Node, public CanInterface {
 
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr velocity_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr torque_pub_;
 
     std::shared_ptr<rclcpp::ParameterEventHandler> param_event_handler_;
     std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle_;
-
-    const int loop_ms_ = 10;
 
     // Enable motors logic
     driverless_msgs::msg::AVStateStamped::SharedPtr state_ = std::make_shared<driverless_msgs::msg::AVStateStamped>();

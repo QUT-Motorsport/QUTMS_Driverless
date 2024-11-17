@@ -31,14 +31,9 @@ const float WHEEL_DIAMETER = 0.4064;
 const float AXLE_WIDTH = 1.4;
 
 // create array of CAN IDs we care about
-std::vector<uint32_t> canopen_ids = {RES_BOOT_UP_ID, RES_HEARTBEAT_ID, C5E_BOOT_UP_ID, C5E_POS_ID,
-                                     C5E_EMCY_ID,    C5E_STATUS_ID,    C5E_SRV_ID};
-std::vector<uint32_t> can_ids = {SW_Heartbeat_ID, EBS_CTRL_Heartbeat_ID};
+std::vector<uint32_t> canopen_ids = {C5E_BOOT_UP_ID, C5E_POS_ID, C5E_EMCY_ID, C5E_STATUS_ID, C5E_SRV_ID};
 
-// names for the CAN IDs
-std::vector<std::string> canopen_names = {"RES_BOOT_UP_ID", "RES_HEARTBEAT_ID", "C5E_BOOT_UP_ID", "C5E_POS_ID",
-                                          "C5E_EMCY_ID",    "C5E_STATUS_ID",    "C5E_SRV_ID"};
-std::vector<std::string> can_names = {"SW_Heartbeat_ID", "EBS_CTRL_Heartbeat_ID", "VCU_TransmitSteering_ID"};
+CANTranslator::~CANTranslator() { can_interface_->deconstruct(); }
 
 class CANTranslator : public rclcpp::Node, public CanInterface {
    private:

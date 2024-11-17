@@ -138,6 +138,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     // Creates publishers and subscribers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr step_target_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
     rclcpp::Subscription<driverless_msgs::msg::AVStateStamped>::SharedPtr state_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
@@ -151,26 +152,19 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     std::shared_ptr<rclcpp::ParameterEventCallbackHandle> param_cb_handle_;
 
     // params
-    double Kp_, Ki_, Kd_, centre_range_, centre_angle_;
-    int settling_iter_, max_position_;
+    int max_position_;
 
     c5e_state desired_state_ = states[RTSO];
     c5e_state current_state_ = states[NRTSO];
     uint16_t control_method_ = MODE_RELATIVE;
     bool motor_enabled_ = false;
-    bool centred_ = false;
-    int32_t offset_ = 0;
-    int settled_count_ = 0;
     bool initial_enc_saved_ = false;
     int32_t initial_enc_ = 0;
     bool steering_ang_received_ = false;
-    double current_steering_angle_ = 0;
+    int32_t offset_ = 0;
     int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity_;
     uint32_t current_acceleration_;
-
-    // time to reset node if no state received
-    std::chrono::time_point<std::chrono::system_clock> last_state_time = std::chrono::system_clock::now();
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
@@ -180,7 +174,6 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void can_callback(const driverless_msgs::msg::Can::SharedPtr msg);
 
-    void pre_op_centering();
     void target_position(int32_t target);
     void send_steering_data(uint16_t obj_index, uint8_t *data, size_t data_size);
     void read_steering_data(uint16_t obj_index);

@@ -12,6 +12,7 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
     this->declare_parameter<float>("histerisis_kick_ms", 0);
     this->declare_parameter<float>("histerisis_reset_ms", 0);
     this->declare_parameter<float>("min_time_to_max_accel_sec", 2.0);
+    this->declare_parameter<int>("loop_ms", 20);
 
     this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
@@ -41,7 +42,10 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("can/canbus_carbound", 10);
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
-    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/velocity", 10);
+    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/combined_velocity", 10);
+
+    // Torque request (data and debug)
+    torque_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/torque_request", 10);
 
     // Param callback
     param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
@@ -60,6 +64,7 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
     this->get_parameter("histerisis_kickin_ms", histerisis_kickin_ms_);
     this->get_parameter("histerisis_reset_ms", histerisis_reset_ms_);
     this->get_parameter("min_time_to_max_accel_sec", min_time_to_max_accel_sec_);
+    this->get_parameter("loop_ms", loop_ms_);
     max_accel_per_tick_ = loop_ms_ / (1000 * min_time_to_max_accel_sec_);
 
     RCLCPP_INFO(this->get_logger(), "Kp: %f, max_accel_per_tick: %f", Kp_, max_accel_per_tick_);
@@ -152,6 +157,11 @@ void VelocityController::controller_callback() {
         std::move(this->_d_2_f(torque_heartbeat.id, true, torque_heartbeat.data, sizeof(torque_heartbeat.data))));
 
     prev_accel_ = accel;
+
+    // publish torque
+    std_msgs::msg::Float32::UniquePtr torque_msg(new std_msgs::msg::Float32());
+    torque_msg->data = accel;
+    torque_pub_->publish(std::move(torque_msg));
 }
 
 }  // namespace velocity_controller

@@ -56,7 +56,7 @@ class VehicleSupervisor(Node):
 
         self.system_launch_cli = self.create_client(SetBool, "launch/system")
 
-        self.create_timer(0.001, self.timer_callback)
+        self.create_timer(0.05, self.timer_callback)
 
         # publishers
         self.av_state_pub = self.create_publisher(AVStateStamped, "system/av_state", 1)
@@ -141,10 +141,6 @@ class VehicleSupervisor(Node):
 
             # start system if in autonomous mode
             if self.av_state.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
-                # command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
-                # self.get_logger().info(f"Command: {' '.join(command)}")
-                # self.system_process = Popen(command)
-                # self.get_logger().info("Autnomous System started")
                 self.system_started = self.send_system_request(True)
 
             # start mission if in autonomous mode and mission is not none
@@ -154,16 +150,8 @@ class VehicleSupervisor(Node):
                 and not self.mission_launched
             ):
                 target_mission = INT_MISSION_TYPE[self.av_state.mission].value
-                # node = target_mission + "_handler_node"
-                # command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
-
-                # self.get_logger().info(f"Command: {' '.join(command)}")
-                # self.mission_process = Popen(command)
-                # self.mission_launched = True
                 self.get_logger().info("Mission started: " + target_mission)
                 self.mission_launched = self.send_mission_request(self.av_state.mission, True)
-                # if result.success:
-                # self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
