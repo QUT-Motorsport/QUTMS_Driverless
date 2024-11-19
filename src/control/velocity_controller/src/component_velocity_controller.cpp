@@ -75,6 +75,8 @@ void VelocityController::av_state_callback(const driverless_msgs::msg::AVStateSt
     // enabled if driving and not in inspection mission
     if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_) {
         motors_enabled_ = true;
+    } else {
+        motors_enabled_ = false;
     }
 }
 

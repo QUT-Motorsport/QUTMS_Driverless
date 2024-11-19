@@ -165,11 +165,13 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity_;
     uint32_t current_acceleration_;
+    bool g2g_ = false;
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
     void c5e_state_request_callback();
     void as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg);
+    void ros_state_callback(const driverless_msgs::msg::ROSStateStamped::SharedPtr msg);
     void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);
     void driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
     void can_callback(const driverless_msgs::msg::Can::SharedPtr msg);

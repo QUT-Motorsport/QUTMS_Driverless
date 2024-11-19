@@ -88,13 +88,17 @@ void SteeringActuator::c5e_state_request_callback() {
 
 // Check State to enable or disable motor
 void SteeringActuator::as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg) {
-    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING) {
+    if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_) {
         // Enable motor
         motor_enabled_ = true;
     } else {
         // Disable motor
         motor_enabled_ = false;
     }
+}
+
+void SteeringActuator::ros_state_callback(const driverless_msgs::msg::ROSStateStamped::SharedPtr msg) {
+    g2g_ = msg->good_to_go;
 }
 
 // Get steering angle reading
