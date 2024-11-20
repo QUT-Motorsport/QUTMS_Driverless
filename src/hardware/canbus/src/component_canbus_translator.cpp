@@ -4,6 +4,8 @@
 
 namespace canbus {
 
+CANTranslator::~CANTranslator() { can_interface_->deconstruct(); }
+
 CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_translator_node", options) {
     ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
 

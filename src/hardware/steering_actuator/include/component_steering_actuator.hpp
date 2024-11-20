@@ -140,7 +140,8 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr encoder_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr step_target_pub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr steering_ready_pub_;
-    rclcpp::Subscription<driverless_msgs::msg::AVStateStamped>::SharedPtr state_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::AVStateStamped>::SharedPtr as_state_sub_;
+    rclcpp::Subscription<driverless_msgs::msg::ROSStateStamped>::SharedPtr ros_state_sub_;
     rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr steer_ang_sub_;
     rclcpp::Subscription<driverless_msgs::msg::Can>::SharedPtr canopen_sub_;

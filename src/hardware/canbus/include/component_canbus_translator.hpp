@@ -33,8 +33,6 @@ const float AXLE_WIDTH = 1.4;
 // create array of CAN IDs we care about
 std::vector<uint32_t> canopen_ids = {C5E_BOOT_UP_ID, C5E_POS_ID, C5E_EMCY_ID, C5E_STATUS_ID, C5E_SRV_ID};
 
-CANTranslator::~CANTranslator() { can_interface_->deconstruct(); }
-
 class CANTranslator : public rclcpp::Node, public CanInterface {
    private:
     // can connection queue retrieval timer
@@ -65,9 +63,6 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
 
     // class variables for sensor data
     float wheel_speeds_[4];
-
-    std::vector<rclcpp::Time> last_canopen_times_{canopen_ids.size(), rclcpp::Time(0)};
-    std::vector<rclcpp::Time> last_can_times_{can_names.size(), rclcpp::Time(0)};
 
     void canmsg_timer();
     void canmsg_callback(const driverless_msgs::msg::Can::SharedPtr msg) const;

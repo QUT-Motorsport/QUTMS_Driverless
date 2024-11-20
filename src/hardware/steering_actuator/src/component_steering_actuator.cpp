@@ -36,8 +36,11 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
         control_cb_opt);
 
     // Create subscriber to topic AS status
-    state_sub_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
+    as_state_sub_ = this->create_subscription<driverless_msgs::msg::AVStateStamped>(
         "system/av_state", QOS_ALL, std::bind(&SteeringActuator::as_state_callback, this, _1), control_cb_opt);
+    // Create subscriber to topic ROS status
+    ros_state_sub_ = this->create_subscription<driverless_msgs::msg::ROSStateStamped>(
+        "system/ros_state", QOS_ALL, std::bind(&SteeringActuator::ros_state_callback, this, _1), control_cb_opt);
 
     // Create state request and config timers
     state_request_timer_ =

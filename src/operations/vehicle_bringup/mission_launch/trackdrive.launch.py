@@ -60,7 +60,7 @@ def generate_launch_description():
     ros2_bag_node = ExecuteProcess(
         cmd=["ros2", "bag", "record", "-s", "mcap", "-o", name, "--all", "-x", "(/velodyne_points|/velodyne_packets)"],
         output="both",
-        condition=IfCondition(record),
+        # condition=IfCondition(record),
     )
 
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
@@ -80,6 +80,6 @@ def generate_launch_description():
             grid_to_cone_node,
             planner_node,
             ackermann_control_node,
-            # ros2_bag_node,
+            ros2_bag_node,
         ]
     )

@@ -23,7 +23,6 @@ from vehicle_bringup.shutdown_node_class import ShutdownNode
 class TrackdriveHandler(ShutdownNode):
     mission_started = False
     good_to_go = False
-    process = None
     debug = False
     record: bool = False
     released = False
@@ -82,7 +81,7 @@ class TrackdriveHandler(ShutdownNode):
                 f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
@@ -115,7 +114,7 @@ class TrackdriveHandler(ShutdownNode):
                 f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
 
         if msg.state == AVStateStamped.DRIVING and not self.released:
