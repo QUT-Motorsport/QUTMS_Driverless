@@ -4,7 +4,6 @@ import numpy as np
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from transforms3d.euler import euler2quat, quat2euler
 
 import rclpy
 from rclpy.node import Node
@@ -15,15 +14,15 @@ from nav_msgs.msg import Path
 
 
 class Vel2Ackermann(Node):
-    last_modifier = 0
+    path = None
 
     def __init__(self):
         super().__init__("nav_cmd_translator")
 
         self.declare_parameter("Kp", 4.0)
         self.declare_parameter("wheelbase", 1.5)
-        self.declare_parameter("distance_ctrl", False)
-        self.declare_parameter("distance_Kp", 20.0)
+        self.declare_parameter("distance_ctrl", True)
+        self.declare_parameter("distance_Kp", -20.0)
         self.declare_parameter("distance_max", 1.5)
         self.declare_parameter("map_frame", "track")
         self.declare_parameter("base_frame", "base_footprint")
@@ -56,7 +55,7 @@ class Vel2Ackermann(Node):
             steering = atan(self.wheelbase / radius) * (180 / pi) * self.Kp  ## MAKE THIS A PARAM
 
         if self.distance_ctrl:
-            steering += self.last_modifier
+            steering = self.distance_control(steering)
 
         msg = AckermannDriveStamped()
         # make time for msg id
@@ -68,38 +67,47 @@ class Vel2Ackermann(Node):
         self.drive_pub.publish(msg)
 
     def path_callback(self, path_msg: Path):
+        self.path = path_msg
+
+    def find_nearest_point(self, position: np.ndarray, path_points: np.ndarray):
+        distances = [np.linalg.norm(position - point) for point in path_points]
+        nearest_index = np.argmin(distances)
+        return nearest_index, path_points[nearest_index]
+
+    def compute_lateral_error(self, position: np.ndarray, path_points: np.ndarray):
+        nearest_index, nearest_point = self.find_nearest_point(position, path_points)
+        if nearest_index < len(path_points) - 1:
+            next_point = path_points[nearest_index + 1]
+        else:
+            next_point = path_points[nearest_index - 1]
+        
+        tangent = next_point - nearest_point
+        tangent /= np.linalg.norm(tangent)
+        
+        vector_to_robot = position - nearest_point
+        lateral_error = np.cross(tangent, vector_to_robot)
+        return lateral_error
+
+    def distance_control(self, steering):
         try:
             # TODO: parameterise these frames?
             map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
-            return
+            return steering
 
-        car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
-        # get closest point on path to car
-        points = np.array([[point.x, point.y] for point in path_msg.poses])
-        if len(points) == 0:
-            self.get_logger().warn("Path is empty", throttle_duration_sec=1)
-            return
-        distances = np.linalg.norm(points - car_position, axis=1)
-        closest_point = points[np.argmin(distances)]
-
-        # perpendicular distance from car to closest point
-        # vector to next point
-        next_point = points[np.argmin(distances) + 1]
-        vector = next_point - closest_point
-        # distance from car to closest point along vector
-        distance = np.dot(car_position - closest_point, vector) / np.linalg.norm(vector)
+        points = np.array([[point.pose.position.x, point.pose.position.y] for point in self.path.poses])
+        distance = self.compute_lateral_error([map_to_base.transform.translation.x, map_to_base.transform.translation.y], points)
 
         # if distance is greater than max, set to max
         if distance > self.distance_max:
             distance = self.distance_max
-        elif distance < -self.distance_max:
+        elif distance <= -self.distance_max:
             distance = -self.distance_max
 
         # calculate steering modifier
-        self.last_modifier = distance * self.distance_Kp
-
+        modifier = distance * self.distance_Kp
+        return steering + modifier
 
 def main(args=None):
     # begin ros node
