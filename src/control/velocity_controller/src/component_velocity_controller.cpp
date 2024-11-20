@@ -136,8 +136,12 @@ void VelocityController::controller_callback() {
         accel += i_term;
     }
 
-    if ((accel - prev_accel_) > max_accel_per_tick_) {
-        accel = prev_accel_ + max_accel_per_tick_;
+    if ((abs(accel) - abs(prev_accel_)) > max_accel_per_tick_) {
+        if (accel >= 0){
+            accel = prev_accel_ + max_accel_per_tick_;
+        } else {
+            accel = prev_accel_ - max_accel_per_tick_;
+        }
     }
 
     // limit output accel to be between -1 (braking) and 1 (accel)
