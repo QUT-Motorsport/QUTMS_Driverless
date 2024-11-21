@@ -137,7 +137,7 @@ void VelocityController::controller_callback() {
     }
 
     if ((abs(accel) - abs(prev_accel_)) > max_accel_per_tick_) {
-        if (accel >= 0){
+        if (accel >= 0) {
             accel = prev_accel_ + max_accel_per_tick_;
         } else {
             accel = prev_accel_ - max_accel_per_tick_;
