@@ -13,6 +13,7 @@
     <depend>std_msgs</depend>
     <!-- Packages -->
     <depend>QUTMS_Embedded_Common</depend>
+    <depend>control_toolbox</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
