@@ -26,6 +26,7 @@ COPY ./QUTMS_Driverless/src /tmp/src
 RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
 RUN git clone https://github.com/SteveMacenski/slam_toolbox.git
 RUN git clone https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds.git
+RUN git clone -b 0.22.8 https://github.com/ros2/rosbag2.git
 # specific commit for slam_toolbox that builds with humble and lifecycle nodes
 RUN cd slam_toolbox && git checkout a3442d2f6824ff058fab0cb0a635e7a454294855 && cd ..
 
@@ -33,7 +34,7 @@ RUN cd slam_toolbox && git checkout a3442d2f6824ff058fab0cb0a635e7a454294855 && 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep update && rosdep install -y \
         --rosdistro ${ROS_DISTRO} \
-        --from-paths src slam_toolbox sbg_ros2_driver \
+        --from-paths src slam_toolbox sbg_ros2_driver rosbag2 \
         --ignore-src
 
 # install pip requirements
