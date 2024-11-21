@@ -7,6 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ackermann_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -31,6 +32,7 @@ ament_target_dependencies(steering_actuator_component
   "std_msgs"
   "driverless_msgs"
   "ackermann_msgs"
+  "control_toolbox"
 )
 rclcpp_components_register_nodes(steering_actuator_component "steering_actuator::SteeringActuator")
 
