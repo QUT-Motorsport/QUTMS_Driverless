@@ -12,6 +12,7 @@
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "can_interface.hpp"
 #include "canopen.hpp"
+#include "control_toolbox/pid_ros.hpp"
 #include "driverless_common/common.hpp"
 #include "driverless_msgs/msg/av_state_stamped.hpp"
 #include "driverless_msgs/msg/can.hpp"
@@ -131,6 +132,11 @@ c5e_state parse_state(uint16_t status_word) {
 
 class SteeringActuator : public rclcpp::Node, public CanInterface {
    private:
+    // PID controller
+    std::shared_ptr<control_toolbox::PidROS> pid_controller_;
+    // PID timer
+    rclcpp::TimerBase::SharedPtr timer_;
+
     // Creates
     rclcpp::TimerBase::SharedPtr steering_update_timer_;
     rclcpp::TimerBase::SharedPtr state_request_timer_;
@@ -154,6 +160,9 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
 
     // params
     int max_position_;
+    int pid_frequency_;
+    int32_t current_angle;
+    int32_t target_angle;
 
     c5e_state desired_state_ = states[RTSO];
     c5e_state current_state_ = states[NRTSO];
@@ -171,6 +180,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
     void c5e_state_request_callback();
+    void compute_steering_command();
     void as_state_callback(const driverless_msgs::msg::AVStateStamped::SharedPtr msg);
     void ros_state_callback(const driverless_msgs::msg::ROSStateStamped::SharedPtr msg);
     void steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg);
