@@ -161,7 +161,8 @@ void SteeringActuator::ros_state_callback(const driverless_msgs::msg::ROSStateSt
 void SteeringActuator::steering_angle_callback(const std_msgs::msg::Float32::SharedPtr msg) {
     if (!steering_ang_received_ && initial_enc_saved_) {
         steering_ang_received_ = true;
-        offset_ = int32_t(-105 * msg->data) - initial_enc_;
+        // Calcualed equation was {Encoder value} = 82.493 * {Steering Angle} - 109.22
+        offset_ = int32_t(-82 * msg->data + 109) - initial_enc_;
         RCLCPP_INFO(this->get_logger(), "Steering angle received, offset: %d", offset_);
     }
     current_angle = msg->data;
@@ -181,9 +182,9 @@ void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::Acker
                          target);
     this->target_position(target);
 
-    std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
-    step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
-    step_target_pub_->publish(std::move(step_targ_msg));
+    // std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
+    // step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
+    // step_target_pub_->publish(std::move(step_targ_msg));
 }
 
 // Receive message from CAN
