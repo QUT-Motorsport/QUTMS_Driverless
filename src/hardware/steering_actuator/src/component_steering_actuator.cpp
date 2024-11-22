@@ -9,6 +9,7 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     this->declare_parameter<int>("velocity", 10000);
     this->declare_parameter<int>("acceleration", 2000);
     this->declare_parameter<int>("max_position", 7500);
+    this->declare_parameter<bool>("use_pid", true);
     this->declare_parameter<int>("pid_frequency", 20);
 
     this->update_parameters(rcl_interfaces::msg::ParameterEvent());
@@ -22,12 +23,12 @@ SteeringActuator::SteeringActuator(const rclcpp::NodeOptions &options) : Node("s
     );
 
     // Initialize pid controller
-    // if (pid_controller_->initPid()) {
-    //   RCLCPP_INFO(this->get_logger(), "PID controller initialized successfully.");
-    // } else {
-    //   RCLCPP_ERROR(this->get_logger(), "Failed to initialize PID controller.");
-    // }
-    pid_controller_->initPid(10, 3, 0, max_position_, -max_position_, true);
+    if (pid_controller_->initPid()) {
+        RCLCPP_INFO(this->get_logger(), "PID controller initialized successfully.");
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Failed to initialize PID controller.");
+    }
+    // pid_controller_->initPid(10, 3, 0, max_position_, -max_position_, true);
 
     timer_ = this->create_wall_timer(std::chrono::milliseconds((1 / pid_frequency_) * 1000),
                                      std::bind(&SteeringActuator::compute_steering_command, this)
@@ -93,6 +94,7 @@ void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEve
     current_acceleration_ = this->get_parameter("acceleration").as_int();
     max_position_ = this->get_parameter("max_position").as_int();
     pid_frequency_ = this->get_parameter("pid_frequency").as_int();
+    use_pid_ = this->get_parameter("use_pid").as_bool();
 }
 
 void SteeringActuator::configure_c5e() {
@@ -113,7 +115,7 @@ void SteeringActuator::c5e_state_request_callback() {
 }
 
 void SteeringActuator::compute_steering_command() {
-    if (!motor_enabled_ && !steering_ang_received_) return;
+    if ((!motor_enabled_ && !steering_ang_received_) || !use_pid_) return;
     // // Use 1 equation for both left and right turns
     // int32_t target = int32_t(-105 * pid_controller_->computeCommand()) - offset_;
     // // Clamp target to max
@@ -126,8 +128,8 @@ void SteeringActuator::compute_steering_command() {
     // std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
     // step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
     // step_target_pub_->publish(std::move(step_targ_msg));
-    double error = double(target_angle - current_angle);
-    rclcpp::Duration dt = rclcpp::Duration::from_seconds(1 / pid_frequency_);
+    double error = double(target_angle - current_angle + 10);
+    rclcpp::Duration dt = rclcpp::Duration::from_seconds(1.0 / pid_frequency_);
     double output = pid_controller_->computeCommand(error, dt);
     // Clamp output to max
     auto target = std::max(std::min(int32_t(output), max_position_ - offset_), -max_position_ - offset_);
@@ -170,17 +172,18 @@ void SteeringActuator::steering_angle_callback(const std_msgs::msg::Float32::Sha
 void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
     if (!motor_enabled_ && !steering_ang_received_) return;
     target_angle = msg->drive.steering_angle;
+    if (use_pid_) return;
     // // Use 1 equation for both left and right turns
-    // int32_t target = int32_t(-105 * msg->drive.steering_angle) - offset_;
-    // // Clamp target to max
-    // target = std::max(std::min(target, max_position_ - offset_), -max_position_ - offset_);
-    // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", msg->drive.steering_angle,
-    //                      target);
-    // this->target_position(target);
+    int32_t target = int32_t(-105 * msg->drive.steering_angle) - offset_;
+    // Clamp target to max
+    target = std::max(std::min(target, max_position_ - offset_), -max_position_ - offset_);
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", msg->drive.steering_angle,
+                         target);
+    this->target_position(target);
 
-    // std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
-    // step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
-    // step_target_pub_->publish(std::move(step_targ_msg));
+    std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
+    step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
+    step_target_pub_->publish(std::move(step_targ_msg));
 }
 
 // Receive message from CAN

@@ -163,6 +163,7 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     int pid_frequency_;
     int32_t current_angle;
     int32_t target_angle;
+    bool use_pid_;
 
     c5e_state desired_state_ = states[RTSO];
     c5e_state current_state_ = states[NRTSO];
