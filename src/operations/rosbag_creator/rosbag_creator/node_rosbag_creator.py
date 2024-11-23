@@ -21,10 +21,12 @@ class RosbagCreator(Node):
         self.get_logger().info("Rosbag creator node started")
 
     def bag_record_callback(self, request, response):
+        # Check if already recording, return success false if so
         if self.recording:
             self.get_logger().info("Already recording")
             response.success = False
             response.message = "Already recording"
+        # Check if the output folder exists, if not start recording
         elif not path.isdir(request.filename):
             self.recorder = Recorder()
             self.record_options = RecordOptions()
@@ -38,6 +40,7 @@ class RosbagCreator(Node):
             self.recording = True
             self.get_logger().info(f"Recording '{request.filename}' started")
             response.success = True
+        # If the output folder already exists, return success false
         else:
             self.get_logger().info(f"Output folder '{request.filename}' already exists")
             response.success = False
@@ -45,10 +48,12 @@ class RosbagCreator(Node):
         return response
 
     def stop_record_callback(self, request, response):
+        # Check if recording, return success false if not (Nothing to stop)
         if not self.recording:
             self.get_logger().info("Not recording")
             response.success = False
             response.message = "Not recording"
+        # Stop recording if recording
         else:
             self.recorder.cancel()
             self.recording = False
