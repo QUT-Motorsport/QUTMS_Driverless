@@ -14,6 +14,11 @@ def generate_launch_description():
         executable="vehicle_supervisor_node",
     )
 
+    rosbag_creator_node = Node(
+        package="rosbag_creator",
+        executable="rosbag_creator_node",
+    )
+
     system_watcher = Node(
         package="vehicle_bringup",
         executable="system_watcher_node",
@@ -52,5 +57,6 @@ def generate_launch_description():
             launch_system_on_watcher_exit,
             mission_launch,
             vehicle_supervisor_node,
+            rosbag_creator_node,
         ]
     )
