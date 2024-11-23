@@ -1,5 +1,3 @@
-import signal
-from subprocess import Popen
 import time
 
 from ament_index_python.packages import get_package_share_path
@@ -26,9 +24,7 @@ db = cantools.database.load_file(dbc_path)
 
 class VehicleSupervisor(Node):
     system_started: bool = False
-    system_process = None
     mission_launched: bool = False
-    mission_process = None
     finished: bool = False
 
     ros_state = ROSStateStamped()
@@ -156,7 +152,6 @@ class VehicleSupervisor(Node):
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
                 self.get_logger().warn("Closing mission")
-                self.mission_process.send_signal(signal.SIGINT)
                 self.finished = True
 
     def diagnostics_callback(self, msg: DiagnosticArray):
@@ -192,9 +187,6 @@ def main(args=None):
     rclpy.init(args=args)
     node = VehicleSupervisor()
     rclpy.spin(node)
-    # shut down processes
-    # node.system_process.terminate()
-    # node.mission_process.terminate()
     node.can_bus.shutdown()
     node.destroy_node()
     rclpy.shutdown()

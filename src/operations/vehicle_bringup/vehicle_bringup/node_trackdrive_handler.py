@@ -1,5 +1,6 @@
 from subprocess import Popen
 import time
+import datetime
 
 from nav2_msgs.action import FollowPath
 from tf2_ros import TransformException
@@ -15,8 +16,6 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
 
-from std_srvs.srv import SetBool
-
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
@@ -24,7 +23,6 @@ class TrackdriveHandler(ShutdownNode):
     mission_started = False
     good_to_go = False
     debug = False
-    record: bool = False
     released = False
 
     sent_init = False
@@ -75,13 +73,19 @@ class TrackdriveHandler(ShutdownNode):
                 "launch",
                 "vehicle_bringup",
                 "trackdrive.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
+            self.recording_process = self.start_recording("trackdrive")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
+
+    def start_recording(self, target_mission: str):
+        now = datetime.datetime.now()
+        name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
+        command = ["stdbuf", "-o", "L", "ros2", "bag", "record", "-s", "mcap", "-o", name, "--all", "-x", "(/velodyne_points|/velodyne_packets)"]
+        self.recording_process = Popen(command)
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
@@ -102,11 +106,11 @@ class TrackdriveHandler(ShutdownNode):
                 "launch",
                 "vehicle_bringup",
                 "trackdrive.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
+            self.start_recording("trackdrive")
 
         if msg.state == AVStateStamped.DRIVING and not self.released:
             time.sleep(3)
