@@ -10,6 +10,9 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("vehicle_bringup") / "launch" / "displays.launch.py")
         ),
+        launch_arguments=[
+            ("use_zenoh_bridge", "false"),
+        ],
     )
 
     urdf_launch = IncludeLaunchDescription(

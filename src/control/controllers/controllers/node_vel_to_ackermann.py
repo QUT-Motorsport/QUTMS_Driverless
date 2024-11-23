@@ -17,7 +17,7 @@ class Vel2Ackermann(Node):
     path = None
 
     def __init__(self):
-        super().__init__("nav_cmd_translator")
+        super().__init__("vel_to_ackermann_node")
 
         self.declare_parameter("Kp", 4.0)
         self.declare_parameter("wheelbase", 1.5)

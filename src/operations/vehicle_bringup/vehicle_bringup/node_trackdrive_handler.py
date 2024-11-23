@@ -48,9 +48,6 @@ class TrackdriveHandler(ShutdownNode):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # create recording service
-        self.create_service(SetBool, "system/record", self.record_callback)
-
         # publishers
         self.shutdown_pub = self.create_publisher(Shutdown, "system/shutdown", 1)
         self.lap_trig_pub = self.create_publisher(UInt8, "system/laps_completed", 1)
@@ -85,12 +82,6 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info("Trackdrive mission started")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
-
-    def record_callback(self, request, response):
-        self.record = request.data
-        response.success = True
-        self.get_logger().info(f"Recording set to {self.record}")
-        return response
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)

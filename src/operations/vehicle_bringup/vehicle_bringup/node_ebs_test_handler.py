@@ -41,9 +41,6 @@ class EBSTestHandler(ShutdownNode):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # create recording service
-        self.create_service(SetBool, "system/record", self.record_callback)
-
         # publishers
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
 
@@ -89,7 +86,7 @@ class EBSTestHandler(ShutdownNode):
                 "L",
                 "ros2",
                 "launch",
-                "mission_controller",
+                "vehicle_bringup",
                 "ebs_test.launch.py",
                 f"record:={self.record}",
             ]

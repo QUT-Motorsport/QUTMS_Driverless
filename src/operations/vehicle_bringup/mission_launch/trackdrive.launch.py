@@ -49,7 +49,9 @@ def generate_launch_description():
     ackermann_control_node = Node(
         package="controllers",
         executable="vel_to_ackermann_node",
-        parameters=[{"Kp": 4.0}],  # specific for Trackdrive
+        parameters=[
+            get_package_share_path("controllers") / "config" / "control.yaml",
+        ],
         output="both",
     )
 
