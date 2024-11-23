@@ -24,6 +24,7 @@ class Vel2Ackermann(Node):
         self.declare_parameter("distance_ctrl", True)
         self.declare_parameter("distance_Kp", -20.0)
         self.declare_parameter("distance_max", 1.5)
+        self.declare_parameter("angle_limit", 40.0)
         self.declare_parameter("map_frame", "track")
         self.declare_parameter("base_frame", "base_footprint")
         self.Kp = self.get_parameter("Kp").value
@@ -31,6 +32,7 @@ class Vel2Ackermann(Node):
         self.distance_ctrl = self.get_parameter("distance_ctrl").value
         self.distance_Kp = self.get_parameter("distance_Kp").value
         self.distance_max = self.get_parameter("distance_max").value
+        self.angle_limit = self.get_parameter("angle_limit").value
         self.map_frame = self.get_parameter("map_frame").value
         self.base_frame = self.get_parameter("base_frame").value
 
@@ -94,6 +96,10 @@ class Vel2Ackermann(Node):
             map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
+            return steering
+
+        if abs(steering) > self.angle_limit:
+            # dont modify steering if it is past a limit
             return steering
 
         points = np.array([[point.pose.position.x, point.pose.position.y] for point in self.path.poses])
