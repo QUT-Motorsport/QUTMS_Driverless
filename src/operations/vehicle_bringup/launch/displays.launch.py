@@ -1,3 +1,6 @@
+import os.path as path
+
+from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.conditions import IfCondition, UnlessCondition
@@ -6,6 +9,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    bringup_share_dir = get_package_share_path("vehicle_bringup")
     use_zenoh_bridge = LaunchConfiguration("use_zenoh_bridge")
 
     use_zenoh_bridge_arg = DeclareLaunchArgument("use_zenoh_bridge", default_value="True")
@@ -21,7 +25,10 @@ def generate_launch_description():
     )
 
     zenoh_node = Node(
-        package="zenoh_bridge_ros2dds", executable="zenoh_bridge_ros2dds", condition=IfCondition(use_zenoh_bridge)
+        package="zenoh_bridge_ros2dds",
+        executable="zenoh_bridge_ros2dds",
+        condition=IfCondition(use_zenoh_bridge),
+        arguments=["-c", path.join(bringup_share_dir, "config", "zenoh_config.json5")],
     )
 
     foxglove_node = Node(
