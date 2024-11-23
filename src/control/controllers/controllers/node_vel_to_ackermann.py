@@ -82,10 +82,10 @@ class Vel2Ackermann(Node):
             next_point = path_points[nearest_index + 1]
         else:
             next_point = path_points[nearest_index - 1]
-        
+
         tangent = next_point - nearest_point
         tangent /= np.linalg.norm(tangent)
-        
+
         vector_to_robot = position - nearest_point
         lateral_error = np.cross(tangent, vector_to_robot)
         return lateral_error
@@ -103,7 +103,9 @@ class Vel2Ackermann(Node):
             return steering
 
         points = np.array([[point.pose.position.x, point.pose.position.y] for point in self.path.poses])
-        distance = self.compute_lateral_error([map_to_base.transform.translation.x, map_to_base.transform.translation.y], points)
+        distance = self.compute_lateral_error(
+            [map_to_base.transform.translation.x, map_to_base.transform.translation.y], points
+        )
 
         # if distance is greater than max, set to max
         if distance > self.distance_max:
@@ -114,6 +116,7 @@ class Vel2Ackermann(Node):
         # calculate steering modifier
         modifier = distance * self.distance_Kp
         return steering + modifier
+
 
 def main(args=None):
     # begin ros node
