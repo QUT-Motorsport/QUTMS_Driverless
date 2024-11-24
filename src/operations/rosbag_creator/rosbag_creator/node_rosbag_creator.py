@@ -60,7 +60,7 @@ class RosbagCreator(Node):
             self.recorder = None
             self.record_thread.join()
             response.success = True
-            self.get_logger().info(f"Recroding stopped. Saved to {path.abspath(self.storage_options.uri)}")
+            self.get_logger().info(f"Recording stopped. Saved to {path.abspath(self.storage_options.uri)}")
         return response
 
 

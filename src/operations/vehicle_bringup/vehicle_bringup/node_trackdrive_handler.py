@@ -1,4 +1,3 @@
-import datetime
 from subprocess import Popen
 import time
 
@@ -15,8 +14,6 @@ from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
-
-from driverless_msgs.srv import TriggerBagRecord
 
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
@@ -54,11 +51,6 @@ class TrackdriveHandler(ShutdownNode):
 
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
 
-        # clients
-        self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start")
-        while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("Service 'bag/start' not available, waiting...")
-
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
 
@@ -88,16 +80,6 @@ class TrackdriveHandler(ShutdownNode):
 
         self.get_logger().info("---Trackdrive handler node initialised---")
 
-    def start_recording(self, target_mission: str):
-        now = datetime.datetime.now()
-        name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
-        request = TriggerBagRecord.Request()
-        request.filename = name
-        self.record_future = self.bag_start_cli.call_async(request)
-        self.get_logger().info(f"Recording reqested")
-        rclpy.spin_until_future_complete(self, self.record_future)
-        return self.record_future.result()
-
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
         if (
@@ -121,7 +103,7 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
-            self.start_recording("trackdrive")
+            self.recording = self.start_recording("trackdrive")
 
         if msg.state == AVStateStamped.DRIVING and not self.released:
             time.sleep(3)
