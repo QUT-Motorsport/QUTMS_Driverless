@@ -56,6 +56,8 @@ class TrackdriveHandler(ShutdownNode):
 
         # clients
         self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start")
+        while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("Service 'bag/start' not available, waiting...")
 
         # actions
         self.nav_through_poses_client = ActionClient(self, FollowPath, "follow_path")
