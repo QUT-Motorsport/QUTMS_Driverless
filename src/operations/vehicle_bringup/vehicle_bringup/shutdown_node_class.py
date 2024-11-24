@@ -35,12 +35,17 @@ class ShutdownNode(Node):
                 self.get_logger().error("Interrupted MISSION process")
                 self.mission_process = None
             if self.record_future is not None:
+                while not self.bag_stop_cli.service_is_ready():
+                    self.get_logger().info("Service 'bag/stop' not available, waiting...")
+                    self.bag_stop_cli.wait_for_service(timeout_sec=1.0)
                 request = Trigger.Request()
                 self.bag_stop_cli.call_async(request)
-                rclpy.get_global_executor().spin_until_future_complete(self.bag_stop_cli, timeout_sec=1.0)
-                if self.recording.result is None:
+                while not self.record_future.done() and rclpy.ok():
+                    self.get_logger().info("Waiting for recording to stop")
+                    rclpy.spin_once(self, timeout_sec=1.0)
+                if self.record_future.result() is None:
                     self.get_logger().error("Service ERROR, recording may still be running")
-                elif self.recording.result.success is True:
+                elif self.record_future.result().success:
                     self.get_logger().error("Interrupted RECORDING process")
                 else:
                     self.get_logger().error("No recording process to interrupt")
@@ -55,9 +60,18 @@ class ShutdownNode(Node):
         name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
         request = TriggerBagRecord.Request()
         request.filename = name
+        while not self.bag_start_cli.service_is_ready():
+            self.get_logger().info("Service 'bag/start' not available, waiting...")
+            self.bag_start_cli.wait_for_service(timeout_sec=1.0)
         self.record_future = self.bag_start_cli.call_async(request)
-        self.get_logger().info(f"Recording reqested")
-        rclpy.get_global_executor().spin_until_future_complete(self.record_future, timeout_sec=1.0)
+        self.get_logger().info("Recording reqested")
+        while not self.record_future.done() and rclpy.ok():
+            self.get_logger().info("Waiting for recording to start")
+            rclpy.spin_once(self, timeout_sec=1.0)
         if self.record_future.result() is None:
             self.get_logger().error("Service ERROR, recording may not have started")
+        elif self.record_future.result().success:
+            self.get_logger().info("Recording started")
+        else:
+            self.get_logger().error("Recording failed to start")
         return self.record_future.result()
