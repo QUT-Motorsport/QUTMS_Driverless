@@ -6,8 +6,8 @@ import rclpy
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped
-from driverless_msgs.srv import TriggerBagRecord
 
+from driverless_msgs.srv import TriggerBagRecord
 from std_srvs.srv import Trigger
 
 from driverless_common.common import QOS_LATEST
@@ -37,11 +37,13 @@ class ShutdownNode(Node):
             if self.record_future is not None:
                 request = Trigger.Request()
                 self.bag_stop_cli.call_async(request)
-                # rclpy.spin_until_future_complete(self, self.bag_stop_cli)
-                # if self.recording.result is True:
-                self.get_logger().error("Interrupted RECORDING process")
-                # else:
-                # self.get_logger().error("No recording process to interrupt")
+                rclpy.get_global_executor().spin_until_future_complete(self.bag_stop_cli, timeout_sec=1.0)
+                if self.recording.result is None:
+                    self.get_logger().error("Service ERROR, recording may still be running")
+                elif self.recording.result.success is True:
+                    self.get_logger().error("Interrupted RECORDING process")
+                else:
+                    self.get_logger().error("No recording process to interrupt")
                 self.record_future = None
 
             self.get_logger().error("Exit Node - Shutdown Triggered")
@@ -55,5 +57,7 @@ class ShutdownNode(Node):
         request.filename = name
         self.record_future = self.bag_start_cli.call_async(request)
         self.get_logger().info(f"Recording reqested")
-        # rclpy.spin_until_future_complete(self, self.record_future)
+        rclpy.get_global_executor().spin_until_future_complete(self.record_future, timeout_sec=1.0)
+        if self.record_future.result() is None:
+            self.get_logger().error("Service ERROR, recording may not have started")
         return self.record_future.result()
