@@ -3,6 +3,7 @@ import signal
 from subprocess import Popen
 
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped
@@ -21,10 +22,12 @@ class ShutdownNode(Node):
     def __init__(self, node_name: str, **kwargs) -> None:
         super().__init__(node_name, **kwargs)
         self.reset_sub = self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, QOS_LATEST)
-        self.bag_stop_cli = self.create_client(Trigger, "bag/stop")
+
+        cli_callback_group = ReentrantCallbackGroup()
+        self.bag_stop_cli = self.create_client(Trigger, "bag/stop", callback_group=cli_callback_group)
 
         # clients
-        self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start")
+        self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start", callback_group=cli_callback_group)
         while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("Service 'bag/start' not available, waiting...")
 
