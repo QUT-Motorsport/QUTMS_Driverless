@@ -1,5 +1,3 @@
-import signal
-from subprocess import Popen
 import time
 
 from ament_index_python.packages import get_package_share_path
@@ -26,9 +24,7 @@ db = cantools.database.load_file(dbc_path)
 
 class VehicleSupervisor(Node):
     system_started: bool = False
-    system_process = None
     mission_launched: bool = False
-    mission_process = None
     finished: bool = False
 
     ros_state = ROSStateStamped()
@@ -40,7 +36,7 @@ class VehicleSupervisor(Node):
         # subscribers
         self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
         self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.lidar_callback, 1)
-        self.create_subscription(ConeDetectionStamped, "slam/global_map", self.map_callback, 1)
+        self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.map_callback, 1)
         self.create_subscription(Bool, "system/steering_ready", self.steering_callback, 1)
         self.create_subscription(Shutdown, "system/shutdown", self.shutdown_callback, 1)
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
@@ -56,7 +52,7 @@ class VehicleSupervisor(Node):
 
         self.system_launch_cli = self.create_client(SetBool, "launch/system")
 
-        self.create_timer(0.001, self.timer_callback)
+        self.create_timer(0.05, self.timer_callback)
 
         # publishers
         self.av_state_pub = self.create_publisher(AVStateStamped, "system/av_state", 1)
@@ -141,10 +137,6 @@ class VehicleSupervisor(Node):
 
             # start system if in autonomous mode
             if self.av_state.mode == AVStateStamped.AUTONOMOUS and not self.system_started:
-                # command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "system.launch.py"]
-                # self.get_logger().info(f"Command: {' '.join(command)}")
-                # self.system_process = Popen(command)
-                # self.get_logger().info("Autnomous System started")
                 self.system_started = self.send_system_request(True)
 
             # start mission if in autonomous mode and mission is not none
@@ -152,24 +144,14 @@ class VehicleSupervisor(Node):
                 self.system_started
                 and self.av_state.mission != AVStateStamped.MISSION_NONE
                 and not self.mission_launched
-                and self.ros_state.steering_ctrl
             ):
                 target_mission = INT_MISSION_TYPE[self.av_state.mission].value
-                # node = target_mission + "_handler_node"
-                # command = ["stdbuf", "-o", "L", "ros2", "run", "vehicle_bringup", node]
-
-                # self.get_logger().info(f"Command: {' '.join(command)}")
-                # self.mission_process = Popen(command)
-                # self.mission_launched = True
                 self.get_logger().info("Mission started: " + target_mission)
                 self.mission_launched = self.send_mission_request(self.av_state.mission, True)
-                # if result.success:
-                # self.mission_launched = True
 
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
                 self.get_logger().warn("Closing mission")
-                self.mission_process.send_signal(signal.SIGINT)
                 self.finished = True
 
     def diagnostics_callback(self, msg: DiagnosticArray):
@@ -189,10 +171,10 @@ class VehicleSupervisor(Node):
         self.ros_state.sbg_operational = True
 
     def lidar_callback(self, msg: ConeDetectionStamped):
-        self.ros_state.identified_cones = len(msg.cones_with_cov)
+        self.ros_state.identified_cones = len(msg.cones)
 
     def map_callback(self, msg: ConeDetectionStamped):
-        self.ros_state.mapped_cones = len(msg.cones_with_cov)
+        self.ros_state.mapped_cones = len(msg.cones)
 
     def laps_callback(self, msg: UInt8):
         self.ros_state.lap_count = msg.data
@@ -205,9 +187,6 @@ def main(args=None):
     rclpy.init(args=args)
     node = VehicleSupervisor()
     rclpy.spin(node)
-    # shut down processes
-    # node.system_process.terminate()
-    # node.mission_process.terminate()
     node.can_bus.shutdown()
     node.destroy_node()
     rclpy.shutdown()

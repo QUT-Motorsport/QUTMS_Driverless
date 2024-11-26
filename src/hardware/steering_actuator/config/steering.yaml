@@ -1,20 +1,5 @@
-# steering_controller_node:
-#   ros__parameters:
-#     d_velocity: 1000
-#     d_acceleration: 10000
-#     d_limits: 6000
-#     d_current: 5000
-
 steering_actuator_node:
   ros__parameters:
     velocity: 5000
-    velocity_centering: 100
     acceleration: 1000
-    acceleration_centering: 100
-    centre_range: 2.0
-    centre_angle: -12.0
-    settling_iter: 50
     max_position: 8500
-    Kp: 10.0
-    Ki: 0.0
-    Kd: 0.0

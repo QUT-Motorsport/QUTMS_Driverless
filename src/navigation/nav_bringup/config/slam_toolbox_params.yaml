@@ -31,7 +31,7 @@ slam_toolbox_node:
     max_laser_range: 25.0  # Maximum laser range to use for 2D occupancy map rastering
     minimum_time_interval: 0.1  # The minimum duration of time between scans to be processed in synchronous mode
     transform_timeout: 0.5  # TF timeout for looking up transforms
-    tf_buffer_duration: 1.0  # Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode
+    tf_buffer_duration: 2.0  # Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode
     stack_size_to_use: 500000000 # 500MB  # The number of bytes to reset the stack size to, to enable serialization/deserialization of files
 
     # General Parameters
@@ -49,10 +49,10 @@ slam_toolbox_node:
     link_match_minimum_response_fine: 0.2  # The threshold link matching algorithm response for fine resolution to pass
     link_scan_maximum_distance: 10.0  # Maximum distance between linked scans to be valid
 
-    loop_search_maximum_distance: 10.0  # Maximum threshold of distance for scans to be considered for loop closure
+    loop_search_maximum_distance: 15.0  # Maximum threshold of distance for scans to be considered for loop closure
     do_loop_closing: true  # Whether to do loop closure
 
-    loop_match_minimum_chain_size: 50  # The minimum chain length of scans to look for loop closure
+    loop_match_minimum_chain_size: 20  # The minimum chain length of scans to look for loop closure
     loop_match_maximum_variance_coarse: 5.0  # The threshold variance in coarse search to pass to refine
     loop_match_minimum_response_coarse: 0.3  # The threshold response of the loop closure algorithm in coarse search to pass to refine
     loop_match_minimum_response_fine: 0.2  # The threshold response of the loop closure algorithm in fine search to pass to refine
@@ -72,9 +72,9 @@ slam_toolbox_node:
     loop_search_space_smear_deviation: 0.1  # Amount of multimodal smearing to smooth out responses
 
     # Scan Matcher Parameters
-    distance_variance_penalty: 0.3  # A penalty to apply to a matched scan as it differs from the odometric pose
+    distance_variance_penalty: 0.2  # A penalty to apply to a matched scan as it differs from the odometric pose
     #   Increasing improves scan matching
-    angle_variance_penalty: 0.3  # A penalty to apply to a matched scan as it differs from the odometric pose
+    angle_variance_penalty: 0.2  # A penalty to apply to a matched scan as it differs from the odometric pose
     #   Increasing improves scan matching
 
     fine_search_angle_offset: 0.01400  # Range of angles to test for fine scan matching

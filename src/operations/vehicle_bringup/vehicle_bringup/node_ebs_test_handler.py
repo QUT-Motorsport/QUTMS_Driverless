@@ -1,5 +1,6 @@
 from subprocess import Popen
 import time
+import datetime
 
 from nav2_msgs.action import FollowPath
 from tf2_ros import TransformException
@@ -14,8 +15,6 @@ from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 
-from std_srvs.srv import SetBool
-
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
@@ -24,7 +23,6 @@ class EBSTestHandler(ShutdownNode):
     good_to_go = False
     process = None
     debug = False
-    record: bool = False
 
     sent_init = False
     path = None
@@ -40,9 +38,6 @@ class EBSTestHandler(ShutdownNode):
         self.create_timer((1 / 20), self.timer_callback)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-
-        # create recording service
-        self.create_service(SetBool, "system/record", self.record_callback)
 
         # publishers
         self.init_pose_pub = self.create_publisher(PoseWithCovarianceStamped, "/initialpose", 1)
@@ -89,15 +84,21 @@ class EBSTestHandler(ShutdownNode):
                 "L",
                 "ros2",
                 "launch",
-                "mission_controller",
+                "vehicle_bringup",
                 "ebs_test.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("EBS mission started")
+            self.recording_process = self.start_recording("ebs_test")
 
         self.get_logger().info("---EBS handler node initialised---")
+
+    def start_recording(self, target_mission: str):
+        now = datetime.datetime.now()
+        name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
+        command = ["stdbuf", "-o", "L", "ros2", "bag", "record", "-s", "mcap", "-o", name, "--all", "-x", "(/velodyne_points|/velodyne_packets)"]
+        self.recording_process = Popen(command)
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
@@ -141,11 +142,11 @@ class EBSTestHandler(ShutdownNode):
                 "launch",
                 "vehicle_bringup",
                 "ebs_test.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             self.process = Popen(command)
             self.get_logger().info("EBS mission started")
+            self.recording_process = self.start_recording("ebs_test")
 
     def ros_state_callback(self, msg: ROSStateStamped):
         if msg.good_to_go:

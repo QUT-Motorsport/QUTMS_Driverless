@@ -8,6 +8,6 @@ bool good_to_go
 bool finished
 
 uint8 identified_cones
-uint8 mapped_cones
+uint16 mapped_cones
 
 uint8 lap_count
