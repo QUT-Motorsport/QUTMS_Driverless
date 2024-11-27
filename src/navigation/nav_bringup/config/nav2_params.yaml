@@ -202,7 +202,7 @@ controller_server:
     TrackdriveRPP:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 3.0  # The desired maximum linear velocity to use.
-      lookahead_dist: 5.0  # The lookahead distance to use to find the lookahead point.
+      lookahead_dist: 4.5  # The lookahead distance to use to find the lookahead point.
       # min_lookahead_dist: 3.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
       # max_lookahead_dist: 5.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       # lookahead_time: 2.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
@@ -234,7 +234,7 @@ controller_server:
       desired_linear_vel: 4.5  # The desired maximum linear velocity to use.
       # lookahead_dist: 6.0  # The lookahead distance to use to find the lookahead point.
       min_lookahead_dist: 4.0  # The minimum lookahead distance threshold when using velocity scaled lookahead distances.
-      max_lookahead_dist: 12.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
+      max_lookahead_dist: 10.0  # The maximum lookahead distance threshold when using velocity scaled lookahead distances.
       lookahead_time: 3.0  # The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain.
       # rotate_to_heading_angular_vel: 1.8  # If rotate to heading is used, this is the angular velocity to use.
       transform_tolerance: 0.3  # The TF transform tolerance.

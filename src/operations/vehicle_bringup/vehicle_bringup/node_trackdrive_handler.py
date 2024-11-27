@@ -195,8 +195,8 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Lap {self.laps} completed")
 
         # we have finished lap "1"
-        if self.laps > 1:
-            self.controller_id = "TrackdriveRPPFast"
+        # if self.laps > 1:
+        #     self.controller_id = "TrackdriveRPPFast"
 
         # we have finished lap "10"
         if self.laps == 10:
