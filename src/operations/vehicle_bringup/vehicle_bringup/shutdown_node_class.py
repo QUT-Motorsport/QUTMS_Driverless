@@ -71,10 +71,12 @@ class ShutdownNode(Node):
         while not self.record_future.done() and rclpy.ok():
             self.get_logger().info("Waiting for recording to start")
             rclpy.spin_once(self, timeout_sec=1.0)
-        if self.record_future.result() is None:
+        result = self.record_future.result()
+        self.get_logger().info(f"Service Call result: {str(result)}")
+        if result is None:
             self.get_logger().error("Service ERROR, recording may not have started")
-        elif self.record_future.result().success:
+        elif result.success:
             self.get_logger().info("Recording started")
         else:
             self.get_logger().error("Recording failed to start")
-        return self.record_future.result()
+        return result.success
