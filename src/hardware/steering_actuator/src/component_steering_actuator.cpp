@@ -95,6 +95,7 @@ void SteeringActuator::update_parameters(const rcl_interfaces::msg::ParameterEve
     max_position_ = this->get_parameter("max_position").as_int();
     pid_frequency_ = this->get_parameter("pid_frequency").as_int();
     use_pid_ = this->get_parameter("use_pid").as_bool();
+    RCLCPP_INFO(this->get_logger(), "use_pid_: %d", use_pid_);
 }
 
 void SteeringActuator::configure_c5e() {

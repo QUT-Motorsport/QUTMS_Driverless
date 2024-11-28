@@ -15,7 +15,7 @@ source install/setup.bash
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_18-01_40_49 --clock -p" # 10 laps recording from 2nd lap, 1st corner
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_30-04_40_17 --clock -p" # 14 laps recording from 2nd lap, 1st corner
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_11_01-19_02_10 --clock -p" # 14 laps recording from 2nd lap, 1st corner
-BAG_CMD="ros2 bag play -l -s mcap /mnt/usb/Projects/QUTMS/mcaps/trackdrive-2024-11-20-02-48-40 --clock -p"
+BAG_CMD="ros2 bag play -l -s mcap /home/leungw16/QUTMS/bags/trackdrive-2024-11-24-23-59-03 --clock -p"
 
 TOPICS=(
     # for mapping debugging
