@@ -68,6 +68,11 @@ def generate_launch_description():
         ),
     )
 
+    rosbag_creator_node = Node(
+        package="rosbag_creator",
+        executable="rosbag_creator_node",
+    )
+
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
 
     return LaunchDescription(
@@ -77,5 +82,6 @@ def generate_launch_description():
             display_launch,
             urdf_launch,
             perception_launch,
+            rosbag_creator_node,
         ]
     )

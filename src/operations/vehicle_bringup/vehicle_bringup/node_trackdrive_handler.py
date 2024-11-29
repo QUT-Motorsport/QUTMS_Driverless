@@ -1,6 +1,5 @@
 from subprocess import Popen
 import time
-import datetime
 
 from nav2_msgs.action import FollowPath
 from tf2_ros import TransformException
@@ -9,6 +8,7 @@ from tf2_ros.transform_listener import TransformListener
 
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
@@ -37,12 +37,17 @@ class TrackdriveHandler(ShutdownNode):
     def __init__(self):
         super().__init__("trackdrive_logic_node")
 
+        # callbacks
+        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
+
         # subscribers
-        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(
+            AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group
+        )
         self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
 
-        self.create_timer((1 / 20), self.timer_callback)
+        self.create_timer((1 / 20), self.timer_callback, callback_group=self.timer_cb_group)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -77,15 +82,9 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
-            self.recording_process = self.start_recording("trackdrive")
+            self.recording = self.start_recording("trackdrive")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
-
-    def start_recording(self, target_mission: str):
-        now = datetime.datetime.now()
-        name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
-        command = ["stdbuf", "-o", "L", "ros2", "bag", "record", "-s", "mcap", "-o", name, "--all", "-x", "(/velodyne_points|/velodyne_packets)"]
-        self.recording_process = Popen(command)
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
@@ -110,7 +109,7 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
-            self.start_recording("trackdrive")
+            self.recording = self.start_recording("trackdrive")
 
         if msg.state == AVStateStamped.DRIVING and not self.released:
             time.sleep(3)
@@ -210,6 +209,7 @@ class TrackdriveHandler(ShutdownNode):
 def main(args=None):
     rclpy.init(args=args)
     node = TrackdriveHandler()
-    rclpy.spin(node)
+    # rclpy.spin(node)
+    node.spin()
     node.destroy_node()
     rclpy.shutdown()

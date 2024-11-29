@@ -41,8 +41,7 @@ def generate_launch_description():
         executable="vel_to_ackermann_node",
         parameters=[
             get_package_share_path("controllers") / "config" / "control.yaml",
-            {"Kp": 2.0,
-             "distance_ctrl": False},  # specific for EBS test
+            {"Kp": 2.0, "distance_ctrl": False},  # specific for EBS test
         ],
         output="both",
     )
