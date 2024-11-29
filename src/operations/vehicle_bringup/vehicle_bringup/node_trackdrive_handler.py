@@ -8,6 +8,7 @@ from tf2_ros.transform_listener import TransformListener
 
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
@@ -36,12 +37,17 @@ class TrackdriveHandler(ShutdownNode):
     def __init__(self):
         super().__init__("trackdrive_logic_node")
 
+        # callbacks
+        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
+
         # subscribers
-        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group)
+        self.create_subscription(
+            AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group
+        )
         self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
 
-        self.create_timer((1 / 20), self.timer_callback)
+        self.create_timer((1 / 20), self.timer_callback, callback_group=self.timer_cb_group)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -137,7 +143,7 @@ class TrackdriveHandler(ShutdownNode):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
-        self.get_logger().info("Trackdrive handler heartbeat", throttle_duration_sec=0.1)
+        self.get_logger().info("Trackdrive handler heartbeat")
         if not self.mission_started:
             return
 
@@ -204,6 +210,7 @@ class TrackdriveHandler(ShutdownNode):
 def main(args=None):
     rclpy.init(args=args)
     node = TrackdriveHandler()
-    rclpy.spin(node)
+    # rclpy.spin(node)
+    node.spin()
     node.destroy_node()
     rclpy.shutdown()

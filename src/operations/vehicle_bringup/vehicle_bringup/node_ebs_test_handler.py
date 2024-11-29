@@ -8,6 +8,7 @@ from tf2_ros.transform_listener import TransformListener
 
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
@@ -28,13 +29,17 @@ class EBSTestHandler(ShutdownNode):
 
     def __init__(self):
         super().__init__("ebs_test_logic_node")
+        # callback groups
+        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
 
         # subscribers
-        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(
+            AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group
+        )
         self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
 
-        self.create_timer((1 / 20), self.timer_callback)
+        self.create_timer((1 / 20), self.timer_callback, callback_group=self.timer_cb_group)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -195,6 +200,7 @@ class EBSTestHandler(ShutdownNode):
 def main(args=None):
     rclpy.init(args=args)
     node = EBSTestHandler()
-    rclpy.spin(node)
+    # rclpy.spin(node)
+    node.spin()
     # node.destroy_node()
     rclpy.shutdown()
