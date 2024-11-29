@@ -18,7 +18,7 @@ class ShutdownNode(Node):
     mission_process: Popen = None
     recording = None
     record_future = None
-    stop_future = None
+    stop_record_future = None
 
     def __init__(self, node_name: str, **kwargs) -> None:
         super().__init__(node_name, **kwargs)

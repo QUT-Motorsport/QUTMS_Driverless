@@ -143,7 +143,6 @@ class TrackdriveHandler(ShutdownNode):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
-        self.get_logger().info("Trackdrive handler heartbeat")
         if not self.mission_started:
             return
 
