@@ -10,11 +10,14 @@ source install/setup.bash
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_18_42/ --clock -p" # other half of lap
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43 --clock -p" # 2.5 laps
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-06_08_59/ --clock -p" # 1 lap, loop close crashing
-# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-02_16_55/ --clock -p" # ebs test run
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_17-01_36_17/ --clock -p" # ebs test run
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_18-01_10_29/ --clock -p" # 9 laps, recording from 1st corner
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_18-01_40_49 --clock -p" # 10 laps recording from 2nd lap, 1st corner
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_30-04_40_17 --clock -p" # 14 laps recording from 2nd lap, 1st corner
-BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_11_01-19_02_10 --clock -p" # 14 laps recording from 2nd lap, 1st corner
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_11_01-19_02_10 --clock -p" # 
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/trackdrive-2024-11-20-02-48-40 --clock -p" # 
+BAG_CMD="ros2 bag play -s mcap /mnt/e/trackdrive-2024-11-20-02-27-43 --clock -p" # 
+
 
 TOPICS=(
     # for mapping debugging
@@ -32,16 +35,16 @@ TOPICS=(
     /vehicle/velocity
     /vehicle/steering_angle
     /imu/data
-    /control/driving_command
+    # /control/driving_command
 
-    # for fast lap debugging
-    /tf
-    /tf_static
-    /odometry/filtered
-    /slam/occupancy_grid
-    /slam/occupancy_grid_metadata
-    /slam/pose
-    /slam/graph_visualization
+    # # for fast lap debugging
+    # /tf
+    # /tf_static
+    # /odometry/filtered
+    # /slam/occupancy_grid
+    # /slam/occupancy_grid_metadata
+    # /slam/pose
+    # /slam/graph_visualization
 )
 
 # remap these topics if you are running programs which output to the same topic names
@@ -49,7 +52,10 @@ REMAPS=(
     # /odometry/filtered:=/odometry/filtered_old
     # /sbg_translated/odometry:=/sbg_translated/odometry_old
     # /tf:=/tf_old
-    /control/driving_command:=/control/driving_command_old
+    # /control/driving_command:=/control/driving_command_old
+    # /vehicle/stepper_request:=/vehicle/stepper_request_old
+    # /system/av_state:=/system/av_state_old
+    # /system/ros_state:=/system/ros_state_old
 )
 
 # for each topic append to the command
