@@ -156,11 +156,13 @@ void VelocityController::controller_callback() {
     }
 
     // create control ackermann based off desired and calculated acceleration
-    Torque_Request_t torque_request;
-    torque_request.torque = accel * 100;  // convert to percentage
-    auto torque_heartbeat = Compose_Torque_Request_Heartbeat(&torque_request);
+    Request_t request_msg;
+    request_msg.torque = accel * 100;  // convert to percentage
+    request_msg.speed = target_ackermann_->drive.speed;
+    request_msg.steering = target_ackermann_->drive.steering_angle;
+    auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);
     this->can_pub_->publish(
-        std::move(this->_d_2_f(torque_heartbeat.id, true, torque_heartbeat.data, sizeof(torque_heartbeat.data))));
+        std::move(this->_d_2_f(request_heartbeat.id, true, request_heartbeat.data, sizeof(request_heartbeat.data))));
 
     prev_accel_ = accel;
 
