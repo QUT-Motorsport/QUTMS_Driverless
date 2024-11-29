@@ -23,10 +23,6 @@ class ShutdownNode(Node):
         super().__init__(node_name, **kwargs)
         self.sub_cb_group = MutuallyExclusiveCallbackGroup()
 
-        self.reset_sub = self.create_subscription(
-            AVStateStamped, "system/av_state", self.av_state_callback, QOS_LATEST, callback_group=self.sub_cb_group
-        )
-
         self.cli_callback_group = ReentrantCallbackGroup()
         self.bag_stop_cli = self.create_client(Trigger, "bag/stop", callback_group=self.cli_callback_group)
 

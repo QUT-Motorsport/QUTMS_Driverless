@@ -37,7 +37,7 @@ class TrackdriveHandler(ShutdownNode):
         super().__init__("trackdrive_logic_node")
 
         # subscribers
-        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group)
         self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
 
@@ -137,7 +137,7 @@ class TrackdriveHandler(ShutdownNode):
         # check if car has crossed the finish line (0,0)
         # get distance from 0,0 and increment laps when within a certain threshold
         # and distance is increasing away from 0,0
-        self.get_logger().debug("Trackdrive handler heartbeat", throttle_duration_sec=1)
+        self.get_logger().info("Trackdrive handler heartbeat", throttle_duration_sec=0.1)
         if not self.mission_started:
             return
 
