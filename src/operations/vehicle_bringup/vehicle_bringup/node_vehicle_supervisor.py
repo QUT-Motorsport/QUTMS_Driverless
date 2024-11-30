@@ -37,7 +37,6 @@ class VehicleSupervisor(Node):
         self.create_subscription(Odometry, "imu/odometry", self.odom_callback, 1)
         self.create_subscription(ConeDetectionStamped, "lidar/cone_detection", self.lidar_callback, 1)
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.map_callback, 1)
-        self.create_subscription(Bool, "system/steering_ready", self.steering_callback, 1)
         self.create_subscription(Shutdown, "system/shutdown", self.shutdown_callback, 1)
         self.create_subscription(UInt8, "system/laps_completed", self.laps_callback, 1)
         self.create_subscription(DiagnosticArray, "diagnostics", self.diagnostics_callback, 1)
@@ -87,8 +86,8 @@ class VehicleSupervisor(Node):
         self.ros_state.header.stamp = self.get_clock().now().to_msg()
         if (
             self.ros_state.sbg_operational
-            # and self.ros_state.lidar_operational
-            # and self.ros_state.planning
+            and self.ros_state.lidar_operational
+            and self.ros_state.planning
             # and self.ros_state.steering_ctrl
             and not self.ros_state.finished
         ):
@@ -149,21 +148,19 @@ class VehicleSupervisor(Node):
                 self.get_logger().info("Mission started: " + target_mission)
                 self.mission_launched = self.send_mission_request(self.av_state.mission, True)
 
+            if self.av_state.state == AVStateStamped.DRIVING:
+                self.ros_state.steering_ctrl = True
+
             # close mission if mission is finished
             if self.av_state.state == AVStateStamped.END and self.mission_launched and not self.finished:
                 self.get_logger().warn("Closing mission")
                 self.finished = True
 
     def diagnostics_callback(self, msg: DiagnosticArray):
-        if "velodyne_driver_node" in msg.status[0].name and msg.status[0].level == 0:
+        if "velodyne_driver_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
             self.ros_state.lidar_operational = True
-        # if "sbg_driver_node" in msg.status[0].name and msg.status[0].level == 0:
-        #     self.ros_state.sbg_operational = True
-        if "ft_planner_node" in msg.status[0].name and msg.status[0].level == 0:
-            self.ros_state.planning = True
-
-    def steering_callback(self, msg: Bool):
-        self.ros_state.steering_ctrl = msg.data
+        if "ft_planner_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
+                self.ros_state.planning = True
 
     def odom_callback(self, msg: Odometry):
         """Ensure the SBG EKF has settled and we get odom msgs before starting the mission"""

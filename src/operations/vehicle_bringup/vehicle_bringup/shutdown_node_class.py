@@ -27,8 +27,8 @@ class ShutdownNode(Node):
         self.bag_stop_cli = self.create_client(Trigger, "bag/stop", callback_group=self.cli_callback_group)
         self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start", callback_group=self.cli_callback_group)
 
-        # while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info("Service 'bag/start' not available, waiting...")
+        while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("Service 'bag/start' not available, waiting...")
 
     def av_state_callback(self, msg: AVStateStamped):
         if msg.state in [AVStateStamped.END]:
@@ -36,16 +36,12 @@ class ShutdownNode(Node):
                 self.mission_process.send_signal(signal.SIGINT)
                 self.get_logger().error("Interrupted MISSION process")
                 self.mission_process = None
-            if self.record_future is not None:
-                while not self.bag_stop_cli.service_is_ready():
-                    self.get_logger().info("Service 'bag/stop' not available, waiting...")
-                    self.bag_stop_cli.wait_for_service(timeout_sec=1.0)
-                request = Trigger.Request()
-                self.stop_record_future = self.bag_stop_cli.call_async(request)
+            request = Trigger.Request()
+            self.stop_record_future = self.bag_stop_cli.call_async(request)
             self.trigger_shutdown()
 
     def trigger_shutdown(self):
-        while not self.stop_record_future is None:
+        while self.stop_record_future is not None:
             continue
         self.get_logger().error("Exit Node - Shutdown Triggered")
         self.destroy_node()
@@ -56,9 +52,6 @@ class ShutdownNode(Node):
         name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
         request = TriggerBagRecord.Request()
         request.filename = name
-        while not self.bag_start_cli.service_is_ready():
-            self.get_logger().info("Service 'bag/start' not available, waiting...")
-            self.bag_start_cli.wait_for_service(timeout_sec=1.0)
         self.record_future = self.bag_start_cli.call_async(request)
         self.get_logger().info("Recording reqested")
 
