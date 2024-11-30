@@ -30,6 +30,11 @@ class VehicleSupervisor(Node):
     ros_state = ROSStateStamped()
     av_state = AVStateStamped()
 
+    timeout = 1.0 # seconds
+    lidar_update_time = time.time()
+    planning_update_time = time.time()
+    sbg_update_time = time.time()
+
     def __init__(self):
         super().__init__("vehicle_supervisor_node")
 
@@ -84,6 +89,15 @@ class VehicleSupervisor(Node):
     def timer_callback(self):
         # consolidate current ROS state
         self.ros_state.header.stamp = self.get_clock().now().to_msg()
+
+        # check for timeouts
+        if time.time() - self.planning_update_time > self.timeout:
+            self.ros_state.planning = False
+        if time.time() - self.lidar_update_time > self.timeout:
+            self.ros_state.lidar_operational = False
+        if time.time() - self.sbg_update_time > self.timeout:
+            self.ros_state.sbg_operational = False
+
         if (
             self.ros_state.sbg_operational
             and self.ros_state.lidar_operational
@@ -159,13 +173,17 @@ class VehicleSupervisor(Node):
     def diagnostics_callback(self, msg: DiagnosticArray):
         if "velodyne_driver_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
             self.ros_state.lidar_operational = True
+            self.lidar_update_time = time.time()
+
         if "ft_planner_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
-                self.ros_state.planning = True
+            self.ros_state.planning = True
+            self.planning_update_time = time.time()
 
     def odom_callback(self, msg: Odometry):
         """Ensure the SBG EKF has settled and we get odom msgs before starting the mission"""
         ## THIS SHOULD BE LOGIC BASED ON SBG EKF STATUS VALUE
         self.ros_state.sbg_operational = True
+        self.sbg_update_time = time.time()
 
     def lidar_callback(self, msg: ConeDetectionStamped):
         self.ros_state.identified_cones = len(msg.cones)
