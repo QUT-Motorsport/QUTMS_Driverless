@@ -92,7 +92,7 @@ class EBSTestHandler(ShutdownNode):
                 "ebs_test.launch.py",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("EBS mission started")
             self.recording = self.start_recording("ebs_test")
             # if not self.recording.success:
@@ -146,7 +146,7 @@ class EBSTestHandler(ShutdownNode):
                 "ebs_test.launch.py",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("EBS mission started")
             self.recording = self.start_recording("ebs_test")
 
