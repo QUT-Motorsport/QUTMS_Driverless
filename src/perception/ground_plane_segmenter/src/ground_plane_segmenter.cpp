@@ -108,6 +108,11 @@ void GroundPlaneSegmenterNode::pcl_callback(const sensor_msgs::msg::PointCloud2:
         filtered_objects->header = cloud->header;
 
         for (auto point : objects->points) {
+            // dont add point if below the plane
+            if (A * point.x + B * point.y + C * point.z + D < 0) {
+                continue;
+            }
+
             float distance = std::abs(A * point.x + B * point.y + C * point.z + D) / std::sqrt(A * A + B * B + C * C);
             if (distance > plane_thresh) {
                 filtered_objects->points.push_back(point);
