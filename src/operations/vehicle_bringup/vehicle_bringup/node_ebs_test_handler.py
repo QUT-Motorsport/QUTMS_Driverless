@@ -21,8 +21,8 @@ from vehicle_bringup.shutdown_node_class import ShutdownNode
 class EBSTestHandler(ShutdownNode):
     mission_started = False
     good_to_go = False
-    process = None
     debug = False
+    released = False
 
     sent_init = False
     path = None
@@ -149,6 +149,11 @@ class EBSTestHandler(ShutdownNode):
             self.mission_process = Popen(command)
             self.get_logger().info("EBS mission started")
             self.recording = self.start_recording("ebs_test")
+
+        if msg.state == AVStateStamped.DRIVING and not self.released:
+            time.sleep(3)
+            self.released = True
+            self.get_logger().info("RELEASED BRAKES")
 
     def ros_state_callback(self, msg: ROSStateStamped):
         if msg.good_to_go:
