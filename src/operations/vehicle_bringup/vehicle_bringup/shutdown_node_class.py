@@ -27,9 +27,6 @@ class ShutdownNode(Node):
         self.bag_stop_cli = self.create_client(Trigger, "bag/stop", callback_group=self.cli_callback_group)
         self.bag_start_cli = self.create_client(TriggerBagRecord, "bag/start", callback_group=self.cli_callback_group)
 
-        while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("Service 'bag/start' not available, waiting...")
-
     def av_state_callback(self, msg: AVStateStamped):
         if msg.state in [AVStateStamped.END]:
             if self.mission_process is not None:
@@ -48,6 +45,9 @@ class ShutdownNode(Node):
         exit(1)
 
     def start_recording(self, target_mission: str):
+        while not self.bag_start_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("Service 'bag/start' not available, waiting...")
+
         now = datetime.datetime.now()
         name = f'bags/{target_mission}-{now.strftime("%Y-%m-%d-%H-%M-%S")}'
         request = TriggerBagRecord.Request()

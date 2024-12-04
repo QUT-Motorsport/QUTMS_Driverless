@@ -20,7 +20,7 @@ from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 class EBSTestHandler(ShutdownNode):
     mission_started = False
-    good_to_go = False
+    sbg_operational = False
     debug = False
     released = False
 
@@ -105,7 +105,7 @@ class EBSTestHandler(ShutdownNode):
         if (
             (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
             and not self.mission_started
-            and self.good_to_go
+            and self.sbg_operational
         ):
 
             self.mission_started = True
@@ -156,8 +156,8 @@ class EBSTestHandler(ShutdownNode):
             self.get_logger().info("RELEASED BRAKES")
 
     def ros_state_callback(self, msg: ROSStateStamped):
-        if msg.good_to_go:
-            self.good_to_go = True
+        if msg.sbg_operational:
+            self.sbg_operational = True
 
     def path_callback(self, msg: Path):
         # receive path and convert to numpy array
