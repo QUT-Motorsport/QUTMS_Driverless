@@ -105,61 +105,62 @@ void VelocityController::controller_callback() {
         RCLCPP_INFO_ONCE(this->get_logger(), "Motors not enabled, awaiting State::DRIVING");
         return;
     }
-    if (!received_velocity_ || !received_ackermann_) {
-        RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for target and current velocities");
-        return;
-    }
-    RCLCPP_INFO_ONCE(this->get_logger(),
+    RCLCPP_INFO(this->get_logger(),
                      "Motors enabled, Received target and current velocities\n - Starting control loop");
 
-    // calculate error
-    float error = target_ackermann_->drive.speed - avg_velocity_;
-    integral_error_ += error;
-
-    // clip the integral error based on max_integral_torque_
-    if (integral_error_ < 0) {
-        integral_error_ = 0;
-    } else if (integral_error_ > (max_integral_torque_ / Ki_)) {
-        integral_error_ = max_integral_torque_ / Ki_;
-    }
-
-    if (avg_velocity_ < histerisis_reset_ms_) {
-        integral_error_ = 0;
-    }
-
-    // calculate control variable
-    float p_term = Kp_ * error;
-    float i_term = Ki_ * integral_error_;
-
-    float accel = p_term;
-    if (avg_velocity_ > histerisis_kickin_ms_) {
-        accel += i_term;
-    }
-
-    if ((abs(accel) - abs(prev_accel_)) > max_accel_per_tick_) {
-        if (accel >= 0) {
-            accel = prev_accel_ + max_accel_per_tick_;
-        } else {
-            accel = prev_accel_ - max_accel_per_tick_;
+    float accel = 0;
+    if (state_->mission != driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        if (!received_velocity_ || !received_ackermann_) {
+            RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for target and current velocities");
+            return;
         }
-    }
+        // calculate error
+        float error = target_ackermann_->drive.speed - avg_velocity_;
+        integral_error_ += error;
 
-    // limit output accel to be between -1 (braking) and 1 (accel)
-    if (accel > 1) {
-        accel = 1;
-    } else if (accel < -1) {
-        accel = -1;
-    }
+        // clip the integral error based on max_integral_torque_
+        if (integral_error_ < 0) {
+            integral_error_ = 0;
+        } else if (integral_error_ > (max_integral_torque_ / Ki_)) {
+            integral_error_ = max_integral_torque_ / Ki_;
+        }
 
-    if (state_->mission == driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        if (avg_velocity_ < histerisis_reset_ms_) {
+            integral_error_ = 0;
+        }
+
+        // calculate control variable
+        float p_term = Kp_ * error;
+        float i_term = Ki_ * integral_error_;
+
+        accel = p_term;
+        if (avg_velocity_ > histerisis_kickin_ms_) {
+            accel += i_term;
+        }
+
+        if ((abs(accel) - abs(prev_accel_)) > max_accel_per_tick_) {
+            if (accel >= 0) {
+                accel = prev_accel_ + max_accel_per_tick_;
+            } else {
+                accel = prev_accel_ - max_accel_per_tick_;
+            }
+        }
+
+        // limit output accel to be between -1 (braking) and 1 (accel)
+        if (accel > 1) {
+            accel = 1;
+        } else if (accel < -1) {
+            accel = -1;
+        }
+    } else {
         accel = 0.10;  // THIS COULD BE A PARAM, TODO
     }
 
     // create control ackermann based off desired and calculated acceleration
     Request_t request_msg;
     request_msg.torque = accel * 100;  // convert to percentage
-    request_msg.speed = target_ackermann_->drive.speed;
     request_msg.steering = target_ackermann_->drive.steering_angle;
+    request_msg.speed = target_ackermann_->drive.speed;
     auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);
     this->can_pub_->publish(
         std::move(this->_d_2_f(request_heartbeat.id, true, request_heartbeat.data, sizeof(request_heartbeat.data))));

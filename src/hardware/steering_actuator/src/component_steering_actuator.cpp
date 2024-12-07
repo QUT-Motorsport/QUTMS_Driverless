@@ -120,7 +120,7 @@ void SteeringActuator::steering_angle_callback(const std_msgs::msg::Float32::Sha
 void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
     if (!(motor_enabled_ && steering_ang_received_)) return;
     // Use 1 equation for both left and right turns
-    int32_t target = int32_t(-82 * (msg->drive.steering_angle + 10) + 109) - offset_;
+    int32_t target = int32_t(-82 * (msg->drive.steering_angle + 8) + 109) - offset_;
     // Clamp target to max
     target = std::max(std::min(target, max_position_ - offset_), -max_position_ - offset_);
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 250, "Target: %f = %d", msg->drive.steering_angle,

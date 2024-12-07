@@ -99,10 +99,9 @@ class VehicleSupervisor(Node):
             self.ros_state.sbg_operational = False
 
         if (
-            self.ros_state.sbg_operational
-            and self.ros_state.lidar_operational
-            and self.ros_state.planning
-            # and self.ros_state.steering_ctrl
+            self.ros_state.lidar_operational
+            and self.ros_state.sbg_operational
+            # and self.ros_state.planning
             and not self.ros_state.finished
         ):
             self.ros_state.good_to_go = True

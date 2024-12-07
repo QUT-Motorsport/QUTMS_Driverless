@@ -12,7 +12,7 @@ from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 class InspectionHandler(ShutdownNode):
     mission_started = False
-    good_to_go = False
+    good_to_go = True
     process = None
 
     start_time = 0.0
@@ -33,7 +33,8 @@ class InspectionHandler(ShutdownNode):
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
-        if msg.state == AVStateStamped.DRIVING and not self.mission_started and self.good_to_go:
+        if msg.state == AVStateStamped.DRIVING and not self.mission_started and msg.mission == AVStateStamped.INSPECTION:
+            time.sleep(1)
             self.mission_started = True
             self.start_time = time.time()
             command = ["stdbuf", "-o", "L", "ros2", "launch", "vehicle_bringup", "inspection.launch.py"]
