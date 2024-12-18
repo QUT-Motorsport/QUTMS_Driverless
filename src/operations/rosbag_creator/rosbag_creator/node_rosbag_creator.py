@@ -57,6 +57,7 @@ class RosbagCreator(Node):
             response.message = "Not recording"
         # Stop recording if recording
         else:
+            # Set a timer for stopping the recording
             self.stop_record_timer = self.create_timer(self.stop_after_seconds, self.stop_record_timer_callback)
             # self.recorder.cancel()
             # self.recording = False
@@ -67,6 +68,7 @@ class RosbagCreator(Node):
         return response
 
     def stop_record_timer_callback(self):
+        # Stop recording and reset the bag recorder
         self.recorder.cancel()
         self.recording = False
         self.recorder = None
