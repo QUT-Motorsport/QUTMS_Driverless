@@ -17,6 +17,8 @@ class RosbagCreator(Node):
         self.recording = False
         self.record_srv = self.create_service(TriggerBagRecord, "bag/start", self.bag_record_callback)
         self.stop_record_srv = self.create_service(Trigger, "bag/stop", self.stop_record_callback)
+        self.stop_record_timer = None  # self.create_timer(1, self.stop_record_timer_callback)
+        self.stop_after_seconds = 5
         self.recorder = None
         self.get_logger().info("Rosbag creator node started")
 
@@ -55,13 +57,24 @@ class RosbagCreator(Node):
             response.message = "Not recording"
         # Stop recording if recording
         else:
-            self.recorder.cancel()
-            self.recording = False
-            self.recorder = None
-            self.record_thread.join()
+            self.stop_record_timer = self.create_timer(self.stop_after_seconds, self.stop_record_timer_callback)
+            # self.recorder.cancel()
+            # self.recording = False
+            # self.recorder = None
+            # self.record_thread.join()
             response.success = True
-            self.get_logger().info(f"Recording stopped. Saved to {path.abspath(self.storage_options.uri)}")
+            self.get_logger().info(f"Recording stop requested. Stopping in {self.stop_after_seconds} seconds")
         return response
+
+    def stop_record_timer_callback(self):
+        self.recorder.cancel()
+        self.recording = False
+        self.recorder = None
+        self.record_thread.join()
+        response = Trigger.Response()
+        # response.success = True
+        self.get_logger().info(f"Recording stopped. Saved to {path.abspath(self.storage_options.uri)}")
+        self.stop_record_timer.cancel()
 
 
 def main(args=None):
