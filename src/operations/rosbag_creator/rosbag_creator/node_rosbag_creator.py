@@ -71,8 +71,6 @@ class RosbagCreator(Node):
         self.recording = False
         self.recorder = None
         self.record_thread.join()
-        response = Trigger.Response()
-        # response.success = True
         self.get_logger().info(f"Recording stopped. Saved to {path.abspath(self.storage_options.uri)}")
         self.stop_record_timer.cancel()
 
