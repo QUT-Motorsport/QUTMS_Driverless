@@ -30,7 +30,7 @@ class VehicleSupervisor(Node):
     ros_state = ROSStateStamped()
     av_state = AVStateStamped()
 
-    timeout = 1.0 # seconds
+    timeout = 1.0  # seconds
     lidar_update_time = time.time()
     planning_update_time = time.time()
     sbg_update_time = time.time()

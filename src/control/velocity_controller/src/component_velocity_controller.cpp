@@ -105,8 +105,7 @@ void VelocityController::controller_callback() {
         RCLCPP_INFO_ONCE(this->get_logger(), "Motors not enabled, awaiting State::DRIVING");
         return;
     }
-    RCLCPP_INFO(this->get_logger(),
-                     "Motors enabled, Received target and current velocities\n - Starting control loop");
+    RCLCPP_INFO(this->get_logger(), "Motors enabled, Received target and current velocities\n - Starting control loop");
 
     float accel = 0;
     if (state_->mission != driverless_msgs::msg::AVStateStamped::INSPECTION) {
