@@ -399,7 +399,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
 
-        # convert current time to nanosecs 
+        # convert current time to nanosecs
         stamp_float = time.time()
         self.diagnostic_pub.tick(stamp_float)
 
