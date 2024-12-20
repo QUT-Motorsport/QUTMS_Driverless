@@ -12,10 +12,11 @@ export EUFS_MASTER=~/QUTMS
 export QUTMS_WS=~/QUTMS
 
 ## Clone SBG driver
-echo ""
-echo "---Cloning SBG Driver---"
-echo ""
-git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
+## DEPRECATED: SBG driver can now be installed via rosdep
+# echo ""
+# echo "---Cloning SBG Driver---"
+# echo ""
+# git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
 
 sudo rosdep init
 rosdep update

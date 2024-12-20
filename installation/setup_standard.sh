@@ -29,7 +29,7 @@ cd QUTMS_Driverless
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_source.sh
 
 ## Install ROS2 Humble
-source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_humble.sh
+source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_jazzy.sh
 
 ## Package requirements
 echo ""
