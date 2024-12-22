@@ -13,8 +13,6 @@
     <exec_depend>slam_toolbox</exec_depend>
     <exec_depend>navigation2</exec_depend>
     <exec_depend>sbg_driver</exec_depend>
-    <!-- Custom packages -->
-    <exec_depend>odom_transformer</exec_depend>
 
     <export>
         <build_type>ament_cmake</build_type>

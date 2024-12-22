@@ -7,7 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
@@ -37,7 +37,6 @@ ament_target_dependencies(velocity_controller_component
   "rclcpp_components"
   "rcl_interfaces"
   "std_msgs"
-  "nav_msgs"
   "ackermann_msgs"
   "driverless_msgs"
 )

@@ -11,7 +11,7 @@
     <depend>driverless_msgs</depend>
     <depend>ackermann_msgs</depend>
     <depend>std_msgs</depend>
-    <!-- Packages -->
+    <!-- Custom Packages -->
     <depend>QUTMS_Embedded_Common</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
