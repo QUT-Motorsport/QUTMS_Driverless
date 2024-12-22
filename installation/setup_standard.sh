@@ -9,11 +9,17 @@ echo ""
 sleep 3
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y git python3-pip pre-commit cmake
+sudo apt install -y git python3-pip cmake
+
+# for installing pip rosdeps
+export PIP_BREAK_SYSTEM_PACKAGES=1
 
 ## Make workspace
 mkdir ~/QUTMS
 cd ~/QUTMS
+echo "export QUTMS_WS=~/QUTMS" >> ~/.bashrc
+export QUTMS_WS=~/QUTMS
+
 # directory for people to drop their rosbags in
 mkdir bags/
 
@@ -28,7 +34,7 @@ cd QUTMS_Driverless
 ## Set ROS2 repositories
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_source.sh
 
-## Install ROS2 Humble
+## Install ROS2
 source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_ros_jazzy.sh
 
 ## Package requirements
@@ -46,15 +52,10 @@ ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/format.sh ~
 ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/launch.sh ~/QUTMS/launch.sh
 ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/pull.sh ~/QUTMS/pull.sh
 ln -s ~/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/record.sh ~/QUTMS/record.sh
-
-## Check if user is going to work with vision
-source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_torch_pip.sh
+ln -s ~/QUTMS/QUTMS_Driverless/tools/play_bag.sh ~/QUTMS/play_bag.sh
 
 ## Source ROS
-source /opt/ros/humble/setup.bash
-
-## Install EUFS
-source ~/QUTMS/QUTMS_Driverless/installation/install_scripts/install_eufs_sim.sh
+source /opt/ros/jazzy/setup.bash
 
 ## Install dependencies from src/
 rosdep install --from-paths ~/QUTMS --ignore-src -r -y
@@ -72,7 +73,7 @@ sleep 3
 cd ~/QUTMS
 
 # build the rest of the workspace
-source ~/QUTMS/build.sh
+source ~/QUTMS/build.sh --all
 
 ## Wrap up
 echo "Thank you for installing, explore the rest of the wiki"
