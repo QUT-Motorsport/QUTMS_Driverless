@@ -13,7 +13,6 @@ rosdep install -y \
     --rosdistro=${ROS_DISTRO} \
     --ignore-src \
     --from-paths QUTMS_Driverless/src \
-    --skip-keys "zed_ros2"
-    # skip the 3rd party device drivers that get installed on-car (we dont have the devices)
+    --skip-keys "zenoh_bridge_ros2dds"
 
 echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
