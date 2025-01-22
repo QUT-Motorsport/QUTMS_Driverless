@@ -28,7 +28,7 @@ echo ""
 echo "---Cloning Driverless repo---"
 echo ""
 sleep 3
-git clone --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
+git clone -b feature/jazzy_migration --recurse-submodules https://github.com/QUT-Motorsport/QUTMS_Driverless.git
 cd QUTMS_Driverless
 
 ## Set ROS2 repositories
