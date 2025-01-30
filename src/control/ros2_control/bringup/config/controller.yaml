@@ -13,13 +13,13 @@ controller_manager:
 
 bicycle_steering_controller:
   ros__parameters:
-    wheelbase: 0.325
-    front_wheel_radius: 0.05
-    rear_wheel_radius: 0.05
+    wheelbase: 1.580 # distance between the front and rear wheels
+    front_wheel_radius: 0.2032 # in meters
+    rear_wheel_radius: 0.2032 # in meters
     front_steering: true
     reference_timeout: 2.0
-    rear_wheels_names: ['virtual_rear_wheel_joint']
-    front_wheels_names: ['virtual_front_wheel_joint']
+    rear_wheels_names: [rear_wheel_joint]
+    front_wheels_names: [front_wheel_joint]
     open_loop: false
     velocity_rolling_window_size: 10
     base_frame_id: base_link
