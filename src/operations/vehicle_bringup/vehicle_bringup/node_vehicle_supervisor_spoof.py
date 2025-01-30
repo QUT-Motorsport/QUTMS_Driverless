@@ -30,7 +30,7 @@ class VehicleSupervisor(Node):
     ros_state = ROSStateStamped()
     av_state = AVStateStamped()
 
-    timeout = 1.0 # seconds
+    timeout = 1.0  # seconds
     lidar_update_time = time.time()
     planning_update_time = time.time()
     sbg_update_time = time.time()
@@ -124,11 +124,7 @@ class VehicleSupervisor(Node):
             self.system_started = self.send_system_request(True)
 
         # start mission if in autonomous mode and mission is not none
-        if (
-            self.system_started
-            and self.av_state.mission != AVStateStamped.MISSION_NONE
-            and not self.mission_launched
-        ):
+        if self.system_started and self.av_state.mission != AVStateStamped.MISSION_NONE and not self.mission_launched:
             target_mission = INT_MISSION_TYPE[self.av_state.mission].value
             self.get_logger().info("Mission started: " + target_mission)
             self.mission_launched = self.send_mission_request(self.av_state.mission, True)
