@@ -1,8 +1,10 @@
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.16)
 
+# Define the project name macro
+set(PROJECT_NAME qev3d_ros2_control)
 # Project name and language
-project(ros2_control LANGUAGES CXX)
+project(${PROJECT_NAME})
 
 # Add compile options for GCC and Clang
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
@@ -12,20 +14,13 @@ endif()
 # Set the same behavior for Windows as it is on Linux
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# Find dependencies
+# Define the dependencies macro
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
 )
-
-# Specify the required version of ros2_control
-find_package(controller_manager 4.0.0)
-# Handle the case where the required version is not found
-if(NOT controller_manager_FOUND)
-  message(FATAL_ERROR "ros2_control version 4.0.0 or higher is required.")
-endif()
 
 # Find additional dependencies
 find_package(backward_ros REQUIRED)
@@ -36,46 +31,41 @@ endforeach()
 
 # Compile the library
 add_library(
-  ros2_control
+  ${PROJECT_NAME}
   SHARED
-  src/my_controller.cpp  # Rename to your own source files
-  src/my_hardware.cpp    # Rename to your own source files
+  hardware_interface/src/qev3d_hardware_interface.cpp    # Rename to your own source files
 )
-target_compile_features(ros2_control PUBLIC cxx_std_17)
-target_include_directories(ros2_control PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/ros2_control>
+
+# Set include directories for the library
+target_include_directories(
+  ${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/hardware_interface/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
+
+# Specify dependencies for the library
 ament_target_dependencies(
-  ros2_control PUBLIC
+  ${PROJECT_NAME} PUBLIC
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
 # Export hardware plugins
-pluginlib_export_plugin_description_file(hardware_interface ros2_control.xml)  # Rename to your own plugin description file
+pluginlib_export_plugin_description_file(hardware_interface qev3d_hardware_plugin.xml)  # Rename to your own plugin description file
 
 # Install include directory
 install(
-  DIRECTORY include/
-  DESTINATION include/ros2_control
-)
-
-# Install additional directories
-install(
-  DIRECTORY description/launch description/ros2_control description/urdf
-  DESTINATION share/ros2_control
-)
-install(
-  DIRECTORY bringup/launch bringup/config
-  DESTINATION share/ros2_control
+  DIRECTORY hardware_interface/include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 # Install the library
-install(TARGETS ros2_control
-  EXPORT export_ros2_control
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
 )
 
 # Uncomment and modify the following lines to add tests
@@ -87,7 +77,14 @@ install(TARGETS ros2_control
 #   ament_add_pytest_test(run_example_11_launch_remapped test/test_carlikebot_launch_remapped.py)  # Rename to your own test files
 # endif()
 
+# Export include directories
+ament_export_include_directories(
+  hardware_interface/include
+)
+# Export libraries
+ament_export_libraries(${PROJECT_NAME})
+
 # Export targets and dependencies
-ament_export_targets(export_ros2_control HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
