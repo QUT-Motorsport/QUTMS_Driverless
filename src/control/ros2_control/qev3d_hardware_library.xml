@@ -1,9 +1,0 @@
-<library path="qev-3d_hw_interfaces">
-  <class name="qev_hw_interfaces/Qev3dTopicInterface"
-         type="qutms_hw_interfaces::Qev3dTopicInterface"
-         base_class_type="hardware_interface::SystemInterface">
-    <description>
-      ros2_control hardware interface.
-    </description>
-  </class>
-</library>
