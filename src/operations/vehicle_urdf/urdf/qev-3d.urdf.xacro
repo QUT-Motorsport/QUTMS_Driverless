@@ -45,5 +45,7 @@
     <origin xyz="-0.3 0.0 0.85" rpy="0 0 0"/>
   </xacro:velodyne>
 
+  <!-- ros2_control include -->
+  <xacro:include filename="$(find ros2_control)/description/qev3d.ros2_control.urdf.xacro"/>
 
 </robot>

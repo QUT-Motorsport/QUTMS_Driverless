@@ -7,7 +7,7 @@
   <description>ros2 control for qev3d vehicle</description>
 
   <!-- Maintainer information -->
-  <maintainer email="team@qutmotorsport.com">Peter Liao</maintainer>
+  <maintainer email="team@qutmotorsport.com">Peter Liao, Kevin Le</maintainer>
 
   <!-- License information -->
   <license>MIT</license>
