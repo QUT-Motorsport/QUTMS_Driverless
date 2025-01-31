@@ -1,7 +1,10 @@
+
+<!-- Currently copied from the ros2 control demo example 11. Change once other stuff is setup -->
+
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:macro name="qev3d_ros2_control" params="name prefix">
+  <xacro:macro name="qev3d_ros2_control" params="name prefix"> <!--Template for the QEV-3D ros2_control description -->
 
     <ros2_control name="${name}" type="system">
       <hardware>
@@ -9,12 +12,16 @@
         <param name="example_param_hw_start_duration_sec">0</param>
         <param name="example_param_hw_stop_duration_sec">3.0</param>
       </hardware>
-      <joint name="${prefix}front_wheel_joint">
+      <joint name="${prefix}virtual_front_wheel_joint">
         <command_interface name="position"/>
+          <param name = "min">-0.28</param>
+          <param name = "max">0.28</param>
         <state_interface name="position"/>
       </joint>
-      <joint name="${prefix}rear_wheel_joint">
+      <joint name="${prefix}virtual_rear_wheel_joint">
         <command_interface name="velocity"/>
+          <param name = "min">-10</param>
+          <param name = "max">10</param>>
         <state_interface name="velocity"/>
         <state_interface name="position"/>
       </joint>

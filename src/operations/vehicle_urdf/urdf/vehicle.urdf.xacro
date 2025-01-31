@@ -74,11 +74,13 @@
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 
+      <!-- Add the wheel -->
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front"/>
     </xacro:macro>
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
+
       <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
@@ -101,10 +103,10 @@
     <!-- right_front_wheel -->
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
 
-    <!-- left_rear_wheel -->
+    <!--  left_rear_wheel -->
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
 
-    <!-- right_rear_wheel -->
+
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
   </xacro:macro>
 </robot>
