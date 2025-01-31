@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ros2_control_bringup</name>
+  <name>qev3d_ros2_control</name>
   <version>0.0.1</version>
-  <description>Bringup Package for ros2_control</description>
+  <description>ros2 control for qev3d vehicle</description>
   <maintainer email="team@qutmotorsport.com">Peter Liao</maintainer>
   <license>MIT</license>
 
