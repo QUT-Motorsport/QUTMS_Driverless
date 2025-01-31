@@ -79,6 +79,13 @@
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
+      <joint name = "virtual_rear_wheel_joint" type = continuous>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="${chassis_link}"/>
+        <child link="${lr_prefix}_rear_wheel"/>
+        <axis xyz="0 1 0"/>
+      </joint>
+
       <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
@@ -101,10 +108,10 @@
     <!-- right_front_wheel -->
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
 
-    <!-- left_rear_wheel -->
+    <!--  left_rear_wheel -->
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
 
-    <!-- right_rear_wheel -->
+
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
   </xacro:macro>
 </robot>
