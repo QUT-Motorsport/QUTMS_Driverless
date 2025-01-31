@@ -8,32 +8,27 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-<<<<<<< HEAD:src/control/ros2_control/bringup/launch/qev-3d_controller_launch.py
-      # List of arguments to be declared into Node  
-      declared_arguments = []
-
-      # Open Rviz2 GUI
-      declared_arguments.append(
-            DeclareLaunchArgument(
-                  "gui",
-                  default_value="true", # Default value is true
-                  description="Start RViz2 automatically with this launch file.",
-            )
-      )
-
-      # Remap odometry TF from the steering controller to the TF tree
-      declared_arguments.append( 
-            DeclareLaunchArgument(
-                  "remap_odometry_tf",
-                  default_value="false", # Default value is false
-                  description="Remap odometry TF from the steering controller to the TF tree.",
-            )
-      )
-
-      # Arguments Initialization
-      gui = LaunchConfiguration("gui")
-      remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
-=======
     # List of arguments to be declared into Node
     declared_arguments = []
->>>>>>> cea9496a927535100acf4a8bec037947a60b01a3:src/control/ros2_control/bringup/launch/qev3d_controller_launch.py
+
+    # Open Rviz2 GUI
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gui",
+            default_value="true",  # Default value is true
+            description="Start RViz2 automatically with this launch file.",
+        )
+    )
+
+    # Remap odometry TF from the steering controller to the TF tree
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "remap_odometry_tf",
+            default_value="false",  # Default value is false
+            description="Remap odometry TF from the steering controller to the TF tree.",
+        )
+    )
+
+    # Arguments Initialization
+    gui = LaunchConfiguration("gui")
+    remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
