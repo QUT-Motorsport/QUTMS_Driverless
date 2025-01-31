@@ -74,17 +74,12 @@
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 
+      <!-- Add the wheel -->
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front"/>
     </xacro:macro>
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
-      <joint name = "virtual_rear_wheel_joint" type = continuous>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <parent link="${chassis_link}"/>
-        <child link="${lr_prefix}_rear_wheel"/>
-        <axis xyz="0 1 0"/>
-      </joint>
 
       <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
         <origin xyz="${-1 * wheelbase / 2}
