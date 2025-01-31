@@ -35,7 +35,8 @@
   </xacro:macro>
 
   <!-- Wheels -->
-  <xacro:macro name="wheels">
+  <xacro:macro name="wheels">   <!--Template for the wheels -->
+
     <!-- Wheel description -->
     <xacro:macro name="wheel" params="lr_prefix fr_prefix">
       <link name="${lr_prefix}_${fr_prefix}_wheel">
@@ -53,7 +54,6 @@
     <!-- Description of how a front wheel is connected to the chassis -->
     <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
       <link name="${lr_prefix}_steering_hinge"/>
-
       <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
         <origin xyz="${wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
@@ -94,10 +94,17 @@
     </xacro:macro>
 
     <!-- Add the wheels -->
-    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/>
+    
+    <!-- left_front_wheel -->
+    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/> 
+
+    <!-- right_front_wheel -->
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
 
+    <!-- left_rear_wheel -->
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
+
+    <!-- right_rear_wheel -->
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
   </xacro:macro>
 </robot>
