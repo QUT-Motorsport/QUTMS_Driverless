@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot name="qev-3d" xmlns:xacro="http://ros.org/wiki/xacro">
-
+  <xacro:arg name="prefix" default="" />
   <!--  Get the parameters  -->
   <xacro:arg name="base_frame" default="base_link"/>
   <xacro:arg name="display_car" default="true"/>
@@ -24,6 +24,13 @@
     <color rgba="0.88 0.36 0.035 1"/>
   </material>
 
+
+  <!-- Import QEV-3D ros2_control description -->
+  <xacro:include filename="$(find src)/control/ros2_control/description/qev3d.ros2_control.urdf.xacro"/>
+  <!-- Declaring wheel joints setup for the controller -->
+  <xacro:qev3d_ros2_control name="QEV3D" prefix="$(arg prefix)" />
+
+
   <!-- Vehicle include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
   <!-- Chassis of the car -->
@@ -31,10 +38,12 @@
   <!-- Wheels -->
   <xacro:wheels/>
 
+
   <!-- Sensors include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/sensors.urdf.xacro"/>
   <xacro:velodyne parent="${chassis_link}" name="velodyne">
     <origin xyz="-0.3 0.0 0.85" rpy="0 0 0"/>
   </xacro:velodyne>
+
 
 </robot>
