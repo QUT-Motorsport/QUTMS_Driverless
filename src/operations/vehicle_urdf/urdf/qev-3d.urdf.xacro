@@ -10,7 +10,7 @@
   <xacro:property name="M_PI" value="3.1415926535897931" />
 
   <xacro:property name="steering_limit" default="0.28"/>
-  <xacro:property name="wheel_diameter" value="0.4064"/>
+  
   <xacro:property name="wheel_width" value="0.2"/>
   <xacro:property name="chassis_width" value="1.6"/>
   <xacro:property name="wheelbase" value="1.580"/>
@@ -28,7 +28,7 @@
   <!-- Import QEV-3D ros2_control description -->
   <xacro:include filename="$(find src)/control/ros2_control/description/qev3d.ros2_control.urdf.xacro"/>
   <!-- Declaring wheel joints setup for the controller -->
-  <xacro:qev3d_ros2_control name="QEV3D" prefix="$(arg prefix)" />
+  <xacro:qev3d_ros2_control name="QEV3D" />
 
 
   <!-- Vehicle include -->
