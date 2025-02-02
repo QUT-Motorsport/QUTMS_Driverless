@@ -129,7 +129,7 @@
 
 
       <!-- create a joint connect the {lr}_steering_hinge to the {lr}_front_wheel -->
-      <joint name="front_${lr_prefix}_wheel_joint" type="revoloute">
+      <joint name="front_${lr_prefix}_wheel_joint" type="revolute">
         <!-- connect to the chassis -->
         <parent link="${chassis_link}"/>
         <!-- connect to the {lr}_front_wheel -->
