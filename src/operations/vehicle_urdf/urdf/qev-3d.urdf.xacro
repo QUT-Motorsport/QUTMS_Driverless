@@ -2,9 +2,9 @@
 <robot name="qev-3d" xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:arg name="prefix" default="" />
   <!--  Get the parameters  -->
-  <xacro:arg name="base_frame" default="base_link"/>
-  <xacro:arg name="display_car" default="true"/>
-  <xacro:property name="chassis_link" default="chassis"/>
+  <xacro:arg name="base_frame" default="base_link"/> 
+  <xacro:arg name="display_car" default="true"/>  <!--Display the car mesh-->
+  <xacro:property name="chassis_link" default="chassis"/> <!--Chassis link name-->
 
   <xacro:property name="degrees_90" value="1.5708"/>
   <xacro:property name="M_PI" value="3.1415926535897931" />
@@ -35,7 +35,8 @@
   <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
   <!-- Chassis of the car -->
   <xacro:chassis base_frame="$(arg base_frame)" display_car="$(arg display_car)"/>
-  <!-- Wheels -->
+  
+  <!-- Generate the wheels link, joint -->
   <xacro:wheels/>
 
 

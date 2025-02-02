@@ -9,8 +9,7 @@
       <parent link="${base_frame}"/>
       <child link="${chassis_link}"/>
       <!-- Wheel height off ground -->
-      <origin xyz="0 0 ${wheel_diameter/2}"
-              rpy="0 0 0"/>
+      <origin xyz="0 0 ${wheel_diameter/2}" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -35,9 +34,12 @@
   </xacro:macro>
 
   <!-- Wheels -->
-  <xacro:macro name="wheels">   <!--Template for the wheels -->
+  <xacro:macro name="wheels">    <!--Template for the wheels -->
 
-    <!-- Wheel description -->
+    <!-- TODO: ADD virtual_front_wheel_joint and virtual_rear_wheel_joint -->
+    <!-- TODO: Remmove the steering_hinge joint and links -->
+
+    <!-- Wheel visualisation description -->
     <xacro:macro name="wheel" params="lr_prefix fr_prefix">
       <link name="${lr_prefix}_${fr_prefix}_wheel">
         <visual>
@@ -53,28 +55,35 @@
     <!-- Front and rear wheel descriptions -->
     <!-- Description of how a front wheel is connected to the chassis -->
     <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
+      <!-- create a link for steering hinge -->
       <link name="${lr_prefix}_steering_hinge"/>
+
+      <!-- create joint to connect corresponding {lr}_steering_hinge to the chassis -->
       <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
         <origin xyz="${wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
-        <parent link="${chassis_link}"/>
-        <child link="${lr_prefix}_steering_hinge"/>
-        <axis xyz="0 0 1"/>
+                     0" rpy="0 0 0"/>
+        <parent link="${chassis_link}"/> <!-- connect to the chassis -->
+        <child link="${lr_prefix}_steering_hinge"/> <!-- connect to the steering hinge -->
+        <axis xyz="0 0 1"/> <!-- axis of rotation -->
         <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
       </joint>
 
+
+
+      
+      <!-- create a joint connect the {lr}_steering_hinge to the {lr}_front_wheel -->
       <joint name="front_${lr_prefix}_wheel_joint" type="fixed">
-        <origin xyz="0 0 0"
-                rpy="0 0 0"/>
-        <parent link="${lr_prefix}_steering_hinge"/>
-        <child link="${lr_prefix}_front_wheel"/>
-        <axis xyz="0 1 0"/>
+        <!-- TODO: change type of rear wheel joints to be "revoloute for steering" -->
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="${lr_prefix}_steering_hinge"/> <!-- connect to the {lr} steering hinge -->
+        <child link="${lr_prefix}_front_wheel"/> <!-- connect to the {lr} wheel -->
+        <axis xyz="0 1 0"/> <!-- axis of rotation -->
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
+        <!-- TODO: add <mimic> to immitate behaviour of virtual_front_wheel_joint -->
       </joint>
 
-      <!-- Add the wheel -->
+      <!-- launch the macro to add the front wheels pair -->
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front"/>
     </xacro:macro>
 
@@ -82,23 +91,29 @@
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
 
       <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
+        <!-- TODO: change type of rear wheel joints to be "continuous" for rolling -->
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
+                     0" rpy="0 0 0"/>
         <parent link="${chassis_link}"/>
         <child link="${lr_prefix}_rear_wheel"/>
         <axis xyz="0 1 0"/>
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
-      </joint>
 
+        <!-- TODO: add <mimic> to immitate behaviour of virtual_rear_wheel_joint -->
+      </joint>
+      
+
+      <!-- Add the wheel -->
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="rear"/>
     </xacro:macro>
 
+
+
     <!-- Add the wheels -->
-    
+
     <!-- left_front_wheel -->
-    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/> 
+    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/>
 
     <!-- right_front_wheel -->
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
