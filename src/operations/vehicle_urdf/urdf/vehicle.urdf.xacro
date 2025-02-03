@@ -86,7 +86,7 @@
           <geometry>
             <cylinder radius="${wheel_diameter / 2}" length="${wheel_width}"/>
           </geometry>
-          <material name="black"/>
+          <material name="white"/>
         </visual>
       </link>
     </xacro:macro>
@@ -120,7 +120,7 @@
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
-      <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
+      <joint name="rear_${lr_prefix}_wheel_joint" type="continuous">
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
                      0" rpy="0 0 0"/>
