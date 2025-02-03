@@ -59,3 +59,45 @@ def generate_launch_description():
 
       # initialize the variable storing the value of the argument
       prefix = LaunchConfiguration("prefix")
+
+      # Get URDF via xacro
+      robot_description_content = Command(
+            [
+                  PathJoinSubstitution([FindExecutable(name="xacro")]),
+                  " ",
+                  PathJoinSubstitution(
+                  [FindPackageShare("vehicle_urdf"), "urdf", description_file]
+                  ),
+                  " ",
+                  "prefix:=", # prefix argument is passed to xacro, WHICH IS EMPTY
+                  prefix,
+            ]
+      )
+      robot_description = {"robot_description": robot_description_content}
+      
+      #TODO: SET UP RVIZ2 CONFIGURATION FILE
+      rviz_config_file = PathJoinSubstitution(
+            [FindPackageShare(description_package), "carlikebot/rviz", "carlikebot_view.rviz"]
+      )
+
+
+      joint_state_publisher_node = Node(
+            package="joint_state_publisher_gui",
+            executable="joint_state_publisher_gui",
+            condition=IfCondition(gui), # Only launch the node if gui is set to true
+      )
+      robot_state_publisher_node = Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            output="both",
+            parameters=[robot_description],
+      )
+      rviz_node = Node(
+            package="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            output="log",
+            arguments=["-d", rviz_config_file],
+            condition=IfCondition(gui), # Only launch the node if gui is set to true
+      )
+

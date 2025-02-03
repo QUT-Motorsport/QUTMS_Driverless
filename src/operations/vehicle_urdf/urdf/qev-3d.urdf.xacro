@@ -1,16 +1,19 @@
 <?xml version="1.0"?>
-<robot name="qev-3d" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="qev-3d"
+  xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:arg name="prefix" default="" />
   <!--  Get the parameters  -->
-  <xacro:arg name="base_frame" default="base_link"/> 
-  <xacro:arg name="display_car" default="true"/>  <!--Display the car mesh-->
-  <xacro:property name="chassis_link" default="chassis"/> <!--Chassis link name-->
+  <xacro:arg name="base_frame" default="base_link"/>
+  <xacro:arg name="display_car" default="true"/>
+  <!--Display the car mesh-->
+  <xacro:property name="chassis_link" default="chassis"/>
+  <!--Chassis link name-->
 
   <xacro:property name="degrees_90" value="1.5708"/>
   <xacro:property name="M_PI" value="3.1415926535897931" />
 
   <xacro:property name="steering_limit" default="0.28"/>
-  
+
   <xacro:property name="wheel_width" value="0.2"/>
   <xacro:property name="chassis_width" value="1.6"/>
   <xacro:property name="wheelbase" value="1.580"/>
@@ -23,19 +26,22 @@
   <material name="orange">
     <color rgba="0.88 0.36 0.035 1"/>
   </material>
-
+  
+  <material name="invisible">
+    <color rgba="0.0 0.0 0.0 0.0"/>
+  </material>
 
   <!-- Import QEV-3D ros2_control description -->
   <xacro:include filename="$(find src)/control/ros2_control/description/qev3d.ros2_control.urdf.xacro"/>
   <!-- Declaring wheel joints setup for the controller -->
-  <xacro:qev3d_ros2_control name="QEV3D" />
+  <xacro:qev3d_ros2_control name="QEV-3D" />
 
 
   <!-- Vehicle include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/vehicle.urdf.xacro"/>
   <!-- Chassis of the car -->
   <xacro:chassis base_frame="$(arg base_frame)" display_car="$(arg display_car)"/>
-  
+
   <!-- Generate the wheels link, joint -->
   <xacro:wheels/>
 
