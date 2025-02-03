@@ -77,7 +77,7 @@ def generate_launch_description():
       
       #TODO: SET UP RVIZ2 CONFIGURATION FILE
       rviz_config_file = PathJoinSubstitution(
-            [FindPackageShare(description_package), "carlikebot/rviz", "carlikebot_view.rviz"]
+            [FindPackageShare(description_package), "rviz", "qev3d_view.rviz"]
       )
 
 
@@ -101,3 +101,11 @@ def generate_launch_description():
             condition=IfCondition(gui), # Only launch the node if gui is set to true
       )
 
+
+      nodes = [
+            joint_state_publisher_node,
+            robot_state_publisher_node,
+            rviz_node,
+      ]
+
+      return LaunchDescription(declared_arguments + nodes)
