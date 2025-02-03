@@ -13,9 +13,12 @@ controller_manager:
 
 bicycle_steering_controller:
   ros__parameters:
+
+    # Specific parameters of the BicycleSteeringController
     wheelbase: 1.580 # distance between the front and rear wheels
     front_wheel_radius: 0.2032 # in meters
     rear_wheel_radius: 0.2032 # in meters
+
     front_steering: true
     reference_timeout: 2.0
     rear_wheels_names: [rear_wheel_joint]
