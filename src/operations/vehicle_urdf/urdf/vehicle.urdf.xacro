@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+
+
+
+
+
+
   <xacro:macro name="chassis" params="base_frame display_car">
     <!-- Base Frame -->
     <link name="${base_frame}"/>
@@ -42,7 +49,7 @@
         <visual>
           <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
           <geometry>
-            <cylinder length="0.01" radius="${wheel_radius}"/>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
           </geometry>
           <material name="invisible"/>
         </visual>
@@ -51,7 +58,7 @@
         <visual>
           <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
           <geometry>
-            <cylinder length="0.01" radius="${wheel_radius}"/>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
           </geometry>
           <material name="invisible"/>
         </visual>
@@ -76,8 +83,7 @@
       </joint>
     </xacro:macro>
 
-    <!-- ADDING VIRTUAL COMPONENTS -->
-    <xacro:virtual_conponents/>
+
 
     <!-- Wheel description -->
     <xacro:macro name="wheel" params="lr_prefix fr_prefix">
@@ -97,13 +103,14 @@
     <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
       <link name="${lr_prefix}_steering_hinge"/>
 
-      <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
+      <joint name="${lr_prefix}_steering_hinge_joint" type="revolute">
         <origin xyz="${wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
                      0" rpy="0 0 0"/>
         <parent link="${chassis_link}"/>
         <child link="${lr_prefix}_steering_hinge"/>
         <axis xyz="0 0 1"/>
+        <mimic joint="virtual_front_wheel_joint" multiplier="1" offset="0"/>
         <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
       </joint>
 
@@ -127,17 +134,31 @@
         <parent link="${chassis_link}"/>
         <child link="${lr_prefix}_rear_wheel"/>
         <axis xyz="0 1 0"/>
+        <!-- the real rear wheel joint should mimic the behaviour of the continuous virtual rear joint -->
+        <mimic joint="virtual_rear_wheel_joint" multiplier="1" offset="0"/>
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="rear"/>
     </xacro:macro>
 
-    <!-- Add the wheels -->
+    <!-- ADDING VIRTUAL COMPONENTS -->
+    <xacro:virtual_conponents/>
+
+    <!-- ADD: -->
+    <!-- Links: left_steering_hinge, left_steering_hinge, left_front_wheel, right_front_wheel -->
+    <!-- Joints: right_steering_hinge_joint, left_steering_hinge_joint,  -->
+    <!-- front_left_wheel_joint, front_right_wheel_joint-->
     <xacro:front_wheel lr_prefix="left" lr_reflect="1"/>
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
 
+
+    <!-- ADD: -->
+    <!-- Links: left_rear_wheel, right_rear_wheel -->
+    <!-- Joints: rear_left_wheel_joint, rear_right_wheel_joint,  -->
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
+
+
   </xacro:macro>
 </robot>
