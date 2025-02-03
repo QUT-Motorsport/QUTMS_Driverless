@@ -19,16 +19,21 @@ bicycle_steering_controller:
     front_wheel_radius: 0.2032 # in meters
     rear_wheel_radius: 0.2032 # in meters
 
-    front_steering: true
+    # Common parameters of the BicycleSteeringController
+    front_steering: true # Enable front steering to be the controlled steering joint
+    #NOTE: COMMAND_INTERFACES: (incase of front_steering: true)
+    #     <front_wheels_names[i]>/position
+    #     <rear_wheels_names[i]>/velocity
+
     reference_timeout: 2.0
     rear_wheels_names: [rear_wheel_joint]
     front_wheels_names: [front_wheel_joint]
     open_loop: false
-    velocity_rolling_window_size: 10
-    base_frame_id: base_link
-    odom_frame_id: odom
-    enable_odom_tf: true
+    velocity_rolling_window_size: 10 # The number of velocity samples to average together to compute the odometry twist.linear.x and twist.angular.z velocities.
+    base_frame_id: base_link # The frame_id of the robot base
+    odom_frame_id: odom # The frame_id of the odometry message
+    enable_odom_tf: true # Enable publishing the odom frame to tf
     twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
     pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
     position_feedback: false
-    use_stamped_vel: true
+    use_stamped_vel: true # Enable to use stamped velocity messages
