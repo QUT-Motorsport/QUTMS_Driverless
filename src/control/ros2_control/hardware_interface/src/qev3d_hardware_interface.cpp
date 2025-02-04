@@ -5,7 +5,34 @@
 
 namespace qev3d_hardware_interface {
 
+// pass in the hardware info (command, state interfaces and joints) in the qev3d_ros2_control.xacro
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardware_interface::HardwareInfo& info) {
+    /* For now, info_ is a member variable of the class Qev3dHardwareInterface, storing:
+        info_.joints = {
+            {
+                name: "front_left_wheel",
+                state_interfaces: ["position"],
+                command_interfaces: ["position"]
+            },
+            {
+                name: "front_right_wheel",
+                state_interfaces: ["position"],
+                command_interfaces: ["position"]
+            }
+        }
+
+        info_.hardware_parameters = {
+            {
+                name: "wheel_radius",
+                value: "0.03"
+            },
+            {
+                name: "wheel_base",
+                value: "0.1"
+            }
+        }
+    */
+
     // Check if the parent class hardware_interface::SystemInterface can be initialized
     if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS) {
         return hardware_interface::CallbackReturn::ERROR;
