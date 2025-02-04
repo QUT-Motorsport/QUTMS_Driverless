@@ -9,8 +9,7 @@
       <parent link="${base_frame}"/>
       <child link="${chassis_link}"/>
       <!-- Wheel height off ground -->
-      <origin xyz="0 0 ${wheel_diameter/2}"
-              rpy="0 0 0"/>
+      <origin xyz="0 0 ${wheel_diameter/2}" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -35,7 +34,49 @@
   </xacro:macro>
 
   <!-- Wheels -->
-  <xacro:macro name="wheels">   <!--Template for the wheels -->
+  <xacro:macro name="wheels">
+
+    <!-- Virtual wheel for immitation purposes -->
+    <xacro:macro name="virtual_conponents">
+      <link name="virtual_rear_wheel">
+        <visual>
+          <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
+          <geometry>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
+          </geometry>
+          <material name="invisible"/>
+        </visual>
+      </link>
+      <link name="virtual_front_wheel">
+        <visual>
+          <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
+          <geometry>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
+          </geometry>
+          <material name="invisible"/>
+        </visual>
+      </link>
+
+      <joint name="virtual_rear_wheel_joint" type="continuous">
+        <parent link="${chassis_link}"/>
+        <child link="virtual_rear_wheel"/>
+        <origin xyz="-${wheelbase/2} 0 -${base_height/2}" rpy="0 0 ${PI/2}"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="100.0" velocity="100.0"/>
+        <dynamics damping="0.2"/>
+      </joint>
+
+      <joint name="virtual_front_wheel_joint" type="revolute">
+        <parent link="${chassis_link}"/>
+        <child link="virtual_front_wheel"/>
+        <origin xyz="${wheelbase/2} 0 -${base_height/2}" rpy="0 0 ${PI/2}"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-0.4" upper="0.4" effort="100.0" velocity="0.0"/>
+        <dynamics damping="0.2"/>
+      </joint>
+    </xacro:macro>
+
+
 
     <!-- Wheel description -->
     <xacro:macro name="wheel" params="lr_prefix fr_prefix">
@@ -45,7 +86,7 @@
           <geometry>
             <cylinder radius="${wheel_diameter / 2}" length="${wheel_width}"/>
           </geometry>
-          <material name="black"/>
+          <material name="white"/>
         </visual>
       </link>
     </xacro:macro>
@@ -54,59 +95,63 @@
     <!-- Description of how a front wheel is connected to the chassis -->
     <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
       <link name="${lr_prefix}_steering_hinge"/>
-      <joint name="${lr_prefix}_steering_hinge_joint" type="fixed">
+
+      <joint name="${lr_prefix}_steering_hinge_joint" type="revolute">
         <origin xyz="${wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
+                     0" rpy="0 0 0"/>
         <parent link="${chassis_link}"/>
         <child link="${lr_prefix}_steering_hinge"/>
         <axis xyz="0 0 1"/>
+        <mimic joint="virtual_front_wheel_joint" multiplier="1" offset="0"/>
         <limit lower="${-1*steering_limit}" upper="${steering_limit}" effort="10000000" velocity="1000000"/>
       </joint>
 
       <joint name="front_${lr_prefix}_wheel_joint" type="fixed">
-        <origin xyz="0 0 0"
-                rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <parent link="${lr_prefix}_steering_hinge"/>
         <child link="${lr_prefix}_front_wheel"/>
         <axis xyz="0 1 0"/>
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 
-      <!-- Add the wheel -->
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="front"/>
     </xacro:macro>
 
     <!-- Description of how a rear wheel is connected to the chassis -->
     <xacro:macro name="rear_wheel" params="lr_prefix lr_reflect">
-
-      <joint name="rear_${lr_prefix}_wheel_joint" type="fixed">
+      <joint name="rear_${lr_prefix}_wheel_joint" type="continuous">
         <origin xyz="${-1 * wheelbase / 2}
                      ${lr_reflect * ((chassis_width - wheel_width) / 2)}
-                     0"
-                rpy="0 0 0"/>
+                     0" rpy="0 0 0"/>
         <parent link="${chassis_link}"/>
         <child link="${lr_prefix}_rear_wheel"/>
         <axis xyz="0 1 0"/>
+        <!-- the real rear wheel joint should mimic the behaviour of the continuous virtual rear joint -->
+        <mimic joint="virtual_rear_wheel_joint" multiplier="1" offset="0"/>
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 
       <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="rear"/>
     </xacro:macro>
 
-    <!-- Add the wheels -->
-    
-    <!-- left_front_wheel -->
-    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/> 
+    <!-- ADDING VIRTUAL COMPONENTS -->
+    <xacro:virtual_conponents/>
 
-    <!-- right_front_wheel -->
+    <!-- ADD: -->
+    <!-- Links: left_steering_hinge, left_steering_hinge, left_front_wheel, right_front_wheel -->
+    <!-- Joints: right_steering_hinge_joint, left_steering_hinge_joint,  -->
+    <!-- front_left_wheel_joint, front_right_wheel_joint-->
+    <xacro:front_wheel lr_prefix="left" lr_reflect="1"/>
     <xacro:front_wheel lr_prefix="right" lr_reflect="-1"/>
 
-    <!--  left_rear_wheel -->
+
+    <!-- ADD: -->
+    <!-- Links: left_rear_wheel, right_rear_wheel -->
+    <!-- Joints: rear_left_wheel_joint, rear_right_wheel_joint,  -->
     <xacro:rear_wheel lr_prefix="left" lr_reflect="1" />
-
-
     <xacro:rear_wheel lr_prefix="right" lr_reflect="-1" />
+
+
   </xacro:macro>
 </robot>
