@@ -19,3 +19,4 @@ tqdm
 transforms3d
 simplejpeg
 pygame
+git+https://git@github.com/QUT-Motorsport/ft-fsd-path-planning.git

@@ -114,7 +114,7 @@ void ASSupervisor::publish_heartbeart() {
         or_DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_DRIVING;
         or_DVL_heartbeat.missionID = DVL_MISSION::DVL_MISSION_SELECTED;
         auto heartbeat = Compose_DVL_Heartbeat(&or_DVL_heartbeat);
-        this->can_pub_->publish(std::move(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
+        this->can_pub_->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
 
         driverless_msgs::msg::State::UniquePtr or_ros_state(new driverless_msgs::msg::State());
         or_ros_state->state = or_DVL_heartbeat.stateID;
@@ -128,7 +128,7 @@ void ASSupervisor::publish_heartbeart() {
     }
     // CAN publisher
     auto heartbeat = Compose_DVL_Heartbeat(&this->DVL_heartbeat);
-    this->can_pub_->publish(std::move(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data))));
+    this->can_pub_->publish(this->_d_2_f(heartbeat.id, true, heartbeat.data, sizeof(heartbeat.data)));
 
     // ROS publisher
     driverless_msgs::msg::State::UniquePtr state_msg(new driverless_msgs::msg::State());
@@ -150,10 +150,10 @@ void ASSupervisor::res_alive_timer_callback() {
         this->DVL_heartbeat.stateID = DVL_STATES::DVL_STATE_EMERGENCY;
         RCLCPP_WARN(this->get_logger(), "RES TIMEOUT: Attemping to start RES");
         uint8_t p[8] = {0x80, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        this->can_pub_->publish(std::move(this->_d_2_f(0x00, false, p, sizeof(p))));
+        this->can_pub_->publish(this->_d_2_f(0x00, false, p, sizeof(p)));
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         uint8_t p2[8] = {0x01, RES_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        this->can_pub_->publish(std::move(this->_d_2_f(0x00, false, p2, sizeof(p2))));
+        this->can_pub_->publish(this->_d_2_f(0x00, false, p2, sizeof(p2)));
     }
     this->res_alive = 0;
 }
@@ -162,15 +162,15 @@ void ASSupervisor::dataLogger_timer_callback() {
     // system status
     auto systemStatusMsg = Compose_DVL_SystemStatus(&this->DVL_systemStatus);
     this->can_pub_->publish(
-        std::move(this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data))));
+        this->_d_2_f(systemStatusMsg.id, false, systemStatusMsg.data, sizeof(systemStatusMsg.data)));
 
     // very small delay between messages
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // driving dynamics 1
     auto drivingDynamics1Msg = Compose_DVL_DrivingDynamics1(&this->DVL_drivingDynamics1);
-    this->can_pub_->publish(std::move(
-        this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data))));
+    this->can_pub_->publish(
+        this->_d_2_f(drivingDynamics1Msg.id, false, drivingDynamics1Msg.data, sizeof(drivingDynamics1Msg.data)));
 }
 
 void ASSupervisor::run_fsm() {
