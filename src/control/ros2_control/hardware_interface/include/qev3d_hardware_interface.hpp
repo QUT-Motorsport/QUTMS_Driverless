@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "canbus/can_translator.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
@@ -80,7 +81,10 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
 
     // Joint names
     std::string steering_joint_;  // Name of the steering joint
-    std::string traction_joint_;  // Name of the traction joint
+    std::string drive_joint_;     // Name of the drive joint
+
+    // CAN translator for CANbus communication
+    std::shared_ptr<canbus::CANTranslator> can_translator_node_;
 };
 
 }  // namespace qev3d_hardware_interface

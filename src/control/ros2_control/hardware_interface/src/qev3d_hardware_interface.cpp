@@ -57,7 +57,7 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
             }
         } else {
             RCLCPP_INFO(get_logger(), "Joint '%s' is a drive joint.", joint.name.c_str());
-            traction_joint_ = joint.name;
+            drive_joint_ = joint.name;
 
             // Drive joints have an effort command interface and velocity and position state interfaces
             if (joint.command_interfaces.size() != 1) {
