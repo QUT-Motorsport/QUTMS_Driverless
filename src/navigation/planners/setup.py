@@ -24,7 +24,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "ft_planner_node = planners.node_ft_planner:main",
+            "node_ft_planner = planners.node_ft_planner:main",
+            "dummy_track_publisher = planners.dummy_track_publisher:main",
+            "path_visualizer = planners.path_visualizer:main",
         ],
     },
 )

@@ -230,14 +230,14 @@ void SteeringActuator::send_steering_data(uint16_t obj_index, uint8_t *data, siz
     uint32_t id;                                                                    // Packet id out
     uint8_t out[8];                                                                 // Data out
     sdo_write(C5E_NODE_ID, obj_index, 0x00, (uint8_t *)data, data_size, &id, out);  // Control Word
-    can_pub_->publish(std::move(_d_2_f(id, 0, out, sizeof(out))));
+    can_pub_->publish(_d_2_f(id, 0, out, sizeof(out)));
 }
 
 void SteeringActuator::read_steering_data(uint16_t obj_index) {
     uint32_t id;                                       // Packet id out
     uint8_t out[8];                                    // Data out
     sdo_read(C5E_NODE_ID, obj_index, 0x00, &id, out);  // Control Word
-    can_pub_->publish(std::move(_d_2_f(id, 0, out, sizeof(out))));
+    can_pub_->publish(_d_2_f(id, 0, out, sizeof(out)));
 }
 }  // namespace steering_actuator
 

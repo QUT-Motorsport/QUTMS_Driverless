@@ -22,19 +22,23 @@ add_compile_definitions(QUTMS_CAN_SW)
 
 include_directories(
   include
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/include
+  #${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Inc
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/include
   ${CMAKE_SOURCE_DIR}/../../common/driverless_common/include
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Inc
 )
 
 set (SOURCES
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_VCU.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_DVL.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_EBS_CTRL.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_RES.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/QUTMS_Embedded_Common/Src/CAN_SW.c
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/canopen.cpp
-  ${CMAKE_SOURCE_DIR}/../../hardware/CAN_Common/src/can_interface.cpp
+# QUTMS_Driverless/src/hardware/vehicle_supervisor/CMakeLists.txt
+#QUTMS_Driverless/src/common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src
+#QUTMS_Driverless/src/common/QUTMS_Embedded_Common/src
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VCU.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_DVL.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_EBS_CTRL.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_RES.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_SW.c
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/canopen.cpp
+  ${CMAKE_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/src/can_interface.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE CXX )

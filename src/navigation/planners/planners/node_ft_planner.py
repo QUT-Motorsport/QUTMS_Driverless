@@ -250,28 +250,32 @@ class FaSTTUBeBoundaryExtractor(Node):
         }
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
-        self.get_logger().debug("Received detections")
+        self.get_logger().info("Received detections")
         if not self.initial_planning:
             self.current_track = track_msg
             return
 
     def planning_callback(self):
-        try:
-            # TODO: parameterise these frames?
-            map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
-        except TransformException as e:
-            self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
-            return
+        # Remove or comment out the transform-related code
+        # try:
+        #     map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
+        # except TransformException as e:
+        #     self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
+        #     return
 
-        car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
-        car_direction = quat2euler(
-            [
-                map_to_base.transform.rotation.w,
-                map_to_base.transform.rotation.x,
-                map_to_base.transform.rotation.y,
-                map_to_base.transform.rotation.z,
-            ]
-        )[2]
+        # car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
+        # car_direction = quat2euler(
+        #     [
+        #         map_to_base.transform.rotation.w,
+        #         map_to_base.transform.rotation.x,
+        #         map_to_base.transform.rotation.y,
+        #         map_to_base.transform.rotation.z,
+        #     ]
+        # )[2]
+
+        # Use dummy car position and direction
+        car_position = np.array([0.0, 0.0])
+        car_direction = 0.0
 
         if car_position[0] < 0.5 and self.initial_planning:
             # make a cone detection stamped msg from pre-track list
@@ -383,15 +387,19 @@ class FaSTTUBeBoundaryExtractor(Node):
 
             # publish bounds
             blue_bound_msg = make_path_msg(blue_points, self.map_frame)
+            self.get_logger().info("Publish blue line")
             self.blue_bound_pub.publish(blue_bound_msg)
 
             yellow_bound_msg = make_path_msg(yellow_points, self.map_frame)
+            self.get_logger().info("Publish yellow line")
             self.yellow_bound_pub.publish(yellow_bound_msg)
         except Exception as e:
             self.get_logger().warn("Cant calculate bounds, error" + str(e), throttle_duration_sec=1)
 
         # publish midpoints
-        self.planned_path_pub.publish(make_path_msg(path[:, 1:3], self.map_frame))
+        midline_msg = make_path_msg(path[:, 1:3], self.map_frame)
+        self.get_logger().info("Publish midline line")
+        self.planned_path_pub.publish(midline_msg)
 
         ## Create occupancy grid of interpolated bounds
         # map = get_occupancy_grid(blue_points, yellow_points, self.current_track.header)
@@ -399,7 +407,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
 
-        # convert current time to nanosecs 
+        # convert current time to nanosecs
         stamp_float = time.time()
         self.diagnostic_pub.tick(stamp_float)
 
