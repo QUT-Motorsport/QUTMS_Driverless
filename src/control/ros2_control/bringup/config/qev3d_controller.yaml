@@ -7,8 +7,13 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    bicycle_steering_controller:
+    bicycle_steering_controller: # The main controller for the robot
       type: bicycle_steering_controller/BicycleSteeringController
+
+    drive_pid_controller: # The PID Controller for rear-wheel joints
+      type: pid_controller/PidController
+
+
 
 
 bicycle_steering_controller:
@@ -37,3 +42,9 @@ bicycle_steering_controller:
     pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
     position_feedback: false
     use_stamped_vel: true # Enable to use stamped velocity messages
+
+
+drive_pid_controller: # The PID Controller for rear-wheel joints
+  ros__parameters:
+    type: pid_controller/PidController
+    dof_names: [rear_wheel_joint]
