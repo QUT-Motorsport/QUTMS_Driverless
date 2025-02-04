@@ -1,5 +1,6 @@
 # CONTROLLERS
 
+# Declaring the available controllers to the controller manager
 controller_manager:
   ros__parameters:
     update_rate: 10  # Hz
@@ -15,32 +16,45 @@ controller_manager:
 
 
 
-
 bicycle_steering_controller:
   ros__parameters:
+    type: bicycle_steering_controller/BicycleSteeringController
+
+    # TODO Set up controllers chaining
+    in_chaied_mode: false
 
     # Specific parameters of the BicycleSteeringController
     wheelbase: 1.580 # distance between the front and rear wheels
     front_wheel_radius: 0.2032 # in meters
     rear_wheel_radius: 0.2032 # in meters
 
-    # Common parameters of the BicycleSteeringController
+    wheel_track: 1.4
+
+    # Common parameters of the steering controller
     front_steering: true # Enable front steering to be the controlled steering joint
     #NOTE: COMMAND_INTERFACES: (incase of front_steering: true)
     #     <front_wheels_names[i]>/position
     #     <rear_wheels_names[i]>/velocity
 
     reference_timeout: 2.0
-    rear_wheels_names: [rear_wheel_joint]
-    front_wheels_names: [front_wheel_joint]
+    rear_wheels_names: [virtual_front_wheel_joint]
+    front_wheels_names: [virtual_rear_wheel_joint]
+
+    #TODO: Command interfaces for rear steering
+    front_wheels_state_names: [virtual_front_wheel_joint] # The state interface feedback for the front wheels
+    rear_wheels_state_names: [virtual_rear_wheel_joint] # The state interface feedback for the rear wheels
+
+    reference_timeout: 2.0
     open_loop: false
     velocity_rolling_window_size: 10 # The number of velocity samples to average together to compute the odometry twist.linear.x and twist.angular.z velocities.
     base_frame_id: base_link # The frame_id of the robot base
     odom_frame_id: odom # The frame_id of the odometry message
     enable_odom_tf: true # Enable publishing the odom frame to tf
-    twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-    pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-    position_feedback: false
+
+    # twist/pose_covariance_diagonal: are setted by defaul of {0.0, 7.0, 14.0, 21.0, 28.0, 35.0}
+
+    position_feedback: false # Take HW_IF_VELOCITY as the feedback
+
     use_stamped_vel: true # Enable to use stamped velocity messages
 
 
