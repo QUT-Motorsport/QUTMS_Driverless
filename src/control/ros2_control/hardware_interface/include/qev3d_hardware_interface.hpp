@@ -21,7 +21,13 @@
 #include <utility>
 #include <vector>
 
+<<<<<<< HEAD
 #include "hardware/canbus/include/component_canbus_translator.hpp"
+    == == ==
+    =
+//#include "canbus/can_translator.hpp"
+
+>>>>>>> fd5e0043a82ac12743101c2b158994ae5b0f4836
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
@@ -33,59 +39,75 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-namespace qev3d_hardware_interface {
-struct JointValue {
-    double position{0.0};
-    double velocity{0.0};
-    double effort{0.0};
-};
+        namespace qev3d_hardware_interface {
+    struct JointValue {
+        double position{0.0};
+        double velocity{0.0};
+    };
 
-struct Joint {
-    explicit Joint(const std::string& name) : joint_name(name) {
-        state = JointValue();
-        command = JointValue();
-    }
+    struct Joint {
+        explicit Joint(const std::string& name) : joint_name(name) {
+            state = JointValue();
+            command = JointValue();
+        }
 
-    Joint() = default;
+        Joint() = default;
 
-    std::string joint_name;
-    JointValue state;
-    JointValue command;
-};
-class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
-   public:
-    RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
+        std::string joint_name;
+        JointValue state;
+        JointValue command;
+    };
+    class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
+        struct Config {
+            std::string steering_joint = "";
+            std::string drive_joint = "";
+            double hw_start_sec;
+            double hw_stop_sec;
+        }
 
-    // Initialize the hardware interface with the given hardware information
-    hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
+        public : RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
 
-    // Configure the hardware interface with the given lifecycle state
-    hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+        // Initialize the hardware interface with the given hardware information
+        hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
 
-    // Activate the hardware interface with the given lifecycle state
-    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+        // Configure the hardware interface with the given lifecycle state
+        hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
 
-    // Deactivate the hardware interface with the given lifecycle state
-    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+        // Cleanup the hardware interface with the given lifecycle state
+        hardware_interface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
 
-    // Read the current state of the hardware
-    hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+        // Activate the hardware interface with the given lifecycle state
+        hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
-    // Write the command to the hardware
-    hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+        // Deactivate the hardware interface with the given lifecycle state
+        hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
-   private:
-    // Parameters for the simulation
-    double hw_start_sec_;  // Time in seconds to start the hardware
-    double hw_stop_sec_;   // Time in seconds to stop the hardware
+        // Read the current state of the hardware
+        hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-    // Joint names
-    std::string steering_joint_;  // Name of the steering joint
-    std::string drive_joint_;     // Name of the drive joint
+        // Write the command to the hardware
+        hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-    // CAN translator for CANbus communication
-    std::shared_ptr<canbus::CANTranslator> can_translator_node_;
-};
+        // Export command interfaces
+        std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+
+        // Export state interfaces
+        std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+
+       private:
+        // Parameters for the simulation
+        double hw_start_sec_;  // Time in seconds to start the hardware
+        double hw_stop_sec_;   // Time in seconds to stop the hardware
+
+        // Joint names
+        std::string steering_joint_;  // Name of the steering joint
+        std::string drive_joint_;     // Name of the drive joint
+
+        // CAN translator for CANbus communication
+        // std::shared_ptr<canbus::CANTranslator> can_translator_node_;
+        // Config parameters
+        Config config_;
+    };
 
 }  // namespace qev3d_hardware_interface
 

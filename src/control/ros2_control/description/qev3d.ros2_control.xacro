@@ -19,7 +19,7 @@
       <joint name="virtual_rear_wheel_joint">
         <command_interface name="velocity"/>
           <param name = "min">-10</param>
-          <param name = "max">10</param>>
+          <param name = "max">10</param>
         <state_interface name="velocity"/>
         <state_interface name="position"/>
       </joint>

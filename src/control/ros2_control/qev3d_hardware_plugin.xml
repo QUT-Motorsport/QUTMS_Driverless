@@ -1,7 +1,7 @@
 
 <!-- These are currently copied code from Walden's branch. Change later when Hardware interface is made -->
 
-<library path="qev-3d_hw_interfaces">
+<library path="qev3d_hw_interfaces">
   <class name="qev_hw_interfaces/Qev3dTopicInterface"
          type="qutms_hw_interfaces::Qev3dTopicInterface"
          base_class_type="hardware_interface::SystemInterface">
