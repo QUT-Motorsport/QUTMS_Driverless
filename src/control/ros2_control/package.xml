@@ -25,6 +25,7 @@
   <!-- QEV3D custom packages -->
   <exec_depend>driverless_msgs</exec_depend>
   <exec_depend>vehicle_urdf</exec_depend>
+  <exec_depend>canbus</exec_depend>
 
   <!-- Additional dependencies -->
   <exec_depend>bicycle_steering_controller</exec_depend>

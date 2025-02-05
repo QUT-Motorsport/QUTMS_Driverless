@@ -21,7 +21,8 @@
 #include <utility>
 #include <vector>
 
-#include "canbus/can_translator.hpp"
+//#include "canbus/can_translator.hpp"
+
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
@@ -37,7 +38,6 @@ namespace qev3d_hardware_interface {
 struct JointValue {
     double position{0.0};
     double velocity{0.0};
-    double effort{0.0};
 };
 
 struct Joint {
@@ -53,14 +53,23 @@ struct Joint {
     JointValue command;
 };
 class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
-   public:
-    RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
+    struct Config {
+        std::string steering_joint = "";
+        std::string drive_joint = "";
+        double hw_start_sec;
+        double hw_stop_sec;
+    }
+
+    public : RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
 
     // Initialize the hardware interface with the given hardware information
     hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
 
     // Configure the hardware interface with the given lifecycle state
     hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+
+    // Cleanup the hardware interface with the given lifecycle state
+    hardware_interface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
 
     // Activate the hardware interface with the given lifecycle state
     hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
@@ -74,6 +83,12 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     // Write the command to the hardware
     hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
+    // Export command interfaces
+    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+
+    // Export state interfaces
+    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+
    private:
     // Parameters for the simulation
     double hw_start_sec_;  // Time in seconds to start the hardware
@@ -84,7 +99,9 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     std::string drive_joint_;     // Name of the drive joint
 
     // CAN translator for CANbus communication
-    std::shared_ptr<canbus::CANTranslator> can_translator_node_;
+    // std::shared_ptr<canbus::CANTranslator> can_translator_node_;
+    // Config parameters
+    Config config_;
 };
 
 }  // namespace qev3d_hardware_interface
