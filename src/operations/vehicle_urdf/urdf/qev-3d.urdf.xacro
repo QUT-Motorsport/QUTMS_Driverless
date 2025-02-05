@@ -64,6 +64,8 @@
 
 
   <!-- ros2_control include -->
-  <!-- <xacro:include filename="$(find ros2_control)/description/qev3d.ros2_control.urdf.xacro"/> -->
 
+  <!-- TODO FIXME: Fix this include path -->
+  <!-- <xacro:include filename="qev3d.ros2_control.xacro"/> -->
+  <!-- <xacro:qev3d_ros2_control name="QEV-3D" /> -->
 </robot>
