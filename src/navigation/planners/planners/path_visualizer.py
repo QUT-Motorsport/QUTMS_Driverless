@@ -37,44 +37,44 @@ class PathVisualizer(Node):
         self.ax.set_xlabel("X")
         self.ax.set_ylabel("Y")
 
-        self.get_logger().info("PathVisualizer node initialized")
+        plt.ion()  # Turn on interactive mode
+        plt.show()
 
     def blue_path_callback(self, msg):
-        self.get_logger().info("Received blue path")
         self.blue_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
         self.received_blue_path = True
-        self.check_all_paths_received()
+        self.update_plot()
+        self.received_blue_path = False
+        self.get_logger().info("Recieved Blue Path!")
 
     def yellow_path_callback(self, msg):
-        self.get_logger().info("Received yellow path")
         self.yellow_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
         self.received_yellow_path = True
-        self.check_all_paths_received()
+        self.update_plot()
+        self.received_yellow_path = False
+        self.get_logger().info("Recieved Yellow Path!")
 
     def midline_path_callback(self, msg):
-        self.get_logger().info("Received midline path")
         self.midline_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
         self.received_midline_path = True
-        self.check_all_paths_received()
-
-    def check_all_paths_received(self):
-        if self.received_blue_path and self.received_yellow_path and self.received_midline_path:
-            self.get_logger().info("All paths received, displaying graph")
-            self.update_plot()
-            self.plot_queue.put(True)
+        self.update_plot()
+        self.received_midline_path = False
+        self.get_logger().info("Recieved Midline Path!")
 
     def update_plot(self):
-        if self.blue_path:
+        if self.received_blue_path:
             x, y = zip(*self.blue_path)
             self.blue_line.set_data(x, y)
-        if self.yellow_path:
+        if self.received_yellow_path:
             x, y = zip(*self.yellow_path)
             self.yellow_line.set_data(x, y)
-        if self.midline_path:
+        if self.received_midline_path:
             x, y = zip(*self.midline_path)
             self.midline_line.set_data(x, y)
         self.ax.relim()
         self.ax.autoscale_view()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
 
 def main(args=None):
@@ -90,6 +90,10 @@ def main(args=None):
     spin_thread = threading.Thread(target=ros_spin)
     spin_thread.start()
 
-    plot_queue.get()  # Wait until all paths are received
-    plt.show()
+    plt.show(block=True)  # Show the plot window and block until it is closed
+
     spin_thread.join()
+
+
+if __name__ == "__main__":
+    main()

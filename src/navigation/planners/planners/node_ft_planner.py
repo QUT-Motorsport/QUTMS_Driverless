@@ -17,6 +17,7 @@ from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReli
 from driverless_msgs.msg import Cone, ConeDetectionStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import MapMetaData, OccupancyGrid, Path
+from std_msgs.msg import Bool
 
 from driverless_common.common import QOS_LATEST, angle, midpoint
 
@@ -152,7 +153,14 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(1 / 10, self.planning_callback)
+        self.create_timer(3, self.planning_callback)  # change back to 1/10 (1Hz)
+
+        # Create subscriber for cars pose, when using the navigation simulator
+        self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
+
+        # Initialise nav_sim as false (will be set to true if dummy track publisher sets to true)
+        self.create_subscription(Bool, "nav_sim", self.nav_sim_callback, 10)
+        self.nav_sim = False  # intiialise as false
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -249,35 +257,54 @@ class FaSTTUBeBoundaryExtractor(Node):
             "cone_matching_kwargs": cone_matching_kwargs,
         }
 
+    # Navigation simulation boolean callback (to announce if using navigation simulation)
+    def nav_sim_callback(self, msg: Bool):
+        self.nav_sim = msg.data
+
+    # Cone detection callback, save detected cones as self.current_track variable/list
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().info("Received detections")
         if not self.initial_planning:
-            self.current_track = track_msg
-            return
+            if not self.nav_sim:
+                self.current_track = track_msg
+                return
 
+    # Car pose callback (for navigation simulation)
+    def car_pose_sim(self, car_pose: PoseStamped):
+        self.car_position = np.array([car_pose.pose.position.x, car_pose.pose.position.y])
+        # Extract the car's orientation (yaw angle)
+        self.car_direction = quat2euler(
+            [
+                car_pose.pose.orientation.w,
+                car_pose.pose.orientation.x,
+                car_pose.pose.orientation.y,
+                car_pose.pose.orientation.z,
+            ]
+        )[2]
+
+    # Main callback, runs at a frequency set by subscriber
     def planning_callback(self):
-        # Remove or comment out the transform-related code
-        # try:
-        #     map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
-        # except TransformException as e:
-        #     self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
-        #     return
 
-        # car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
-        # car_direction = quat2euler(
-        #     [
-        #         map_to_base.transform.rotation.w,
-        #         map_to_base.transform.rotation.x,
-        #         map_to_base.transform.rotation.y,
-        #         map_to_base.transform.rotation.z,
-        #     ]
-        # )[2]
+        # if not running nav_sim get car position and car_direction from transforms
+        if not self.nav_sim:
+            try:
+                map_to_base = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rclpy.time.Time())
+            except TransformException as e:
+                self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
+                return
+            self.car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
+            car_direction = quat2euler(
+                [
+                    map_to_base.transform.rotation.w,
+                    map_to_base.transform.rotation.x,
+                    map_to_base.transform.rotation.y,
+                    map_to_base.transform.rotation.z,
+                ]
+            )[2]
 
-        # Use dummy car position and direction
-        car_position = np.array([0.0, 0.0])
-        car_direction = 0.0
-
-        if car_position[0] < 0.5 and self.initial_planning:
+        # If car position is close to start & initial planning is true (initial planning is true for setup lap)
+        # & not running the navigation simulation (nav_sim), set points to pre-track list
+        if self.car_position[0] < 0.5 and self.initial_planning and not self.nav_sim:
             # make a cone detection stamped msg from pre-track list
             points = [
                 [12.062088012695312, 1.751],
@@ -295,7 +322,7 @@ class FaSTTUBeBoundaryExtractor(Node):
                 [5.6245880126953125, 1.755],
                 [5.9370880126953125, -1.756],
             ]
-
+            # Set list of points equal to cone locations (spoof cone locations with pre-track list)
             self.current_track = ConeDetectionStamped()
             for point in points:
                 cone = Cone()
@@ -303,14 +330,15 @@ class FaSTTUBeBoundaryExtractor(Node):
                 cone.location.y = point[1]
                 cone.color = Cone.UNKNOWN
                 self.current_track.cones.append(cone)
-        else:
+        else:  # initial planning false when car is moving &
             self.initial_planning = False
 
+        # Redundancy in case self.current_track variable is None
         if self.current_track is None or len(self.current_track.cones) == 0:
             self.get_logger().warn("No track data received", throttle_duration_sec=1)
             return
 
-        # split track into conetypes
+        # Split current_track (recieved from cone/points detection callback) into cone types, organised by color
         unknown_cones = np.array([])
         yellow_cones = np.array([])
         blue_cones = np.array([])
@@ -342,11 +370,12 @@ class FaSTTUBeBoundaryExtractor(Node):
                 _,
                 _,
             ) = self.path_planner.calculate_path_in_global_frame(
-                global_cones, car_position, car_direction, return_intermediate_results=True
+                global_cones, self.car_position, car_direction, return_intermediate_results=True
             )
         except Exception as e:
             self.get_logger().warn("Cant plan, error" + str(e), throttle_duration_sec=1)
             return
+        self.get_logger().info(f"Publishing Path from path planner:\n {path}")
 
         use_virt = True
         if use_virt:
@@ -398,7 +427,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # publish midpoints
         midline_msg = make_path_msg(path[:, 1:3], self.map_frame)
-        self.get_logger().info("Publish midline line")
+        self.get_logger().info(f"Published Mid-Point Path as msg! : {path[:,1:3]}")
         self.planned_path_pub.publish(midline_msg)
 
         ## Create occupancy grid of interpolated bounds
@@ -419,3 +448,7 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
