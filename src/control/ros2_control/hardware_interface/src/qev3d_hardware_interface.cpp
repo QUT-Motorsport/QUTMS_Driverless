@@ -119,8 +119,11 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
         }
     }
 
-    config_.drive_joint = info_.hardware_parameters["virtual_rear_wheel_joint"];
-    config_.steering_joint = info_.hardware_parameters["virtual_front_wheel_joint"];
+    // TODO: CLARIFICATION NEEDED: invalid parameter names
+    config_.drive_joint = info_.joints[1].name;     // info_.joints[1] is the drive joint (virtual_rear_wheel_joint)
+    config_.steering_joint = info_.joints[0].name;  // info_.joints[0] is the steering joint (virtual_front_wheel_joint)
+    // config_.drive_joint = info_.hardware_parameters["virtual_rear_wheel_joint"];
+    // config_.steering_joint = info_.hardware_parameters["virtual_front_wheel_joint"];
     config_.hw_start_sec = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
     config_.hw_stop_sec = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
 
