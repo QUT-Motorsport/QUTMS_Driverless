@@ -102,10 +102,7 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
 
     // CAN translator for CANbus communication
     // std::shared_ptr<canbus::CANTranslator> can_translator_node_;
-<<<<<<< HEAD
-=======
 
->>>>>>> ba6c02d634c099907c79c530bcf2f7f72f015e1c
     // Config parameters
     Config config_;
 };
