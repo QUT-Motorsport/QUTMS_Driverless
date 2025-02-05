@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!-- Copied from the ros2 control Demo code. Change later when hardware is setup -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="qev3d_ros2_control"> <!--Template for the QEV-3D ros2_control description -->
+
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <plugin>ros2_control_demo_example_11/CarlikeBotSystemHardware</plugin>
+        <param name="example_param_hw_start_duration_sec">0</param>
+        <param name="example_param_hw_stop_duration_sec">3.0</param>
+      </hardware>
+      <joint name="virtual_front_wheel_joint">
+        <command_interface name="position"/>
+          <param name = "min">-0.28</param>
+          <param name = "max">0.28</param>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="virtual_rear_wheel_joint">
+        <command_interface name="velocity"/>
+          <param name = "min">-10</param>
+          <param name = "max">10</param>>
+        <state_interface name="velocity"/>
+        <state_interface name="position"/>
+      </joint>
+    </ros2_control>
+
+  </xacro:macro>
+
+</robot>
