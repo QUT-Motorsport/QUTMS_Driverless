@@ -25,7 +25,6 @@
 
 //#include "canbus/can_translator.hpp"
 
->>>>>>> ba6c02d634c099907c79c530bcf2f7f72f015e1c
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
