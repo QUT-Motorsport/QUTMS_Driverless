@@ -20,8 +20,6 @@ controller_manager:
 
 bicycle_steering_controller:
   ros__parameters:
-    type: bicycle_steering_controller/BicycleSteeringController
-
     # TODO Set up controllers chaining
     in_chaied_mode: false
 
@@ -62,7 +60,6 @@ bicycle_steering_controller:
 
 drive_pid_controller: # The PID Controller for rear-wheel joints
   ros__parameters:
-    type: pid_controller/PidController
     dof_names:
       - virtual_rear_wheel_joint # The joint that PID controller will control
 
@@ -75,7 +72,6 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
 
 steering_pid_controller: # The PID Controller for front-wheel joints
   ros__parameters:
-    type: pid_controller/PidController
     dof_names:
       - virtual_front_wheel_joint # The joint that PID controller will control
 
