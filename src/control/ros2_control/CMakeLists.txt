@@ -59,6 +59,11 @@ install(
   DESTINATION include/${PROJECT_NAME}
 )
 
+# Install the description directory
+install(DIRECTORY description/
+  DESTINATION share/${PROJECT_NAME}/description
+)
+
 # Install the library
 install(
   TARGETS ${PROJECT_NAME}
