@@ -4,6 +4,7 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -68,7 +69,7 @@ def generate_launch_description():
             prefix,
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    robot_description = ParameterValue(robot_description_content, value_type=str)
 
     # TODO: SET UP RVIZ2 CONFIGURATION FILE
     rviz_config_file = PathJoinSubstitution([FindPackageShare(description_package), "rviz", "robot.rviz"])
@@ -82,7 +83,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
+        parameters=[{"robot_description": robot_description}],
     )
     rviz_node = Node(
         package="rviz2",
