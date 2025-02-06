@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "hardware/canbus/include/component_canbus_translator.hpp"
+
 //#include "canbus/can_translator.hpp"
 
 #include "hardware_interface/handle.hpp"
