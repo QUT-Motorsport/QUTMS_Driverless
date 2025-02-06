@@ -73,6 +73,12 @@ install(
   LIBRARY DESTINATION lib
 )
 
+
+install(
+  DIRECTORY bringup/launch bringup/config
+  DESTINATION share/${PROJECT_NAME}
+
+)
 # Uncomment and modify the following lines to add tests
 # if(BUILD_TESTING)
 #   find_package(ament_cmake_pytest REQUIRED)
