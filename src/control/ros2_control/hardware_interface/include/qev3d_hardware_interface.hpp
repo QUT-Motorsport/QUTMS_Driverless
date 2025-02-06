@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "hardware/canbus/include/component_canbus_translator.hpp"
+//#include "hardware/canbus/include/component_canbus_translator.hpp"
 
 //#include "canbus/can_translator.hpp"
 
@@ -60,9 +60,10 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
         std::string drive_joint = "";
         double hw_start_sec;
         double hw_stop_sec;
-    }
+    };
 
-    public : RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
+   public:
+    RCLCPP_SHARED_PTR_DEFINITIONS(Qev3dHardwareInterface);
 
     // Initialize the hardware interface with the given hardware information
     hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
