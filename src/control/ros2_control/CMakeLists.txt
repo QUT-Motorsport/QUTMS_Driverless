@@ -1,6 +1,5 @@
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.16)
-find_package(vehicle_urdf REQUIRED)
 # Define the project name macro
 set(PROJECT_NAME qev3d_ros2_control)
 # Project name and language

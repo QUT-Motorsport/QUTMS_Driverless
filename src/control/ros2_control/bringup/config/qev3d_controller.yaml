@@ -9,18 +9,10 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    bicycle_steering_controller: # The main controller for the robot
-      type: bicycle_steering_controller/BicycleSteeringController
+  bicycle_steering_controller:
 
-    drive_pid_controller: # The PID Controller for rear-wheel joints
-      type: pid_controller/PidController
+    type: bicycle_steering_controller/BicycleSteeringController
 
-    steering_pid_controller: # The PID Controller for front-wheel joints
-      type: pid_controller/PidController
-
-
-bicycle_steering_controller:
-  ros__parameters:
     # TODO Set up controllers chaining
     in_chaied_mode: false
 
@@ -59,8 +51,8 @@ bicycle_steering_controller:
     use_stamped_vel: true # Enable to use stamped velocity messages
 
 
-drive_pid_controller: # The PID Controller for rear-wheel joints
-  ros__parameters:
+  drive_pid_controller: # The PID Controller for rear-wheel joints
+    type: pid_controller/PidController
     dof_names:
       - virtual_rear_wheel_joint # The joint that PID controller will control
 
@@ -71,8 +63,8 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
       virtual_rear_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
 
 
-steering_pid_controller: # The PID Controller for front-wheel joints
-  ros__parameters:
+  steering_pid_controller: # The PID Controller for front-wheel joints
+    type: pid_controller/PidController
     dof_names:
       - virtual_front_wheel_joint # The joint that PID controller will control
 

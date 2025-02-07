@@ -42,9 +42,8 @@
   <exec_depend>rviz2</exec_depend>
   <exec_depend>xacro</exec_depend>
    <!-- Packages -->
-    <exec_depend>robot_state_publisher</exec_depend>
-    <exec_depend>joint_state_publisher</exec_depend>
-    <depend>xacro</depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+
 
   <!-- Test dependencies -->
   <test_depend>ament_cmake_pytest</test_depend>

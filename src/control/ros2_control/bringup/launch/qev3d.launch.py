@@ -135,14 +135,27 @@ def generate_launch_description():
         )
     )
 
+    delay_pid_controllers_spawner_after_controller_manager = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=control_node,
+            on_exit=[drive_pid_controller, steering_pid_controller],
+        )
+    )
+
+    delay_robot_bicycle_controller_spawner_after_pid_controller_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=delay_pid_controllers_spawner_after_controller_manager,
+            on_exit=[robot_bicycle_controller_spawner],
+        )
+    )
+
     # Nodes to launch
     nodes = [
         control_node,
         joint_state_broadcaster_spawner,
         joint_state_publisher_node,
-        drive_pid_controller,
-        steering_pid_controller,
-        delay_robot_bicycle_controller_spawner_after_steering_controller_spawner,
+        delay_pid_controllers_spawner_after_controller_manager,
+        delay_robot_bicycle_controller_spawner_after_pid_controller_spawner,
         robot_state_pub_bicycle_node,
         rviz_node,
         delay_rviz_after_joint_state_broadcaster_spawner,
