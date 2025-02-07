@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef QEV3D_HARDWARE_INTERFACE_HPP_
-#define QEV3D_HARDWARE_INTERFACE_HPP_
+#ifndef QEV3D_ROS2_CONTROL_HARDWARE_INTERFACE_HPP_
+#define QEV3D_ROS2_CONTROL_HARDWARE_INTERFACE_HPP_
 
 #include <map>
 #include <memory>
@@ -36,7 +36,8 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-namespace qev3d_hardware_interface {
+namespace qev3d_ros2_control {
+
 struct JointValue {
     double position{0.0};
     double velocity{0.0};
@@ -54,6 +55,7 @@ struct Joint {
     JointValue state;
     JointValue command;
 };
+
 class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     struct Config {
         std::string steering_joint = "";
@@ -108,6 +110,6 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     Config config_;
 };
 
-}  // namespace qev3d_hardware_interface
+}  // namespace qev3d_ros2_control
 
-#endif  // QEV3D_HARDWARE_INTERFACE_HPP_
+#endif  // QEV3D_ROS2_CONTROL_HARDWARE_INTERFACE_HPP_

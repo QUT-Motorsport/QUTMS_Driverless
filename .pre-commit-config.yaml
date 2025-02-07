@@ -8,8 +8,6 @@ repos:
     rev: 'v14.0.6'
     hooks:
       - id: clang-format
-        args: ["-i"]  # Apply changes directly
-        pass_filenames: false  # Apply to all files, avoiding conflicts
   - repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:

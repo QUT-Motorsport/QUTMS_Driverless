@@ -22,6 +22,14 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
 )
 
+# Specify the required version of ros2_control
+find_package(controller_manager 4.0.0)
+# Handle the case where the required version is not found
+if(NOT controller_manager_FOUND)
+  message(FATAL_ERROR "ros2_control version 4.0.0 or higher is required. "
+  "Are you using the correct branch of the ros2_control_demos repository?")
+endif()
+
 # Find additional dependencies
 find_package(backward_ros REQUIRED)
 find_package(ament_cmake REQUIRED)
@@ -37,6 +45,7 @@ add_library(
 )
 
 # Set include directories for the library
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
@@ -51,7 +60,7 @@ ament_target_dependencies(
 )
 
 # Export hardware plugins
-pluginlib_export_plugin_description_file(hardware_interface qev3d_hardware_plugin.xml)  # Rename to your own plugin description file
+pluginlib_export_plugin_description_file(hardware_interface qev3d_hardware_plugin.xml)
 
 # Install include directory
 install(
@@ -61,7 +70,11 @@ install(
 
 # Install the description directory
 install(DIRECTORY description/
-  DESTINATION share/${PROJECT_NAME}/description
+  DESTINATION share/${PROJECT_NAME}
+)
+install(
+  DIRECTORY bringup/launch bringup/config
+  DESTINATION share/${PROJECT_NAME}
 )
 
 # Install the library
@@ -80,13 +93,10 @@ install(
 
 )
 # Uncomment and modify the following lines to add tests
-# if(BUILD_TESTING)
-#   find_package(ament_cmake_pytest REQUIRED)
-#   ament_add_pytest_test(example_11_urdf_xacro test/test_urdf_xacro.py)  # Rename to your own test files
-#   ament_add_pytest_test(view_example_11_launch test/test_view_robot_launch.py)  # Rename to your own test files
-#   ament_add_pytest_test(run_example_11_launch test/test_carlikebot_launch.py)  # Rename to your own test files
-#   ament_add_pytest_test(run_example_11_launch_remapped test/test_carlikebot_launch_remapped.py)  # Rename to your own test files
-# endif()
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(example_11_urdf_xacro test/test_qev3d_ros2_control_launch.py)  # Rename to your own test files
+endif()
 
 # Export include directories
 ament_export_include_directories(
@@ -95,7 +105,9 @@ ament_export_include_directories(
 # Export libraries
 ament_export_libraries(${PROJECT_NAME})
 
-# Export targets and dependencies
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+# Export targets (e.g. libraries, executables, etc.), used when you want to export both library and executables
+# ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# Export dependencies
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
