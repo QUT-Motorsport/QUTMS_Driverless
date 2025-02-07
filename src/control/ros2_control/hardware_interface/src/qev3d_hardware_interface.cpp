@@ -1,9 +1,10 @@
-#include "qev3d_hardware_interface.hpp"
+#include "qev3d_ros2_control/qev3d_hardware_interface.hpp"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace qev3d_hardware_interface {
+namespace qev3d_ros2_control {
 
 // pass in the hardware info (command, state interfaces and joints) in the qev3d_ros2_control.xacro
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardware_interface::HardwareInfo& info) {
@@ -119,17 +120,16 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
         }
     }
 
-    // TODO: CLARIFICATION NEEDED: invalid parameter names
+    // Initialize the configuration parameters for the hardware interface
     config_.drive_joint = info_.joints[1].name;     // info_.joints[1] is the drive joint (virtual_rear_wheel_joint)
     config_.steering_joint = info_.joints[0].name;  // info_.joints[0] is the steering joint (virtual_front_wheel_joint)
-    // config_.drive_joint = info_.hardware_parameters["virtual_rear_wheel_joint"];
-    // config_.steering_joint = info_.hardware_parameters["virtual_front_wheel_joint"];
     config_.hw_start_sec = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
     config_.hw_stop_sec = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Configure the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_configure(const rclcpp_lifecycle::State& previous_state) {
     // ...implementation...
 
@@ -138,6 +138,7 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_configure(const rc
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Cleanup the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_cleanup(const rclcpp_lifecycle::State& previous_state) {
     // Implementation for cleanup state
     RCLCPP_INFO(get_logger(), "Cleaning up hardware interface.");
@@ -145,17 +146,20 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_cleanup(const rclc
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Activate the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_activate(const rclcpp_lifecycle::State& previous_state) {
     // ...implementation...
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Deactivate the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_deactivate(
     const rclcpp_lifecycle::State& previous_state) {
     // ...implementation...
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Read the current state of the hardware
 hardware_interface::return_type Qev3dHardwareInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period) {
     // ...implementation...
 
@@ -163,6 +167,7 @@ hardware_interface::return_type Qev3dHardwareInterface::read(const rclcpp::Time&
     return hardware_interface::return_type::OK;
 }
 
+// Write the command to the hardware
 hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time& time,
                                                               const rclcpp::Duration& period) {
     // ...implementation...
@@ -171,25 +176,29 @@ hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time
     return hardware_interface::return_type::OK;
 }
 
-// std::vector<hardware_interface::CommandInterface> Qev3dHardwareInterface::export_command_interfaces() {
-//     std::vector<hardware_interface::CommandInterface> command_interfaces;
-//     command_interfaces.emplace_back(
-//         hardware_interface::CommandInterface(steering_joint_, hardware_interface::HW_IF_POSITION,
-//         &command.position));
-//     command_interfaces.emplace_back(
-//         hardware_interface::CommandInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY, &command.velocity));
-//     return command_interfaces;
-// }
+// Export command interfaces
+std::vector<hardware_interface::CommandInterface> Qev3dHardwareInterface::export_command_interfaces() {
+    // std::vector<hardware_interface::CommandInterface> command_interfaces;
+    // command_interfaces.emplace_back(
+    //     hardware_interface::CommandInterface(steering_joint_, hardware_interface::HW_IF_POSITION,
+    //     &command.position));
+    // command_interfaces.emplace_back(
+    //     hardware_interface::CommandInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY, &command.velocity));
+    // return command_interfaces;
+}
 
-// std::vector<hardware_interface::StateInterface> Qev3dHardwareInterface::export_state_interfaces() {
-//     std::vector<hardware_interface::StateInterface> state_interfaces;
-//     state_interfaces.emplace_back(
-//         hardware_interface::StateInterface(steering_joint_, hardware_interface::HW_IF_POSITION, &state.position));
-//     state_interfaces.emplace_back(
-//         hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY, &state.velocity));
-//     state_interfaces.emplace_back(
-//         hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_POSITION, &state.position));
-//     return state_interfaces;
-// }
+// Export state interfaces
+std::vector<hardware_interface::StateInterface> Qev3dHardwareInterface::export_state_interfaces() {
+    // std::vector<hardware_interface::StateInterface> state_interfaces;
+    // state_interfaces.emplace_back(
+    //     hardware_interface::StateInterface(steering_joint_, hardware_interface::HW_IF_POSITION, &state.position));
+    // state_interfaces.emplace_back(
+    //     hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY, &state.velocity));
+    // state_interfaces.emplace_back(
+    //     hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_POSITION, &state.position));
+    // return state_interfaces;
+}
 
-}  // namespace qev3d_hardware_interface
+}  // namespace qev3d_ros2_control
+
+PLUGINLIB_EXPORT_CLASS(qev3d_ros2_control::Qev3dHardwareInterface, hardware_interface::SystemInterface)

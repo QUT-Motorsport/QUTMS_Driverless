@@ -1,9 +1,9 @@
 
 <!-- These are currently copied code from Walden's branch. Change later when Hardware interface is made -->
 
-<library path="qev3d_hw_interfaces">
-  <class name="qev_hw_interfaces/Qev3dTopicInterface"
-         type="qutms_hw_interfaces::Qev3dTopicInterface"
+<library path="qev3d_ros2_control">
+  <class name="qev3d_ros2_control/Qev3dHardwareInterface"
+         type="qev3d_ros2_control::Qev3dHardwareInterface"
          base_class_type="hardware_interface::SystemInterface">
     <description>
       ros2_control hardware interface.
