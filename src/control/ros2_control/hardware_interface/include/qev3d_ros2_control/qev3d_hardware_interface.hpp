@@ -88,11 +88,11 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     // Write the command to the hardware
     hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-    // Export command interfaces
-    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+    // // Export command interfaces
+    // std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
-    // Export state interfaces
-    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+    // // Export state interfaces
+    // std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
 
    private:
     // Parameters for the simulation

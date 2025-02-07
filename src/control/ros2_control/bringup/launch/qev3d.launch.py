@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessExit
+from launch.event_handlers import OnProcessStart
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -112,26 +112,20 @@ def generate_launch_description():
     )
 
     # Event Handlers for delayed execution
-    delay_robot_bicycle_controller_spawner_after_steering_controller_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=steering_pid_controller,
-            on_exit=[robot_bicycle_controller_spawner],
-        )
-    )
-    delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=joint_state_broadcaster_spawner,
-            on_exit=[rviz_node],
-        )
-    )
     delay_controller_spawners = RegisterEventHandler(
-        event_handler=OnProcessExit(
+        event_handler=OnProcessStart(
             target_action=robot_state_pub_bicycle_node,
-            on_exit=[
+            on_start=[
                 joint_state_broadcaster_spawner,
                 drive_pid_controller,
                 steering_pid_controller,
             ],
+        )
+    )
+    delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessStart(
+            target_action=joint_state_broadcaster_spawner,
+            on_start=[rviz_node],
         )
     )
 
@@ -141,7 +135,6 @@ def generate_launch_description():
         joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
-        rviz_node,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
 
