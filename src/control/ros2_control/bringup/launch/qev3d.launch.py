@@ -101,10 +101,14 @@ def generate_launch_description():
             "bicycle_steering_controller",
             "--param-file",
             robot_controllers,
-            "--controller-ros-args",
-            "-r /bicycle_steering_controller/tf_odometry:=/tf",
         ],
         condition=IfCondition(remap_odometry_tf),
+    )
+
+    joint_state_publisher_node = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
+        condition=IfCondition(gui),  # Only launch the node if gui is set to true
     )
 
     # Event Handlers for delayed execution
@@ -120,16 +124,29 @@ def generate_launch_description():
             on_exit=[rviz_node],
         )
     )
+    delay_controller_spawners = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=robot_state_pub_bicycle_node,
+            on_exit=[
+                joint_state_broadcaster_spawner,
+                drive_pid_controller,
+                steering_pid_controller,
+            ],
+        )
+    )
 
     # Nodes to launch
     nodes = [
         control_node,
-        robot_state_pub_bicycle_node,
         joint_state_broadcaster_spawner,
+        joint_state_publisher_node,
         drive_pid_controller,
         steering_pid_controller,
         delay_robot_bicycle_controller_spawner_after_steering_controller_spawner,
+        robot_state_pub_bicycle_node,
         rviz_node,
+        delay_rviz_after_joint_state_broadcaster_spawner,
+        delay_controller_spawners,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
