@@ -33,7 +33,11 @@ class InspectionHandler(ShutdownNode):
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
-        if msg.state == AVStateStamped.DRIVING and not self.mission_started and msg.mission == AVStateStamped.INSPECTION:
+        if (
+            msg.state == AVStateStamped.DRIVING
+            and not self.mission_started
+            and msg.mission == AVStateStamped.INSPECTION
+        ):
             time.sleep(1)
             self.mission_started = True
             self.start_time = time.time()
