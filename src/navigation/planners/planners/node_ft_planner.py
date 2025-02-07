@@ -153,7 +153,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(3, self.planning_callback)  # change back to 1/10 (1Hz)
+        self.create_timer(1 / 10, self.planning_callback)  # change back to 1/10 (1Hz)
 
         # Create subscriber for cars pose, when using the navigation simulator
         self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
@@ -265,7 +265,7 @@ class FaSTTUBeBoundaryExtractor(Node):
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().info("Received detections")
         if not self.initial_planning:
-            if not self.nav_sim:
+            if self.nav_sim:
                 self.current_track = track_msg
                 return
 
@@ -359,6 +359,7 @@ class FaSTTUBeBoundaryExtractor(Node):
                 orange_big_cones = np.vstack([orange_big_cones, cone_pos]) if orange_big_cones.size else cone_pos
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
+        self.get_logger().info(f"Test global cones: {global_cones}")
 
         try:
             (
@@ -370,21 +371,25 @@ class FaSTTUBeBoundaryExtractor(Node):
                 _,
                 _,
             ) = self.path_planner.calculate_path_in_global_frame(
-                global_cones, self.car_position, car_direction, return_intermediate_results=True
+                global_cones, self.car_position, self.car_direction, return_intermediate_results=True
             )
         except Exception as e:
             self.get_logger().warn("Cant plan, error" + str(e), throttle_duration_sec=1)
             return
-        self.get_logger().info(f"Publishing Path from path planner:\n {path}")
+        # self.get_logger().info(f"Publishing Path from path planner:\n {path}")
+
+        self.get_logger().info(f"Test global cones: {ordered_blues} and {ordered_yellows}")
 
         use_virt = True
         if use_virt:
             ordered_blues = virt_blues
             ordered_yellows = virt_yellows
 
-        if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
-            self.get_logger().warn("No cones found", throttle_duration_sec=1)
-            return
+        # if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
+        #     self.get_logger().warn("No cones found", throttle_duration_sec=1)
+        #     return
+        # else:
+        #     self.get_logger().info(f"Found {len(ordered_blues)} blue cones and {len(ordered_yellows)} yellow cones")
 
         # Spline smoothing
         # make number of pts based on length of path
