@@ -138,15 +138,11 @@ def generate_launch_description():
     # Nodes to launch
     nodes = [
         control_node,
-        joint_state_broadcaster_spawner,
         joint_state_publisher_node,
-        drive_pid_controller,
-        steering_pid_controller,
-        delay_robot_bicycle_controller_spawner_after_steering_controller_spawner,
         robot_state_pub_bicycle_node,
+        delay_controller_spawners,
         rviz_node,
         delay_rviz_after_joint_state_broadcaster_spawner,
-        delay_controller_spawners,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
