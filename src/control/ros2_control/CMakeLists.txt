@@ -1,6 +1,6 @@
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.16)
-
+find_package(vehicle_urdf REQUIRED)
 # Define the project name macro
 set(PROJECT_NAME qev3d_ros2_control)
 # Project name and language
@@ -78,6 +78,11 @@ install(
   DIRECTORY bringup/launch bringup/config
   DESTINATION share/${PROJECT_NAME}
 
+)
+
+install(FILES
+qev3d_hardware_plugin.xml
+  DESTINATION share/${PROJECT_NAME}
 )
 # Uncomment and modify the following lines to add tests
 # if(BUILD_TESTING)
