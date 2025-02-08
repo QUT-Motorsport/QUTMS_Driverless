@@ -2,6 +2,7 @@
 <robot name="qev-3d"
   xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:arg name="prefix" default="" />
+  <xacro:arg name="use_gazebo" default="false" />
   <!--  Get the parameters  -->
   <xacro:arg name="base_frame" default="base_link"/>
   <xacro:arg name="display_car" default="true"/>
@@ -61,11 +62,13 @@
   </xacro:velodyne>
 
 
-
-
   <!-- ros2_control include -->
-
-  <!-- TODO FIXME: Fix this include path -->
-  <xacro:include filename="$(find qev3d_ros2_control)/description/qev3d.ros2_control.xacro"/>
+  <xacro:include filename="$(find qev3d_ros2_control)/ros2_control/qev3d.ros2_control.xacro"/>
   <xacro:qev3d_ros2_control name="QEV-3D" />
+
+  <!-- Import Gazebo definitions + plugin -->
+  <xacro:if value="$(arg use_gazebo)">
+    <xacro:include filename="$(find qev3d_ros2_control)/gazebo/qev3d.gazebo.xacro"/>
+  </xacro:if>
+
 </robot>
