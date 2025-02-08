@@ -68,7 +68,7 @@ install(
 )
 
 # Install the description directory
-install(DIRECTORY description
+install(DIRECTORY description/gazebo description/ros2_control
   DESTINATION share/${PROJECT_NAME}
 )
 
