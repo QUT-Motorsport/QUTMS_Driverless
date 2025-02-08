@@ -116,6 +116,8 @@ class DummyTrackPublisher(Node):
 
             self.car_orientation.append({"theta": theta, "w": w, "x": x, "y": y, "z": z})
 
+        self.get_logger().info(f"Length of car_orientation: {len(self.car_orientation)}")
+
         # Initialize plot (if plotting is enabled)
         if self.plotting_enabled:
             self.fig, self.ax = plt.subplots(figsize=(10, 6))
@@ -165,7 +167,7 @@ class DummyTrackPublisher(Node):
             pose_msg.pose.orientation.z = car_orien_z
             self.pose_publisher_.publish(pose_msg)
             self.get_logger().info(
-                f"Publishing Car Position: x={self.car_positions[i][0]}, y={self.car_positions[i][1]}"
+                f"Publishing Car Position: x={self.car_positions[self.current_index][0]}, y={self.car_positions[self.current_index][1]}"
             )
 
         ##### PUBLISHING ####
@@ -175,8 +177,9 @@ class DummyTrackPublisher(Node):
         n_publish_ahead = 3  # # of cone pairs to publish ahead
         detected_cones = []
         for i in range(self.current_index, self.current_index + n_publish_ahead):
-            detected_cones.append(cone_msg(self.blue_cones[i][0], self.blue_cones[i][1], Cone.BLUE))
-            detected_cones.append(cone_msg(self.yellow_cones[i][0], self.yellow_cones[i][1], Cone.YELLOW))
+            index = i % len(self.blue_cones)
+            detected_cones.append(cone_msg(self.blue_cones[index][0], self.blue_cones[index][1], Cone.BLUE))
+            detected_cones.append(cone_msg(self.yellow_cones[index][0], self.yellow_cones[index][1], Cone.YELLOW))
 
         # Add cones to the message
         msg.cones = detected_cones
@@ -190,10 +193,11 @@ class DummyTrackPublisher(Node):
 
         # Publish car pose for current index (position and orientation)
         car_x, car_y = self.car_positions[self.current_index]
-        car_orien = self.car_orientation[self.current_index]
-        pose_msg(
-            car_x, car_y, float(car_orien["w"]), float(car_orien["x"]), float(car_orien["y"]), float(car_orien["z"])
-        )
+        if self.current_index < len(self.car_positions) - 1:  # orientation is 1 less length than position
+            car_orien = self.car_orientation[self.current_index]
+            pose_msg(
+                car_x, car_y, float(car_orien["w"]), float(car_orien["x"]), float(car_orien["y"]), float(car_orien["z"])
+            )
 
         # 🖥️ PLOTTING UPDATE (Only Displays Published Cones)
         if self.plotting_enabled:
@@ -219,14 +223,14 @@ class DummyTrackPublisher(Node):
             self.ax.scatter(car_x, car_y, c="black", s=50, label="Car Position")
 
             # Add car orientation (theta) as an arrow
-            theta = self.car_orientation[self.current_index]["theta"]  # Extract orientation angle
-            arrow_length = 5  # Scale for visibility
-            dx = arrow_length * np.cos(theta)  # X-component of arrow
-            dy = arrow_length * np.sin(theta)  # Y-component of arrow
-
-            self.ax.quiver(
-                car_x, car_y, dx, dy, angles="xy", scale_units="xy", scale=0.4, color="red", label="Car Orientation"
-            )
+            if self.current_index < len(self.car_positions) - 1:
+                theta = self.car_orientation[self.current_index]["theta"]  # Extract orientation angle
+                arrow_length = 5  # Scale for visibility
+                dx = arrow_length * np.cos(theta)  # X-component of arrow
+                dy = arrow_length * np.sin(theta)  # Y-component of arrow
+                self.ax.quiver(
+                    car_x, car_y, dx, dy, angles="xy", scale_units="xy", scale=0.4, color="red", label="Car Orientation"
+                )
 
             # Update plot
             self.ax.set_xlim(-20, 80)
@@ -238,6 +242,7 @@ class DummyTrackPublisher(Node):
 
         # Move to next position and reset upon full lap
         self.current_index += 1
+        # self.get_logger().info(f"current_index: {self.current_index}")
         if self.current_index >= len(self.car_positions):  # Reset if last position is reached
             self.current_index = 0
 
