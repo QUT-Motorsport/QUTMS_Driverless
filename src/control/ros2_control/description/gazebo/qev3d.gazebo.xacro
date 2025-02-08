@@ -16,6 +16,24 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
       </plugin>
     </gazebo>
 
+    <!-- Base Link -->
+    <gazebo reference="${base_frame}">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <!-- Chassis Link -->
+    <gazebo reference="${chassis_link}">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+
+    <gazebo reference="virtual_rear_wheel">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <gazebo reference="virtual_front_wheel">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
   </xacro:macro>
 
 </robot>
