@@ -1,3 +1,6 @@
+# Path planner documentation below:
+# ft-fsd-path-planning - Simple Application (https://github.com/QUT-Motorsport/ft-fsd-path-planning/blob/main/fsd_path_planning/demo/simple_application.ipynb)
+
 from math import pi
 import time
 
@@ -153,7 +156,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(1 / 10, self.planning_callback)  # change back to 1/10 (1Hz)
+        self.create_timer(2, self.planning_callback)  # change back to 1/10 (1Hz)
 
         # Create subscriber for cars pose, when using the navigation simulator
         self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
@@ -162,10 +165,17 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.create_subscription(Bool, "nav_sim", self.nav_sim_callback, 10)
         self.nav_sim = False  # intiialise as false
 
+        # Initialise car_position & car_direction
+        self.car_position = [0.0]
+        self.car_direction = [0.0]
+
+        # Initialise Initial_planning as None
+        self.initial_planning = None  # Change???
+
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # publishers
+        # Path Planning Publishers
         self.blue_bound_pub = self.create_publisher(Path, "/planning/blue_bounds", 1)
         self.yellow_bound_pub = self.create_publisher(Path, "/planning/yellow_bounds", 1)
         self.planned_path_pub = self.create_publisher(Path, "/planning/midline_path", 1)
@@ -179,6 +189,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub = self.create_publisher(OccupancyGrid, "/planning/boundary_grid", map_qos)
         # self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
 
+        # Create PathPlanner object
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
         self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
@@ -265,9 +276,11 @@ class FaSTTUBeBoundaryExtractor(Node):
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().info("Received detections")
         if not self.initial_planning:
-            if self.nav_sim:
-                self.current_track = track_msg
-                return
+            self.current_track = track_msg
+            return
+        if self.nav_sim:
+            self.current_track = track_msg
+            return
 
     # Car pose callback (for navigation simulation)
     def car_pose_sim(self, car_pose: PoseStamped):
@@ -335,10 +348,10 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # Redundancy in case self.current_track variable is None
         if self.current_track is None or len(self.current_track.cones) == 0:
-            self.get_logger().warn("No track data received", throttle_duration_sec=1)
+            self.get_logger().warn("No track data received, Path Planning Aborted!", throttle_duration_sec=1)
             return
 
-        # Split current_track (recieved from cone/points detection callback) into cone types, organised by color
+        # Split current_track (recieved from cone/points detection callback) into cone types, organised by color (2D numpy array)
         unknown_cones = np.array([])
         yellow_cones = np.array([])
         blue_cones = np.array([])
@@ -359,7 +372,7 @@ class FaSTTUBeBoundaryExtractor(Node):
                 orange_big_cones = np.vstack([orange_big_cones, cone_pos]) if orange_big_cones.size else cone_pos
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
-        self.get_logger().info(f"Test global cones: {global_cones}")
+        # self.get_logger().info(f"global_cones: {global_cones}")
 
         try:
             (
@@ -376,9 +389,10 @@ class FaSTTUBeBoundaryExtractor(Node):
         except Exception as e:
             self.get_logger().warn("Cant plan, error" + str(e), throttle_duration_sec=1)
             return
-        # self.get_logger().info(f"Publishing Path from path planner:\n {path}")
 
-        self.get_logger().info(f"Test global cones: {ordered_blues} and {ordered_yellows}")
+        # self.get_logger().info(f"Found Path!:\n {path}")
+
+        self.get_logger().info(f"ordered_blues: {ordered_blues}\n virt_blues: {ordered_yellows}\n")
 
         use_virt = True
         if use_virt:
@@ -427,6 +441,7 @@ class FaSTTUBeBoundaryExtractor(Node):
             yellow_bound_msg = make_path_msg(yellow_points, self.map_frame)
             self.get_logger().info("Publish yellow line")
             self.yellow_bound_pub.publish(yellow_bound_msg)
+
         except Exception as e:
             self.get_logger().warn("Cant calculate bounds, error" + str(e), throttle_duration_sec=1)
 
