@@ -5,24 +5,14 @@ controller_manager:
   ros__parameters:
     update_rate: 10  # Hz
     hardware_interface: "qev3d_ros2_control/Qev3dHardwareInterface"
-
-
-
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    bicycle_steering_controller: # The main controller for the robot
-      type: bicycle_steering_controller/BicycleSteeringController
-
-    drive_pid_controller: # The PID Controller for rear-wheel joints
-      type: pid_controller/PidController
-
-    steering_pid_controller: # The PID Controller for front-wheel joints
-      type: pid_controller/PidController
 
 
 bicycle_steering_controller:
   ros__parameters:
+    type: bicycle_steering_controller/BicycleSteeringController
     # TODO Set up controllers chaining
     in_chaied_mode: false
 
@@ -63,23 +53,27 @@ bicycle_steering_controller:
 
 drive_pid_controller: # The PID Controller for rear-wheel joints
   ros__parameters:
+    type: pid_controller/PidController
     dof_names:
       - virtual_rear_wheel_joint # The joint that PID controller will control
 
     # The reference and state interfaces that the PID controller will use
     reference_and_state_interfaces: ["position", "velocity"]
-
+    command_interface: velocity
     gains: # set up the gain for the PID controller to control the rear wheel
       virtual_rear_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
 
 
+
+
 steering_pid_controller: # The PID Controller for front-wheel joints
   ros__parameters:
+    type: pid_controller/PidController
     dof_names:
       - virtual_front_wheel_joint # The joint that PID controller will control
 
     # The reference and state interfaces that the PID controller will use
     reference_and_state_interfaces: ["position"]
-
+    command_interface: position
     gains: # set up the gain for the PID controller to control the front wheel
       virtual_front_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}

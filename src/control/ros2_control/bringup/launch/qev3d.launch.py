@@ -27,7 +27,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "remap_odometry_tf",
-            default_value="false",
+            default_value="true",
             description="Remap odometry TF from the steering controller to the TF tree.",
         ),
     ]
@@ -69,7 +69,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[{"robot_description": robot_description}],
+        parameters=[{"robot_description": robot_description, "use_sim_time": True, "initial_positions": 0.0}],
     )
     rviz_node = Node(
         package="rviz2",
@@ -135,6 +135,7 @@ def generate_launch_description():
         joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
+        robot_bicycle_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
 
