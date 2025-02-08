@@ -68,12 +68,18 @@ install(
 )
 
 # Install the description directory
-install(DIRECTORY description/
+install(DIRECTORY description
   DESTINATION share/${PROJECT_NAME}
 )
 
 install(
   DIRECTORY bringup/launch bringup/config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+
+install(FILES
+qev3d_hardware_plugin.xml
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -87,21 +93,11 @@ install(
 )
 
 
-install(
-  DIRECTORY bringup/launch bringup/config
-  DESTINATION share/${PROJECT_NAME}
-
-)
-
-install(FILES
-qev3d_hardware_plugin.xml
-  DESTINATION share/${PROJECT_NAME}
-)
 # Uncomment and modify the following lines to add tests
-if(BUILD_TESTING)
-  find_package(ament_cmake_pytest REQUIRED)
-  ament_add_pytest_test(example_11_urdf_xacro test/test_qev3d_ros2_control_launch.py)  # Rename to your own test files
-endif()
+# if(BUILD_TESTING)
+#   find_package(ament_cmake_pytest REQUIRED)
+#   ament_add_pytest_test(test/test_qev3d_ros2_control_launch.py)  # Rename to your own test files
+# endif()
 
 # Export include directories
 ament_export_include_directories(
@@ -111,7 +107,7 @@ ament_export_include_directories(
 ament_export_libraries(${PROJECT_NAME})
 
 # Export targets (e.g. libraries, executables, etc.), used when you want to export both library and executables
-# ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 # Export dependencies
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
