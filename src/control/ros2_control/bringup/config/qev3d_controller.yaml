@@ -14,7 +14,7 @@ bicycle_steering_controller:
   ros__parameters:
     type: bicycle_steering_controller/BicycleSteeringController
     # TODO Set up controllers chaining
-    in_chaied_mode: false
+    in_chained_mode: true
 
     # Specific parameters of the BicycleSteeringController
     wheelbase: 1.580 # distance between the front and rear wheels
@@ -53,12 +53,15 @@ bicycle_steering_controller:
 
 drive_pid_controller: # The PID Controller for rear-wheel joints
   ros__parameters:
+
     type: pid_controller/PidController
+
+    in_chained_mode: false
     dof_names:
       - virtual_rear_wheel_joint # The joint that PID controller will control
 
     # The reference and state interfaces that the PID controller will use
-    reference_and_state_interfaces: ["position", "velocity"]
+    reference_and_state_interfaces: ["velocity", "position"] # or we can use ["position"]
     command_interface: velocity
     gains: # set up the gain for the PID controller to control the rear wheel
       virtual_rear_wheel_joint: {p: 30.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
@@ -69,6 +72,7 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
 steering_pid_controller: # The PID Controller for front-wheel joints
   ros__parameters:
     type: pid_controller/PidController
+    in_chained_mode: false
     dof_names:
       - virtual_front_wheel_joint # The joint that PID controller will control
 
