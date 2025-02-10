@@ -12,8 +12,8 @@
       </hardware>
       <joint name="virtual_front_wheel_joint">
         <command_interface name="position"/>
-          <!-- <param name = "min">-0.28</param> -->
-          <!-- <param name = "max">0.28</param> -->
+          <param name = "min">-10</param>
+          <param name = "max">10</param>
         <state_interface name="position"/>
       </joint>
       <joint name="virtual_rear_wheel_joint">

@@ -249,30 +249,6 @@ hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time
     return hardware_interface::return_type::OK;
 }
 
-// Export command interfaces
-// std::vector<hardware_interface::CommandInterface> Qev3dHardwareInterface::export_command_interfaces() {
-//     // std::vector<hardware_interface::CommandInterface> command_interfaces;
-//     // command_interfaces.emplace_back(
-//     //     hardware_interface::CommandInterface(steering_joint_, hardware_interface::HW_IF_POSITION,
-//     //     &command.position));
-//     // command_interfaces.emplace_back(
-//     //     hardware_interface::CommandInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY,
-//     &command.velocity));
-//     // return command_interfaces;
-// }
-
-// // Export state interfaces
-// std::vector<hardware_interface::StateInterface> Qev3dHardwareInterface::export_state_interfaces() {
-//     // std::vector<hardware_interface::StateInterface> state_interfaces;
-//     // state_interfaces.emplace_back(
-//     //     hardware_interface::StateInterface(steering_joint_, hardware_interface::HW_IF_POSITION, &state.position));
-//     // state_interfaces.emplace_back(
-//     //     hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_VELOCITY, &state.velocity));
-//     // state_interfaces.emplace_back(
-//     //     hardware_interface::StateInterface(drive_joint_, hardware_interface::HW_IF_POSITION, &state.position));
-//     // return state_interfaces;
-// }
-
 }  // namespace qev3d_ros2_control
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(qev3d_ros2_control::Qev3dHardwareInterface, hardware_interface::SystemInterface)

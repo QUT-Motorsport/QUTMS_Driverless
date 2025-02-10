@@ -22,13 +22,12 @@
 
 using std::placeholders::_1;
 
-namespace canbus {
-
 const int NUM_CMUS = 8;
 const int NUM_VOLTAGES = 14;
 const int NUM_TEMPERATURES = 16;
 const float WHEEL_DIAMETER = 0.4064;
 const float AXLE_WIDTH = 1.4;
+namespace canbus {
 
 // create array of CAN IDs we care about
 std::vector<uint32_t> canopen_ids = {C5E_BOOT_UP_ID, C5E_POS_ID, C5E_EMCY_ID, C5E_STATUS_ID, C5E_SRV_ID};
