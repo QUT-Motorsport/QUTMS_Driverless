@@ -56,7 +56,7 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
 
     type: pid_controller/PidController
 
-    in_chained_mode: false
+    in_chained_mode: true
     dof_names:
       - virtual_rear_wheel_joint # The joint that PID controller will control
 
@@ -72,7 +72,7 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
 steering_pid_controller: # The PID Controller for front-wheel joints
   ros__parameters:
     type: pid_controller/PidController
-    in_chained_mode: false
+    in_chained_mode: true
     dof_names:
       - virtual_front_wheel_joint # The joint that PID controller will control
 

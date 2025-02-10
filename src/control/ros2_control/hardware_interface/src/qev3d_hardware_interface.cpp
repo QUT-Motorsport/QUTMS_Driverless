@@ -42,7 +42,7 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
     // Check if the number of joints is correct based on the mode of operation
     if (info_.joints.size() != 2) {
         RCLCPP_ERROR(get_logger(),
-                     "CarlikeBotSystemHardware::on_init() - Failed to initialize, "
+                     "Qev3dHardwareInterface::on_init() - Failed to initialize, "
                      "because the number of joints %ld is not 2.",
                      info_.joints.size());
         return hardware_interface::CallbackReturn::ERROR;
@@ -131,9 +131,22 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
 
 // Configure the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_configure(const rclcpp_lifecycle::State& previous_state) {
-    // ...implementation...
+    RCLCPP_INFO(get_logger(), "Configuring ...please wait...");
 
-    // can_translator_node_.set_interface();
+    for (auto i = 0; i < hw_start_sec_; i++) {
+        rclcpp::sleep_for(std::chrono::seconds(1));
+        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
+    }
+
+    // reset values always when configuring hardware
+    for (const auto& [name, descr] : joint_state_interfaces_) {
+        set_state(name, 0.0);
+    }
+    for (const auto& [name, descr] : joint_command_interfaces_) {
+        set_command(name, 0.0);
+    }
+
+    RCLCPP_INFO(get_logger(), "Successfully configured!");
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -148,31 +161,91 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_cleanup(const rclc
 
 // Activate the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_activate(const rclcpp_lifecycle::State& previous_state) {
-    // ...implementation...
+    RCLCPP_INFO(get_logger(), "Activating ...please wait...");
+
+    for (auto i = 0; i < hw_start_sec_; i++) {
+        rclcpp::sleep_for(std::chrono::seconds(1));
+        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
+    }
+
+    // command and state should be equal when starting
+    for (const auto& [name, descr] : joint_command_interfaces_) {
+        set_command(name, get_state(name));
+    }
+
+    RCLCPP_INFO(get_logger(), "Successfully activated!");
+
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 // Deactivate the hardware interface with the given lifecycle state
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_deactivate(
     const rclcpp_lifecycle::State& previous_state) {
-    // ...implementation...
+    // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
+    RCLCPP_INFO(get_logger(), "Deactivating ...please wait...");
+
+    for (auto i = 0; i < hw_stop_sec_; i++) {
+        rclcpp::sleep_for(std::chrono::seconds(1));
+        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_stop_sec_ - i);
+    }
+    // END: This part here is for exemplary purposes - Please do not copy to your production code
+    RCLCPP_INFO(get_logger(), "Successfully deactivated!");
+
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 // Read the current state of the hardware
 hardware_interface::return_type Qev3dHardwareInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period) {
-    // ...implementation...
+    // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
+    // update states from commands and integrate velocity to position
+    set_state(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION,
+              get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION));
 
-    // can_translator_node_.canmsg_timer();
+    set_state(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY,
+              get_command(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY));
+    set_state(drive_joint_ + "/" + hardware_interface::HW_IF_POSITION,
+              get_state(drive_joint_ + "/" + hardware_interface::HW_IF_POSITION) +
+                  get_command(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) * period.seconds());
+
+    std::stringstream ss;
+    ss << "Reading states:";
+
+    ss << std::fixed << std::setprecision(2) << std::endl
+       << "\t"
+       << "position: " << get_state(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION) << " for joint '"
+       << steering_joint_ << "'" << std::endl
+       << "\t"
+       << "position: " << get_state(drive_joint_ + "/" + hardware_interface::HW_IF_POSITION) << " for joint '"
+       << drive_joint_ << "'" << std::endl
+       << "\t"
+       << "velocity: " << get_state(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) << " for joint '"
+       << drive_joint_ << "'";
+
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
+
+    // END: This part here is for exemplary purposes - Please do not copy to your production code
+
     return hardware_interface::return_type::OK;
 }
 
 // Write the command to the hardware
 hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time& time,
                                                               const rclcpp::Duration& period) {
-    // ...implementation...
+    // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
+    std::stringstream ss;
+    ss << "Writing commands:";
 
-    // can_translator_node_.canmsg_callback();
+    ss << std::fixed << std::setprecision(2) << std::endl
+       << "\t"
+       << "position: " << get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION) << " for joint '"
+       << steering_joint_ << "'" << std::endl
+       << "\t"
+       << "velocity: " << get_command(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) << " for joint '"
+       << drive_joint_ << "'";
+
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
+    // END: This part here is for exemplary purposes - Please do not copy to your production code
+
     return hardware_interface::return_type::OK;
 }
 
@@ -201,5 +274,5 @@ hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time
 // }
 
 }  // namespace qev3d_ros2_control
-
+#include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(qev3d_ros2_control::Qev3dHardwareInterface, hardware_interface::SystemInterface)
