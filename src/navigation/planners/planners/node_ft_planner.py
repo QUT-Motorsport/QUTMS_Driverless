@@ -156,7 +156,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(3, self.planning_callback)  # change back to 1/10 (1Hz)
+        self.create_timer(1 / 5, self.planning_callback)  # change back to 1/10 (1Hz)
 
         # Create subscriber for cars pose, when using the navigation simulator
         self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
