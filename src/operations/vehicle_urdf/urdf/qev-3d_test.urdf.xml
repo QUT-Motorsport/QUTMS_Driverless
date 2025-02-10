@@ -20,7 +20,6 @@
   <material name="white">
     <color rgba="1.0 1.0 1.0 1.0"/>
   </material>
-
   <!-- Base Frame -->
   <link name="base_link"/>
   <!-- Chassis -->
@@ -38,9 +37,15 @@
         <mesh filename="file:///home/peterliao/QUTMS/QUTMS_Driverless/install/vehicle_urdf/share/vehicle_urdf/meshes/lando.dae"/>
       </geometry>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/peterliao/QUTMS/QUTMS_Driverless/install/vehicle_urdf/share/vehicle_urdf/meshes/lando.dae"/>
+      </geometry>
+    </collision>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="1.0"/>
       <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
     </inertial>
@@ -53,8 +58,14 @@
       </geometry>
       <material name="invisible"/>
     </visual>
+    <collision>
+      <origin rpy="1.5707963267948966 0 1.5707963267948966" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.01" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -67,8 +78,14 @@
       </geometry>
       <material name="invisible"/>
     </visual>
+    <collision>
+      <origin rpy="1.5707963267948966 0 1.5707963267948966" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.01" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -91,7 +108,7 @@
   </joint>
   <link name="left_steering_hinge">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -119,15 +136,21 @@
       </geometry>
       <material name="white"/>
     </visual>
+    <collision>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.2" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
   </link>
   <link name="right_steering_hinge">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -155,8 +178,14 @@
       </geometry>
       <material name="white"/>
     </visual>
+    <collision>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.2" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -178,8 +207,14 @@
       </geometry>
       <material name="white"/>
     </visual>
+    <collision>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.2" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -201,8 +236,14 @@
       </geometry>
       <material name="white"/>
     </visual>
+    <collision>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.2" radius="0.2"/>
+      </geometry>
+    </collision>
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
     </inertial>
@@ -221,11 +262,6 @@
       </geometry>
       <material name="black"/>
     </visual>
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.1"/>
-      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-    </inertial>
   </link>
   <!-- default parameters -->
   <ros2_control name="QEV-3D" type="system">

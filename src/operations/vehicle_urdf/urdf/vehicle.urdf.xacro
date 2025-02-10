@@ -30,6 +30,12 @@
           <material name="orange"/>
         </xacro:unless>
       </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file://$(find vehicle_urdf)/meshes/lando.dae"/>
+        </geometry>
+      </collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -52,6 +58,12 @@
           </geometry>
           <material name="invisible"/>
         </visual>
+        <collision>
+          <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
+          <geometry>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
+          </geometry>
+        </collision>
         <inertial>
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <mass value="0.1"/>
@@ -66,6 +78,12 @@
           </geometry>
           <material name="invisible"/>
         </visual>
+        <collision>
+          <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
+          <geometry>
+            <cylinder length="0.01" radius="${wheel_diameter / 2}"/>
+          </geometry>
+        </collision>
         <inertial>
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <mass value="0.1"/>
@@ -104,6 +122,12 @@
           </geometry>
           <material name="white"/>
         </visual>
+        <collision>
+          <origin xyz="0 0 0" rpy="${degrees_90} 0 0"/>
+          <geometry>
+            <cylinder radius="${wheel_diameter / 2}" length="${wheel_width}"/>
+          </geometry>
+        </collision>
         <inertial>
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <mass value="0.1"/>
