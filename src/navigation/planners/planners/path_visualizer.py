@@ -10,6 +10,7 @@ from nav_msgs.msg import Path
 class PathVisualizer(Node):
     def __init__(self):
         super().__init__("path_visualizer")
+        self.get_logger().info("\n--- Path Visualizer Initialised ---")
 
         # ROS2 Subscribers
         self.blue_path_sub = self.create_subscription(Path, "planning/blue_bounds", self.blue_path_callback, 10)
@@ -35,6 +36,8 @@ class PathVisualizer(Node):
         # Plot settings
         self.ax.set_xlim(-20, 80)
         self.ax.set_ylim(-60, 60)
+        self.ax.set_xlim(-40, 40)
+        self.ax.set_ylim(-10, 140)
         self.ax.set_title("Path Visualization")
         self.ax.set_xlabel("X")
         self.ax.set_ylabel("Y")

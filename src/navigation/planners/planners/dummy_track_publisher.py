@@ -15,7 +15,7 @@ class DummyTrackPublisher(Node):
         self.publisher_ = self.create_publisher(ConeDetectionStamped, "slam/cone_detection", 10)
         self.nav_sim_publisher_ = self.create_publisher(Bool, "nav_sim", 10)
         self.pose_publisher_ = self.create_publisher(PoseStamped, "car/pose", 10)
-        self.timer = self.create_timer(1, self.publish_dummy_track)  # Publish every second
+        self.timer = self.create_timer(3, self.publish_dummy_track)  # Publish every second
 
         # Publish nav_sim status (tell node_ft_planner, we're simulating)
         nav_sim_msg = Bool()
@@ -25,72 +25,71 @@ class DummyTrackPublisher(Node):
         # Plotting flag
         self.plotting_enabled = True  # Set this to False to disable plotting
 
-        # Define track list of cones and car_positions
-        self.yellow_cones = [
-            (0, 0),
-            (5, 3),
-            (10, 8),
-            (15, 15),
-            (20, 22),
-            (25, 28),
-            (30, 32),
-            (35, 35),
-            (40, 36),
-            (45, 35),
-            (50, 32),
-            (55, 28),
-            (60, 22),
-            (63, 15),
-            (65, 8),
-            (66, 2),
-            (65, -5),
-            (62, -12),
-            (58, -18),
-            (53, -23),
-            (47, -27),
-            (40, -30),
-            (33, -31),
-            (26, -30),
-            (19, -27),
-            (13, -22),
-            (8, -16),
-            (4, -9),
-            (1, -3),
-            (0, 0),
-        ]  # Closing the loop
-
         self.blue_cones = [
-            (0, -2),
-            (5, 1),
-            (10, 6),
-            (15, 12),
-            (20, 18),
-            (25, 24),
-            (30, 28),
-            (35, 31),
-            (40, 32),
-            (45, 31),
-            (50, 28),
-            (55, 24),
-            (60, 18),
-            (63, 12),
-            (65, 6),
-            (66, 0),
-            (65, -6),
-            (62, -10),
-            (58, -15),
-            (53, -20),
-            (47, -24),
-            (40, -27),
-            (33, -28),
-            (26, -27),
-            (19, -24),
-            (13, -20),
-            (8, -14),
-            (4, -7),
-            (1, -2),
-            (0, -2),
-        ]  # Closing the loop
+            (0, 0),
+            (0, 5),
+            (0, 10),
+            (0, 15),
+            (0, 20),
+            (0, 25),
+            (0, 30),
+            (0, 35),
+            (0, 40),
+            (0, 45),
+            (0, 50),
+            (0, 55),
+            (0, 60),
+            (0, 65),
+            (0, 70),
+            (0, 75),
+            (0, 80),
+            (0, 85),
+            (0, 90),
+            (0, 95),
+            (0, 100),
+            (0, 105),
+            (0, 110),
+            (0, 115),
+            (0, 120),
+            (0, 125),
+            (0, 130),
+            (0, 135),
+            (0, 140),
+            (0, 145),
+        ]
+
+        self.yellow_cones = [
+            (4, 0),
+            (4, 5),
+            (4, 10),
+            (4, 15),
+            (4, 20),
+            (4, 25),
+            (4, 30),
+            (4, 35),
+            (4, 40),
+            (4, 45),
+            (4, 50),
+            (4, 55),
+            (4, 60),
+            (4, 65),
+            (4, 70),
+            (4, 75),
+            (4, 80),
+            (4, 85),
+            (4, 90),
+            (4, 95),
+            (4, 100),
+            (4, 105),
+            (4, 110),
+            (4, 115),
+            (4, 120),
+            (4, 125),
+            (4, 130),
+            (4, 135),
+            (4, 140),
+            (4, 145),
+        ]
 
         # Calculate car_position from the list of cones
         self.car_positions = []
@@ -100,8 +99,6 @@ class DummyTrackPublisher(Node):
             self.car_positions.append((x_mid, y_mid))
 
         # Calculate the cars_orientation as quaternions (convert to euler in node_ft_planner)
-        self.car_orientation = []
-
         self.car_orientation = []
         for i in range(len(self.yellow_cones) - 1):
             dx = self.car_positions[i + 1][0] - self.car_positions[i][0]
@@ -122,8 +119,10 @@ class DummyTrackPublisher(Node):
         if self.plotting_enabled:
             self.fig, self.ax = plt.subplots(figsize=(10, 6))
 
-            self.ax.set_xlim(-20, 80)
-            self.ax.set_ylim(-60, 60)
+            # self.ax.set_xlim(-20, 80) # track #1
+            # self.ax.set_ylim(-60, 60)
+            self.ax.set_xlim(-40, 40)  # track #2
+            self.ax.set_ylim(-10, 140)
             self.ax.set_title("Cone and Car Position Visualization")
             self.ax.set_xlabel("X")
             self.ax.set_ylabel("Y")
@@ -167,14 +166,14 @@ class DummyTrackPublisher(Node):
             pose_msg.pose.orientation.z = car_orien_z
             self.pose_publisher_.publish(pose_msg)
             self.get_logger().info(
-                f"Publishing Car Position: x={self.car_positions[self.current_index][0]}, y={self.car_positions[self.current_index][1]}"
+                f"Publishing Car Position:\nx={self.car_positions[self.current_index][0]}, y={self.car_positions[self.current_index][1]}"
             )
 
         ##### PUBLISHING ####
         # Publish cones from cone list, x cones ahead of current_index (using publishing functions)
         # NOTE: In any of the planning scripts, cone locations are not retained, nor does the path planner retain the cone locations.
         # NOTE: The car path plans based on the current list of cones and car pose.
-        n_publish_ahead = 3  # # of cone pairs to publish ahead
+        n_publish_ahead = 5  # # of cone pairs to publish ahead
         detected_cones = []
         for i in range(self.current_index, self.current_index + n_publish_ahead):
             index = i % len(self.blue_cones)
@@ -189,7 +188,7 @@ class DummyTrackPublisher(Node):
 
         # Log cone publishing
         for cone in detected_cones:
-            self.get_logger().info(f"Publishing Cone: x={cone.location.x}, y={cone.location.y}, color={cone.color}")
+            self.get_logger().info(f"Publishing Cone:\nx={cone.location.x}, y={cone.location.y}, color={cone.color}")
 
         # Publish car pose for current index (position and orientation)
         car_x, car_y = self.car_positions[self.current_index]
@@ -233,8 +232,10 @@ class DummyTrackPublisher(Node):
                 )
 
             # Update plot
-            self.ax.set_xlim(-20, 80)
-            self.ax.set_ylim(-60, 60)
+            self.ax.set_xlim(-40, 40)  # track #1
+            self.ax.set_ylim(-10, 140)
+            # self.ax.set_xlim(-20, 80) # track #2
+            # self.ax.set_ylim(-60, 60)
             self.ax.legend(["Blue Cones", "Yellow Cones", "Car Position", "Car Orientation"])
             self.ax.grid(True)
             plt.draw()
