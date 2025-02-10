@@ -104,6 +104,14 @@ def generate_launch_description():
         ],
         condition=IfCondition(remap_odometry_tf),
     )
+    delay_bicycle_controller_spawners = RegisterEventHandler(
+        event_handler=OnProcessStart(
+            target_action=steering_pid_controller,
+            on_start=[
+                robot_bicycle_controller_spawner,
+            ],
+        )
+    )
 
     joint_state_publisher_node = Node(
         package="joint_state_publisher",
@@ -135,7 +143,7 @@ def generate_launch_description():
         joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
-        robot_bicycle_controller_spawner,
+        # elay_bicycle_controller_spawners,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
 
