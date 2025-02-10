@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="chassis" params="base_frame display_car">
+
     <!-- Base Frame -->
     <link name="${base_frame}"/>
 
@@ -30,6 +31,11 @@
         </xacro:unless>
       </visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      </inertial>
     </link>
   </xacro:macro>
 
@@ -46,6 +52,11 @@
           </geometry>
           <material name="invisible"/>
         </visual>
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="0.1"/>
+          <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+        </inertial>
       </link>
       <link name="virtual_front_wheel">
         <visual>
@@ -55,6 +66,11 @@
           </geometry>
           <material name="invisible"/>
         </visual>
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="0.1"/>
+          <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+        </inertial>
       </link>
 
       <joint name="virtual_rear_wheel_joint" type="continuous">
@@ -88,13 +104,24 @@
           </geometry>
           <material name="white"/>
         </visual>
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="0.1"/>
+          <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+        </inertial>
       </link>
     </xacro:macro>
 
     <!-- Front and rear wheel descriptions -->
     <!-- Description of how a front wheel is connected to the chassis -->
     <xacro:macro name="front_wheel" params="lr_prefix lr_reflect">
-      <link name="${lr_prefix}_steering_hinge"/>
+      <link name="${lr_prefix}_steering_hinge">
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="0.1"/>
+          <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+        </inertial>
+      </link>
 
       <joint name="${lr_prefix}_steering_hinge_joint" type="revolute">
         <origin xyz="${wheelbase / 2}
