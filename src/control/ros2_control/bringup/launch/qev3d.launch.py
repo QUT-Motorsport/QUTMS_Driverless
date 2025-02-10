@@ -60,7 +60,7 @@ def generate_launch_description():
         parameters=[robot_controllers],
         output="both",
     )
-    robot_state_pub_bicycle_node = Node(
+    robot_state_publisher_spawner = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
@@ -99,7 +99,7 @@ def generate_launch_description():
     # Event Handlers for delayed execution
     delay_controller_spawners = RegisterEventHandler(
         event_handler=OnProcessStart(
-            target_action=robot_state_pub_bicycle_node,
+            target_action=robot_state_publisher_spawner,
             on_start=[
                 joint_state_broadcaster_spawner,
                 drive_pid_controller,
@@ -118,7 +118,7 @@ def generate_launch_description():
     nodes = [
         control_node,
         joint_state_publisher_node,
-        robot_state_pub_bicycle_node,
+        robot_state_publisher_spawner,
         delay_controller_spawners,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
