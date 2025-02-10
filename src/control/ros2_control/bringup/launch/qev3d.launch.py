@@ -12,11 +12,6 @@ def generate_launch_description():
     # Declare arguments
     declared_arguments = [
         DeclareLaunchArgument(
-            "description_package",
-            default_value="vehicle_urdf",
-            description="Description package with robot URDF/xacro files.",
-        ),
-        DeclareLaunchArgument(
             "description_file", default_value="qev-3d.urdf.xacro", description="URDF/xacro file to load."
         ),
         DeclareLaunchArgument(
@@ -36,7 +31,7 @@ def generate_launch_description():
     prefix = LaunchConfiguration("prefix")
     gui = LaunchConfiguration("gui")
     description_file = LaunchConfiguration("description_file")
-    description_package = LaunchConfiguration("description_package")
+
     remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
 
     # Get URDF via xacro
@@ -94,16 +89,6 @@ def generate_launch_description():
         executable="spawner",
         arguments=["steering_pid_controller", "--param-file", robot_controllers],
     )
-    robot_bicycle_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "bicycle_steering_controller",
-            "--param-file",
-            robot_controllers,
-        ],
-        condition=IfCondition(remap_odometry_tf),
-    )
 
     joint_state_publisher_node = Node(
         package="joint_state_publisher",
@@ -135,7 +120,6 @@ def generate_launch_description():
         joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
-        robot_bicycle_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
 
