@@ -21,14 +21,14 @@ def generate_launch_description():
             "description_file", default_value="qev-3d.urdf.xacro", description="URDF/xacro file to load."
         ),
         DeclareLaunchArgument(
-            "gui", default_value="false", description="Start Rviz2 and Joint State Publisher GUI automatically."
-        ),
+            "gui", default_value="true", description="Start Rviz2 and Joint State Publisher GUI automatically."
+        ),  # gui should set to false
         DeclareLaunchArgument(
             "prefix", default_value='""', description="Prefix of the joint names, useful for multi-robot setup."
         ),
         DeclareLaunchArgument(
             "remap_odometry_tf",
-            default_value="false",
+            default_value="true",  # should set to false
             description="Remap odometry TF from the steering controller to the TF tree.",
         ),
     ]
@@ -39,8 +39,6 @@ def generate_launch_description():
     description_file = LaunchConfiguration("description_file")
     description_package = LaunchConfiguration("description_package")
     remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
-    # Declare launch arguments
-    # use_gazebo = LaunchConfiguration("use_gazebo")
 
     # gazebo
     gazebo = IncludeLaunchDescription(
@@ -90,11 +88,11 @@ def generate_launch_description():
         parameters=[robot_controllers],
         output="both",
     )
-    robot_state_pub_bicycle_node = Node(
+    robot_state_publisher_spawner = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[{"robot_description": robot_description}],
+        parameters=[{"robot_description": robot_description, "use_sim_time": True, "initial_positions": 0.0}],
     )
     rviz_node = Node(
         package="rviz2",
@@ -119,16 +117,6 @@ def generate_launch_description():
         executable="spawner",
         arguments=["steering_pid_controller", "--param-file", robot_controllers],
     )
-    robot_bicycle_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "bicycle_steering_controller",
-            "--param-file",
-            robot_controllers,
-        ],
-        condition=IfCondition(remap_odometry_tf),
-    )
 
     joint_state_publisher_node = Node(
         package="joint_state_publisher",
@@ -139,7 +127,7 @@ def generate_launch_description():
     # Event Handlers for delayed execution
     delay_controller_spawners = RegisterEventHandler(
         event_handler=OnProcessStart(
-            target_action=robot_state_pub_bicycle_node,
+            target_action=robot_state_publisher_spawner,
             on_start=[
                 joint_state_broadcaster_spawner,
                 drive_pid_controller,
@@ -160,7 +148,7 @@ def generate_launch_description():
         gz_spawn_entity,
         control_node,
         joint_state_publisher_node,
-        robot_state_pub_bicycle_node,
+        robot_state_publisher_spawner,
         delay_controller_spawners,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
