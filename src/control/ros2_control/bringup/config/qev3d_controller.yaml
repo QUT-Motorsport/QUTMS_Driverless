@@ -5,7 +5,8 @@ controller_manager:
   ros__parameters:
     update_rate: 10  # Hz
     hardware_interface: "qev3d_ros2_control/Qev3dHardwareInterface"
-
+    example_param_hw_start_duration_sec: "5.0"
+    example_param_hw_stop_duration_sec: "5.0"
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 

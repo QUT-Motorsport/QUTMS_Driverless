@@ -121,7 +121,6 @@ def generate_launch_description():
     # Nodes to launch
     nodes = [
         control_node,
-        # joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
