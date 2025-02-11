@@ -1,13 +1,7 @@
 <?xml version="1.0"?>
-<!--
-Copied and modified from ROS1 example -
-https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_description/urdf/rrbot.gazebo
--->
-
-<!-- TODO:  COPIED FROM THE EXAMPLE 9 OF ROS2_CONTROL - NEED MODIFICATION -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <xacro:macro name="qev3d_gazebo" params="prefix">
+  <xacro:macro name="qev3d_gazebo" params="prefix base_frame chassis_link">
 
     <!-- ros_control plugin -->
     <gazebo>
@@ -32,6 +26,28 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
 
     <gazebo reference="virtual_front_wheel">
       <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <gazebo reference="left_steering_hinge">
+    </gazebo>
+
+    <gazebo reference="left_front_wheel">
+      <material>Gazebo/Black</material>
+    </gazebo>
+
+    <gazebo reference="right_steering_hinge">
+    </gazebo>
+
+    <gazebo reference="right_front_wheel">
+      <material>Gazebo/Red</material>
+    </gazebo>
+
+    <gazebo reference="left_rear_wheel">
+      <material>Gazebo/White</material>
+    </gazebo>
+
+    <gazebo reference="right_rear_wheel">
+      <material>Gazebo/White</material>
     </gazebo>
 
   </xacro:macro>

@@ -2,6 +2,8 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="chassis" params="base_frame display_car">
 
+  <!-- TODO: collision and inertial parameters are currently placeholders. should update to match actual values OR seperate them to gazebo files if able -->
+
     <!-- Base Frame -->
     <link name="${base_frame}"/>
 
