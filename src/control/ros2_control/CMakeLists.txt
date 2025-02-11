@@ -73,7 +73,7 @@ install(DIRECTORY description
 )
 
 install(
-  DIRECTORY bringup/launch bringup/config
+  DIRECTORY bringup/launch bringup/config test
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -91,13 +91,17 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
-
+install(
+  PROGRAMS
+    test/sine_wheel_testing.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Uncomment and modify the following lines to add tests
-# if(BUILD_TESTING)
-#   find_package(ament_cmake_pytest REQUIRED)
-#   ament_add_pytest_test(test/test_qev3d_ros2_control_launch.py)  # Rename to your own test files
-# endif()
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test/sine_wheel_testing.py)  # Rename to your own test files
+endif()
 
 # Export include directories
 ament_export_include_directories(
