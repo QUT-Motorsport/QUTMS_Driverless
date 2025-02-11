@@ -4,7 +4,7 @@
 controller_manager:
   ros__parameters:
     update_rate: 10  # Hz
-    hardware_interface: "qev3d_ros2_control/Qev3dHardwareInterface"
+    #hardware_interface: "qev3d_ros2_control/Qev3dHardwareInterface"  #might be unecessary
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 

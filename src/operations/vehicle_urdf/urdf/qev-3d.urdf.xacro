@@ -59,10 +59,11 @@
 
   <!-- ros2_control include -->
   <xacro:include filename="$(find qev3d_ros2_control)/ros2_control/qev3d.ros2_control.xacro"/>
-  <xacro:qev3d_ros2_control name="QEV-3D" />
+  <xacro:qev3d_ros2_control name="QEV-3D" use_gazebo="$(arg use_gazebo)"/>
 
   <!-- Import Gazebo definitions + plugin -->
   <xacro:if value="$(arg use_gazebo)">
     <xacro:include filename="$(find qev3d_ros2_control)/gazebo/qev3d.gazebo.xacro"/>
+    <xacro:qev3d_gazebo prefix="$(arg prefix)" base_frame="$(arg base_frame)" chassis_link="chassis"/>
   </xacro:if>
 </robot>

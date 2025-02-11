@@ -39,6 +39,8 @@ def generate_launch_description():
     description_file = LaunchConfiguration("description_file")
     description_package = LaunchConfiguration("description_package")
     remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
+    # Declare launch arguments
+    # use_gazebo = LaunchConfiguration("use_gazebo")
 
     # gazebo
     gazebo = IncludeLaunchDescription(
@@ -69,6 +71,8 @@ def generate_launch_description():
             " ",
             "prefix:=",
             prefix,
+            " ",
+            "use_gazebo:=true",  # Add this line to set use_gazebo to true
         ]
     )
     robot_description = ParameterValue(robot_description_content, value_type=str)

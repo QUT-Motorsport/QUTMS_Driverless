@@ -2,7 +2,7 @@
 <!-- Copied from the ros2 control Demo code. Change later when hardware is setup -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:macro name="qev3d_ros2_control" params="name use_gazebo:=^|false"> <!-- default parameters -->
+  <xacro:macro name="qev3d_ros2_control" params="name use_gazebo"> <!-- default parameters -->
 
     <ros2_control name="${name}" type="system">
       <hardware>

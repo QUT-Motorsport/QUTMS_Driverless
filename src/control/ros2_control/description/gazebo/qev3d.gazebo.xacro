@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <xacro:macro name="qev3d_gazebo" params="prefix base_frame chassis_link">
+<xacro:macro name="qev3d_gazebo" params="prefix base_frame chassis_link">
 
     <!-- ros_control plugin -->
     <gazebo>
@@ -28,7 +28,9 @@
       <material>Gazebo/Orange</material>
     </gazebo>
 
+    <!-- Steering Hinges (if intended to be defined) -->
     <gazebo reference="left_steering_hinge">
+      <!-- Add any relevant material or other properties here -->
     </gazebo>
 
     <gazebo reference="left_front_wheel">
@@ -36,6 +38,7 @@
     </gazebo>
 
     <gazebo reference="right_steering_hinge">
+      <!-- Add any relevant material or other properties here -->
     </gazebo>
 
     <gazebo reference="right_front_wheel">
