@@ -65,5 +65,4 @@
   <xacro:if value="$(arg use_gazebo)">
     <xacro:include filename="$(find qev3d_ros2_control)/gazebo/qev3d.gazebo.xacro"/>
   </xacro:if>
-
 </robot>
