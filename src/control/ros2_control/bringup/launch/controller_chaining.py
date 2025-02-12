@@ -90,7 +90,7 @@ def generate_launch_description():
 
     # Add nodes to launch list
     nodes = [
-        # robot_state_publisher,
+        ## robot_state_publisher,
         robot_bicycle_controller_spawner,
         robot_bicycle_controller_spawner_remapped,
     ]
