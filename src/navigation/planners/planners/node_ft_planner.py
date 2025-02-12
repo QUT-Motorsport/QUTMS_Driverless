@@ -156,7 +156,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(1 / 5, self.planning_callback)  # change back to 1/10 (1Hz)
+        self.create_timer(1 / 10, self.planning_callback)  # change back to 1/10 (1Hz)
 
         # Create subscriber for cars pose, when using the navigation simulator
         self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
@@ -376,7 +376,7 @@ class FaSTTUBeBoundaryExtractor(Node):
                 self.get_logger().info(f"Found Orange Big Cones:\n{orange_big_cones}")
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
-        # self.get_logger().info(f"global_cones: {global_cones}")
+        self.get_logger().info(f"global_cones: {global_cones}")
 
         try:
             (
@@ -407,7 +407,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # If not planning properly, return out of path_planning function **need to keep this uncommented, to validate planning working properly
         # NOTE: ft-fsd-path-planner documentation states that only need one side of cones to path plan,
         # NOTE: could use "and" condition here instead of "or"
-        # if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
+        # if len(ordered_blues) == 0 and len(ordered_yellows) == 0:
         #    self.get_logger().warn("No cones found!", throttle_duration_sec=1)
         #    return
         # else:

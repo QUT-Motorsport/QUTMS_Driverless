@@ -51,8 +51,8 @@ class PathVisualizer(Node):
         (self.first_positions_plot,) = self.ax.plot([], [], "r-", markersize=4, label="First Positions")
 
         # Plot settings
-        self.ax.set_xlim(-40, 40)
-        self.ax.set_ylim(-10, 140)
+        self.ax.set_xlim(-10, 70)
+        self.ax.set_ylim(-30, 40)
         self.ax.set_title("Path Visualization")
         self.ax.set_xlabel("X")
         self.ax.set_ylabel("Y")
@@ -63,17 +63,17 @@ class PathVisualizer(Node):
         plt.show()
 
     # # ✅ Callback Functions
-    # def blue_path_callback(self, msg):
-    #     self.blue_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
-    #     self.received_blue_path = True
-    #     self.update_plot()
-    #     self.get_logger().info("Received Blue Path!")
+    def blue_path_callback(self, msg):
+        self.blue_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
+        self.received_blue_path = True
+        self.update_plot()
+        self.get_logger().info("Received Blue Path!")
 
-    # def yellow_path_callback(self, msg):
-    #     self.yellow_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
-    #     self.received_yellow_path = True
-    #     self.update_plot()
-    #     self.get_logger().info("Received Yellow Path!")
+    def yellow_path_callback(self, msg):
+        self.yellow_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
+        self.received_yellow_path = True
+        self.update_plot()
+        self.get_logger().info("Received Yellow Path!")
 
     def midline_path_callback(self, msg):
         self.midline_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
@@ -94,17 +94,17 @@ class PathVisualizer(Node):
     def update_plot(self):
         updated = False
 
-        # if self.received_blue_path and self.blue_path:
-        #     x, y = zip(*self.blue_path)
-        #     self.blue_line.set_data(x, y)
-        #     self.received_blue_path = False
-        #     updated = True
+        if self.received_blue_path and self.blue_path:
+            x, y = zip(*self.blue_path)
+            self.blue_line.set_data(x, y)
+            self.received_blue_path = False
+            updated = True
 
-        # if self.received_yellow_path and self.yellow_path:
-        #     x, y = zip(*self.yellow_path)
-        #     self.yellow_line.set_data(x, y)
-        #     self.received_yellow_path = False
-        #     updated = True
+        if self.received_yellow_path and self.yellow_path:
+            x, y = zip(*self.yellow_path)
+            self.yellow_line.set_data(x, y)
+            self.received_yellow_path = False
+            updated = True
 
         if self.received_midline_path and self.midline_path:
             x, y = zip(*self.midline_path)
