@@ -66,7 +66,7 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
     reference_and_state_interfaces: ["velocity", "position"] # or we can use ["position"]
     command_interface: velocity
     gains: # set up the gain for the PID controller to control the rear wheel
-      virtual_rear_wheel_joint: {p: 1.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
+      virtual_rear_wheel_joint: {p: 0.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
 
 
 
@@ -82,4 +82,4 @@ steering_pid_controller: # The PID Controller for front-wheel joints
     reference_and_state_interfaces: ["position"]
     command_interface: position
     gains: # set up the gain for the PID controller to control the front wheel
-      virtual_front_wheel_joint: {p: 1.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
+      virtual_front_wheel_joint: {p: 0.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
