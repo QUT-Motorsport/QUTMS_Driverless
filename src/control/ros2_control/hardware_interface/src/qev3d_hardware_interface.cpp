@@ -123,8 +123,8 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
     // Initialize the configuration parameters for the hardware interface
     config_.drive_joint = info_.joints[1].name;     // info_.joints[1] is the drive joint (virtual_rear_wheel_joint)
     config_.steering_joint = info_.joints[0].name;  // info_.joints[0] is the steering joint (virtual_front_wheel_joint)
-    config_.hw_start_sec = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
-    config_.hw_stop_sec = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
+    config_.hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
+    config_.hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -133,12 +133,13 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_init(const hardwar
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_configure(const rclcpp_lifecycle::State& previous_state) {
     RCLCPP_INFO(get_logger(), "Configuring ...please wait...");
 
-    for (auto i = 0; i < hw_start_sec_; i++) {
+    for (int i = 0; i < config_.hw_start_sec_; i++) {
+        RCLCPP_INFO(get_logger(), "%.1f seconds left... [ on_configure() ]",
+                    static_cast<float>(config_.hw_start_sec_ - i));
         rclcpp::sleep_for(std::chrono::seconds(1));
-        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
     }
 
-    // reset values always when configuring hardware
+    // Reset values when configuring hardware
     for (const auto& [name, descr] : joint_state_interfaces_) {
         set_state(name, 0.0);
     }
@@ -163,9 +164,9 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_cleanup(const rclc
 hardware_interface::CallbackReturn Qev3dHardwareInterface::on_activate(const rclcpp_lifecycle::State& previous_state) {
     RCLCPP_INFO(get_logger(), "Activating ...please wait...");
 
-    for (auto i = 0; i < hw_start_sec_; i++) {
+    for (auto i = 0; i < config_.config_.hw_start_sec_; i++) {
         rclcpp::sleep_for(std::chrono::seconds(1));
-        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
+        RCLCPP_INFO(get_logger(), "%.1f seconds left.. [ on_activate() ].", config_.hw_start_sec_ - i);
     }
 
     // command and state should be equal when starting
@@ -184,9 +185,9 @@ hardware_interface::CallbackReturn Qev3dHardwareInterface::on_deactivate(
     // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
     RCLCPP_INFO(get_logger(), "Deactivating ...please wait...");
 
-    for (auto i = 0; i < hw_stop_sec_; i++) {
+    for (auto i = 0; i < config_.hw_stop_sec_; i++) {
         rclcpp::sleep_for(std::chrono::seconds(1));
-        RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_stop_sec_ - i);
+        RCLCPP_INFO(get_logger(), "%.1f seconds left... [ on_deactivate() ]", config_.hw_stop_sec_ - i);
     }
     // END: This part here is for exemplary purposes - Please do not copy to your production code
     RCLCPP_INFO(get_logger(), "Successfully deactivated!");
