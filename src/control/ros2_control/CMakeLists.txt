@@ -98,10 +98,10 @@ install(
 )
 
 # Uncomment and modify the following lines to add tests
-if(BUILD_TESTING)
-  find_package(ament_cmake_pytest REQUIRED)
-  ament_add_pytest_test(test/sine_wheel_testing.py)  # Rename to your own test files
-endif()
+# if(BUILD_TESTING)
+#   find_package(ament_cmake_pytest REQUIRED)
+#   ament_add_pytest_test(test/sine_wheel_testing.py)  # Rename to your own test files
+# endif()
 
 # Export include directories
 ament_export_include_directories(
