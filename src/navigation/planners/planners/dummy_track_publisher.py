@@ -1,4 +1,5 @@
 import math
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,7 +21,7 @@ class DummyTrackPublisher(Node):
         self.publisher_ = self.create_publisher(ConeDetectionStamped, "slam/cone_detection", 10)
         self.nav_sim_publisher_ = self.create_publisher(Bool, "nav_sim", 10)
         self.pose_publisher_ = self.create_publisher(PoseStamped, "car/pose", 10)
-        self.timer = self.create_timer(1 / 3, self.publish_dummy_track)  # Publish every second
+        self.timer = self.create_timer(1 / 2, self.publish_dummy_track)  # Publish every second
         self.midline_path_sub = self.create_subscription(
             Path, "planning/midline_path", self.midline_path_callback, QOS_LATEST
         )
@@ -28,9 +29,17 @@ class DummyTrackPublisher(Node):
         # Plotting flag
         self.plotting_enabled = True
 
+        # Initialisation flag
+        self.init = True
+
         # Variable Initialisations
         self.received_midline_path = False
         self.midline_path = []
+        self.car_x = 0.0
+        self.car_y = 0.0
+        # Lists to store detected cones for plotting
+        self.detected_blue_cones = []
+        self.detected_yellow_cones = []
 
         # Publish nav_sim status (tell node_ft_planner, we're simulating)
         nav_sim_msg = Bool()
@@ -191,18 +200,16 @@ class DummyTrackPublisher(Node):
             [60.917484762030114, 3.092754987622678],
         ]
 
-        # Pre-Calculate car_position from the list of cones
-        self.car_positions = []
-        for i in range(len(self.yellow_cones)):
-            x_mid = (self.yellow_cones[i][0] + self.blue_cones[i][0]) / 2
-            y_mid = (self.yellow_cones[i][1] + self.blue_cones[i][1]) / 2
-            self.car_positions.append((x_mid, y_mid))
-
-        # Pre-Calculate the cars_orientation as quaternions (convert to euler in node_ft_planner)
-        self.car_orientation = []
-        for i in range(len(self.yellow_cones) - 1):
-            orientation = self.calc_orien(self.car_positions[i], self.car_positions[i + 1])
-            self.car_orientation.append(orientation)
+        # Pre-Calculate initial car position & orientation from the list of cones
+        self.initial_car_position = (
+            (self.yellow_cones[0][0] + self.blue_cones[0][0]) / 2,
+            (self.yellow_cones[0][1] + self.blue_cones[0][1]) / 2,
+        )
+        self.next_initial_car_position = (
+            (self.yellow_cones[1][0] + self.blue_cones[1][0]) / 2,
+            (self.yellow_cones[1][1] + self.blue_cones[1][1]) / 2,
+        )
+        self.initial_car_orientation = self.calc_orien(self.initial_car_position, self.next_initial_car_position)
 
         # Initialize plot (if plotting is enabled)
         if self.plotting_enabled:
@@ -216,14 +223,13 @@ class DummyTrackPublisher(Node):
             self.ax.set_xlabel("X")
             self.ax.set_ylabel("Y")
 
-            self.ax.legend(["Blue Cones", "Yellow Cones", "Car Position"])
+            # self.ax.legend(["Blue Cones", "Yellow Cones", "Car Position"])
             self.ax.grid(True)
 
             plt.ion()  # Turn on interactive mode
             plt.show()
 
-        # Initialize index for incremental publishing
-        self.current_index = 0
+        ######### END OF __init__() #########
 
     # Subscribe to the planning/midline_path to take back the planned path from node_ft_planner
     # NOTE: The car's position is being subscribed to here from node_ft_planner, this way the publisher
@@ -245,147 +251,144 @@ class DummyTrackPublisher(Node):
         z = np.sin(theta / 2)
         return {"theta": theta, "w": w, "x": x, "y": y, "z": z}
 
-    def publish_dummy_track(
-        self,
-    ):  # Timer/Main Callback, publishes dummy track at rate specified by timer subscrober (Hz)
+    # cone_msg : function used to create cone message to publish
+    def create_cone_msg(self, cone_x, cone_y, cone_color):
+        # Create Cone message
+        cone = Cone()
+        cone.location.x = float(cone_x)
+        cone.location.y = float(cone_y)
+        cone.location.z = 0.0  # Ensure z is set to 0.0
+        cone.color = cone_color  # Set color (BLUE/YELLOW)
+
+        if cone_color == Cone.BLUE:  # append persistent cone variables for plotting
+            self.detected_blue_cones.append((cone_x, cone_y))
+        elif cone_color == Cone.YELLOW:
+            self.detected_yellow_cones.append((cone_x, cone_y))
+
+        return cone
+
+    # pose_msg : function to publish pose locations (car_orientation & car_position) as PoseStamped msg
+    def pose_msg(self, car_x, car_y, car_orien_w, car_orien_x, car_orien_y, car_orien_z):
+        pose_msg = PoseStamped()
+        pose_msg.header.stamp = self.get_clock().now().to_msg()
+        pose_msg.header.frame_id = "map"
+        pose_msg.pose.position.x = car_x
+        pose_msg.pose.position.y = car_y
+        pose_msg.pose.position.z = 0.0
+        pose_msg.pose.orientation.w = car_orien_w
+        pose_msg.pose.orientation.x = car_orien_x
+        pose_msg.pose.orientation.y = car_orien_y
+        pose_msg.pose.orientation.z = car_orien_z
+        self.pose_publisher_.publish(pose_msg)
+        self.get_logger().info(f"Publishing Initial Car Position!:\n {car_x, car_y}")
+
+    def filter_coordinates(self, center_x, center_y, radius, coordinates):
+        filtered_coords = []
+        for x, y in coordinates:
+            distance = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)  # Calculate Euclidean distance
+            if distance <= radius:  # Check if the point is within the given radius
+                filtered_coords.append((x, y))  # Add to the result list
+        return filtered_coords  # Return the filtered list
+
+    def plot_cones(self, car_orien):
+        if not self.plotting_enabled:
+            return
+        self.ax.clear()
+        # Extract coordinates for plotting
+        blue_x, blue_y = zip(*self.detected_blue_cones) if self.detected_blue_cones else ([], [])
+        yellow_x, yellow_y = zip(*self.detected_yellow_cones) if self.detected_yellow_cones else ([], [])
+        # Plot detected cones
+        self.ax.scatter(blue_x, blue_y, c="blue", s=10, label="Published Blue Cones")
+        self.ax.scatter(yellow_x, yellow_y, c="yellow", s=10, label="Published Yellow Cones")
+        # Plot car position
+        self.ax.scatter(self.car_x, self.car_y, c="black", s=20, label="Car Position")
+        # Add car orientation as an arrow
+        if self.received_midline_path and len(self.midline_path) > 1:
+            theta = car_orien["theta"]
+            arrow_length = 1
+            dx = arrow_length * np.cos(theta)
+            dy = arrow_length * np.sin(theta)
+            self.ax.quiver(
+                self.car_x,
+                self.car_y,
+                dx,
+                dy,
+                angles="xy",
+                scale_units="xy",
+                scale=0.2,
+                color="red",
+                label="Car Orientation",
+            )
+        # Update plot settings
+        self.ax.set_xlim(-10, 70)
+        self.ax.set_ylim(-30, 40)
+        self.ax.set_title("Dummy Track Publication")
+        self.ax.legend()
+        self.ax.grid(True)
+        # Refresh plot
+        plt.draw()
+        plt.pause(0.1)
+
+    ##### MAIN TIMER CALLBACK ########
+    def publish_dummy_track(self):
+        if self.init:  # Upon initialisation, publish initial car_pose as midpoint between cones.
+            self.car_x, self.car_y = self.initial_car_position
+            self.pose_msg(
+                self.initial_car_position[0],
+                self.initial_car_position[1],
+                float(self.initial_car_orientation["w"]),
+                float(self.initial_car_orientation["x"]),
+                float(self.initial_car_orientation["y"]),
+                float(self.initial_car_orientation["z"]),
+            )
+            self.init = False
+
+        #### CONE PUBLISHING ####
         msg = ConeDetectionStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = "map"
+        msg.cones = []  # Store cones here, batch them together
 
-        # cone_msg : function to publish cone locations as ConeDetectionStamped msg
-        def cone_msg(cone_x, cone_y, cone_color):
-            cone = Cone()
-            cone.location.x = float(cone_x)
-            cone.location.y = float(cone_y)
-            cone.location.z = 0.0  # Ensure z is set to 0.0
-            cone.color = cone_color  # Set color to unknown
-            return cone
+        car_radius = 25  # Radius of the car's cone detection
+        for coordinate in self.filter_coordinates(self.car_x, self.car_y, car_radius, self.blue_cones):
+            msg.cones.append(self.create_cone_msg(coordinate[0], coordinate[1], Cone.BLUE))
+        for coordinate in self.filter_coordinates(self.car_x, self.car_y, car_radius, self.yellow_cones):
+            msg.cones.append(self.create_cone_msg(coordinate[0], coordinate[1], Cone.YELLOW))
 
-        # pose_msg : function to publish pose locations (car_orientation & car_position) as PoseStamped msg
-        def pose_msg(car_x, car_y, car_orien_w, car_orien_x, car_orien_y, car_orien_z):
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = self.get_clock().now().to_msg()
-            pose_msg.header.frame_id = "map"
-            pose_msg.pose.position.x = car_x
-            pose_msg.pose.position.y = car_y
-            pose_msg.pose.position.z = 0.0
-            pose_msg.pose.orientation.w = car_orien_w
-            pose_msg.pose.orientation.x = car_orien_x
-            pose_msg.pose.orientation.y = car_orien_y
-            pose_msg.pose.orientation.z = car_orien_z
-            self.pose_publisher_.publish(pose_msg)
-            self.get_logger().info(
-                f"Publishing Car Position:\nx={self.car_positions[self.current_index][0]}, y={self.car_positions[self.current_index][1]}"
-            )
+        self.publisher_.publish(msg)  # Publish the batch
+        self.get_logger().info(f"Published {len(msg.cones)} cones")
 
-        def filter_coordinates(center_x, center_y, radius, coordinates):
-            return [(x, y) for x, y in coordinates if math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2) <= radius]
-
-        # Publish car pose for current index (either from list or from the planned path subscribed from node_ft_planner)
+        # Upon recieving planned path, publish the next n waypoint within the midline_path as the next car_pose.
         if self.received_midline_path and len(self.midline_path) > 1:
-            car_x, car_y = self.midline_path[1]
-            car_orien = self.calc_orien(self.midline_path[1], self.midline_path[1])
-            pose_msg(
-                car_x, car_y, float(car_orien["w"]), float(car_orien["x"]), float(car_orien["y"]), float(car_orien["z"])
+            self.get_logger().info(f"recieved midline path! calculating & publishing new car_pose")
+            self.car_x, self.car_y = self.midline_path[1]
+            car_orien = self.calc_orien(self.midline_path[0], self.midline_path[1])
+            self.pose_msg(
+                self.car_x,
+                self.car_y,
+                float(car_orien["w"]),
+                float(car_orien["x"]),
+                float(car_orien["y"]),
+                float(car_orien["z"]),
             )
         else:
-            car_x, car_y = self.car_positions[self.current_index]
-            if self.current_index < len(self.car_positions) - 1:  # orientation is 1 less length than position
-                car_orien = self.car_orientation[self.current_index]
-            else:
-                car_orien = {"theta": 0, "w": 1, "x": 0, "y": 0, "z": 0}
-            pose_msg(
-                car_x, car_y, float(car_orien["w"]), float(car_orien["x"]), float(car_orien["y"]), float(car_orien["z"])
-            )
+            self.get_logger().warn("Not received midline path! Returning out of timer callback!")
+            # self.get_logger().warn(f"Length of midline path: {len(self.midline_path)}")
+            return
 
-        ##### PUBLISHING #####
-        # Publish cones from cone list, x cones ahead of current_index (using publishing functions)
-        # NOTE: In any of the planning scripts, cone locations are not retained, nor does the path planner retain the cone locations.
-        # NOTE: The car path plans based on the current list of cones and car pose.
-        n_publish_ahead = 5  # # of cone pairs to publish ahead
-        detected_cones = []
-        # for i in range(self.current_index, self.current_index + n_publish_ahead):
-        #     index = i % len(self.blue_cones)
-        #     detected_cones.append(cone_msg(self.blue_cones[index][0], self.blue_cones[index][1], Cone.BLUE))
-        #     detected_cones.append(cone_msg(self.yellow_cones[index][0], self.yellow_cones[index][1], Cone.YELLOW))
-
-        car_radius = 35  # Radius of the car's cone detection
-        for coordinate in filter_coordinates(car_x, car_y, car_radius, self.blue_cones):
-            detected_cones.append(cone_msg(coordinate[0], coordinate[1], Cone.BLUE))
-
-        for coordinate in filter_coordinates(car_x, car_y, car_radius, self.yellow_cones):
-            detected_cones.append(cone_msg(coordinate[0], coordinate[1], Cone.YELLOW))
-
-        # Add cones to the message
-        msg.cones = detected_cones
-
-        # Publish cones for current_index
-        self.publisher_.publish(msg)
-
-        # Log cone publishing
-        for cone in detected_cones:
-            self.get_logger().info(f"Publishing Cone:\nx={cone.location.x}, y={cone.location.y}, color={cone.color}")
-
-        # 🖥️ PLOTTING UPDATE (Only Displays Published Cones)
-        if self.plotting_enabled:
-            if self.plotting_enabled:
-                self.ax.clear()
-
-            # Extract coordinates of only the published cones
-            blue_x, blue_y = [], []
-            yellow_x, yellow_y = [], []
-
-            for cone in detected_cones:
-                if cone.color == Cone.BLUE:
-                    blue_x.append(cone.location.x)
-                    blue_y.append(cone.location.y)
-                elif cone.color == Cone.YELLOW:
-                    yellow_x.append(cone.location.x)
-                    yellow_y.append(cone.location.y)
-
-            # Plot only the published cones
-            self.ax.scatter(blue_x, blue_y, c="blue", s=40, label="Published Blue Cones")
-            self.ax.scatter(yellow_x, yellow_y, c="yellow", s=40, label="Published Yellow Cones")
-
-            # Plot current car position
-            self.ax.scatter(car_x, car_y, c="black", s=40, label="Car Position")
-
-            # Add car orientation (theta) as an arrow
-            if self.current_index < len(self.car_positions) - 1:
-                theta = self.car_orientation[self.current_index]["theta"]  # Extract orientation angle
-                arrow_length = 4  # Scale for visibility
-                dx = arrow_length * np.cos(theta)  # X-component of arrow
-                dy = arrow_length * np.sin(theta)  # Y-component of arrow
-                self.ax.quiver(
-                    car_x, car_y, dx, dy, angles="xy", scale_units="xy", scale=0.3, color="red", label="Car Orientation"
-                )
-
-            # Update plot
-            self.ax.set_xlim(-40, 40)  # track #1
-            self.ax.set_ylim(-10, 140)
-            # self.ax.set_xlim(-20, 80) # track #2
-            # self.ax.set_ylim(-60, 60)
-            self.ax.set_title("Dummy Track Publication")
-            # self.ax.legend(["Blue Cones", "Yellow Cones", "Car Position", "Car Orientation"])
-            handles, labels = self.ax.get_legend_handles_labels()
-            self.ax.legend(handles, labels)
-            self.ax.grid(True)
-            # plt.draw()
-            # plt.pause(0.1)
-
-        # Move to next position and reset upon full lap
-        self.current_index += 1
-        # self.get_logger().info(f"current_index: {self.current_index}")
-        if self.current_index >= len(self.car_positions):  # Reset if last position is reached
-            self.current_index = 0
+        self.plot_cones(car_orien)
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = DummyTrackPublisher()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":

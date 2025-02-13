@@ -67,13 +67,13 @@ class PathVisualizer(Node):
         self.blue_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
         self.received_blue_path = True
         self.update_plot()
-        self.get_logger().info("Received Blue Path!")
+        # self.get_logger().info("Received Blue Path!")
 
     def yellow_path_callback(self, msg):
         self.yellow_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
         self.received_yellow_path = True
         self.update_plot()
-        self.get_logger().info("Received Yellow Path!")
+        # self.get_logger().info("Received Yellow Path!")
 
     def midline_path_callback(self, msg):
         self.midline_path = [(pose.pose.position.x, pose.pose.position.y) for pose in msg.poses]
@@ -81,19 +81,19 @@ class PathVisualizer(Node):
             self.first_positions.append(self.midline_path[0])  # Store first position
         self.received_midline_path = True
         self.update_plot()
-        self.get_logger().info("Received Midline Path!")
+        # self.get_logger().info("Received Midline Path!")
 
     def cone_detection_callback(self, msg):
         self.blue_cones = [(cone.location.x, cone.location.y) for cone in msg.cones if cone.color == Cone.BLUE]
         self.yellow_cones = [(cone.location.x, cone.location.y) for cone in msg.cones if cone.color == Cone.YELLOW]
         self.received_cones = True
         self.update_plot()
-        self.get_logger().info("Received Cones!")
+        # self.get_logger().info("Received Cones!")
 
     # ✅ Update Plot Function
     def update_plot(self):
         updated = False
-
+        self.get_logger().info("Updated Plot!")
         if self.received_blue_path and self.blue_path:
             x, y = zip(*self.blue_path)
             self.blue_line.set_data(x, y)
