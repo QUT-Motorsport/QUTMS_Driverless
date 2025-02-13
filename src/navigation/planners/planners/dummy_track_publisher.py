@@ -283,8 +283,8 @@ class DummyTrackPublisher(Node):
 
         # Publish car pose for current index (either from list or from the planned path subscribed from node_ft_planner)
         if self.received_midline_path and len(self.midline_path) > 1:
-            car_x, car_y = self.midline_path[6]
-            car_orien = self.calc_orien(self.midline_path[6], self.midline_path[6])
+            car_x, car_y = self.midline_path[1]
+            car_orien = self.calc_orien(self.midline_path[1], self.midline_path[1])
             pose_msg(
                 car_x, car_y, float(car_orien["w"]), float(car_orien["x"]), float(car_orien["y"]), float(car_orien["z"])
             )
