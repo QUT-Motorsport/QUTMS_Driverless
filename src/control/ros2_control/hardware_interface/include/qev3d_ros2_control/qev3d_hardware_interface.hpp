@@ -99,6 +99,9 @@ class Qev3dHardwareInterface : public hardware_interface::SystemInterface {
     double hw_start_sec_;  // Time in seconds to start the hardware
     double hw_stop_sec_;   // Time in seconds to stop the hardware
 
+    double last_steering_position_ = 0.0;
+    double last_drive_velocity_ = 0.0;
+
     // Joint names
     std::string steering_joint_;  // Name of the steering joint
     std::string drive_joint_;     // Name of the drive joint

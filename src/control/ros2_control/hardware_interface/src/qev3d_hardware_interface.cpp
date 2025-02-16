@@ -231,20 +231,34 @@ hardware_interface::return_type Qev3dHardwareInterface::read(const rclcpp::Time&
 // Write the command to the hardware
 hardware_interface::return_type Qev3dHardwareInterface::write(const rclcpp::Time& time,
                                                               const rclcpp::Duration& period) {
-    // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
+    // Retrieve the current commanded values
+    double new_steering_position = get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION);
+    double new_drive_velocity = get_command(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY);
+
+    // Compute delta (change from last command)
+    double delta_steering = new_steering_position - last_steering_position_;
+    double delta_drive = new_drive_velocity - last_drive_velocity_;
+
+    // Apply the delta (adjusted command)
+    double adjusted_steering = last_steering_position_ + delta_steering;
+    double adjusted_drive = last_drive_velocity_ + delta_drive;
+
+    // Send adjusted values to the hardware
+    // send_to_steering_motor(adjusted_steering);
+    // send_to_drive_motor(adjusted_drive);
+
+    // Store the last command values for the next iteration
+    last_steering_position_ = adjusted_steering;
+    last_drive_velocity_ = adjusted_drive;
+
+    // Log the changes
     std::stringstream ss;
-    ss << "Writing commands:";
-
-    ss << std::fixed << std::setprecision(2) << std::endl
-       << "\t"
-       << "position: " << get_command(steering_joint_ + "/" + hardware_interface::HW_IF_POSITION) << " for joint '"
+    ss << "Writing delta-based commands:" << std::endl
+       << "\tΔ Position: " << delta_steering << " (New Position: " << adjusted_steering << ") for joint '"
        << steering_joint_ << "'" << std::endl
-       << "\t"
-       << "velocity: " << get_command(drive_joint_ + "/" + hardware_interface::HW_IF_VELOCITY) << " for joint '"
-       << drive_joint_ << "'";
-
+       << "\tΔ Velocity: " << delta_drive << " (New Velocity: " << adjusted_drive << ") for joint '" << drive_joint_
+       << "'";
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
-    // END: This part here is for exemplary purposes - Please do not copy to your production code
 
     return hardware_interface::return_type::OK;
 }
