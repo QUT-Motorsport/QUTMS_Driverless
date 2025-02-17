@@ -59,7 +59,7 @@ def generate_launch_description():
         namespace="",
         executable="rviz2",
         name="rviz2",
-        arguments=[],
+        arguments=["-d" + os.path.join(get_package_share_directory("peception_bringup"), "config", "demo.rviz")],
     )
 
     urdf_launch = IncludeLaunchDescription(
