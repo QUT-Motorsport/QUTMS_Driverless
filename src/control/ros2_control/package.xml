@@ -21,7 +21,8 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-
+  <depend>ros2_control</depend>
+  <depend>controller_interface</depend>
   <!-- QEV3D custom packages -->
   <exec_depend>driverless_msgs</exec_depend>
   <exec_depend>vehicle_urdf</exec_depend>
@@ -56,4 +57,7 @@
   <export>
     <build_type>ament_cmake</build_type>
   </export>
+
+
+
 </package>
