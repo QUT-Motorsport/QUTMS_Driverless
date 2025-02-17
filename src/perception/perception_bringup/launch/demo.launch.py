@@ -60,9 +60,21 @@ def generate_launch_description():
         arguments=[],
     )
 
+    urdf_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource(
+            launch_file_path=str(get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py")
+        ),
+        launch_arguments=[
+            ("urdf_model", "qev-3d.urdf.xacro"),
+            ("base_frame", "base_footprint"),
+            ("display_car", "false"),
+        ],
+    )
+
     return LaunchDescription(
         [
             velodyne_pointcloud_container,
             rviz_node,
+            urdf_launch,
         ]
     )
