@@ -21,7 +21,7 @@ class DummyTrackPublisher(Node):
         self.publisher_ = self.create_publisher(ConeDetectionStamped, "slam/cone_detection", 10)
         self.nav_sim_publisher_ = self.create_publisher(Bool, "nav_sim", 10)
         self.pose_publisher_ = self.create_publisher(PoseStamped, "car/pose", 10)
-        self.timer = self.create_timer(1 / 2, self.publish_dummy_track)  # Publish every second
+        self.timer = self.create_timer(1 / 15, self.publish_dummy_track)  # Publish every second
         self.midline_path_sub = self.create_subscription(
             Path, "planning/midline_path", self.midline_path_callback, QOS_LATEST
         )
@@ -349,7 +349,7 @@ class DummyTrackPublisher(Node):
         msg.header.frame_id = "map"
         msg.cones = []  # Store cones here, batch them together
 
-        car_radius = 25  # Radius of the car's cone detection
+        car_radius = 10  # Radius of the car's cone detection
         for coordinate in self.filter_coordinates(self.car_x, self.car_y, car_radius, self.blue_cones):
             msg.cones.append(self.create_cone_msg(coordinate[0], coordinate[1], Cone.BLUE))
         for coordinate in self.filter_coordinates(self.car_x, self.car_y, car_radius, self.yellow_cones):
@@ -361,8 +361,8 @@ class DummyTrackPublisher(Node):
         # Upon recieving planned path, publish the next n waypoint within the midline_path as the next car_pose.
         if self.received_midline_path and len(self.midline_path) > 1:
             self.get_logger().info(f"recieved midline path! calculating & publishing new car_pose")
-            self.car_x, self.car_y = self.midline_path[1]
-            car_orien = self.calc_orien(self.midline_path[0], self.midline_path[1])
+            self.car_x, self.car_y = self.midline_path[3]
+            car_orien = self.calc_orien(self.midline_path[0], self.midline_path[3])
             self.pose_msg(
                 self.car_x,
                 self.car_y,
