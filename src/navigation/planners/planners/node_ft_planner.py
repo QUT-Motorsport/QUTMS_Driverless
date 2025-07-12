@@ -156,7 +156,7 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         # sub to track for all cone locations relative to car start point
         self.create_subscription(ConeDetectionStamped, "slam/cone_detection", self.detection_callback, QOS_LATEST)
-        self.create_timer(3, self.planning_callback)  # change back to 1/10 (1Hz)
+        self.create_timer(1 / 15, self.planning_callback)  # change back to 1/10 (1Hz)
 
         # Create subscriber for cars pose, when using the navigation simulator
         self.create_subscription(PoseStamped, "car/pose", self.car_pose_sim, 10)
@@ -274,11 +274,12 @@ class FaSTTUBeBoundaryExtractor(Node):
 
     # Cone detection callback, save detected cones as self.current_track variable/list
     def detection_callback(self, track_msg: ConeDetectionStamped):
-        self.get_logger().info("Received detections")
+        # self.get_logger().info("Received detections")
         if not self.initial_planning:
             self.current_track = track_msg
             return
         if self.nav_sim:
+            self.get_logger().info("Recieved Cones from navigation simulator!")
             self.current_track = track_msg
             return
 
@@ -361,19 +362,19 @@ class FaSTTUBeBoundaryExtractor(Node):
             cone_pos = np.array([cone.location.x, cone.location.y])
             if cone.color == Cone.UNKNOWN:
                 unknown_cones = np.vstack([unknown_cones, cone_pos]) if unknown_cones.size else cone_pos
-                self.get_logger().info(f"Found Unknown Cones:\n{unknown_cones}")
+                # self.get_logger().info(f"Found Unknown Cones:\n{unknown_cones}")
             elif cone.color == Cone.YELLOW:
                 yellow_cones = np.vstack([yellow_cones, cone_pos]) if yellow_cones.size else cone_pos
-                self.get_logger().info(f"Found Yellow Cones:\n{yellow_cones}")
+                # self.get_logger().info(f"Found Yellow Cones:\n{yellow_cones}")
             elif cone.color == Cone.BLUE:
                 blue_cones = np.vstack([blue_cones, cone_pos]) if blue_cones.size else cone_pos
-                self.get_logger().info(f"Found Blue Cones:\n{blue_cones}")
+                # self.get_logger().info(f"Found Blue Cones:\n{blue_cones}")
             elif cone.color == Cone.ORANGE_SMALL:
                 orange_small_cones = np.vstack([orange_small_cones, cone_pos]) if orange_small_cones.size else cone_pos
-                self.get_logger().info(f"Found Orange Small Cones:\n{orange_small_cones}")
+                # self.get_logger().info(f"Found Orange Small Cones:\n{orange_small_cones}")
             elif cone.color == Cone.ORANGE_BIG:
                 orange_big_cones = np.vstack([orange_big_cones, cone_pos]) if orange_big_cones.size else cone_pos
-                self.get_logger().info(f"Found Orange Big Cones:\n{orange_big_cones}")
+                # self.get_logger().info(f"Found Orange Big Cones:\n{orange_big_cones}")
 
         global_cones = [unknown_cones, yellow_cones, blue_cones, orange_small_cones, orange_big_cones]
         # self.get_logger().info(f"global_cones: {global_cones}")
@@ -395,9 +396,8 @@ class FaSTTUBeBoundaryExtractor(Node):
             return
 
         # self.get_logger().info(f"Found Path!:\n {path}")
-
-        self.get_logger().info(f"ordered_blues: {ordered_blues}\n virt_blues: {virt_blues}")
-        self.get_logger().info(f"ordered_yellows: {ordered_yellows}\n virt_yellows: {virt_yellows}")
+        # self.get_logger().info(f"ordered_blues: {ordered_blues}\n virt_blues: {virt_blues}")
+        # self.get_logger().info(f"ordered_yellows: {ordered_yellows}\n virt_yellows: {virt_yellows}")
 
         use_virt = True
         if use_virt:
@@ -407,7 +407,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # If not planning properly, return out of path_planning function **need to keep this uncommented, to validate planning working properly
         # NOTE: ft-fsd-path-planner documentation states that only need one side of cones to path plan,
         # NOTE: could use "and" condition here instead of "or"
-        # if len(ordered_blues) == 0 or len(ordered_yellows) == 0:
+        # if len(ordered_blues) == 0 and len(ordered_yellows) == 0:
         #    self.get_logger().warn("No cones found!", throttle_duration_sec=1)
         #    return
         # else:

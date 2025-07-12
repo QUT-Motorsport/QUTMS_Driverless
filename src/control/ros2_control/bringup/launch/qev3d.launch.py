@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessStart
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -31,7 +31,6 @@ def generate_launch_description():
     prefix = LaunchConfiguration("prefix")
     gui = LaunchConfiguration("gui")
     description_file = LaunchConfiguration("description_file")
-
     remap_odometry_tf = LaunchConfiguration("remap_odometry_tf")
 
     # Get URDF via xacro
@@ -101,7 +100,6 @@ def generate_launch_description():
         event_handler=OnProcessStart(
             target_action=robot_state_pub_bicycle_node,
             on_start=[
-                joint_state_broadcaster_spawner,
                 drive_pid_controller,
                 steering_pid_controller,
             ],
@@ -113,13 +111,19 @@ def generate_launch_description():
             on_start=[rviz_node],
         )
     )
+    delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=drive_pid_controller,
+            on_exit=[joint_state_broadcaster_spawner],
+        )
+    )
 
     # Nodes to launch
     nodes = [
         control_node,
-        joint_state_publisher_node,
         robot_state_pub_bicycle_node,
         delay_controller_spawners,
+        delay_joint_state_broadcaster_after_robot_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
     ]
 

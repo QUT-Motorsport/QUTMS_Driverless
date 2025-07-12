@@ -1,6 +1,7 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
 from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -67,6 +68,11 @@ def generate_launch_description():
         ],
         condition=UnlessCondition(remap_odometry_tf),
     )
+    passthrough_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["passthrough_controller", "--param-file", robot_controllers],
+    )
 
     robot_bicycle_controller_spawner_remapped = Node(
         package="controller_manager",
@@ -81,6 +87,15 @@ def generate_launch_description():
         condition=IfCondition(remap_odometry_tf),
     )
 
+    delay_bicycle_controller_spawners = RegisterEventHandler(
+        event_handler=OnProcessStart(
+            target_action=passthrough_controller,
+            on_start=[
+                robot_bicycle_controller_spawner,
+                robot_bicycle_controller_spawner_remapped,
+            ],
+        )
+    )
     # Node for robot state publisher (publish robot description)
     robot_state_publisher = Node(
         package="robot_state_publisher",

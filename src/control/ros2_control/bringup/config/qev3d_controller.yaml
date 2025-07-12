@@ -5,6 +5,8 @@ controller_manager:
   ros__parameters:
     update_rate: 10  # Hz
     hardware_interface: "qev3d_ros2_control/Qev3dHardwareInterface"
+    example_param_hw_start_duration_sec: "5.0"
+    example_param_hw_stop_duration_sec: "5.0"
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
@@ -30,8 +32,8 @@ bicycle_steering_controller:
     #     <rear_wheels_names[i]>/velocity
 
     reference_timeout: 2.0
-    rear_wheels_names: [drive_pid_controller/virtual_rear_wheel_joint]
-    front_wheels_names: [steering_pid_controller/virtual_front_wheel_joint]
+    rear_wheels_names: [passthrough_controller/drive_pid_controller/virtual_rear_wheel_joint]
+    front_wheels_names: [passthrough_controller/steering_pid_controller/virtual_front_wheel_joint]
 
     #TODO: Command interfaces for rear steering
     front_wheels_state_names: [virtual_front_wheel_joint] # The state interface feedback for the front wheels
@@ -51,6 +53,16 @@ bicycle_steering_controller:
     use_stamped_vel: true # Enable to use stamped velocity messages
 
 
+
+passthrough_controller:
+  ros__parameters:
+    type: passthrough_controller/PassthroughController
+    interfaces:
+      - drive_pid_controller/virtual_rear_wheel_joint/velocity
+      - steering_pid_controller/virtual_front_wheel_joint/position
+
+
+
 drive_pid_controller: # The PID Controller for rear-wheel joints
   ros__parameters:
 
@@ -65,8 +77,6 @@ drive_pid_controller: # The PID Controller for rear-wheel joints
     command_interface: velocity
     gains: # set up the gain for the PID controller to control the rear wheel
       virtual_rear_wheel_joint: {p: 1.0, i: 0.0, d: 0.0, antiwindup: true, i_clamp_max: 5.0, i_clamp_min: -5.0}
-
-
 
 
 steering_pid_controller: # The PID Controller for front-wheel joints

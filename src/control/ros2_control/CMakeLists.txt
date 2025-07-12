@@ -15,6 +15,7 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Define the dependencies macro
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  controller_interface
   hardware_interface
   pluginlib
   rclcpp
@@ -61,6 +62,27 @@ ament_target_dependencies(
 # Export hardware plugins
 pluginlib_export_plugin_description_file(hardware_interface qev3d_hardware_plugin.xml)
 
+# Add library of the controller and export it
+generate_parameter_library(passthrough_controller_parameters
+  controllers/src/passthrough_controller_parameters.yaml
+)
+
+add_library(passthrough_controller SHARED
+  controllers/src/passthrough_controller.cpp
+)
+
+target_include_directories(passthrough_controller PUBLIC
+$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/controllers/include>
+$<INSTALL_INTERFACE:include/passthrough_controller>
+)
+
+target_link_libraries(passthrough_controller PUBLIC passthrough_controller_parameters)
+ament_target_dependencies(passthrough_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+
+pluginlib_export_plugin_description_file(controller_interface passthrough_controller.xml)
+
+
 # Install include directory
 install(
   DIRECTORY hardware_interface/include/
@@ -73,7 +95,7 @@ install(DIRECTORY description
 )
 
 install(
-  DIRECTORY bringup/launch bringup/config
+  DIRECTORY bringup/launch bringup/config test
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -91,12 +113,29 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
+install(
+  DIRECTORY controllers/include/
+  DESTINATION include/passthrough_controller
+)
+install(TARGETS
+    passthrough_controller
+    passthrough_controller_parameters
+  EXPORT export_passthrough_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
 
+install(
+  PROGRAMS
+    test/sine_wheel_testing.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Uncomment and modify the following lines to add tests
 # if(BUILD_TESTING)
 #   find_package(ament_cmake_pytest REQUIRED)
-#   ament_add_pytest_test(test/test_qev3d_ros2_control_launch.py)  # Rename to your own test files
+#   ament_add_pytest_test(test/sine_wheel_testing.py)  # Rename to your own test files
 # endif()
 
 # Export include directories
@@ -108,7 +147,7 @@ ament_export_libraries(${PROJECT_NAME})
 
 # Export targets (e.g. libraries, executables, etc.), used when you want to export both library and executables
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-
+ament_export_targets(export_passthrough_controller HAS_LIBRARY_TARGET)
 # Export dependencies
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
