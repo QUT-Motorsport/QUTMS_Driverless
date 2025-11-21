@@ -5,17 +5,17 @@ services:
   base:
     image: driverless:base
     build:
-      context: ../../
-      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.base
+      context: ..
+      dockerfile: ./docker/Dockerfile.base
       args:
-        ROS_DISTRO: humble
+        ROS_DISTRO: jazzy
       target: base
   # Overlay image containing the QUTMS workspace and user
   panda_terminal:
     image: driverless:terminal
     build:
-      context: ../../
-      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.overlay
+      context: ..
+      dockerfile: ./docker/Dockerfile.overlay
       args:
         USERNAME: ${USERNAME}
         UID: ${UID}
