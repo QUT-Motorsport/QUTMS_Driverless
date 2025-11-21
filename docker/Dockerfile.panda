@@ -1,6 +1,6 @@
-FROM ros:humble
+FROM ros:jazzy
 
-ENV ROS_DISTRO=humble
+ENV ROS_DISTRO=jazzy
 
 # Docker config setup
 ENV DEBIAN_FRONTEND=noninteractive
