@@ -17,8 +17,8 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile.overlay
       args:
-        USERNAME: ${USERNAME}
-        UID: ${UID}
+        USERNAME: qutms2
+        UID: 1001
       target: overlay
     # Interactive shell
     stdin_open: true
@@ -38,15 +38,15 @@ services:
       - /dev/shm:/dev/shm
       - /dev/sbg:/dev/sbg
       # Allows graphical programs in the container.
-      - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
+      - $HOME/.Xauthority:/home/qutms2/.Xauthority
       # Mount the workspace folders (some with read-write permissions)
-      - ../../QUTMS_Driverless/src:/home/${USERNAME}/QUTMS/QUTMS_Driverless/src
-      - ../../QUTMS_Driverless/tools:/home/${USERNAME}/QUTMS/QUTMS_Driverless/tools
-      - ../../roslogs:/home/${USERNAME}/QUTMS/roslogs
-      - ../../bags:/home/${USERNAME}/QUTMS/bags
-      - ../../build:/home/${USERNAME}/QUTMS/build
-      - ../../log:/home/${USERNAME}/QUTMS/log
-      - ../../install:/home/${USERNAME}/QUTMS/install
+      - ../../QUTMS_Driverless/src:/home/qutms2/QUTMS/QUTMS_Driverless/src
+      - ../../QUTMS_Driverless/tools:/home/qutms2/QUTMS/QUTMS_Driverless/tools
+      - ../../roslogs:/home/qutms2/QUTMS/roslogs
+      - ../../bags:/home/qutms2/QUTMS/bags
+      - ../../build:/home/qutms2/QUTMS/build
+      - ../../log:/home/qutms2/QUTMS/log
+      - ../../install:/home/qutms2/QUTMS/install
       # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
       # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
