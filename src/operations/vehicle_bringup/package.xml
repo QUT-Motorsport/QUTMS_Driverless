@@ -47,6 +47,7 @@
     <exec_depend>nav_bringup</exec_depend>
     <exec_depend>perception_bringup</exec_depend>
     <exec_depend>velocity_controller</exec_depend>
+    <exec_depend>rosbag_creator</exec_depend>
 
     <export>
         <build_type>ament_python</build_type>
