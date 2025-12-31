@@ -3,6 +3,9 @@ import time
 
 import diagnostic_updater
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
+from fsd_path_planning.cone_matching.core_cone_matching import ConeMatching
+from fsd_path_planning.sorting_cones.core_cone_sorting import ConeSorting
+from fsd_path_planning.calculate_path.core_calculate_path import CalculatePath
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 from tf2_ros import TransformException
@@ -171,7 +174,7 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub = self.create_publisher(OccupancyGrid, "/planning/boundary_grid", map_qos)
         # self.map_meta_pub = self.create_publisher(MapMetaData, "/planning/boundary_grid_metadata", map_qos)
 
-        self.path_planner = PathPlanner(**self.get_planner_cfg())
+        self.create_planner()
 
         self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
         self.diagnostic_updater.setHardwareID("Planner")
@@ -184,8 +187,10 @@ class FaSTTUBeBoundaryExtractor(Node):
 
         self.get_logger().info("---Planner node initalised---")
 
-    def get_planner_cfg(self):
+    def create_planner(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)
+
+        self.path_planner = PathPlanner(self.get_parameter("mission").value)
 
         # cone sorting
         self.declare_parameter("max_n_neighbors", 5)
@@ -204,29 +209,15 @@ class FaSTTUBeBoundaryExtractor(Node):
             "threshold_directional_angle": np.deg2rad(self.get_parameter("threshold_directional_angle").value),
             "threshold_absolute_angle": np.deg2rad(self.get_parameter("threshold_absolute_angle").value),
             "use_unknown_cones": self.get_parameter("use_unknown_cones").value,
+            "experimental_performance_improvements": True, # always on for FT
         }
+
+        self.path_planner.cone_sorting = ConeSorting(**cone_sorting_kwargs)
 
         # cone fitting
         self.declare_parameter("smoothing", 0.2)
         self.declare_parameter("predict_every", 0.1)
         self.declare_parameter("max_deg", 3)
-
-        cone_fitting_kwargs = {
-            "smoothing": self.get_parameter("smoothing").value,
-            "predict_every": self.get_parameter("predict_every").value,
-            "max_deg": self.get_parameter("max_deg").value,
-        }
-
-        # path calculation
-        self.declare_parameter("maximal_distance_for_valid_path", 5)
-        self.declare_parameter("mpc_path_length", 20)
-        self.declare_parameter("mpc_prediction_horizon", 40)
-
-        path_calculation_kwargs = {
-            "maximal_distance_for_valid_path": self.get_parameter("maximal_distance_for_valid_path").value,
-            "mpc_path_length": self.get_parameter("mpc_path_length").value,
-            "mpc_prediction_horizon": self.get_parameter("mpc_prediction_horizon").value,
-        }
 
         # cone matching
         self.declare_parameter("min_track_width", 3.5)
@@ -241,13 +232,27 @@ class FaSTTUBeBoundaryExtractor(Node):
             "matches_should_be_monotonic": self.get_parameter("matches_should_be_monotonic").value,
         }
 
-        return {
-            "mission": self.get_parameter("mission").value,
-            "cone_sorting_kwargs": cone_sorting_kwargs,
-            "cone_fitting_kwargs": cone_fitting_kwargs,
-            "path_calculation_kwargs": path_calculation_kwargs,
-            "cone_matching_kwargs": cone_matching_kwargs,
+        self.path_planner.cone_matching = ConeMatching(**cone_matching_kwargs)
+
+        # path calculation
+        self.declare_parameter("maximal_distance_for_valid_path", 5)
+        self.declare_parameter("mpc_path_length", 20)
+        self.declare_parameter("mpc_prediction_horizon", 40)
+
+        path_calculation_kwargs = {
+            "maximal_distance_for_valid_path": self.get_parameter("maximal_distance_for_valid_path").value,
+            "mpc_path_length": self.get_parameter("mpc_path_length").value,
+            "mpc_prediction_horizon": self.get_parameter("mpc_prediction_horizon").value,
         }
+
+        cone_fitting_kwargs = {
+            "smoothing": self.get_parameter("smoothing").value,
+            "predict_every": self.get_parameter("predict_every").value,
+            "max_deg": self.get_parameter("max_deg").value,
+        }
+
+        self.path_planner.pathing = CalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
+
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detections")
@@ -262,6 +267,8 @@ class FaSTTUBeBoundaryExtractor(Node):
         except TransformException as e:
             self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
             return
+
+        self.get_logger().fatal("RUNNING PLANNER UPDATE")
 
         car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
         car_direction = quat2euler(

@@ -6,4 +6,4 @@ requests
 simplejpeg
 tornado
 numpy<2.0.0
-git+https://git@github.com/QUT-Motorsport/ft-fsd-path-planning.git
+git+https://git@github.com/papalotis/ft-fsd-path-planning.git
