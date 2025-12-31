@@ -35,7 +35,7 @@ class TrackdriveHandler(ShutdownNode):
     controller_id = "TrackdriveRPP"
 
     def __init__(self):
-        super().__init__("trackdrive_logic_node")
+        super().__init__("trackdrive_handler_node")
 
         # callbacks
         self.timer_cb_group = MutuallyExclusiveCallbackGroup()
@@ -65,8 +65,10 @@ class TrackdriveHandler(ShutdownNode):
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
-            self.laps = 1  # skip lap 0
+            # self.laps = 1  # skip lap 0
             self.mission_started = True
+            self.released = True
+            self.sbg_operational = True
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
 
@@ -82,7 +84,7 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
-            self.recording = self.start_recording("trackdrive")
+            # self.recording = self.start_recording("trackdrive")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
 
@@ -194,8 +196,8 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Lap {self.laps} completed")
 
         # we have finished lap "1"
-        # if self.laps > 1:
-        #     self.controller_id = "TrackdriveRPPFast"
+        if self.laps > 1:
+            self.controller_id = "TrackdriveRPPFast"
 
         # we have finished lap "10"
         if self.laps == 10:
