@@ -1,12 +1,9 @@
-FROM driverless:base as overlay
+FROM qutms_driverless:base as overlay
 
 ARG USERNAME
 ARG UID
 ARG GID=dialout
 ENV NUMBA_DISABLE_JIT=1
-
-RUN pip install --break-system-packages "numpy<2.0"
-# PLEASE PLEASE PLEASE fix this eventually, requirements.txt is cooked
 
 # create user and set no password required
 RUN useradd \
@@ -14,17 +11,13 @@ RUN useradd \
         -m \
         -d /home/${USERNAME}/ \
         -u ${UID} \
-        -g ${GID} \
+        -g ${GID} \ 
         -G sudo,video,audio \
         ${USERNAME} && \
     echo ${USERNAME}:${USERNAME} | chpasswd && \
     echo "${USERNAME} ALL=NOPASSWD: ALL" >> /etc/sudoers
 
 WORKDIR /home/${USERNAME}/QUTMS
-
-# RUN mv /tmp/slam_toolbox ./slam_toolbox
-RUN mv /tmp/sbg_ros2_driver ./sbg_ros2_driver
-RUN mv /tmp/zenoh-plugin-ros2dds ./zenoh-plugin-ros2dds
 
 # ==============================================================================
 #                          Build and initialise ROS 2

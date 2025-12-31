@@ -3,22 +3,22 @@ version: "3.9"
 services:
   # Base image containing dependencies
   base:
-    image: driverless:base
+    image: qutms_driverless:base
     build:
-      context: ..
+      context: ../
       dockerfile: ./docker/Dockerfile.base
       args:
         ROS_DISTRO: jazzy
       target: base
   # Overlay image containing the QUTMS workspace and user
   panda_terminal:
-    image: driverless:terminal
+    image: qutms_driverless:terminal
     build:
-      context: ..
+      context: ../
       dockerfile: ./docker/Dockerfile.overlay
       args:
-        USERNAME: qutms2
-        UID: 1001
+        USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+        UID: ${UID?UID env var not set! Use the Makefile}
       target: overlay
     # Interactive shell
     stdin_open: true
@@ -38,15 +38,15 @@ services:
       - /dev/shm:/dev/shm
       - /dev/sbg:/dev/sbg
       # Allows graphical programs in the container.
-      - $HOME/.Xauthority:/home/qutms2/.Xauthority
+      - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
       # Mount the workspace folders (some with read-write permissions)
-      - ../../QUTMS_Driverless/src:/home/qutms2/QUTMS/QUTMS_Driverless/src
-      - ../../QUTMS_Driverless/tools:/home/qutms2/QUTMS/QUTMS_Driverless/tools
-      - ../../roslogs:/home/qutms2/QUTMS/roslogs
-      - ../../bags:/home/qutms2/QUTMS/bags
-      - ../../build:/home/qutms2/QUTMS/build
-      - ../../log:/home/qutms2/QUTMS/log
-      - ../../install:/home/qutms2/QUTMS/install
+      - ../../QUTMS_Driverless/src:/home/${USERNAME}/QUTMS/QUTMS_Driverless/src
+      - ../../QUTMS_Driverless/tools:/home/${USERNAME}/QUTMS/QUTMS_Driverless/tools
+      - ../../roslogs:/home/${USERNAME}/QUTMS/roslogs
+      - ../../bags:/home/${USERNAME}/QUTMS/bags
+      - ../../build:/home/${USERNAME}/QUTMS/build
+      - ../../log:/home/${USERNAME}/QUTMS/log
+      - ../../install:/home/${USERNAME}/QUTMS/install
       # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
       # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
