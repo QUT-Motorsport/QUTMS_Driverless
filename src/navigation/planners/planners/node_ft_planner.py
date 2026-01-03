@@ -268,8 +268,6 @@ class FaSTTUBeBoundaryExtractor(Node):
             self.get_logger().warn("Transform exception: " + str(e), throttle_duration_sec=1)
             return
 
-        self.get_logger().fatal("RUNNING PLANNER UPDATE")
-
         car_position = np.array([map_to_base.transform.translation.x, map_to_base.transform.translation.y])
         car_direction = quat2euler(
             [
