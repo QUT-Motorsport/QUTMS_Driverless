@@ -3,6 +3,7 @@ FROM qutms_driverless:base as overlay
 ARG USERNAME
 ARG UID
 ARG GID=dialout
+# disable numba jit to stop cache setting and retrieving slowing path planner down
 ENV NUMBA_DISABLE_JIT=1
 
 # create user and set no password required
@@ -24,9 +25,6 @@ WORKDIR /home/${USERNAME}/QUTMS
 # ==============================================================================
 
 USER ${USERNAME}
-
-COPY ./src/navigation/planners/scripts/pre_calc.py ./pre_calc.py
-# RUN python3 pre_calc.py
 
 COPY ./docker/cyclonedds.xml ./cyclonedds.xml
 ENV CYCLONEDDS_URI=file:///home/${USERNAME}/QUTMS/cyclonedds.xml

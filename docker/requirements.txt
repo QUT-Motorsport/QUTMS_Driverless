@@ -7,3 +7,4 @@ simplejpeg
 tornado
 numpy<2.0.0
 git+https://git@github.com/papalotis/ft-fsd-path-planning.git
+numba==0.63.1

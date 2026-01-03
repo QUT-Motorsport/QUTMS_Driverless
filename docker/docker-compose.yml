@@ -47,8 +47,6 @@ services:
       - ../../build:/home/${USERNAME}/QUTMS/build
       - ../../log:/home/${USERNAME}/QUTMS/log
       - ../../install:/home/${USERNAME}/QUTMS/install
-      # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
-      # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
       - /dev/dri:/dev/dri
     # Start the terminal
