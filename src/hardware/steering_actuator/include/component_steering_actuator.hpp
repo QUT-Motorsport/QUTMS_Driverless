@@ -158,15 +158,15 @@ class SteeringActuator : public rclcpp::Node, public CanInterface {
     c5e_state desired_state_ = states[RTSO];
     c5e_state current_state_ = states[NRTSO];
     uint16_t control_method_ = MODE_RELATIVE;
-    bool motor_enabled_ = false;
-    bool initial_enc_saved_ = false;
+    bool motor_enabled_ = true;
+    bool initial_enc_saved_ = true;
     int32_t initial_enc_ = 0;
-    bool steering_ang_received_ = false;
+    bool steering_ang_received_ = true;
     int32_t offset_ = 0;
     int32_t current_enc_revolutions_ = 0;  // Current Encoder Revolutions (Stepper encoder)
     uint32_t current_velocity_;
     uint32_t current_acceleration_;
-    bool g2g_ = false;
+    bool g2g_ = true;
 
     void update_parameters(const rcl_interfaces::msg::ParameterEvent &event);
     void configure_c5e();
