@@ -175,18 +175,18 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            stdout_linebuf_envvar,
-            use_zenoh_bridge_arg,
-            rosboard_node,
-            display_node,
-            foxglove_node,
-            zenoh_node,
-            sbg_launch,
+            # stdout_linebuf_envvar,
+            # use_zenoh_bridge_arg,
+            # rosboard_node,
+            # display_node,
+            # foxglove_node,
+            # zenoh_node,
+            # sbg_launch,
             scs_container,
-            urdf_launch,
-            perception_launch,
-            rosbag_creator_node,
-            joy_launch,
-            twist_to_ackermann_launch,
+            # urdf_launch,
+            # perception_launch,
+            # rosbag_creator_node,
+            # joy_launch,
+            # twist_to_ackermann_launch,
         ]
     )
