@@ -12,8 +12,8 @@ make run target=panda
 
 # [Service]
 # Type=simple
-# User=qev3d
-# Group=qev3d
+# User=qutms
+# Group=qutms
 # ExecStart=/home/qutms/repos/QUTMS_Driverless/docker/panda_startup.sh
 # TimeoutStartSec=0
 # RemainAfterExit=yes
