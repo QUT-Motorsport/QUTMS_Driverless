@@ -86,7 +86,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            # velodyne_pointcloud_container,
+            velodyne_pointcloud_container,
             lidar_detector_node,
             pointcloud_to_laserscan_node,
         ]

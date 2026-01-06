@@ -48,7 +48,7 @@ def generate_launch_description():
         [
             system_launch,
             stdout_linebuf_envvar,
-            # sbg_launch,
+            sbg_launch,
             # system_watcher,
             # launch_system_on_watcher_exit,
             # mission_launch,
