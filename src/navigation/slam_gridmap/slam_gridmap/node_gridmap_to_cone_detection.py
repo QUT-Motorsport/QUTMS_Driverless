@@ -10,7 +10,7 @@ from nav_msgs.msg import OccupancyGrid
 
 
 # node class object that gets created
-def cone_msg(x: float, y: float) -> Cone:
+def cone_msg(x: float, y: float, resolution=0.1) -> Cone:
     """
     Create a Cone message from x and y coordinates.
 
@@ -21,7 +21,7 @@ def cone_msg(x: float, y: float) -> Cone:
     Returns:
         Cone: The cone message.
     """
-    location: Point = Point(x=x / 10, y=y / 10, z=0.0)
+    location: Point = Point(x=x*resolution, y=y*resolution, z=0.0)
 
     # SLAM does not identify cone colour
     return Cone(location=location, color=Cone.UNKNOWN)
@@ -55,6 +55,7 @@ class SLAMDetectorNode(Node):
         gridmap_info = map_message.info
         map_width = gridmap_info.width
         map_height = gridmap_info.height
+        resolution = gridmap_info.resolution
 
         gridmap_origin_x = gridmap_info.origin.position.x
         gridmap_origin_y = gridmap_info.origin.position.y
@@ -62,17 +63,11 @@ class SLAMDetectorNode(Node):
         gridmap_data = map_message.data
         map_2d = np.array(gridmap_data).reshape((map_height, map_width))
 
-        # point_coords = []
-        # for row in range(map_height):
-        #     for col in range(map_width):
-        #         cell = map_2d[row, col]
-        #         if cell == 100:
-        #             point_coords.append((col + gridmap_origin_x * 10, (row + gridmap_origin_y * 10)))
-
         # convert row, col checks to a numpy operation (faster)
         cone_indices = np.where(map_2d == 100)  # Get the indices of the cones
         point_coords = np.column_stack(
-            (cone_indices[1] + gridmap_origin_x * 10, cone_indices[0] + gridmap_origin_y * 10)
+            (cone_indices[1] + int(gridmap_origin_x / resolution), 
+             cone_indices[0] + int(gridmap_origin_y / resolution))
         )
 
         # check if there are any cones
@@ -102,7 +97,7 @@ class SLAMDetectorNode(Node):
             return
 
         # Convert cone locations to ConeDetection messages and publish
-        detected_cones: list = [cone_msg(cone[0], cone[1]) for cone in object_centers]
+        detected_cones: list = [cone_msg(cone[0], cone[1], resolution) for cone in object_centers]
         detection_msg = ConeDetectionStamped(header=map_message.header, cones=detected_cones)
         self.detection_publisher.publish(detection_msg)
 
