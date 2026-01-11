@@ -40,10 +40,13 @@ class SLAMDetectorNode(Node):
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
 
         # DBSCAN parameters
-        self.declare_parameter("epsilon", 7)
+        self.declare_parameter("epsilon", 7.0)
         self.declare_parameter("min_points", 5)
+        self.declare_parameter("max_points", 20)
         self.epsilon = self.get_parameter("epsilon").value
         self.min_points = self.get_parameter("min_points").value
+        self.max_points = self.get_parameter("max_points").value
+        self.get_logger().debug(f"epsilon: {self.epsilon}, min_points: {self.min_points}, max_points: {self.max_points}")
 
         self.get_logger().info("---Gridmap to Cone Detection node initialised---")
 
@@ -77,7 +80,7 @@ class SLAMDetectorNode(Node):
         # check if its actually a 1D array (only one cone), if so, make it 2D
         if point_coords.ndim == 1:
             point_coords = np.expand_dims(point_coords, axis=0)
-
+        
         clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(point_coords)
         labels = clustering.labels_
 
@@ -91,6 +94,9 @@ class SLAMDetectorNode(Node):
                 object_centers[idx] = objects[idx][0]
             else:  # multiple points, get the mean
                 object_centers[idx] = np.mean(np.column_stack((objects[idx][0], objects[idx][1])), axis=1)
+
+        # check if clusters are too big - too many points
+        object_centers = object_centers[np.where(np.array([len(obj) for obj in objects]) < self.max_points)]
 
         self.get_logger().debug(f"Detected {len(object_centers)} cones", throttle_duration_sec=1)
         if len(object_centers) == 0:

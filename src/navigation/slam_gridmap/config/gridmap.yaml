@@ -1,4 +1,5 @@
 gridmap_to_cone_detection_node:
   ros__parameters:
     epsilon: 7.0
-    min_points: 4  # change this if SLAM map changes
+    min_points: 2  # change if SLAM map resolution changes
+    max_points: 20
