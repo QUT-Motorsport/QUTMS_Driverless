@@ -53,12 +53,12 @@ def generate_launch_description():
             #     extra_arguments=[{"use_intra_process_comms": True}],
             # ),
             # composed node for faster msg transfer
-            ComposableNode(
-                package="points_maker",
-                plugin="points_maker::PointsMakerNode",
-                name="points_maker_node",
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
+            # ComposableNode(
+            #     package="points_maker",
+            #     plugin="points_maker::PointsMakerNode",
+            #     name="points_maker_node",
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
             ComposableNode(
                 package="ground_plane_segmenter",
                 plugin="ground_plane_segmenter::GroundPlaneSegmenterNode",
@@ -71,7 +71,7 @@ def generate_launch_description():
                 plugin="pointcloud_to_laserscan::PointCloudToLaserScanNode",
                 name="pointcloud_to_laserscan_node",
                 parameters=[pointcloud_to_laserscan_params_file],
-                remappings=[("cloud_in", "/lidar/objects"), ("scan", "/lidar/converted_2D_scan")],
+                remappings=[("cloud_in", "/lidar/cone_points"), ("scan", "/lidar/converted_2D_scan")],
                 extra_arguments=[{"use_intra_process_comms": True}],
             )
         ],
@@ -92,7 +92,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            velodyne_pointcloud_container,
+            pointcloud_container,
             lidar_detector_node,
         ]
     )
