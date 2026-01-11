@@ -21,8 +21,12 @@ def generate_launch_description():
 
     gps_params_file = str(get_package_share_path("ground_plane_segmenter") / "config" / "ground_plane_segmenter.yaml")
 
-    velodyne_pointcloud_container = ComposableNodeContainer(
-        name="velodyne_container",
+    pointcloud_to_laserscan_params_file = os.path.join(
+        get_package_share_path("perception_bringup"), "config", "pointcloud_to_laserscan.yaml"
+    )
+
+    pointcloud_container = ComposableNodeContainer(
+        name="pointcloud_container",
         namespace="",
         package="rclcpp_components",
         executable="component_container",
@@ -62,6 +66,14 @@ def generate_launch_description():
                 parameters=[gps_params_file],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
+            ComposableNode(
+                package="pointcloud_to_laserscan",
+                plugin="pointcloud_to_laserscan::PointCloudToLaserScanNode",
+                name="pointcloud_to_laserscan_node",
+                parameters=[pointcloud_to_laserscan_params_file],
+                remappings=[("cloud_in", "/lidar/objects"), ("scan", "/lidar/converted_2D_scan")],
+                extra_arguments=[{"use_intra_process_comms": True}],
+            )
         ],
         output="both",
     )
@@ -77,23 +89,10 @@ def generate_launch_description():
         parameters=[lidar_detection_params_file],
     )
 
-    pointcloud_to_laserscan_params_file = os.path.join(
-        get_package_share_path("perception_bringup"), "config", "pointcloud_to_laserscan.yaml"
-    )
-
-    pointcloud_to_laserscan_node = Node(
-        package="pointcloud_to_laserscan",
-        executable="pointcloud_to_laserscan_node",
-        name="pointcloud_to_laserscan_node",
-        output="screen",
-        parameters=[pointcloud_to_laserscan_params_file],
-        remappings=[("cloud_in", "/lidar/cone_points"), ("scan", "/lidar/converted_2D_scan")],
-    )
 
     return LaunchDescription(
         [
             velodyne_pointcloud_container,
             lidar_detector_node,
-            pointcloud_to_laserscan_node,
         ]
     )
