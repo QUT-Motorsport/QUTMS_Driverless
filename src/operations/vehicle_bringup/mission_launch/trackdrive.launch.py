@@ -25,6 +25,9 @@ def generate_launch_description():
     grid_to_cone_node = Node(
         package="slam_gridmap",
         executable="gridmap_to_cone_detection_node",
+        parameters=[
+            get_package_share_path("slam_gridmap") / "config" / "gridmap.yaml",
+        ],
         output="both",
     )
     planner_node = Node(
