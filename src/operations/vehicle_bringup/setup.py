@@ -14,6 +14,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "launch"), glob("launch/*.launch.py")),
         (os.path.join("share", package_name, "mission_launch"), glob("mission_launch/*.launch.py")),
+        (os.path.join("share", package_name, "config"), glob("config/*")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -24,6 +25,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
+            "vehicle_supervisor_spoof_node = vehicle_bringup.node_vehicle_supervisor_spoof:main",
             "vehicle_supervisor_node = vehicle_bringup.node_vehicle_supervisor:main",
             "inspection_handler_node = vehicle_bringup.node_inspection_handler:main",
             "trackdrive_handler_node = vehicle_bringup.node_trackdrive_handler:main",

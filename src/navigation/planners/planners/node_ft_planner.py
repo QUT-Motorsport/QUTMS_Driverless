@@ -174,12 +174,12 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.path_planner = PathPlanner(**self.get_planner_cfg())
 
         self.diagnostic_updater = diagnostic_updater.Updater(self, 1)
-        self.diagnostic_updater.setHardwareID("none")
+        self.diagnostic_updater.setHardwareID("Planner")
         self.diagnostic_pub = diagnostic_updater.TopicDiagnostic(
             "/planning/midline_path",
             self.diagnostic_updater,
             diagnostic_updater.FrequencyStatusParam({"min": 5, "max": 10}, 1, 10),
-            diagnostic_updater.TimeStampStatusParam(0.5),
+            diagnostic_updater.TimeStampStatusParam(),
         )
 
         self.get_logger().info("---Planner node initalised---")
@@ -276,20 +276,20 @@ class FaSTTUBeBoundaryExtractor(Node):
         if car_position[0] < 0.5 and self.initial_planning:
             # make a cone detection stamped msg from pre-track list
             points = [
-                [12.062088012695312, 2.0613708496093754],
-                [15.124588012695314, 2.248870849609375],
-                [3.812088012695313, 1.6238708496093752],
-                [18.499588012695312, 2.811370849609375],
-                [9.624588012695312, 1.9988708496093752],
-                [12.499588012695314, -0.688629150390625],
-                [14.999588012695314, -0.626129150390625],
-                [19.124588012695316, -0.313629150390625],
-                [4.187088012695313, -1.5011291503906252],
-                [9.374588012695312, -0.9386291503906252],
-                [6.187088012695313, 1.873870849609375],
-                [6.3745880126953125, -1.188629150390625],
-                [5.6245880126953125, 1.7488708496093752],
-                [5.9370880126953125, -1.251129150390625],
+                [12.062088012695312, 1.751],
+                [15.124588012695314, 1.753],
+                [3.812088012695313, 1.754],
+                [18.499588012695312, 1.755],
+                [9.624588012695312, 1.756],
+                [12.499588012695314, -1.757],
+                [14.999588012695314, -1.758],
+                [19.124588012695316, -1.759],
+                [4.187088012695313, -1.751],
+                [9.374588012695312, -1.752],
+                [6.187088012695313, 1.753],
+                [6.3745880126953125, -1.754],
+                [5.6245880126953125, 1.755],
+                [5.9370880126953125, -1.756],
             ]
 
             self.current_track = ConeDetectionStamped()
@@ -399,8 +399,8 @@ class FaSTTUBeBoundaryExtractor(Node):
         # self.map_pub.publish(self.current_map)
         # self.map_meta_pub.publish(self.current_map.info)
 
-        # convert stamp time to nanosecs
-        stamp_float = self.current_track.header.stamp.sec + self.current_track.header.stamp.nanosec * 1e-9
+        # convert current time to nanosecs
+        stamp_float = time.time()
         self.diagnostic_pub.tick(stamp_float)
 
 

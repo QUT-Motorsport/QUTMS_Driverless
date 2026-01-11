@@ -8,6 +8,7 @@ from tf2_ros.transform_listener import TransformListener
 
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
 from driverless_msgs.msg import AVStateStamped, ROSStateStamped, Shutdown
@@ -15,17 +16,14 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import UInt8
 
-from std_srvs.srv import SetBool
-
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
 class TrackdriveHandler(ShutdownNode):
     mission_started = False
-    good_to_go = False
-    process = None
+    sbg_operational = False
     debug = False
-    record: bool = False
+    released = False
 
     sent_init = False
     laps = 0
@@ -39,17 +37,19 @@ class TrackdriveHandler(ShutdownNode):
     def __init__(self):
         super().__init__("trackdrive_logic_node")
 
+        # callbacks
+        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
+
         # subscribers
-        self.create_subscription(AVStateStamped, "system/av_state", self.av_state_callback, 1)
+        self.create_subscription(
+            AVStateStamped, "system/av_state", self.av_state_callback, 1, callback_group=self.sub_cb_group
+        )
         self.create_subscription(ROSStateStamped, "system/ros_state", self.ros_state_callback, 1)
         self.create_subscription(Path, "planning/midline_path", self.path_callback, 1)
 
-        self.create_timer((1 / 20), self.timer_callback)
+        self.create_timer((1 / 20), self.timer_callback, callback_group=self.timer_cb_group)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-
-        # create recording service
-        self.create_service(SetBool, "system/record", self.record_callback)
 
         # publishers
         self.shutdown_pub = self.create_publisher(Shutdown, "system/shutdown", 1)
@@ -65,6 +65,7 @@ class TrackdriveHandler(ShutdownNode):
         if self.get_parameter("debug").value:
             self.get_logger().warn("---DEBUG MODE ENABLED---")
 
+            self.laps = 1  # skip lap 0
             self.mission_started = True
             self.last_lap_time = time.time()
             self.lap_trig_pub.publish(UInt8(data=0))
@@ -77,26 +78,20 @@ class TrackdriveHandler(ShutdownNode):
                 "launch",
                 "vehicle_bringup",
                 "trackdrive.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
+            self.recording = self.start_recording("trackdrive")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
-
-    def record_callback(self, request, response):
-        self.record = request.data
-        response.success = True
-        self.get_logger().info(f"Recording set to {self.record}")
-        return response
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
         if (
             (msg.state == AVStateStamped.START_MISSION or msg.state == AVStateStamped.DRIVING)
             and not self.mission_started
-            and self.good_to_go
+            and self.sbg_operational
         ):
             self.mission_started = True
             self.last_lap_time = time.time()
@@ -110,20 +105,25 @@ class TrackdriveHandler(ShutdownNode):
                 "launch",
                 "vehicle_bringup",
                 "trackdrive.launch.py",
-                f"record:={self.record}",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
-            self.process = Popen(command)
+            self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
+            self.recording = self.start_recording("trackdrive")
+
+        if msg.state == AVStateStamped.DRIVING and not self.released:
+            time.sleep(3)
+            self.released = True
+            self.get_logger().info("RELEASED BRAKES")
 
     def ros_state_callback(self, msg: ROSStateStamped):
-        if msg.good_to_go:
-            self.good_to_go = True
+        if msg.sbg_operational:
+            self.sbg_operational = True
 
     def path_callback(self, msg: Path):
         # receive path and convert to numpy array
-        # if self.path is not None:
-        #     return
+        if not self.released:
+            return
         self.get_logger().info(f"Spline Path Recieved - length: {len(msg.poses)}", once=True)
 
         # Sends a `NavThroughPoses` action request
@@ -194,8 +194,8 @@ class TrackdriveHandler(ShutdownNode):
             self.get_logger().info(f"Lap {self.laps} completed")
 
         # we have finished lap "1"
-        if self.laps > 1:
-            self.controller_id = "TrackdriveRPPFast"
+        # if self.laps > 1:
+        #     self.controller_id = "TrackdriveRPPFast"
 
         # we have finished lap "10"
         if self.laps == 10:
@@ -209,6 +209,7 @@ class TrackdriveHandler(ShutdownNode):
 def main(args=None):
     rclpy.init(args=args)
     node = TrackdriveHandler()
-    rclpy.spin(node)
+    # rclpy.spin(node)
+    node.spin()
     node.destroy_node()
     rclpy.shutdown()

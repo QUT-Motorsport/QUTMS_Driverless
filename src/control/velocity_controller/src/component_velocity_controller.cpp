@@ -12,6 +12,7 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
     this->declare_parameter<float>("histerisis_kick_ms", 0);
     this->declare_parameter<float>("histerisis_reset_ms", 0);
     this->declare_parameter<float>("min_time_to_max_accel_sec", 2.0);
+    this->declare_parameter<int>("loop_ms", 20);
 
     this->update_parameters(rcl_interfaces::msg::ParameterEvent());
 
@@ -41,7 +42,10 @@ VelocityController::VelocityController(const rclcpp::NodeOptions& options) : Nod
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("can/canbus_carbound", 10);
 
     // Acceleration command publisher (to Supervisor so it can be sent in the DVL heartbeat)
-    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/velocity", 10);
+    velocity_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/combined_velocity", 10);
+
+    // Torque request (data and debug)
+    torque_pub_ = this->create_publisher<std_msgs::msg::Float32>("vehicle/torque_request", 10);
 
     // Param callback
     param_event_handler_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
@@ -60,6 +64,7 @@ void VelocityController::update_parameters(const rcl_interfaces::msg::ParameterE
     this->get_parameter("histerisis_kickin_ms", histerisis_kickin_ms_);
     this->get_parameter("histerisis_reset_ms", histerisis_reset_ms_);
     this->get_parameter("min_time_to_max_accel_sec", min_time_to_max_accel_sec_);
+    this->get_parameter("loop_ms", loop_ms_);
     max_accel_per_tick_ = loop_ms_ / (1000 * min_time_to_max_accel_sec_);
 
     RCLCPP_INFO(this->get_logger(), "Kp: %f, max_accel_per_tick: %f", Kp_, max_accel_per_tick_);
@@ -70,6 +75,8 @@ void VelocityController::av_state_callback(const driverless_msgs::msg::AVStateSt
     // enabled if driving and not in inspection mission
     if (msg->state == driverless_msgs::msg::AVStateStamped::DRIVING && g2g_) {
         motors_enabled_ = true;
+    } else {
+        motors_enabled_ = false;
     }
 }
 
@@ -98,60 +105,71 @@ void VelocityController::controller_callback() {
         RCLCPP_INFO_ONCE(this->get_logger(), "Motors not enabled, awaiting State::DRIVING");
         return;
     }
-    if (!received_velocity_ || !received_ackermann_) {
-        RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for target and current velocities");
-        return;
-    }
-    RCLCPP_INFO_ONCE(this->get_logger(),
-                     "Motors enabled, Received target and current velocities\n - Starting control loop");
+    RCLCPP_INFO(this->get_logger(), "Motors enabled, Received target and current velocities\n - Starting control loop");
 
-    // calculate error
-    float error = target_ackermann_->drive.speed - avg_velocity_;
-    integral_error_ += error;
+    float accel = 0;
+    if (state_->mission != driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        if (!received_velocity_ || !received_ackermann_) {
+            RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for target and current velocities");
+            return;
+        }
+        // calculate error
+        float error = target_ackermann_->drive.speed - avg_velocity_;
+        integral_error_ += error;
 
-    // clip the integral error based on max_integral_torque_
-    if (integral_error_ < 0) {
-        integral_error_ = 0;
-    } else if (integral_error_ > (max_integral_torque_ / Ki_)) {
-        integral_error_ = max_integral_torque_ / Ki_;
-    }
+        // clip the integral error based on max_integral_torque_
+        if (integral_error_ < 0) {
+            integral_error_ = 0;
+        } else if (integral_error_ > (max_integral_torque_ / Ki_)) {
+            integral_error_ = max_integral_torque_ / Ki_;
+        }
 
-    if (avg_velocity_ < histerisis_reset_ms_) {
-        integral_error_ = 0;
-    }
+        if (avg_velocity_ < histerisis_reset_ms_) {
+            integral_error_ = 0;
+        }
 
-    // calculate control variable
-    float p_term = Kp_ * error;
-    float i_term = Ki_ * integral_error_;
+        // calculate control variable
+        float p_term = Kp_ * error;
+        float i_term = Ki_ * integral_error_;
 
-    float accel = p_term;
-    if (avg_velocity_ > histerisis_kickin_ms_) {
-        accel += i_term;
-    }
+        accel = p_term;
+        if (avg_velocity_ > histerisis_kickin_ms_) {
+            accel += i_term;
+        }
 
-    if ((accel - prev_accel_) > max_accel_per_tick_) {
-        accel = prev_accel_ + max_accel_per_tick_;
-    }
+        if ((abs(accel) - abs(prev_accel_)) > max_accel_per_tick_) {
+            if (accel >= 0) {
+                accel = prev_accel_ + max_accel_per_tick_;
+            } else {
+                accel = prev_accel_ - max_accel_per_tick_;
+            }
+        }
 
-    // limit output accel to be between -1 (braking) and 1 (accel)
-    if (accel > 1) {
-        accel = 1;
-    } else if (accel < -1) {
-        accel = -1;
-    }
-
-    if (state_->mission == driverless_msgs::msg::AVStateStamped::INSPECTION) {
+        // limit output accel to be between -1 (braking) and 1 (accel)
+        if (accel > 1) {
+            accel = 1;
+        } else if (accel < -1) {
+            accel = -1;
+        }
+    } else {
         accel = 0.10;  // THIS COULD BE A PARAM, TODO
     }
 
     // create control ackermann based off desired and calculated acceleration
-    Torque_Request_t torque_request;
-    torque_request.torque = accel * 100;  // convert to percentage
-    auto torque_heartbeat = Compose_Torque_Request_Heartbeat(&torque_request);
+    Request_t request_msg;
+    request_msg.torque = accel * 100;  // convert to percentage
+    request_msg.steering = target_ackermann_->drive.steering_angle;
+    request_msg.speed = target_ackermann_->drive.speed;
+    auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);
     this->can_pub_->publish(
-        std::move(this->_d_2_f(torque_heartbeat.id, true, torque_heartbeat.data, sizeof(torque_heartbeat.data))));
+        std::move(this->_d_2_f(request_heartbeat.id, true, request_heartbeat.data, sizeof(request_heartbeat.data))));
 
     prev_accel_ = accel;
+
+    // publish torque
+    std_msgs::msg::Float32::UniquePtr torque_msg(new std_msgs::msg::Float32());
+    torque_msg->data = accel;
+    torque_pub_->publish(std::move(torque_msg));
 }
 
 }  // namespace velocity_controller

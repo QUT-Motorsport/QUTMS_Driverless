@@ -1,0 +1,10 @@
+vel_to_ackermann_node:
+  ros__parameters:
+    Kp: 4.0
+    wheelbase: 1.5
+    distance_ctrl: True
+    distance_Kp: -20.0
+    distance_max: 1.5
+    angle_limit: 40.0
+    map_frame: track
+    base_frame: base_footprint

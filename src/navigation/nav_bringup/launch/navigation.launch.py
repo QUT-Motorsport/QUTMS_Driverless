@@ -99,7 +99,6 @@ def generate_launch_description():
                 parameters=[{"use_sim_time": use_sim_time, "autostart": autostart, "node_names": lifecycle_nodes}],
             ),
         ],
-        output="both",
     )
 
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
