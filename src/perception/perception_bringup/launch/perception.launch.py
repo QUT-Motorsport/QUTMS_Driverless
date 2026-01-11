@@ -27,28 +27,34 @@ def generate_launch_description():
         package="rclcpp_components",
         executable="component_container",
         composable_node_descriptions=[
-            ComposableNode(
-                package="velodyne_driver",
-                plugin="velodyne_driver::VelodyneDriver",
-                name="velodyne_driver_node",
-                parameters=[vlp32_params_file],
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
-            ComposableNode(
-                package="velodyne_pointcloud",
-                plugin="velodyne_pointcloud::Transform",
-                name="velodyne_transform_node",
-                parameters=[transform_params],
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
-            ComposableNode(
-                package="velodyne_laserscan",
-                plugin="velodyne_laserscan::VelodyneLaserScan",
-                name="velodyne_laserscan_node",
-                parameters=[vlp32_params_file],
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
+            # ComposableNode(
+            #     package="velodyne_driver",
+            #     plugin="velodyne_driver::VelodyneDriver",
+            #     name="velodyne_driver_node",
+            #     parameters=[vlp32_params_file],
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
+            # ComposableNode(
+            #     package="velodyne_pointcloud",
+            #     plugin="velodyne_pointcloud::Transform",
+            #     name="velodyne_transform_node",
+            #     parameters=[transform_params],
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
+            # ComposableNode(
+            #     package="velodyne_laserscan",
+            #     plugin="velodyne_laserscan::VelodyneLaserScan",
+            #     name="velodyne_laserscan_node",
+            #     parameters=[vlp32_params_file],
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
             # composed node for faster msg transfer
+            ComposableNode(
+                package="points_maker",
+                plugin="points_maker::PointsMakerNode",
+                name="points_maker_node",
+                extra_arguments=[{"use_intra_process_comms": True}],
+            ),
             ComposableNode(
                 package="ground_plane_segmenter",
                 plugin="ground_plane_segmenter::GroundPlaneSegmenterNode",
