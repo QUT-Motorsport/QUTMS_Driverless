@@ -1,0 +1,4 @@
+gridmap_to_cone_detection_node:
+  ros__parameters:
+    epsilon: 7.0
+    min_points: 3

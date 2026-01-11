@@ -39,6 +39,12 @@ class SLAMDetectorNode(Node):
 
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
 
+        # DBSCAN parameters
+        self.declare_parameter("epsilon", 7)
+        self.declare_parameter("min_points", 5)
+        self.epsilon = self.get_parameter("epsilon").value
+        self.min_points = self.get_parameter("min_points").value
+
         self.get_logger().info("---Gridmap to Cone Detection node initialised---")
 
     # function that is called each time the subscriber reads a new message on the topic
@@ -77,15 +83,7 @@ class SLAMDetectorNode(Node):
         if point_coords.ndim == 1:
             point_coords = np.expand_dims(point_coords, axis=0)
 
-        # Cluster object points
-        if len(point_coords) < 20:  # if we're close to start, we havent seen many cones
-            epsilon = 3
-            min_points = 1
-        else:
-            epsilon = 7
-            min_points = 3
-
-        clustering = DBSCAN(eps=epsilon, min_samples=min_points).fit(point_coords)
+        clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(point_coords)
         labels = clustering.labels_
 
         unq_labels = np.unique(labels)[1:]  # Noise cluster -1 (np.unique sorts)
