@@ -17,7 +17,7 @@ BAG_CMD="ros2 bag play -s mcap bags/rosbag2_2024_10_30-04_40_17 --clock -p" # 14
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_11_01-19_02_10 --clock -p" # 14 laps recording from 2nd lap, 1st corner
 # BAG_CMD="ros2 bag play -s mcap bags/trackdrive-2024-11-24-23-54-17 --clock -p" # 1 lap QR
 # BAG_CMD="ros2 bag play -s mcap bags/ebs_test-2024-12-07-05-26-36 --clock -p" # comp ebs test
-# BAG_CMD="ros2 bag play -s mcap bags/rosbag2_2024_11_12-03_35_31 --clock -p" 
+# BAG_CMD="ros2 bag play -s mcap bags/rosbag2_2024_11_12-03_35_31 --clock -p"
 
 TOPICS=(
     # for mapping debugging

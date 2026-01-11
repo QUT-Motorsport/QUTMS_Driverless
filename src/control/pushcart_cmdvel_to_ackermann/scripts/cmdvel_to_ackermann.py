@@ -18,29 +18,26 @@
 import math
 
 import rclpy
+from rclpy.node import Node
+
 from ackermann_msgs.msg import AckermannDriveStamped
 from geometry_msgs.msg import Twist
-from rclpy.node import Node
 
 
 class CmdvelToAckermann(Node):
-    """Subscribe to the Twist message and converts it to AckermannDrive message and publish.
-    """
+    """Subscribe to the Twist message and converts it to AckermannDrive message and publish."""
 
     def __init__(self):
-        super().__init__('cmdvel_to_ackermann')
+        super().__init__("cmdvel_to_ackermann")
 
-        self.declare_parameter('publish_period_ms', 20)
-        self.declare_parameter('track_width', 0.24)
-        self.declare_parameter('acceleration', 0.0)
-        self.declare_parameter('steering_velocity', 0.0)
-        
-        self._cmd_vel_subscription = self.create_subscription(Twist, '/cmd_vel',
-                                                              self._cmd_vel_callback, 1)
-        self._ackermann_publisher = self.create_publisher(AckermannDriveStamped, 'control/driving_command',
-                                                          1)
-        publish_period_ms = self.get_parameter(
-            'publish_period_ms').value / 1000
+        self.declare_parameter("publish_period_ms", 20)
+        self.declare_parameter("track_width", 0.24)
+        self.declare_parameter("acceleration", 0.0)
+        self.declare_parameter("steering_velocity", 0.0)
+
+        self._cmd_vel_subscription = self.create_subscription(Twist, "/cmd_vel", self._cmd_vel_callback, 1)
+        self._ackermann_publisher = self.create_publisher(AckermannDriveStamped, "control/driving_command", 1)
+        publish_period_ms = self.get_parameter("publish_period_ms").value / 1000
         self.create_timer(publish_period_ms, self._timer_callback)
         self.track_width = self.get_parameter("track_width").value
         self.acceleration = self.get_parameter("acceleration").value
@@ -50,7 +47,6 @@ class CmdvelToAckermann(Node):
         self.get_logger().info(f"acceleration: {self.acceleration}")
         self.get_logger().info(f"steering_velocity: {self.steering_velocity}")
         self._ackermann_msg = None
-        
 
     def _convert_trans_rot_vel_to_steering_angle(self, v, omega) -> float:
         # if omega == 0 or v == 0:
@@ -69,8 +65,7 @@ class CmdvelToAckermann(Node):
         self._ackermann_msg.header.stamp = self.get_clock().now().to_msg()
         # Conversion logic (simplified example)
         self._ackermann_msg.drive.speed = msg.linear.x
-        steering_angle = self._convert_trans_rot_vel_to_steering_angle(
-            self._ackermann_msg.drive.speed, msg.angular.z)
+        steering_angle = self._convert_trans_rot_vel_to_steering_angle(self._ackermann_msg.drive.speed, msg.angular.z)
         self._ackermann_msg.drive.steering_angle = steering_angle
         self._ackermann_msg.drive.acceleration = self.acceleration
         self._ackermann_msg.drive.steering_angle_velocity = self.steering_velocity
@@ -88,5 +83,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

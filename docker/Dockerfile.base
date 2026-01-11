@@ -29,7 +29,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
         --from-paths src \
         --ignore-src \
     --skip-keys zenoh_bridge_ros2dds \
-    --skip-keys rosboard 
+    --skip-keys rosboard
 
 # install pip requirements
 COPY ./docker/requirements.txt /tmp/requirements.txt
@@ -41,6 +41,6 @@ RUN rm -rf /var/lib/apt/lists/* && apt-get clean
 # remove repos as deps have now been installed
 RUN rm -rf src
 
-# remove user 
+# remove user
 RUN deluser ubuntu
 RUN rm -rf /home/ubuntu
