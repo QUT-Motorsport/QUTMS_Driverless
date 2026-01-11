@@ -143,7 +143,7 @@ def get_occupancy_grid(blue_points, yellow_points, header):
 class FaSTTUBeBoundaryExtractor(Node):
     current_track = None
     spline_const = 10  # number of points per cone
-    initial_planning = True
+    initial_planning = False
 
     def __init__(self):
         super().__init__("ft_planner_node")
