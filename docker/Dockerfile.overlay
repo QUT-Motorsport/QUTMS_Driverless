@@ -12,7 +12,7 @@ RUN useradd \
         -m \
         -d /home/${USERNAME}/ \
         -u ${UID} \
-        -g ${GID} \ 
+        -g ${GID} \
         -G sudo,video,audio \
         ${USERNAME} && \
     echo ${USERNAME}:${USERNAME} | chpasswd && \

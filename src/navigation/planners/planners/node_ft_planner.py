@@ -3,9 +3,9 @@ import time
 
 import diagnostic_updater
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
+from fsd_path_planning.calculate_path.core_calculate_path import CalculatePath
 from fsd_path_planning.cone_matching.core_cone_matching import ConeMatching
 from fsd_path_planning.sorting_cones.core_cone_sorting import ConeSorting
-from fsd_path_planning.calculate_path.core_calculate_path import CalculatePath
 import numpy as np
 import scipy.interpolate as scipy_interpolate
 from tf2_ros import TransformException
@@ -209,7 +209,7 @@ class FaSTTUBeBoundaryExtractor(Node):
             "threshold_directional_angle": np.deg2rad(self.get_parameter("threshold_directional_angle").value),
             "threshold_absolute_angle": np.deg2rad(self.get_parameter("threshold_absolute_angle").value),
             "use_unknown_cones": self.get_parameter("use_unknown_cones").value,
-            "experimental_performance_improvements": True, # always on for FT
+            "experimental_performance_improvements": True,  # always on for FT
         }
 
         self.path_planner.cone_sorting = ConeSorting(**cone_sorting_kwargs)
@@ -252,7 +252,6 @@ class FaSTTUBeBoundaryExtractor(Node):
         }
 
         self.path_planner.pathing = CalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
-
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detections")

@@ -2,9 +2,9 @@ import os.path as path
 
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition, UnlessCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
@@ -91,11 +91,11 @@ def generate_launch_description():
             },
         ],
     )
-    
+
     sbg_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(path.join(get_package_share_path("nav_bringup"), "launch", "sbg.launch.py"))
     )
-    
+
     scs_container = ComposableNodeContainer(
         name="critcial_signal_container",
         namespace="",
@@ -132,7 +132,7 @@ def generate_launch_description():
         ],
         output="both",
     )
-    
+
     urdf_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("vehicle_urdf") / "launch" / "robot_description.launch.py")
@@ -154,20 +154,19 @@ def generate_launch_description():
         package="rosbag_creator",
         executable="rosbag_creator_node",
     )
-    
+
     joy_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("teleop_twist_joy") / "launch" / "teleop_launch.py")
         ),
-        launch_arguments=[
-            ('joy_config', 'xbox'),
-            ('scale_angular.yaw', '1.0')
-        ]
+        launch_arguments=[("joy_config", "xbox"), ("scale_angular.yaw", "1.0")],
     )
-    
+
     twist_to_ackermann_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
-            launch_file_path=str(get_package_share_path("pushcart_cmdvel_to_ackermann") / "launch" / "cmdvel_to_ackermann.launch.py")
+            launch_file_path=str(
+                get_package_share_path("pushcart_cmdvel_to_ackermann") / "launch" / "cmdvel_to_ackermann.launch.py"
+            )
         ),
     )
 
