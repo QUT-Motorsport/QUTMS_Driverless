@@ -17,7 +17,7 @@ sudo ip link set dev can0 up
 
 # [Service]
 # Type=simple
-# ExecStart=/home/qutms/dev/repos/QUTMS_Driverless/docker.sh
+# ExecStart=/home/qutms/repos/QUTMS_Driverless/docker/start_can.sh
 # TimeoutStartSec=0
 # RemainAfterExit=yes
 

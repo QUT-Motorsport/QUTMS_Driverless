@@ -10,9 +10,11 @@
     <depend>rclcpp</depend>
 
     <!-- Messages -->
-    <depend>std_msgs</depend>
     <depend>driverless_msgs</depend>
-    <!-- Packages -->
+    <depend>std_msgs</depend>
+    <depend>geometry_msgs</depend>
+
+    <!-- Custom Packages -->
     <depend>QUTMS_Embedded_Common</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>

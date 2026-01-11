@@ -3,22 +3,22 @@ version: "3.9"
 services:
   # Base image containing dependencies
   base:
-    image: driverless:base
+    image: qutms_driverless:base
     build:
-      context: ../../
-      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.base
+      context: ../
+      dockerfile: ./docker/Dockerfile.base
       args:
-        ROS_DISTRO: humble
+        ROS_DISTRO: jazzy
       target: base
   # Overlay image containing the QUTMS workspace and user
   panda_terminal:
-    image: driverless:terminal
+    image: qutms_driverless:terminal
     build:
-      context: ../../
-      dockerfile: ./QUTMS_Driverless/docker/Dockerfile.overlay
+      context: ../
+      dockerfile: ./docker/Dockerfile.overlay
       args:
-        USERNAME: ${USERNAME}
-        UID: ${UID}
+        USERNAME: ${USERNAME?USERNAME env var not set! Use the Makefile}
+        UID: ${UID?UID env var not set! Use the Makefile}
       target: overlay
     # Interactive shell
     stdin_open: true
@@ -47,8 +47,6 @@ services:
       - ../../build:/home/${USERNAME}/QUTMS/build
       - ../../log:/home/${USERNAME}/QUTMS/log
       - ../../install:/home/${USERNAME}/QUTMS/install
-      # - ../../slam_toolbox:/home/${USERNAME}/QUTMS/slam_toolbox
-      # - ../../sbg_ros2_driver:/home/${USERNAME}/QUTMS/sbg_ros2_driver
     devices:
       - /dev/dri:/dev/dri
     # Start the terminal
