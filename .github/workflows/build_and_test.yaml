@@ -1,0 +1,40 @@
+name: Build and Test
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out QUTMS Driverless
+        uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      # - name: 'Checking out eufs_msgs'
+      #   uses: actions/checkout@v2.3.4
+      #   with: 
+      #     repository: QUT-Motorsport/eufs_sim
+
+      # - name: 'Checking out eufs_rviz_plugins'
+      #   run: git clone https://gitlab.com/eufs/eufs_rviz_plugins.git
+
+      # - name: Installing Boost in other ways
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install build-essential libboost-dev
+      #     sudo apt update
+
+      # - name: 'Checking out sbg_ros2_driver'
+      #   uses: actions/checkout@v2.3.4
+      #   with: 
+      #     repository: SBG-Systems/sbg_ros2_driver
+      #     submodules: recursive
+
+      - name: Building and testing
+        uses: ichiro-its/ros2-ci@v1.0.0
+        with:
+          ros2-distro: humble
+          external-repositories: https://github.com/QUT-Motorsport/eufs_sim https://gitlab.com/eufs/eufs_rviz_plugins.git https://gitlab.com/eufs/eufs_msgs.git https://github.com/SBG-Systems/sbg_ros2_driver
+
+
