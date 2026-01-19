@@ -1,0 +1,12 @@
+
+<!-- These are currently copied code from Walden's branch. Change later when Hardware interface is made -->
+
+<library path="qev_controllers">
+  <class name="qev_controllers/QevHardwareInterface"
+         type="qev_controllers::QevHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface.
+    </description>
+  </class>
+</library>
