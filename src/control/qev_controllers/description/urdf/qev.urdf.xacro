@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- 4 Wheel Robot with front steering and rear drive -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="qev">
+  <xacro:arg name="prefix" default="" />
+
+  <xacro:include filename="$(find vehicle_urdf)/urdf/qev_3d.urdf.xacro" />
+
+  <!-- Import Rviz colors -->
+  <!-- <xacro:include filename="$(find vehicle_urdf)/urdf/carlikebot.materials.xacro" /> -->
+
+  <!-- Import carlikebot ros2_control description -->
+  <xacro:include filename="$(find qev_controllers)/ros2_control/qev.ros2_control.xacro" />
+
+  <xacro:carlikebot prefix="$(arg prefix)" />
+
+  <xacro:carlikebot_ros2_control
+    name="QEV" prefix="$(arg prefix)" />
+
+</robot>
