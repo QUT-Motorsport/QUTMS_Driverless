@@ -56,7 +56,7 @@ install(
   DESTINATION share/qev_controllers
 )
 install(
-  DIRECTORY bringup/launch bringup/config
+  DIRECTORY bringup/launch config
   DESTINATION share/qev_controllers
 )
 install(TARGETS qev_controllers
