@@ -82,9 +82,9 @@ class TrackdriveHandler(ShutdownNode):
                 "trackdrive.launch.py",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
-            self.mission_process = Popen(command)
+            # self.mission_process = Popen(command)
             self.get_logger().info("Trackdrive mission started")
-            # self.recording = self.start_recording("trackdrive")
+            self.recording = self.start_recording("trackdrive")
 
         self.get_logger().info("---Trackdrive handler node initialised---")
 

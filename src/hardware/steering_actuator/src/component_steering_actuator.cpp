@@ -128,7 +128,7 @@ void SteeringActuator::driving_command_callback(const ackermann_msgs::msg::Acker
     this->target_position(target);
 
     std_msgs::msg::Int32::UniquePtr step_targ_msg(new std_msgs::msg::Int32());
-    step_targ_msg->data = -target;  // Flip to match steering angle signs, remove offset
+    step_targ_msg->data = target;  // Flip to match steering angle signs, remove offset
     step_target_pub_->publish(std::move(step_targ_msg));
 }
 

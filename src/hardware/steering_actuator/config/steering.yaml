@@ -1,5 +1,5 @@
 steering_actuator_node:
   ros__parameters:
     velocity: 5000
-    acceleration: 1000
-    max_position: 8500
+    acceleration: 2000
+    max_position: 9500

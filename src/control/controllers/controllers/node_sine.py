@@ -8,7 +8,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 
 class SineController(Node):
     count = 0
-    interval = 0.02
+    interval = 0.01
     pub_interval = 0.05
 
     def __init__(self):
@@ -25,7 +25,7 @@ class SineController(Node):
     def timer_callback(self):
         self.count += self.interval
         control_msg = AckermannDriveStamped()
-        control_msg.drive.steering_angle = sin(self.count * pi) * -60  # maximum degrees to turn
+        control_msg.drive.steering_angle = sin(self.count * pi) * -80  # maximum degrees to turn
         control_msg.drive.acceleration = 0.1
         self.driving_publisher.publish(control_msg)
         self.steering_publisher.publish(control_msg)
