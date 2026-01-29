@@ -17,8 +17,8 @@ def generate_launch_description():
             os.path.join(get_package_share_path("nav_bringup"), "launch", "nav_stack_bringup.launch.py")
         ),
         launch_arguments=[
-            ("use_sim_time", "True"),
-            # ("use_sim_time", "False"),
+            # ("use_sim_time", "True"),
+            ("use_sim_time", "False"),
         ],
     )
     # mapping/planning

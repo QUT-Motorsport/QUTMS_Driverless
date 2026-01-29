@@ -23,6 +23,7 @@ TOPICS=(
     # for mapping debugging
     /imu/odometry # needed for RL
     /vehicle/wheel_twist # needed for RL
+    /velodyne_points
     /lidar/objects
     /lidar/ground_points
     # /lidar/converted_2D_scan
@@ -34,7 +35,7 @@ TOPICS=(
     # raw data for visuals (nice to always have)
     /imu/nav_sat_fix
     # /vehicle/velocity
-    /vehicle/steering_angle
+    # /vehicle/steering_angle
     /imu/data
     # /control/driving_command
 
@@ -50,11 +51,10 @@ TOPICS=(
 
 # remap these topics if you are running programs which output to the same topic names
 REMAPS=(
-    # /odometry/filtered:=/odometry/filtered_old
+    # /lidar/objects:=/lidar/objects_old
     # /sbg_translated/odometry:=/sbg_translated/odometry_old
     # /tf:=/tf_old
     # /control/driving_command:=/control/driving_command_old
-)
 
 # for each topic append to the command
 if [ ${#TOPICS[@]} -gt 0 ]; then

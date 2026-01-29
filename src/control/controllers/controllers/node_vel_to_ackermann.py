@@ -63,7 +63,7 @@ class Vel2Ackermann(Node):
         # make time for msg id
         # msg.header.stamp =
         msg.header.frame_id = "base_footprint"
-        msg.drive.steering_angle = steering
+        msg.drive.steering_angle = -steering
         msg.drive.speed = vel
 
         self.drive_pub.publish(msg)
