@@ -41,11 +41,11 @@ help: all
 # use make build target=<value>
 build:
 	@echo "ensure a 'make build_docker_base_XXX' is run before running a build"
-	docker-compose -f ./docker-compose.yml -p qutms_driverless build $(target)
+	docker compose -f ./docker-compose.yml -p qutms_driverless build $(target)
 
 # use make run target=<value>
 run:
-	docker-compose -f ./docker-compose.yml -p qutms_driverless run --rm $(target)
+	docker compose -f ./docker-compose.yml -p qutms_driverless run --rm $(target)
 
 panda_srv:
 	systemctl $(a) panda_startup.service
