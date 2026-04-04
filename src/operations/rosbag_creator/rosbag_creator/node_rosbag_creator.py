@@ -31,8 +31,8 @@ class RosbagCreator(Node):
             self.recorder = Recorder()
             self.record_options = RecordOptions()
             self.storage_options = StorageOptions(uri=request.filename, storage_id="mcap")
-            self.record_options.all = True
-            self.record_options.exclude = "(/velodyne_points|/velodyne_packets)"
+            self.record_options.all_topics = True
+            # self.record_options.exclude_topics = ["/velodyne_points", "/velodyne_packets"]
             self.record_thread = threading.Thread(
                 target=self.recorder.record, args=(self.storage_options, self.record_options)
             )
@@ -68,6 +68,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = RosbagCreator()
     rclpy.spin(node)
+    node.stop_record_callback(None, None)
     rclpy.shutdown()
 
 

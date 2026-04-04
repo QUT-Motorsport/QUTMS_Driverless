@@ -1,4 +1,4 @@
-ARG ROS_DISTRO=humble
+ARG ROS_DISTRO=jazzy
 
 # FROM ros:${ROS_DISTRO}
 FROM osrf/ros:${ROS_DISTRO}-desktop as base
@@ -13,36 +13,34 @@ WORKDIR /tmp
 # ==============================================================================
 #                      Download repos to install rosdeps
 # ==============================================================================
-
+RUN ping -c 3 8.8.8.8 || echo "no network"
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         can-utils net-tools usbutils udev mesa-common-dev \
         python3-pip
 
-COPY ./QUTMS_Driverless/src /tmp/src
-# COPY ./slam_toolbox /tmp/slam_toolbox
-# COPY ./sbg_ros2_driver /tmp/sbg_ros2_driver
-
-RUN git clone https://github.com/SBG-Systems/sbg_ros2_driver.git
-RUN git clone https://github.com/SteveMacenski/slam_toolbox.git
-RUN git clone https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds.git
-# specific commit for slam_toolbox that builds with humble and lifecycle nodes
-RUN cd slam_toolbox && git checkout a3442d2f6824ff058fab0cb0a635e7a454294855 && cd ..
+COPY ./src /tmp/src
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # # install ros requirements
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep update && rosdep install -y \
         --rosdistro ${ROS_DISTRO} \
-        --from-paths src slam_toolbox sbg_ros2_driver rosbag2 \
-        --ignore-src
+        --from-paths src \
+        --ignore-src \
+    --skip-keys zenoh_bridge_ros2dds \
+    --skip-keys rosboard
 
 # install pip requirements
-COPY ./QUTMS_Driverless/docker/requirements.txt /tmp/requirements.txt
-RUN pip3 install -r /tmp/requirements.txt && \
+COPY ./docker/requirements.txt /tmp/requirements.txt
+RUN pip3 install --break-system-packages --ignore-installed -r \
+    /tmp/requirements.txt && \
     rm /tmp/requirements.txt
 
 RUN rm -rf /var/lib/apt/lists/* && apt-get clean
-
 # remove repos as deps have now been installed
 RUN rm -rf src
-# sbg_ros2_driver slam_toolbox
+
+# remove user
+RUN deluser ubuntu
+RUN rm -rf /home/ubuntu

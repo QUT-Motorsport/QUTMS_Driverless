@@ -4,3 +4,6 @@
 [submodule "src/common/QUTMS_Embedded_Common/QUTMS_Embedded_Common"]
 	path = src/common/QUTMS_Embedded_Common/QUTMS_Embedded_Common
 	url = https://github.com/QUT-Motorsport/QUTMS_Embedded_Common
+[submodule "src/navigation/vector_pursuit_controller"]
+	path = src/navigation/vector_pursuit_controller
+	url = https://github.com/QUT-Motorsport/vector_pursuit_controller.git

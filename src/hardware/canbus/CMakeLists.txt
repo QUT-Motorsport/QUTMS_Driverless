@@ -9,7 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
 add_compile_definitions(QUTMS_CAN_VESC)
@@ -40,7 +40,7 @@ ament_target_dependencies(canbus_translator_component
   "rclcpp"
   "rclcpp_components"
   "std_msgs"
-  "nav_msgs"
+  "geometry_msgs"
   "driverless_msgs"
 )
 rclcpp_components_register_nodes(canbus_translator_component "canbus::CANTranslator")

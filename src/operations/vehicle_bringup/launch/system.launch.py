@@ -23,15 +23,15 @@ def generate_launch_description():
                 ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
-            ComposableNode(
-                package="velocity_controller",
-                plugin="velocity_controller::VelocityController",
-                name="velocity_controller_node",
-                parameters=[
-                    get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
-                ],
-                extra_arguments=[{"use_intra_process_comms": True}],
-            ),
+            # ComposableNode(
+            #     package="velocity_controller",
+            #     plugin="velocity_controller::VelocityController",
+            #     name="velocity_controller_node",
+            #     parameters=[
+            #         get_package_share_path("velocity_controller") / "config" / "velocity_controller.yaml",
+            #     ],
+            #     extra_arguments=[{"use_intra_process_comms": True}],
+            # ),
             ComposableNode(
                 package="canbus",
                 plugin="canbus::CANTranslator",
@@ -49,6 +49,9 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("vehicle_bringup") / "launch" / "displays.launch.py")
         ),
+        launch_arguments=[
+            ("use_zenoh_bridge", "false"),
+        ],
     )
 
     urdf_launch = IncludeLaunchDescription(
@@ -78,7 +81,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             stdout_linebuf_envvar,
-            scs_container,
+            # scs_container,
             display_launch,
             urdf_launch,
             perception_launch,

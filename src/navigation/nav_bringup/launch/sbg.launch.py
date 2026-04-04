@@ -18,15 +18,8 @@ def generate_launch_description():
         parameters=[sbg_config],
     )
 
-    odom_transformer_node = Node(
-        package="odom_transformer",
-        executable="odom_rotater_node",
-        output="both",
-    )
-
     return LaunchDescription(
         [
             sbg_driver_node,
-            # odom_transformer_node,
         ]
     )

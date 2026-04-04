@@ -13,8 +13,8 @@
     <depend>driverless_msgs</depend>
     <depend>geometry_msgs</depend>
     <depend>nav_msgs</depend>
-    <depend>std_msgs</depend>
     <depend>diagnostic_msgs</depend>
+
     <!-- Custom packages -->
     <depend>driverless_common</depend>
 
@@ -22,6 +22,9 @@
     <depend>python3-numpy</depend>
     <depend>python3-scipy</depend>
     <depend>python3-transforms3d</depend>
+
+    <depend>tf2</depend>
+    <depend>tf2_ros</depend>
 
     <export>
         <build_type>ament_python</build_type>

@@ -10,11 +10,12 @@
     <depend>rclcpp</depend>
 
     <!-- Messages -->
-    <depend>ackermann_msgs</depend>
-    <depend>nav_msgs</depend>
-    <depend>rcl_interfaces</depend>
     <depend>driverless_msgs</depend>
-    <!-- Packages -->
+    <depend>ackermann_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>rcl_interfaces</depend>
+
+    <!-- Custom Packages -->
     <depend>QUTMS_Embedded_Common</depend>
 
     <buildtool_depend>ament_cmake</buildtool_depend>

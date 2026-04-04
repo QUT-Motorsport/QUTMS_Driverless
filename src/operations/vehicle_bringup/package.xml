@@ -19,16 +19,24 @@
     <depend>tf2</depend>
     <depend>tf2_ros</depend>
 
+    <!-- For Pushcart Testing ONLY -->
+    <depend>teleop_twist_joy</depend>
+    <depend>joy</depend>
+    <depend>pushcart_cmdvel_to_ackermann</depend>
+
+
     <!-- Messages -->
-    <depend>tf2_geometry_msgs</depend>
+    <depend>driverless_msgs</depend>
     <depend>nav2_msgs</depend>
     <depend>geometry_msgs</depend>
     <depend>nav_msgs</depend>
     <depend>std_msgs</depend>
-    <depend>driverless_msgs</depend>
 
     <!-- Custom packages -->
     <depend>driverless_common</depend>
+
+    <!-- Python -->
+    <depend>python3-can</depend>
 
     <exec_depend>vehicle_urdf</exec_depend>
     <exec_depend>controllers</exec_depend>
@@ -36,10 +44,10 @@
     <exec_depend>canbus</exec_depend>
     <exec_depend>planners</exec_depend>
     <exec_depend>slam_gridmap</exec_depend>
-    <exec_depend>map_creation</exec_depend>
     <exec_depend>nav_bringup</exec_depend>
     <exec_depend>perception_bringup</exec_depend>
     <exec_depend>velocity_controller</exec_depend>
+    <exec_depend>rosbag_creator</exec_depend>
 
     <export>
         <build_type>ament_python</build_type>

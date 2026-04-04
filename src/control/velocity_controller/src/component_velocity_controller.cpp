@@ -162,7 +162,7 @@ void VelocityController::controller_callback() {
     request_msg.speed = target_ackermann_->drive.speed;
     auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);
     this->can_pub_->publish(
-        std::move(this->_d_2_f(request_heartbeat.id, true, request_heartbeat.data, sizeof(request_heartbeat.data))));
+        this->_d_2_f(request_heartbeat.id, true, request_heartbeat.data, sizeof(request_heartbeat.data)));
 
     prev_accel_ = accel;
 

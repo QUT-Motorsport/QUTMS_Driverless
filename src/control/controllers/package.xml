@@ -13,7 +13,9 @@
     <depend>builtin_interfaces</depend>
     <depend>std_msgs</depend>
     <depend>sensor_msgs</depend>
+    <depend>nav_msgs</depend>
     <depend>visualization_msgs</depend>
+
     <!-- Custom packages -->
     <depend>driverless_common</depend>
 

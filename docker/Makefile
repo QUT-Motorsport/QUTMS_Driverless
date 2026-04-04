@@ -25,8 +25,9 @@ all:
 	@echo "        - run a target (see DEVICE options)"
 	@echo
 	@echo "DEVICE options:"
-	@echo "    panda (requires nothing, just build)"
-	@echo "    panda_terminal (requires nothing, just build)"
+	@echo "    base (requires nothing, just build)"
+	@echo "    panda (requires base)"
+	@echo "    panda_terminal (requires base)"
 	@echo
 	@echo "ACTION options:"
 	@echo "    status"
@@ -40,11 +41,11 @@ help: all
 # use make build target=<value>
 build:
 	@echo "ensure a 'make build_docker_base_XXX' is run before running a build"
-	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless build $(target)
+	docker-compose -f ./docker-compose.yml -p qutms_driverless build $(target)
 
 # use make run target=<value>
 run:
-	docker-compose -f ./docker-compose.yml -p QUTMS_Driverless run --rm $(target)
+	docker-compose -f ./docker-compose.yml -p qutms_driverless run --rm $(target)
 
 panda_srv:
 	systemctl $(a) panda_startup.service

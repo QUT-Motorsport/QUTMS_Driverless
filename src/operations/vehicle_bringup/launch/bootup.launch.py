@@ -46,11 +46,12 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            system_launch,
             stdout_linebuf_envvar,
             sbg_launch,
-            system_watcher,
-            launch_system_on_watcher_exit,
-            mission_launch,
-            vehicle_supervisor_node,
+            # system_watcher,
+            # launch_system_on_watcher_exit,
+            # mission_launch,
+            # vehicle_supervisor_node,
         ]
     )
