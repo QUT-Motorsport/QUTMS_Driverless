@@ -34,6 +34,7 @@ setup(
             "trackdrive_watcher_node = vehicle_bringup.node_trackdrive_watcher:main",
             "inspection_watcher_node = vehicle_bringup.node_inspection_watcher:main",
             "system_watcher_node = vehicle_bringup.node_system_watcher:main",
+            'safety_monitor_node = safety_monitor.safety_monitor_node:main'
         ],
     },
 )

@@ -51,6 +51,9 @@ services:
       - /dev/dri:/dev/dri
     # Start the terminal
     command: /bin/bash
+    ports:
+      - "8765:8765"  # Foxglove
+      - "8888:8888"  # ROSboard
 
   # Launch bringup
   panda:
