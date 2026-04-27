@@ -28,6 +28,7 @@ all:
 	@echo "    base (requires nothing, just build)"
 	@echo "    panda (requires base)"
 	@echo "    panda_terminal (requires base)"
+	@echo "    panda_build (requires base)"
 	@echo
 	@echo "ACTION options:"
 	@echo "    status"
@@ -46,6 +47,9 @@ build:
 # use make run target=<value>
 run:
 	docker-compose -f ./docker-compose.yml -p qutms_driverless run --rm $(target)
+
+run_detached:
+	docker-compose -f ./docker-compose.yml -p qutms_driverless run -d --rm $(target)
 
 panda_srv:
 	systemctl $(a) panda_startup.service

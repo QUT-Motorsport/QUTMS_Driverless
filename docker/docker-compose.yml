@@ -56,3 +56,7 @@ services:
   panda:
     extends: panda_terminal
     command: ros2 launch vehicle_bringup bootup.launch.py
+
+  panda_build:
+    extends: panda_terminal
+    command: /bin/sh -c "rm -rf build/* install/* && /home/${USERNAME}/QUTMS/QUTMS_Driverless/tools/qutms_cli_tools/qutms_cli_tools/build.sh -u vehicle_bringup"
