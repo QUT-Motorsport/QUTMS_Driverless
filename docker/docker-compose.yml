@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
   # Base image containing dependencies
@@ -56,6 +56,7 @@ services:
   panda:
     extends: panda_terminal
     command: ros2 launch vehicle_bringup bootup.launch.py
+    container_name: panda
 
   panda_build:
     extends: panda_terminal
