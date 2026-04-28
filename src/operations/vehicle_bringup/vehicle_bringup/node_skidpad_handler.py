@@ -19,7 +19,7 @@ from std_msgs.msg import UInt8
 from vehicle_bringup.shutdown_node_class import ShutdownNode
 
 
-class SkidpanHandler(ShutdownNode):
+class SkidpadHandler(ShutdownNode):
     mission_started = False
     sbg_operational = False
     debug = False
@@ -32,10 +32,10 @@ class SkidpanHandler(ShutdownNode):
     path = None
     in_box = True
 
-    controller_id = "SkidpanRPP"
+    controller_id = "TrackdriveRPP"
 
     def __init__(self):
-        super().__init__("skidpan_logic_node")
+        super().__init__("skidpad_logic_node")
 
         # callbacks
         self.timer_cb_group = MutuallyExclusiveCallbackGroup()
@@ -81,10 +81,10 @@ class SkidpanHandler(ShutdownNode):
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
-            self.get_logger().info("Skidpan mission started")
-            self.recording = self.start_recording("skidpan")
+            self.get_logger().info("Skidpad mission started")
+            self.recording = self.start_recording("skidpad")
 
-        self.get_logger().info("---Skidpan handler node initialised---")
+        self.get_logger().info("---Skidpad handler node initialised---")
 
     def av_state_callback(self, msg: AVStateStamped):
         super().av_state_callback(msg)
@@ -104,12 +104,12 @@ class SkidpanHandler(ShutdownNode):
                 "ros2",
                 "launch",
                 "vehicle_bringup",
-                "skidpan.launch.py",
+                "skidpad.launch.py",
             ]
             self.get_logger().info(f"Command: {' '.join(command)}")
             self.mission_process = Popen(command)
-            self.get_logger().info("Skidpan mission started")
-            self.recording = self.start_recording("skidpan")
+            self.get_logger().info("Skidpad mission started")
+            self.recording = self.start_recording("skidpad")
 
         if msg.state == AVStateStamped.DRIVING and not self.released:
             time.sleep(3)
@@ -135,7 +135,7 @@ class SkidpanHandler(ShutdownNode):
         # send controller ID in request
         goal_msg.controller_id = (
             self.controller_id
-        )  # nav2_params.yaml, controller_server, controller_plugins: ["SkidpanRPP", "EBSTestRPP"]
+        )  # nav2_params.yaml, controller_server, controller_plugins: ["SkidpadRPP", "EBSTestRPP"]
 
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg)
 
@@ -165,7 +165,7 @@ class SkidpanHandler(ShutdownNode):
             self.init_pose_pub.publish(init_pose_msg)
             self.sent_init = True
 
-        # Notes copied from trackdrive handler, will need to be updated for skidpan course
+        # Notes copied from trackdrive handler, will need to be updated for skidpad course
         # we start at 0,0
         # once we cross out of x < 2, we can start counting laps
         # if we cross back into x == -2, begin checking for lap completion
@@ -196,11 +196,11 @@ class SkidpanHandler(ShutdownNode):
 
         # we have finished lap "1"
         # if self.laps > 1:
-        #     self.controller_id = "SkidpanRPPFast"
+        #     self.controller_id = "SkidpadRPPFast"
 
         # we have finished lap "10"
         if self.laps == 10:
-            self.get_logger().info("Skidpan mission complete")
+            self.get_logger().info("Skidpad mission complete")
             # currently only works when vehicle supervisor node is running on-car
             # TODO: sort out vehicle states for eventual environment agnostic operation
             shutdown_msg = Shutdown(finished_engage_ebs=True)
@@ -209,7 +209,7 @@ class SkidpanHandler(ShutdownNode):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SkidpanHandler()
+    node = SkidpadHandler()
     # rclpy.spin(node)
     node.spin()
     node.destroy_node()

@@ -4,6 +4,7 @@ import time
 import diagnostic_updater
 from fsd_path_planning import ConeTypes, MissionTypes, PathPlanner
 from fsd_path_planning.calculate_path.core_calculate_path import CalculatePath
+from fsd_path_planning.calculate_path.skidpad_calculate_path import SkidpadCalculatePath
 from fsd_path_planning.cone_matching.core_cone_matching import ConeMatching
 from fsd_path_planning.sorting_cones.core_cone_sorting import ConeSorting
 import numpy as np
@@ -189,8 +190,16 @@ class FaSTTUBeBoundaryExtractor(Node):
 
     def create_planner(self):
         self.declare_parameter("mission", MissionTypes.trackdrive)
+        self.mission = MissionTypes.none
+        match self.get_parameter("mission").value:
+            case 'ebs_test':
+                self.mission = MissionTypes.ebs_test
+            case 'skidpad':
+                self.mission = MissionTypes.skidpad
+            case 'trackdrive':
+                self.mission = MissionTypes.trackdrive
 
-        self.path_planner = PathPlanner(self.get_parameter("mission").value)
+        self.path_planner = PathPlanner(self.mission)
 
         # cone sorting
         self.declare_parameter("max_n_neighbors", 5)
@@ -251,7 +260,10 @@ class FaSTTUBeBoundaryExtractor(Node):
             "max_deg": self.get_parameter("max_deg").value,
         }
 
-        self.path_planner.pathing = CalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
+        if self.mission == mission.skidpad:
+            self.path_planner.pathing = SkidpadCalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
+        else:
+            self.path_planner.pathing = CalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
 
     def detection_callback(self, track_msg: ConeDetectionStamped):
         self.get_logger().debug("Received detections")

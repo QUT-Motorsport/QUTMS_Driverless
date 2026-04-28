@@ -35,6 +35,7 @@ def generate_launch_description():
         executable="ft_planner_node",
         parameters=[
             get_package_share_path("planners") / "config" / "ft_planner.yaml",
+            {'mission': 'ebs_test',},
         ],
         output="both",
     )
