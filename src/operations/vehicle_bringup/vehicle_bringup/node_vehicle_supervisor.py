@@ -52,6 +52,7 @@ class VehicleSupervisor(Node):
             self.create_client(SetBool, "launch/inspection"),
             self.create_client(SetBool, "launch/ebs"),
             self.create_client(SetBool, "launch/trackdrive"),
+            self.create_client(SetBool, "launch/skidpad"),
         ]
 
         self.system_launch_cli = self.create_client(SetBool, "launch/system")
