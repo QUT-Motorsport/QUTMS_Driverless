@@ -31,6 +31,7 @@ class SkidpadHandler(ShutdownNode):
     last_x = 0.0
     path = None
     in_box = True
+    out_box = True
 
     controller_id = "TrackdriveRPP"
 
@@ -172,10 +173,15 @@ class SkidpadHandler(ShutdownNode):
         # lap completion is when we cross x == 2 again
 
         # check if we are within the bounds of the start line width (approx 2m)
-        # and we are also within the distance of the finish line
         if abs(track_to_base.transform.translation.x) < 2 and abs(track_to_base.transform.translation.y) < 2:
             self.in_box = True
             self.get_logger().info(f"In the starting box", throttle_duration_sec=1)
+
+        # check if we are within the bounds of the finish line width (approx 2m)
+        # and we are also within distance of the finish line
+        if abs(track_to_base.transform.translation.x) > 20 and abs(track_to_base.transform.translation.y) < 2:
+            self.out_box = True
+            self.get_logger().info(f"In the finishing box", throttle_duration_sec=1)
 
         # if we are in box, we need to leave the box before we can start counting laps
         if self.in_box:
@@ -184,22 +190,23 @@ class SkidpadHandler(ShutdownNode):
                 return
 
             # we have left the box
-            self.get_logger().info(f"Crossed start line in {time.time() - self.last_lap_time:.2f}s")
+            # self.get_logger().info(f"Crossed start line in {time.time() - self.last_lap_time:.2f}s")
 
             self.in_box = False
             self.last_x = track_to_base.transform.translation.x
-            self.last_lap_time = time.time()
+            # self.last_lap_time = time.time()
 
-            self.laps += 1
-            self.lap_trig_pub.publish(UInt8(data=self.laps - 1))
-            self.get_logger().info(f"Lap {self.laps} completed")
+            # self.laps += 1
+            # self.lap_trig_pub.publish(UInt8(data=self.laps - 1))
+            # self.get_logger().info(f"Lap {self.laps} completed")
 
         # we have finished lap "1"
         # if self.laps > 1:
         #     self.controller_id = "SkidpadRPPFast"
 
         # we have finished lap "10"
-        if self.laps == 10:
+        # if self.laps == 10:
+        if self.out_box:
             self.get_logger().info("Skidpad mission complete")
             # currently only works when vehicle supervisor node is running on-car
             # TODO: sort out vehicle states for eventual environment agnostic operation
