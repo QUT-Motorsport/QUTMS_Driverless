@@ -26,6 +26,15 @@ def generate_launch_description():
         executable="display",
     )
 
+    trackdrive_node = Node(
+        package="vehicle_bringup",
+        executable="trackdrive_handler_node",
+    )
+
+    trackdrive_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "trackdrive.launch.py"))
+    )
+
     zenoh_node = Node(
         package="zenoh_bridge_ros2dds",
         executable="zenoh_bridge_ros2dds",
@@ -182,6 +191,8 @@ def generate_launch_description():
             # zenoh_node,
             # sbg_launch,
             scs_container,
+            trackdrive_node,
+            trackdrive_launch,
             # urdf_launch,
             # perception_launch,
             # rosbag_creator_node,

@@ -9,7 +9,7 @@ source install/setup.bash
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_04_46/ --clock -p" # half lap
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_07_25-05_18_42/ --clock -p" # other half of lap
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_04-05_14_43 --clock -p" # 2.5 laps
-# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-06_08_59/ --clock -p" # 1 lap, loop close crashing
+# BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-02_11_49/ --clock -p" 
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_09_24-02_16_55/ --clock -p" # ebs test run
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_18-01_10_29/ --clock -p" # 9 laps, recording from 1st corner
 # BAG_CMD="ros2 bag play -s mcap /mnt/e/rosbag2_2024_10_18-01_40_49 --clock -p" # 10 laps recording from 2nd lap, 1st corner
@@ -23,6 +23,7 @@ TOPICS=(
     # for mapping debugging
     /imu/odometry # needed for RL
     /vehicle/wheel_twist # needed for RL
+    /velodyne_points
     /lidar/objects
     /lidar/ground_points
     # /lidar/converted_2D_scan
@@ -34,7 +35,7 @@ TOPICS=(
     # raw data for visuals (nice to always have)
     /imu/nav_sat_fix
     # /vehicle/velocity
-    /vehicle/steering_angle
+    # /vehicle/steering_angle
     /imu/data
     # /control/driving_command
 
@@ -50,11 +51,10 @@ TOPICS=(
 
 # remap these topics if you are running programs which output to the same topic names
 REMAPS=(
-    # /odometry/filtered:=/odometry/filtered_old
+    # /lidar/objects:=/lidar/objects_old
     # /sbg_translated/odometry:=/sbg_translated/odometry_old
     # /tf:=/tf_old
     # /control/driving_command:=/control/driving_command_old
-)
 
 # for each topic append to the command
 if [ ${#TOPICS[@]} -gt 0 ]; then
