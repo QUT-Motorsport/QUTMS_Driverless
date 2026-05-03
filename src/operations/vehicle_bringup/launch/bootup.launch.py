@@ -6,7 +6,7 @@ from launch.actions import GroupAction, IncludeLaunchDescription, RegisterEventH
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.subsitutions import EnvironmentVariable
+from launch.substitutions import EnvironmentVariable
 from launch_ros.actions import Node
 
 
