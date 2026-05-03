@@ -21,7 +21,7 @@ def cone_msg(x: float, y: float, resolution=0.1) -> Cone:
     Returns:
         Cone: The cone message.
     """
-    location: Point = Point(x=x*resolution, y=y*resolution, z=0.0)
+    location: Point = Point(x=x * resolution, y=y * resolution, z=0.0)
 
     # SLAM does not identify cone colour
     return Cone(location=location, color=Cone.UNKNOWN)
@@ -46,7 +46,9 @@ class SLAMDetectorNode(Node):
         self.epsilon = self.get_parameter("epsilon").value
         self.min_points = self.get_parameter("min_points").value
         self.max_points = self.get_parameter("max_points").value
-        self.get_logger().debug(f"epsilon: {self.epsilon}, min_points: {self.min_points}, max_points: {self.max_points}")
+        self.get_logger().debug(
+            f"epsilon: {self.epsilon}, min_points: {self.min_points}, max_points: {self.max_points}"
+        )
 
         self.get_logger().info("---Gridmap to Cone Detection node initialised---")
 
@@ -69,8 +71,7 @@ class SLAMDetectorNode(Node):
         # convert row, col checks to a numpy operation (faster)
         cone_indices = np.where(map_2d == 100)  # Get the indices of the cones
         point_coords = np.column_stack(
-            (cone_indices[1] + int(gridmap_origin_x / resolution), 
-             cone_indices[0] + int(gridmap_origin_y / resolution))
+            (cone_indices[1] + int(gridmap_origin_x / resolution), cone_indices[0] + int(gridmap_origin_y / resolution))
         )
 
         # check if there are any cones
@@ -80,7 +81,7 @@ class SLAMDetectorNode(Node):
         # check if its actually a 1D array (only one cone), if so, make it 2D
         if point_coords.ndim == 1:
             point_coords = np.expand_dims(point_coords, axis=0)
-        
+
         clustering = DBSCAN(eps=self.epsilon, min_samples=self.min_points).fit(point_coords)
         labels = clustering.labels_
 

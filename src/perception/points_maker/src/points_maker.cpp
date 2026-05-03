@@ -4,8 +4,7 @@
 
 namespace points_maker {
 
-PointsMakerNode::PointsMakerNode(const rclcpp::NodeOptions &options)
-    : Node("points_maker_node", options) {
+PointsMakerNode::PointsMakerNode(const rclcpp::NodeOptions &options) : Node("points_maker_node", options) {
     ground_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         "lidar/ground_plane_old", rclcpp::SensorDataQoS(),
         std::bind(&PointsMakerNode::ground_callback, this, std::placeholders::_1));

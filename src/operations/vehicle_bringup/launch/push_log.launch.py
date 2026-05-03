@@ -32,7 +32,9 @@ def generate_launch_description():
     )
 
     trackdrive_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "trackdrive.launch.py"))
+        PythonLaunchDescriptionSource(
+            path.join(get_package_share_path("vehicle_bringup"), "mission_launch", "trackdrive.launch.py")
+        )
     )
 
     zenoh_node = Node(

@@ -75,14 +75,16 @@ def generate_launch_description():
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
             ComposableNode(
-                package='cloudini_ros',
-                plugin='CloudiniPointcloudConverter',
-                parameters=[{
-                    'compressing': True,
-                    'topic_input': '/velodyne_points',
-                    'topic_output': '/velodyne_points_compressed',
-                    'resolution': 0.001,
-                },],
+                package="cloudini_ros",
+                plugin="CloudiniPointcloudConverter",
+                parameters=[
+                    {
+                        "compressing": True,
+                        "topic_input": "/velodyne_points",
+                        "topic_output": "/velodyne_points_compressed",
+                        "resolution": 0.001,
+                    },
+                ],
                 extra_arguments=[{"use_intra_process_comms": True}],
             ),
         ],
@@ -99,7 +101,6 @@ def generate_launch_description():
         output="screen",
         parameters=[lidar_detection_params_file],
     )
-
 
     return LaunchDescription(
         [
