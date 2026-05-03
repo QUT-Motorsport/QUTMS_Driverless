@@ -15,6 +15,7 @@
     <exec_depend>ground_plane_segmenter</exec_depend>
     <exec_depend>pointcloud_to_laserscan</exec_depend>
     <exec_depend>points_maker</exec_depend>
+    <exec_depend>cloudini_ros</exec_depend>
 
     <!-- Custom packages -->
     <exec_depend>lidar_pipeline</exec_depend>

@@ -73,7 +73,18 @@ def generate_launch_description():
                 parameters=[pointcloud_to_laserscan_params_file],
                 remappings=[("cloud_in", "/lidar/cone_points"), ("scan", "/lidar/converted_2D_scan")],
                 extra_arguments=[{"use_intra_process_comms": True}],
-            )
+            ),
+            ComposableNode(
+                package='cloudini_ros',
+                plugin='CloudiniPointcloudConverter',
+                parameters=[{
+                    'compressing': True,
+                    'topic_input': '/velodyne_points',
+                    'topic_output': '/velodyne_points_compressed',
+                    'resolution': 0.001,
+                },],
+                extra_arguments=[{"use_intra_process_comms": True}],
+            ),
         ],
         output="both",
     )
