@@ -12,7 +12,7 @@ recorder:
       include_hidden_topics: true
       ignore_leaf_topics: false
       start_paused: false
-      # exclude_topics: ["exclude_topic", "other_exclude_topic"]
+      exclude_topics: ["velodyne_points"]
 
     storage:
       uri: "~/repos/bags"
