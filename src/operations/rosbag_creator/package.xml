@@ -1,19 +1,26 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-    <name>rosbag_creator</name>
-    <version>0.0.0</version>
-    <description>Wraps rosbag as services to start and stop bags</description>
-    <maintainer email="team@qutmotorsport.com">Walden Leung</maintainer>
-    <license>MIT</license>
+  <name>rosbag_creator</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="7531347+leungw16@users.noreply.github.com">leungw16</maintainer>
+  <license>TODO: License declaration</license>
 
-    <depend>rclpy</depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <!-- Messages -->
-    <depend>driverless_msgs</depend>
-    <depend>std_msgs</depend>
+  <depend>driverless_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rosbag2_transport</depend>
+  <depend>rosbag2_cpp</depend>
+  <depend>rosbag2_storage</depend>
+  <depend>rosbag2_interfaces</depend>
 
-    <export>
-        <build_type>ament_python</build_type>
-    </export>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
