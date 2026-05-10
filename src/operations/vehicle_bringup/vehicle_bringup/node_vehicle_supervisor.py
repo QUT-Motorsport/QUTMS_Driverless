@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 from ament_index_python.packages import get_package_share_path
 import can
@@ -16,6 +15,8 @@ from std_msgs.msg import Bool, UInt8
 from std_srvs.srv import SetBool
 
 from driverless_common.status_constants import INT_MISSION_TYPE
+
+from typing import Optional
 
 can_bus = can.interface.Bus("can0", bustype="socketcan")  # type: ignore
 # can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
@@ -35,7 +36,7 @@ class VehicleSupervisor(Node):
     lidar_update_time = time.time()
     planning_update_time = time.time()
     sbg_update_time = time.time()
-    
+
     can_bus: Optional[can.BusABC] = None
     notifier: Optional[can.Notifier] = None
     reader: Optional[can.BufferedReader] = None
