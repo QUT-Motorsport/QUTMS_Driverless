@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 from ament_index_python.packages import get_package_share_path
 import can
@@ -16,10 +17,10 @@ from std_srvs.srv import SetBool
 
 from driverless_common.status_constants import INT_MISSION_TYPE
 
-can_bus = can.interface.Bus("can0", bustype="socketcan")
+can_bus = can.interface.Bus("can0", bustype="socketcan")  # type: ignore
 # can_bus = can.Bus(interface="virtual", channel="can0", receive_own_messages=True)
 dbc_path = get_package_share_path("QUTMS_Embedded_Common") / "QUTMS_Embedded_Common" / "QUTMS.dbc"
-db = cantools.database.load_file(dbc_path)
+db = cantools.database.load_file(str(dbc_path))  # type: ignore
 
 
 class VehicleSupervisor(Node):
@@ -34,6 +35,10 @@ class VehicleSupervisor(Node):
     lidar_update_time = time.time()
     planning_update_time = time.time()
     sbg_update_time = time.time()
+    
+    can_bus: Optional[can.BusABC] = None
+    notifier: Optional[can.Notifier] = None
+    reader: Optional[can.BufferedReader] = None
 
     def __init__(self):
         super().__init__("vehicle_supervisor_node")
@@ -51,7 +56,7 @@ class VehicleSupervisor(Node):
             None,
             self.create_client(SetBool, "launch/inspection"),
             self.create_client(SetBool, "launch/ebs"),
-            self.create_client(SetBool, "launch/trackdrive"),
+            self.create_client(SetBool, "launch/trackdrive"),  # type: ignore
         ]
 
         self.system_launch_cli = self.create_client(SetBool, "launch/system")
@@ -65,10 +70,10 @@ class VehicleSupervisor(Node):
         self.reader = can.BufferedReader()
         self.notifier = can.Notifier(can_bus, [self.reader], 0.1)
 
-        self.get_logger().info("---Mission control node initialised---")
+        self.get_logger().info("---Mission control node initialised---")  # type: ignore
 
-    def send_mission_request(self, mission: int, request_val: bool):
-        assert type(mission) == int
+    def send_mission_request(self, mission: int, request_val: bool) -> bool:
+        assert isinstance(mission, int)
         request = SetBool.Request()
         request.data = request_val
         self.future = self.srv_list[mission].call_async(request)
@@ -77,7 +82,7 @@ class VehicleSupervisor(Node):
         self.system_launch_cli.remove_pending_request(self.future)
         return True
 
-    def send_system_request(self, request_val: bool):
+    def send_system_request(self, request_val: bool) -> bool:
         request = SetBool.Request()
         request.data = request_val
         self.future = self.system_launch_cli.call_async(request)
@@ -112,8 +117,8 @@ class VehicleSupervisor(Node):
         self.ros_state_pub.publish(self.ros_state)
 
         # publish ROS state to CAN
-        ros_state_message = db.get_message_by_name("ROS_State")
-        data = ros_state_message.encode(
+        ros_state_message = db.get_message_by_name("ROS_State")  # type: ignore
+        data = ros_state_message.encode(  # type: ignore
             {
                 "ROS_State_Steering": self.ros_state.steering_ctrl,
                 "ROS_State_SBG": self.ros_state.sbg_operational,
@@ -127,24 +132,24 @@ class VehicleSupervisor(Node):
             }
         )
         try:
-            message = can.Message(arbitration_id=ros_state_message.frame_id, data=data)
+            message = can.Message(arbitration_id=ros_state_message.frame_id, data=data)  # type: ignore
             can_bus.send(message)
         except can.CanOperationError:
             self.get_logger().error("Waiting for CAN bus to be available", throttle_duration_sec=1)
 
         # incoming messages for AV state
-        while not self.reader.buffer.empty():
-            message = self.reader.get_message()
-            if message.arbitration_id != db.get_message_by_name("AV_State").frame_id:
+        while not self.reader.buffer.empty():  # type: ignore
+            message = self.reader.get_message()  # type: ignore
+            if message.arbitration_id != db.get_message_by_name("AV_State").frame_id:  # type: ignore
                 continue  # ignore messages that are not AV state
 
-            msg_signals = db.decode_message(message.arbitration_id, message.data)
+            msg_signals = db.decode_message(message.arbitration_id, message.data)  # type: ignore
 
             # publish AV state to ROS
             self.av_state.header.stamp = self.get_clock().now().to_msg()
-            self.av_state.mode = msg_signals["AV_State_Mode"]
-            self.av_state.mission = msg_signals["AV_State_Mission"]
-            self.av_state.state = msg_signals["AV_State_Status"]
+            self.av_state.mode = int(msg_signals.get("AV_State_Mode", 0))  # type: ignore
+            self.av_state.mission = int(msg_signals.get("AV_State_Mission", 0))  # type: ignore
+            self.av_state.state = int(msg_signals.get("AV_State_Status", 0))  # type: ignore
             self.av_state_pub.publish(self.av_state)
 
             # start system if in autonomous mode
@@ -157,9 +162,9 @@ class VehicleSupervisor(Node):
                 and self.av_state.mission != AVStateStamped.MISSION_NONE
                 and not self.mission_launched
             ):
-                target_mission = INT_MISSION_TYPE[self.av_state.mission].value
+                target_mission = INT_MISSION_TYPE[int(self.av_state.mission)].value  # type: ignore
                 self.get_logger().info("Mission started: " + target_mission)
-                self.mission_launched = self.send_mission_request(self.av_state.mission, True)
+                self.mission_launched = self.send_mission_request(int(self.av_state.mission), True)
 
             if self.av_state.state == AVStateStamped.DRIVING:
                 self.ros_state.steering_ctrl = True
@@ -170,11 +175,11 @@ class VehicleSupervisor(Node):
                 self.finished = True
 
     def diagnostics_callback(self, msg: DiagnosticArray):
-        if "velodyne_driver_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
+        if "velodyne_driver_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:  # type: ignore[reportIndexIssue]
             self.ros_state.lidar_operational = True
             self.lidar_update_time = time.time()
 
-        if "ft_planner_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:
+        if "ft_planner_node" in msg.status[0].name and int.from_bytes(msg.status[0].level, "big") == 0:  # type: ignore[reportIndexIssue]
             self.ros_state.planning = True
             self.planning_update_time = time.time()
 
@@ -201,6 +206,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = VehicleSupervisor()
     rclpy.spin(node)
-    node.can_bus.shutdown()
+    if can_bus is not None:
+        can_bus.shutdown()
     node.destroy_node()
     rclpy.shutdown()
