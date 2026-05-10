@@ -26,6 +26,7 @@ set(msg_files
   "msg/State.msg"
   "msg/AVStateStamped.msg"
   "msg/ROSStateStamped.msg"
+    "srv/IsRecording.srv"
   "srv/TriggerBagRecord.srv"
 )
 
