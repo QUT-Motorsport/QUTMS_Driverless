@@ -56,7 +56,7 @@ def generate_launch_description():
         package="rosbag2_transport",
         executable="recorder",
         name="rosbag_recorder",
-        parameters=os.path.join(get_package_share_path("vehicle_bringup"), "config", "rosbag.yaml"),
+        parameters=[os.path.join(get_package_share_path("vehicle_bringup"), "config", "rosbag.yaml")],
     )
 
     pushcart_launch = IncludeLaunchDescription(

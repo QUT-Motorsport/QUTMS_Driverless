@@ -33,6 +33,7 @@ ENV ROS_DOMAIN_ID=69
 ENV QUTMS_WS=/home/${USERNAME}/QUTMS
 ENV USER=${USERNAME}
 ENV ROS_LOG_DIR=/home/${USERNAME}/QUTMS/roslogs
+ENV PUSHCART=1
 
 RUN pwd
 COPY ./docker/ros_entrypoint.sh ./ros_entrypoint.sh
