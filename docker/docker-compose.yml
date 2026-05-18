@@ -1,5 +1,3 @@
-
-
 services:
   # Base image containing dependencies
   base:
@@ -36,7 +34,6 @@ services:
     volumes:
       # /dev/shm is mounted in so that two foxy containers can talk to each other when using net=host, see: https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/
       - /dev/shm:/dev/shm
-      - /dev/sbg:/dev/sbg
       # Allows graphical programs in the container.
       - $HOME/.Xauthority:/home/${USERNAME}/.Xauthority
       # Mount the workspace folders (some with read-write permissions)
@@ -49,6 +46,8 @@ services:
       - ../../install:/home/${USERNAME}/QUTMS/install
     devices:
       - /dev/dri:/dev/dri
+      # SBG IMU/GNSS — host /dev/sbg symlink exposed as /dev/ttyUSB0 in container
+      - /dev/sbg:/dev/ttyUSB0
     # Start the terminal
     command: /bin/bash
 

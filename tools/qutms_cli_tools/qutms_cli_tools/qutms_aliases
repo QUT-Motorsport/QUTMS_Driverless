@@ -1,10 +1,10 @@
 # --- QUTMS Panda Development Aliases ---
 
 # 1. Run make target without changing directory
-alias panda_terminal='make -C ~/QUTMS/QUTMS_Driverless/docker run target=panda_terminal'
-
+alias panda_terminal='make -C ~/repos/QUTMS_Driverless/docker run target=panda_terminal'
+alias panda_build='make -C ~/repos/QUTMS_Driverless/docker run target=panda_build'
 # 2. Start ROS2 Bag Service (Detached)
-alias bag_start='docker exec -d panda ros2 service call /bag/start std_srvs/srv/Trigger "{}"'
+alias bag_start='docker exec -d panda ros2 service call /rosbag2_interfaces/srv/record "{uri: '~/QUTMS/bags/MANUAL_($date '+%d%m%Y%H%M%S')'}"'
 
 # 3. Stop ROS2 Bag Service (Detached)
 alias bag_stop='docker exec -d panda ros2 service call /bag/stop std_srvs/srv/Trigger "{}"'

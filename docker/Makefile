@@ -48,6 +48,9 @@ build:
 run:
 	docker-compose -f ./docker-compose.yml -p qutms_driverless run --rm $(target)
 
+run_named:
+	docker-compose -f ./docker-compose.yml -p qutms_driverless run -d --name $(target) --rm $(target)
+
 run_detached:
 	docker-compose -f ./docker-compose.yml -p qutms_driverless run -d --rm $(target)
 
