@@ -189,14 +189,14 @@ class FaSTTUBeBoundaryExtractor(Node):
         self.get_logger().info("---Planner node initalised---")
 
     def create_planner(self):
-        self.declare_parameter("mission", MissionTypes.trackdrive)
+        self.declare_parameter("mission", 2)
         self.mission = MissionTypes.none
         match self.get_parameter("mission").value:
-            case 'ebs_test':
+            case 0: # 'ebs_test':
                 self.mission = MissionTypes.ebs_test
-            case 'skidpad':
+            case 1: # 'skidpad':
                 self.mission = MissionTypes.skidpad
-            case 'trackdrive':
+            case 2: # 'trackdrive':
                 self.mission = MissionTypes.trackdrive
 
         self.path_planner = PathPlanner(self.mission)
@@ -260,7 +260,7 @@ class FaSTTUBeBoundaryExtractor(Node):
             "max_deg": self.get_parameter("max_deg").value,
         }
 
-        if self.mission == mission.skidpad:
+        if self.mission == MissionTypes.skidpad:#mission.skidpad:
             self.path_planner.pathing = SkidpadCalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
         else:
             self.path_planner.pathing = CalculatePath(**path_calculation_kwargs, **cone_fitting_kwargs)
