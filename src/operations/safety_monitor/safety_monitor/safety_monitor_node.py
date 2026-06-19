@@ -1,20 +1,33 @@
 import rclpy
 from rclpy.node import Node
 from ackermann_msgs.msg import AckermannDriveStamped
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import PointCloud2
+from driverless_msgs.msg import Shutdown 
 import time
+import math
 
 class SafetyMonitor(Node):
     def __init__(self):
         super().__init__('safety_monitor_node')
 
         # Physical limits
-        self.MAX_SPEED = 20.0 # Meters per second
-        self.MAX_STEERING = 0.8 # Radians (~45 degrees)
-        self.system_locked = False # State for E-Stop
+        self.MAX_SPEED = 20.0 
+        self.MAX_STEERING = 0.8 
+        self.MAX_POSE_JUMP = 3.0 # Meters
+        self.system_locked = False 
 
         # Watchdog parameters
+        self.first_command_received = False
         self.last_command_time = time.time()
-        self.TIMEOUT_LIMIT = 0.5 # Seconds. Trigger E-Stop if no message for 500ms
+        self.TIMEOUT_LIMIT = 0.5 
+
+        # Oscillation parameters
+        self.last_steering = 0.0
+        self.oscillation_count = 0
+
+        # Odometry parameters
+        self.last_pose = None
 
         self.health_status = {
             "lidar": False,
@@ -23,98 +36,108 @@ class SafetyMonitor(Node):
             "slam": False
         }
         
-        # Create a subscriber to the driving command topic
-        self.subscription = self.create_subscription(
-            AckermannDriveStamped,
-            '/control/driving_command',
-            self.listener_callback,
-            10) # Queue size is 10
+        # Subscribers
+        self.drive_sub = self.create_subscription(
+            AckermannDriveStamped, '/control/driving_command', self.listener_callback, 10)
+            
+        self.odom_sub = self.create_subscription(
+            Odometry, 'imu/odometry', self.odom_callback, 10)
+            
+        self.lidar_sub = self.create_subscription(
+            PointCloud2, '/lidar/cone_points', self.lidar_callback, 10)
+            
+        # Publisher to actively trigger the system shutdown
+        self.shutdown_pub = self.create_publisher(
+            Shutdown, 'system/shutdown', 1)
         
         self.watchdog_timer = self.create_timer(0.1, self.check_watchdogs)
             
         self.get_logger().info('Safety Monitor active')
 
     def listener_callback(self, msg):
-        # Ignore new commands if E-Stop engaged
         if self.system_locked:
             return
         
-        # Update heartbeat timestamp
+        self.first_command_received = True
         self.last_command_time = time.time()
+        self.health_status["planner"] = True
         
         speed = msg.drive.speed
         steering = msg.drive.steering_angle
         
-        # Check for safety violations
+        # Bounds Checking
         if abs(speed) > self.MAX_SPEED:
             self.trigger_estop(f'Overspeed Detected: {speed:.2f} m/s')
         elif abs(steering) > self.MAX_STEERING:
             self.trigger_estop(f'Oversteer Detected: {steering:.2f} rad')
+            
+        # Oscillation (Death Wobble) Detection
+        if (self.last_steering > 0.5 and steering < -0.5) or (self.last_steering < -0.5 and steering > 0.5):
+            self.oscillation_count += 1
+            if self.oscillation_count >= 3:
+                self.trigger_estop('Steering Oscillation (Death Wobble) Detected')
         else:
-            self.get_logger().info(f'Monitoring -> Speed: {speed:.2f} m/s, Steering: {steering:.2f} rad')
+            self.oscillation_count = max(0, self.oscillation_count - 1)
+            
+        self.last_steering = steering
+
+    def odom_callback(self, msg):
+        if self.system_locked:
+            return
+            
+        self.health_status["slam"] = True
+        current_pose = msg.pose.pose.position
+        
+        # NaN Check
+        if math.isnan(current_pose.x) or math.isnan(current_pose.y):
+            self.trigger_estop('NaN value detected in Odometry')
+            return
+            
+        # Teleportation Spike Check
+        if self.last_pose:
+            dist = math.sqrt((current_pose.x - self.last_pose.x)**2 + (current_pose.y - self.last_pose.y)**2)
+            if dist > self.MAX_POSE_JUMP:
+                self.trigger_estop(f'Odometry Jump Detected: {dist:.2f}m')
+                
+        self.last_pose = current_pose
 
     def lidar_callback(self, msg):
-        # LiDaR is healthy if we recieved a message
-        self.health_status["lidar"] = True
-        self.last_lidar_received = self.get_clock().now()
-
-    def planner_callback(self, msg):
-        # Permorm math check
-        speed_ok = abs(msg.drive.speed) <= self.MAX_SPEED
-
-        # Update based on math
-        self.health_status["lidar"] = speed_ok
-        self.last_lidar_received = self.get_clock().now()
+        # Ensure the point cloud isn't completely empty
+        if msg.width * msg.height == 0:
+            self.health_status["lidar"] = False
+            self.trigger_estop('Sensor Blindness: LiDAR published empty point cloud')
+        else:
+            self.health_status["lidar"] = True
+            self.last_lidar_received = self.get_clock().now()
 
     def check_watchdogs(self):
-        if self.system_locked:
+        if self.system_locked or not self.first_command_received:
             return
         
         current_time = time.time()
         time_since_last_msg = current_time - self.last_command_time
 
-        # Kill the car if planner stops talking
         if time_since_last_msg > self.TIMEOUT_LIMIT:
+            self.health_status["planner"] = False
             self.trigger_estop(f"Lost communication with Planner! (Timeout: {time_since_last_msg:.2f}s)")
 
-    def health_check_loop(self):
-        if self.system_locked:
-            return
-        
-        now = self.get_clock().now()
-
-        # Check for timeouts and set health to False if a node is silent
-        if (now - self.last_lidar_received).nanoseconds > 0.5 * 1e9: # 500ms
-            self.health_status["lidar"] = False
-            
-        if (now - self.last_planner_received).nanoseconds > 0.2 * 1e9: # 200ms
-            self.health_status["planner"] = False
-        
-        # Returns True if all values are True
-        if not all(self.health_status.values()):
-            # Find failed for logs
-            failed_systems = [k for k, v in self.health_status.items() if not v]
-            self.trigger_estop(f"System Health Failure: {failed_systems}")
-
     def trigger_estop(self, reason):
-        # Update system lock
-        self.system_locked = True
-
-        # Update logs
-        self.get_logger().error(f'E-STOP TRIGGERED! Reason: {reason}')
-
-        # TODO VCU cut power
-
+        if not self.system_locked:
+            self.system_locked = True
+            self.get_logger().error(f'E-STOP TRIGGERED! Reason: {reason}')
+            
+            # Broadcast the shutdown command to the network
+            shutdown_msg = Shutdown()
+            # Assumed shutdown structure
+            self.shutdown_pub.publish(shutdown_msg)
 
 def main(args=None):
     rclpy.init(args=args)
     node = SafetyMonitor()
-
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    
     node.destroy_node()
     rclpy.shutdown()
 
