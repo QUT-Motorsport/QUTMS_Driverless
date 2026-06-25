@@ -56,7 +56,9 @@ hardware_interface::CallbackReturn VcuDrivingInterface::on_init(
 
     diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
 
-    socket_can_ = std::make_unique<SocketCAN>();
+    if (!socket_can_) {
+        socket_can_ = std::make_unique<SocketCAN>();
+    }
 
     RCLCPP_INFO(rclcpp::get_logger("VcuDrivingInterface"),
                 "VCU Driving Interface initialized. CAN: %s, Wheel Radius: %.4fm", can_interface_name_.c_str(),

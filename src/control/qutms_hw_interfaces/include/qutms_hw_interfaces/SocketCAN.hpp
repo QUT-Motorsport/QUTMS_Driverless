@@ -23,7 +23,7 @@ class SocketCAN {
 
    public:
     SocketCAN();
-    ~SocketCAN();
+    virtual ~SocketCAN();
 
     virtual bool setup(std::string interface, rclcpp::Logger logger);
 

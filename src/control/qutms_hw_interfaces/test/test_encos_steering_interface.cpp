@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -30,6 +32,9 @@ class EncosSteeringInterfaceTest : public ::testing::Test {
     }
 
     void SetUp() override {
+        if (!rclcpp::ok()) {
+            rclcpp::init(0, nullptr);
+        }
         // Build mock HardwareInfo
         info.name = "TestEncosSteeringActuator";
         info.type = "system";
@@ -105,7 +110,7 @@ TEST_F(EncosSteeringInterfaceTest, test_read_feedback) {
 
     // Exported state interfaces check
     auto states = interface->export_state_interfaces();
-    ASSERT_EQ(states.size(), 4u);
+    ASSERT_EQ(states.size(), 5u);
 
     // Check decrypted values
     // Middle position raw 32767 / 65535 * 25 - 12.5 is approx 0.0 rad
@@ -113,6 +118,7 @@ TEST_F(EncosSteeringInterfaceTest, test_read_feedback) {
     EXPECT_DOUBLE_EQ(*states[1].get_optional(), 50.0);  // motor_temp
     EXPECT_DOUBLE_EQ(*states[2].get_optional(), 60.0);  // inverter_temp
     EXPECT_DOUBLE_EQ(*states[3].get_optional(), 5.0);   // fault_code (error_code_ is 0x05)
+    EXPECT_DOUBLE_EQ(*states[4].get_optional(), 0.0);   // dc_voltage
 }
 
 TEST_F(EncosSteeringInterfaceTest, test_write_command) {

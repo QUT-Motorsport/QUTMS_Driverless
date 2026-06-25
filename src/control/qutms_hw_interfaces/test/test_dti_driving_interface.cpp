@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -30,6 +32,9 @@ class DtiDrivingInterfaceTest : public ::testing::Test {
     }
 
     void SetUp() override {
+        if (!rclcpp::ok()) {
+            rclcpp::init(0, nullptr);
+        }
         info.name = "TestDtiDrivingInterface";
         info.type = "system";
 
@@ -80,21 +85,22 @@ TEST_F(DtiDrivingInterfaceTest, test_init_and_configure) {
 }
 
 TEST_F(DtiDrivingInterfaceTest, test_read_feedback) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
-
-    // Create mock Packet 0x20 RX frame (Standard ID format: ID = 0x20 << 5 | motor_id)
-    // Left motor (ID 34 = 0x22). Since 0x22 is > 30, wait, standard ID Node ID is 5 bits (1-30).
-    // Let's test standard ID with motor ID = 8 (0x08)
     info.hardware_parameters["left_motor_id"] = "8";
+    info.hardware_parameters["right_motor_id"] = "9";
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
 
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
-    driverless_msgs::msg::Can frame;
-    frame.id = (0x20 << 5) | 8;  // ID = 0x0408
-    frame.dlc = 8;
-    // ERPM = 94500 (approx 0x00017124) Big Endian
-    frame.data = {0x00, 0x01, 0x71, 0x24, 0x00, 0x00, 0x0F, 0xA0};  // cap voltage 4000 (400.0V since scale 10)
-    rx_frames->push_back(frame);
+    driverless_msgs::msg::Can frame_left;
+    frame_left.id = (0x20 << 5) | 8;  // Left Motor (ID 8)
+    frame_left.dlc = 8;
+    frame_left.data = {0x00, 0x01, 0x71, 0x24, 0x00, 0x00, 0x0F, 0xA0};  // ERPM = 94500, cap voltage = 4000
+    rx_frames->push_back(frame_left);
+
+    driverless_msgs::msg::Can frame_right;
+    frame_right.id = (0x20 << 5) | 9;  // Right Motor (ID 9)
+    frame_right.dlc = 8;
+    frame_right.data = {0x00, 0x01, 0x71, 0x24, 0x00, 0x00, 0x0F, 0xA0};  // ERPM = 94500, cap voltage = 4000
+    rx_frames->push_back(frame_right);
 
     EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
 

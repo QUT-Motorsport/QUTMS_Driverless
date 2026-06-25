@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -32,6 +34,9 @@ class SevconDrivingInterfaceTest : public ::testing::Test {
     }
 
     void SetUp() override {
+        if (!rclcpp::ok()) {
+            rclcpp::init(0, nullptr);
+        }
         info.name = "TestSevconDrivingInterface";
         info.type = "system";
 

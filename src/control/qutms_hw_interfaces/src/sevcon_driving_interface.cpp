@@ -98,7 +98,9 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_init(
     node_ = rclcpp::Node::make_shared("_", options);
     diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
 
-    socket_can_ = std::make_unique<SocketCAN>();
+    if (!socket_can_) {
+        socket_can_ = std::make_unique<SocketCAN>();
+    }
 
     RCLCPP_INFO(rclcpp::get_logger("SevconDrivingInterface"),
                 "Sevcon Driving Interface initialized. Left Motor ID: 0x%X, Right Motor ID: 0x%X, Mode: %s",

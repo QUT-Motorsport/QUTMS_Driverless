@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -34,6 +36,9 @@ class VcuDrivingInterfaceTest : public ::testing::Test {
     }
 
     void SetUp() override {
+        if (!rclcpp::ok()) {
+            rclcpp::init(0, nullptr);
+        }
         info.name = "TestVcuDrivingInterface";
         info.type = "system";
 
@@ -91,8 +96,8 @@ TEST_F(VcuDrivingInterfaceTest, test_read_feedback) {
     driverless_msgs::msg::Can frame_left;
     frame_left.id = (VESC_CAN_PACKET_STATUS << 8) | 2;  // ID = 0x0902
     frame_left.dlc = 8;
-    // ERPM = 1000 RPM (motor) -> 1000 * 21 * 4.50 = 94500 ERPM (approx 0x00017124)
-    frame_left.data = {0x00, 0x01, 0x71, 0x24, 0x00, 0x00, 0x00, 0x00};
+    // ERPM = 1000 RPM (motor) -> 1000 * 21 = 21000 ERPM (approx 0x00005208)
+    frame_left.data = {0x00, 0x00, 0x52, 0x08, 0x00, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_left);
 
     EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
@@ -144,7 +149,7 @@ TEST_F(VcuDrivingInterfaceTest, test_write_command) {
     interface->read(time, period);
 
     EXPECT_CALL(*mock_can, tx(_, _)).WillOnce(Invoke([](driverless_msgs::msg::Can* msg, rclcpp::Logger) {
-        EXPECT_EQ(msg->id, 0x500u);  // VCU request ID or similar
+        EXPECT_EQ(msg->id, 144621568u);  // VCU request ID (0x089E8000)
         EXPECT_EQ(msg->dlc, 8);
 
         // Torque request should be 50%
