@@ -179,8 +179,7 @@ hardware_interface::CallbackReturn QevHardwareInterface::on_activate(const rclcp
 }
 
 // Deactivate the hardware interface with the given lifecycle state
-hardware_interface::CallbackReturn QevHardwareInterface::on_deactivate(
-    const rclcpp_lifecycle::State& previous_state) {
+hardware_interface::CallbackReturn QevHardwareInterface::on_deactivate(const rclcpp_lifecycle::State& previous_state) {
     // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
     RCLCPP_INFO(get_logger(), "Deactivating ...please wait...");
 
@@ -229,8 +228,7 @@ hardware_interface::return_type QevHardwareInterface::read(const rclcpp::Time& t
 }
 
 // Write the command to the hardware
-hardware_interface::return_type QevHardwareInterface::write(const rclcpp::Time& time,
-                                                              const rclcpp::Duration& period) {
+hardware_interface::return_type QevHardwareInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period) {
     // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
     std::stringstream ss;
     ss << "Writing commands:";

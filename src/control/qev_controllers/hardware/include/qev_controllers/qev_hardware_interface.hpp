@@ -110,6 +110,6 @@ class QevHardwareInterface : public hardware_interface::SystemInterface {
     Config config_;
 };
 
-}  // namespace qev3d_ros2_control
+}  // namespace qev_controllers
 
 #endif  // QEV_ROS2_CONTROL_HARDWARE_INTERFACE_HPP_
