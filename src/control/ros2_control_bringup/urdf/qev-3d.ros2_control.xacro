@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="qev3d_ros2_control" params="name hardware_interface can_interface">
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <xacro:if value="${hardware_interface == 'stepper'}">
+          <plugin>qutms_hw_interfaces/QevStepperInterface</plugin>
+          <param name="can_interface">${can_interface}</param>
+          <param name="node_id">112</param> <!-- 0x70 -->
+          <param name="max_position">7500</param>
+          <param name="velocity">10000</param>
+          <param name="acceleration">2000</param>
+        </xacro:if>
+        <xacro:if value="${hardware_interface == 'encos'}">
+          <plugin>qutms_hw_interfaces/EncosSteeringInterface</plugin>
+          <param name="can_interface">${can_interface}</param>
+          <param name="motor_id">1</param>
+          <param name="target_speed_rpm">50.0</param>
+          <param name="current_limit_a">10.0</param>
+        </xacro:if>
+        <xacro:if value="${hardware_interface == 'vcu'}">
+          <plugin>qutms_hw_interfaces/VcuDrivingInterface</plugin>
+          <param name="can_interface">${can_interface}</param>
+          <param name="wheel_radius">0.2032</param>
+          <param name="Kp">0.05</param>
+          <param name="Ki">0.0</param>
+          <param name="max_integral_torque">0.0</param>
+        </xacro:if>
+        <xacro:if value="${hardware_interface == 'sevcon'}">
+          <plugin>qutms_hw_interfaces/SevconDrivingInterface</plugin>
+          <param name="can_interface">${can_interface}</param>
+          <param name="left_motor_id">34</param>
+          <param name="right_motor_id">35</param>
+          <param name="vcu_sa">0</param>
+          <param name="gear_ratio">4.50</param>
+          <param name="wheel_radius">0.2032</param>
+          <param name="control_mode">internal_pid</param>
+          <param name="torque_limit_nm">100.0</param>
+          <param name="regen_limit_nm">-100.0</param>
+          <param name="Kp">5.0</param>
+          <param name="Ki">0.1</param>
+        </xacro:if>
+        <xacro:if value="${hardware_interface == 'dti'}">
+          <plugin>qutms_hw_interfaces/DtiDrivingInterface</plugin>
+          <param name="can_interface">${can_interface}</param>
+          <param name="left_motor_id">34</param>
+          <param name="right_motor_id">35</param>
+          <param name="use_extended_id">false</param>
+          <param name="gear_ratio">4.50</param>
+          <param name="wheel_radius">0.2032</param>
+          <param name="pole_pairs">21</param>
+        </xacro:if>
+      </hardware>
+
+      <!-- Steering interfaces -->
+      <joint name="virtual_front_wheel_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="motor_temp"/>
+        <state_interface name="inverter_temp"/>
+        <state_interface name="fault_code"/>
+        <state_interface name="dc_voltage"/>
+      </joint>
+
+      <!-- Driving interfaces -->
+      <joint name="rear_left_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+        <state_interface name="motor_temp"/>
+        <state_interface name="inverter_temp"/>
+        <state_interface name="fault_code"/>
+        <state_interface name="dc_voltage"/>
+      </joint>
+
+      <joint name="rear_right_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+
+    </ros2_control>
+  </xacro:macro>
+</robot>

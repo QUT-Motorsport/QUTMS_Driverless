@@ -1,0 +1,87 @@
+#ifndef QUTMS_HW_INTERFACES__DTI_DRIVING_INTERFACE_HPP_
+#define QUTMS_HW_INTERFACES__DTI_DRIVING_INTERFACE_HPP_
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
+#include "driverless_msgs/msg/can.hpp"
+#include "hardware_interface/handle.hpp"
+#include "hardware_interface/hardware_info.hpp"
+#include "hardware_interface/system_interface.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "qutms_hw_interfaces/SocketCAN.hpp"
+#include "rclcpp/macros.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+
+namespace qutms_hw_interfaces {
+
+class DtiDrivingInterface : public hardware_interface::SystemInterface {
+   public:
+    RCLCPP_SHARED_PTR_DEFINITIONS(DtiDrivingInterface)
+
+    void set_socket_can(std::unique_ptr<SocketCAN> socket_can) { socket_can_ = std::move(socket_can); }
+
+    hardware_interface::CallbackReturn on_init(
+        const hardware_interface::HardwareComponentInterfaceParams& params) override;
+    hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+    hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+    hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+
+   private:
+    std::unique_ptr<SocketCAN> socket_can_;
+    std::string can_interface_name_;
+    uint8_t left_motor_id_;
+    uint8_t right_motor_id_;
+    bool use_extended_id_;
+
+    // States: positions and velocities for left and right wheels
+    double left_wheel_pos_state_;
+    double left_wheel_vel_state_;
+    double right_wheel_pos_state_;
+    double right_wheel_vel_state_;
+
+    // Commands: velocities for left and right wheels
+    double left_wheel_vel_cmd_;
+    double right_wheel_vel_cmd_;
+
+    // Custom state interfaces exported for diagnostics (averaged for the two motors)
+    double motor_temp_;
+    double inverter_temp_;
+    double fault_code_;
+    double dc_voltage_;
+
+    // Individual motor states
+    double left_motor_temp_;
+    double right_motor_temp_;
+    double left_inverter_temp_;
+    double right_inverter_temp_;
+    uint8_t left_fault_code_;
+    uint8_t right_fault_code_;
+    double left_dc_voltage_;
+    double right_dc_voltage_;
+
+    // Configuration parameters
+    double gear_ratio_;
+    double wheel_radius_;
+    uint32_t pole_pairs_;
+
+    // ROS 2 node and publisher for diagnostics
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
+
+    uint32_t get_dti_can_id(uint8_t packet_id, uint8_t motor_id);
+    void send_drive_enable(uint8_t motor_id, bool enable);
+    void send_set_erpm(uint8_t motor_id, int32_t target_erpm);
+    void publish_diagnostics();
+};
+
+}  // namespace qutms_hw_interfaces
+
+#endif  // QUTMS_HW_INTERFACES__DTI_DRIVING_INTERFACE_HPP_

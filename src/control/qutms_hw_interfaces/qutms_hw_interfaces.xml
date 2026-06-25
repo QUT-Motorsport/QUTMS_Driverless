@@ -1,0 +1,27 @@
+<library path="qutms_hw_interfaces">
+  <class name="qutms_hw_interfaces/QevStepperInterface"
+         type="qutms_hw_interfaces::QevStepperInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>Stepper motor CANopen hardware interface.</description>
+  </class>
+  <class name="qutms_hw_interfaces/EncosSteeringInterface"
+         type="qutms_hw_interfaces::EncosSteeringInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>ENCOS CAN steering actuator hardware interface.</description>
+  </class>
+  <class name="qutms_hw_interfaces/VcuDrivingInterface"
+         type="qutms_hw_interfaces::VcuDrivingInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>VCU heartbeat driving hardware interface.</description>
+  </class>
+  <class name="qutms_hw_interfaces/SevconDrivingInterface"
+         type="qutms_hw_interfaces::SevconDrivingInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>Sevcon J1939 H-protocol driving hardware interface.</description>
+  </class>
+  <class name="qutms_hw_interfaces/DtiDrivingInterface"
+         type="qutms_hw_interfaces::DtiDrivingInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>DTI inverter driving hardware interface.</description>
+  </class>
+</library>

@@ -1,0 +1,48 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    ackermann_steering_controller:
+      type: tricycle_controller/TricycleController
+
+joint_state_broadcaster:
+  ros__parameters: {}
+
+ackermann_steering_controller:
+  ros__parameters:
+    # Wheel joints
+    traction_joints:
+      - rear_left_wheel_joint
+      - rear_right_wheel_joint
+    steering_joints:
+      - virtual_steering_hinge_joint
+
+    # Geometry parameters
+    wheel_separation: 1.400  # Track width (m)
+    wheel_radius: 0.2032     # Wheel radius (m)
+    wheel_base: 1.535        # Wheel base (m)
+
+    # Odometry configuration
+    odom_frame_id: odom
+    base_frame_id: base_link
+    publish_rate: 50.0
+    open_loop: false
+    enable_odom_tf: true
+
+    # Command limits
+    linear:
+      x:
+        has_velocity_limits: true
+        max_velocity: 25.0
+        min_velocity: -15.0
+        has_acceleration_limits: true
+        max_acceleration: 10.0
+        min_acceleration: -10.0
+    angular:
+      z:
+        has_velocity_limits: true
+        max_velocity: 2.0
+        min_velocity: -2.0

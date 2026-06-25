@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="qev-3d" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="base_frame" default="base_link"/>
+  <xacro:arg name="display_car" default="true"/>
+  <xacro:arg name="hardware_interface" default="vcu"/>
+  <xacro:arg name="can_interface" default="can0"/>
+
+  <!-- Include the base vehicle description -->
+  <xacro:include filename="$(find vehicle_urdf)/urdf/qev-3d.urdf.xacro"/>
+
+  <!-- Include our ros2_control configuration -->
+  <xacro:include filename="$(find ros2_control_bringup)/urdf/qev-3d.ros2_control.xacro"/>
+
+  <!-- Instantiate the macro -->
+  <xacro:qev3d_ros2_control
+    name="Qev3dHardware"
+    hardware_interface="$(arg hardware_interface)"
+    can_interface="$(arg can_interface)" />
+
+</robot>
