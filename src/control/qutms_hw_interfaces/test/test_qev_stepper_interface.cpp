@@ -1,8 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <rclcpp/rclcpp.hpp>
 
+#include "CAN_VCU.h"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -100,6 +102,14 @@ TEST_F(QevStepperInterfaceTest, test_read_and_state_transitions) {
     frame_pos.data = {0xF4, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_pos);
 
+    // Also include a VCU Transmit Steering calibration frame (reports 8.0 deg steering angle)
+    driverless_msgs::msg::Can frame_vcu_steer;
+    frame_vcu_steer.id = VCU_TransmitSteering_ID;
+    frame_vcu_steer.dlc = 8;
+    VCU_TransmitSteering_t vcu_steer_data = Compose_VCU_TransmitSteering(80, 80, 0, 0);
+    frame_vcu_steer.data.assign(vcu_steer_data.data, vcu_steer_data.data + 8);
+    rx_frames->push_back(frame_vcu_steer);
+
     EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
 
     // When desired state is Operation Enabled (0x0027) upon activation
@@ -114,7 +124,7 @@ TEST_F(QevStepperInterfaceTest, test_read_and_state_transitions) {
     rclcpp::Duration period(0, 50000000);
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    // Check position mapping (initial tick is saved as 500, so position state is 0.0)
+    // Check position mapping (initial tick is saved as 500, offset calibrated to -1047, so position state is 0.0 rad)
     auto states = interface->export_state_interfaces();
     EXPECT_DOUBLE_EQ(*states[0].get_optional(), 0.0);
 }
@@ -125,8 +135,8 @@ TEST_F(QevStepperInterfaceTest, test_write_position) {
     auto commands = interface->export_command_interfaces();
     ASSERT_EQ(commands.size(), 1u);
 
-    // Set position command: -100 ticks
-    EXPECT_TRUE(commands[0].set_value(-100.0));
+    // Set position command: 0.0 radians
+    EXPECT_TRUE(commands[0].set_value(0.0));
 
     // Trigger read to change current state to Operation Enabled (0x0027)
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
@@ -135,6 +145,19 @@ TEST_F(QevStepperInterfaceTest, test_write_position) {
     frame_status.dlc = 8;
     frame_status.data = {0x4B, 0x41, 0x60, 0x00, 0x27, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_status);
+
+    driverless_msgs::msg::Can frame_pos;
+    frame_pos.id = 0x2F0;
+    frame_pos.dlc = 8;
+    frame_pos.data = {0xF4, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    rx_frames->push_back(frame_pos);
+
+    driverless_msgs::msg::Can frame_vcu_steer;
+    frame_vcu_steer.id = VCU_TransmitSteering_ID;
+    frame_vcu_steer.dlc = 8;
+    VCU_TransmitSteering_t vcu_steer_data = Compose_VCU_TransmitSteering(80, 80, 0, 0);
+    frame_vcu_steer.data.assign(vcu_steer_data.data, vcu_steer_data.data + 8);
+    rx_frames->push_back(frame_vcu_steer);
 
     EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
     rclcpp::Time time;
@@ -147,7 +170,7 @@ TEST_F(QevStepperInterfaceTest, test_write_position) {
     // Read to register state is OE
     interface->read(time, period);
 
-    // Write should trigger SDO write to Target Position object (0x607A) with value 100
+    // Write should trigger SDO write to Target Position object (0x607A) with value 500 ticks
     EXPECT_CALL(*mock_can, tx(_, _)).Times(3);  // 1 for absolute mode, 1 for target value, 1 for trigger bit
 
     EXPECT_EQ(interface->write(time, period), hardware_interface::return_type::OK);

@@ -50,6 +50,7 @@ class QevStepperInterface : public hardware_interface::SystemInterface {
     int32_t offset_;
     bool initial_enc_saved_;
     int32_t initial_enc_;
+    bool steering_ang_received_;
     int32_t current_position_;
     double joint_position_state_;
     double joint_position_command_;

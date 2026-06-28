@@ -1,8 +1,10 @@
 #include "qutms_hw_interfaces/qev_stepper_interface.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
+#include "CAN_VCU.h"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
@@ -77,9 +79,10 @@ hardware_interface::CallbackReturn QevStepperInterface::on_init(
                         ? static_cast<uint32_t>(std::stoul(info_.hardware_parameters.at("acceleration")))
                         : 2000;
 
-    offset_ = 0;
+    offset_ = 109;
     initial_enc_saved_ = false;
     initial_enc_ = 0;
+    steering_ang_received_ = false;
     current_position_ = 0;
     joint_position_state_ = std::numeric_limits<double>::quiet_NaN();
     joint_position_command_ = std::numeric_limits<double>::quiet_NaN();
@@ -220,7 +223,24 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
     uint32_t srv_id = 0x580 + node_id_;
 
     for (const auto &msg : *frames) {
-        if (msg.id == emcy_id) {
+        if (msg.id == VCU_TransmitSteering_ID) {
+            int16_t steering0_raw = 0;
+            int16_t steering1_raw = 0;
+            uint16_t adc0 = 0;
+            uint16_t adc1 = 0;
+            Parse_VCU_TransmitSteering(msg.data.data(), &steering0_raw, &steering1_raw, &adc0, &adc1);
+            double steering_deg = steering0_raw / 10.0;
+            if (!steering_ang_received_ && initial_enc_saved_) {
+                offset_ = static_cast<int32_t>(-82 * steering_deg + 109) - initial_enc_;
+                steering_ang_received_ = true;
+                RCLCPP_INFO(rclcpp::get_logger("QevStepperInterface"),
+                            "Steering calibration offset computed from VCU: %d (Steering Angle: %f deg)", offset_,
+                            steering_deg);
+                // Recalculate joint state with the new offset
+                double steer_val = (static_cast<double>(current_position_ + offset_ - 109) / -82.0) - 8.0;
+                joint_position_state_ = steer_val * (M_PI / 180.0);
+            }
+        } else if (msg.id == emcy_id) {
             uint16_t error_code = static_cast<uint16_t>((msg.data[1] << 8) | msg.data[0]);
             fault_code_ = static_cast<double>(error_code);
             RCLCPP_ERROR(rclcpp::get_logger("QevStepperInterface"), "C5E Emergency code: 0x%X", error_code);
@@ -238,9 +258,13 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
             if (!initial_enc_saved_) {
                 initial_enc_ = val;
                 initial_enc_saved_ = true;
+                if (!steering_ang_received_) {
+                    offset_ = 109 - initial_enc_;
+                }
             }
-            // Stepper actual encoder ticks to joint position
-            joint_position_state_ = -static_cast<double>(current_position_ - initial_enc_);
+            // Convert ticks to physical joint position in radians
+            double steering_deg = (static_cast<double>(current_position_ + offset_ - 109) / -82.0) - 8.0;
+            joint_position_state_ = steering_deg * (M_PI / 180.0);
         } else if (msg.id == srv_id) {
             uint16_t object_id = static_cast<uint16_t>(((msg.data[2] & 0xFF) << 8) | (msg.data[1] & 0xFF));
             if (object_id == STATUS_WORD) {
@@ -287,9 +311,10 @@ hardware_interface::return_type QevStepperInterface::write(const rclcpp::Time & 
     if (std::isnan(joint_position_command_)) {
         return hardware_interface::return_type::OK;
     }
-    // Convert joint position back to stepper target ticks
-    int32_t target_ticks = -static_cast<int32_t>(joint_position_command_);
-    target_ticks = std::clamp(target_ticks, -max_position_, max_position_);
+    // Convert joint position (radians) back to stepper target ticks
+    double joint_position_command_deg = joint_position_command_ * (180.0 / M_PI);
+    int32_t target_ticks = static_cast<int32_t>(-82.0 * (joint_position_command_deg + 8.0) + 109) - offset_;
+    target_ticks = std::clamp(target_ticks, -max_position_ - offset_, max_position_ - offset_);
     this->target_position(target_ticks);
     return hardware_interface::return_type::OK;
 }

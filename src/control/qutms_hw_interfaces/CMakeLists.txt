@@ -15,8 +15,8 @@ find_package(driverless_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 
-# Add compile definitions for CAN_AV and CAN_VESC
-add_compile_definitions(QUTMS_CAN_AV QUTMS_CAN_VESC)
+# Add compile definitions for CAN_AV, CAN_VESC, and CAN_VCU
+add_compile_definitions(QUTMS_CAN_AV QUTMS_CAN_VESC QUTMS_CAN_VCU)
 
 include_directories(
   include
@@ -33,12 +33,14 @@ set(SOURCES
   src/dti_driving_interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_AV.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VESC.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VCU.c
 )
 
 # Mark the C source files to compile as C++ if needed, or compile as C
 set_source_files_properties(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_AV.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VESC.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../common/QUTMS_Embedded_Common/QUTMS_Embedded_Common/Src/CAN_VCU.c
   PROPERTIES LANGUAGE CXX
 )
 
