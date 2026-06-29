@@ -48,9 +48,6 @@ class QevStepperInterface : public hardware_interface::SystemInterface {
     std::string can_interface_name_;
     uint8_t node_id_;
     int32_t max_position_;
-    int32_t offset_;
-    bool initial_enc_saved_;
-    int32_t initial_enc_;
     bool steering_ang_received_;
     int32_t current_position_;
     double joint_position_state_;

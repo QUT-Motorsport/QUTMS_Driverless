@@ -124,9 +124,9 @@ TEST_F(QevStepperInterfaceTest, test_read_and_state_transitions) {
     rclcpp::Duration period(0, 50000000);
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    // Check position mapping (initial tick is saved as 500, offset calibrated to -1047, so position state is 0.0 rad)
+    // Check position mapping (reports 8.0 deg steering angle, so position state is 8.0 deg in rad)
     auto states = interface->export_state_interfaces();
-    EXPECT_DOUBLE_EQ(*states[0].get_optional(), 0.0);
+    EXPECT_DOUBLE_EQ(*states[0].get_optional(), 8.0 * (M_PI / 180.0));
 }
 
 TEST_F(QevStepperInterfaceTest, test_write_position) {
@@ -135,8 +135,8 @@ TEST_F(QevStepperInterfaceTest, test_write_position) {
     auto commands = interface->export_command_interfaces();
     ASSERT_EQ(commands.size(), 1u);
 
-    // Set position command: 0.0 radians
-    EXPECT_TRUE(commands[0].set_value(0.0));
+    // Set position command: 500.0 ticks (since always chained and we removed target ticks algorithm)
+    EXPECT_TRUE(commands[0].set_value(500.0));
 
     // Trigger read to change current state to Operation Enabled (0x0027)
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();

@@ -79,9 +79,6 @@ hardware_interface::CallbackReturn QevStepperInterface::on_init(
                         ? static_cast<uint32_t>(std::stoul(info_.hardware_parameters.at("acceleration")))
                         : 2000;
 
-    offset_ = 109;
-    initial_enc_saved_ = false;
-    initial_enc_ = 0;
     steering_ang_received_ = false;
     current_position_ = 0;
     joint_position_state_ = std::numeric_limits<double>::quiet_NaN();
@@ -232,16 +229,8 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
             uint16_t adc1 = 0;
             Parse_VCU_TransmitSteering(msg.data.data(), &steering0_raw, &steering1_raw, &adc0, &adc1);
             double steering_deg = steering0_raw / 10.0;
-            if (!steering_ang_received_ && initial_enc_saved_) {
-                offset_ = static_cast<int32_t>(-82 * steering_deg + 109) - initial_enc_;
-                steering_ang_received_ = true;
-                RCLCPP_INFO(rclcpp::get_logger("QevStepperInterface"),
-                            "Steering calibration offset computed from VCU: %d (Steering Angle: %f deg)", offset_,
-                            steering_deg);
-                // Recalculate joint state with the new offset
-                double steer_val = (static_cast<double>(current_position_ + offset_ - 109) / -82.0) - 8.0;
-                joint_position_state_ = steer_val * (M_PI / 180.0);
-            }
+            steering_ang_received_ = true;
+            joint_position_state_ = steering_deg * (M_PI / 180.0);
         } else if (msg.id == emcy_id) {
             uint16_t error_code = static_cast<uint16_t>((msg.data[1] << 8) | msg.data[0]);
             fault_code_ = static_cast<double>(error_code);
@@ -257,16 +246,6 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
             }
             int32_t val = static_cast<int32_t>(raw_pos);
             current_position_ = val;
-            if (!initial_enc_saved_) {
-                initial_enc_ = val;
-                initial_enc_saved_ = true;
-                if (!steering_ang_received_) {
-                    offset_ = 109 - initial_enc_;
-                }
-            }
-            // Convert ticks to physical joint position in radians
-            double steering_deg = (static_cast<double>(current_position_ + offset_ - 109) / -82.0) - 8.0;
-            joint_position_state_ = steering_deg * (M_PI / 180.0);
         } else if (msg.id == srv_id) {
             uint16_t object_id = static_cast<uint16_t>(((msg.data[2] & 0xFF) << 8) | (msg.data[1] & 0xFF));
             if (object_id == STATUS_WORD) {
