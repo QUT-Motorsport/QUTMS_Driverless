@@ -96,7 +96,9 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_init(
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=sevcon_driving_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    
+    auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
     if (!socket_can_) {
         socket_can_ = std::make_unique<SocketCAN>();
@@ -428,44 +430,48 @@ void SevconDrivingInterface::send_hc3(uint8_t motor_id, uint8_t& seq) {
 }
 
 void SevconDrivingInterface::publish_diagnostics() {
-    diagnostic_msgs::msg::DiagnosticArray diag_msg;
-    diag_msg.header.stamp = node_->now();
+    if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
+        auto &diag_msg = diagnostics_pub_->msg_;
+        diag_msg.header.stamp = node_->now();
+        diag_msg.status.clear();
 
-    diagnostic_msgs::msg::DiagnosticStatus status;
-    status.name = "Driving: Sevcon Inverters";
-    status.hardware_id = "Sevcon_Dual_Setup";
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "Driving: Sevcon Inverters";
+        status.hardware_id = "Sevcon_Dual_Setup";
 
-    if (left_fault_code_ != 0 || right_fault_code_ != 0) {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-        status.message =
-            "Fault Active (L: " + std::to_string(left_fault_code_) + ", R: " + std::to_string(right_fault_code_) + ")";
-    } else {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-        status.message = "Operational";
+        if (left_fault_code_ != 0 || right_fault_code_ != 0) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+            status.message =
+                "Fault Active (L: " + std::to_string(left_fault_code_) + ", R: " + std::to_string(right_fault_code_) + ")";
+        } else {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Operational";
+        }
+
+        status.values.clear();
+        diagnostic_msgs::msg::KeyValue dc_v_val;
+        dc_v_val.key = "DC Link Voltage (V)";
+        dc_v_val.value = std::to_string(dc_voltage_);
+        status.values.push_back(dc_v_val);
+
+        diagnostic_msgs::msg::KeyValue temp_val;
+        temp_val.key = "Average Inverter Temp (°C)";
+        temp_val.value = std::to_string(inverter_temp_);
+        status.values.push_back(temp_val);
+
+        diagnostic_msgs::msg::KeyValue l_state_val;
+        l_state_val.key = "Left State";
+        l_state_val.value = std::to_string(left_status_word_ & 0x0F);
+        status.values.push_back(l_state_val);
+
+        diagnostic_msgs::msg::KeyValue r_state_val;
+        r_state_val.key = "Right State";
+        r_state_val.value = std::to_string(right_status_word_ & 0x0F);
+        status.values.push_back(r_state_val);
+
+        diag_msg.status.push_back(status);
+        diagnostics_pub_->unlockAndPublish();
     }
-
-    diagnostic_msgs::msg::KeyValue dc_v_val;
-    dc_v_val.key = "DC Link Voltage (V)";
-    dc_v_val.value = std::to_string(dc_voltage_);
-    status.values.push_back(dc_v_val);
-
-    diagnostic_msgs::msg::KeyValue temp_val;
-    temp_val.key = "Average Inverter Temp (°C)";
-    temp_val.value = std::to_string(inverter_temp_);
-    status.values.push_back(temp_val);
-
-    diagnostic_msgs::msg::KeyValue l_state_val;
-    l_state_val.key = "Left State";
-    l_state_val.value = std::to_string(left_status_word_ & 0x0F);
-    status.values.push_back(l_state_val);
-
-    diagnostic_msgs::msg::KeyValue r_state_val;
-    r_state_val.key = "Right State";
-    r_state_val.value = std::to_string(right_status_word_ & 0x0F);
-    status.values.push_back(r_state_val);
-
-    diag_msg.status.push_back(status);
-    diagnostics_pub_->publish(diag_msg);
 }
 
 }  // namespace qutms_hw_interfaces

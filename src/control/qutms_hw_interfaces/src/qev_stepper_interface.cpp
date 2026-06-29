@@ -95,11 +95,13 @@ hardware_interface::CallbackReturn QevStepperInterface::on_init(
     current_state_ = states.at(NRTSO_VAL);
     desired_state_ = states.at(RTSO_VAL);
 
-    // Initialize ROS 2 Node for diagnostics
+    // Initialize ROS 2 Node for diagnostics and commands
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=qev_stepper_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+
+    auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
     if (!socket_can_) {
         socket_can_ = std::make_unique<SocketCAN>();
@@ -308,45 +310,45 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
 
 hardware_interface::return_type QevStepperInterface::write(const rclcpp::Time & /*time*/,
                                                            const rclcpp::Duration & /*period*/) {
-    if (std::isnan(joint_position_command_)) {
-        return hardware_interface::return_type::OK;
-    }
-    // Convert joint position (radians) back to stepper target ticks
-    double joint_position_command_deg = joint_position_command_ * (180.0 / M_PI);
-    int32_t target_ticks = static_cast<int32_t>(-82.0 * (joint_position_command_deg + 8.0) + 109) - offset_;
-    target_ticks = std::clamp(target_ticks, -max_position_ - offset_, max_position_ - offset_);
+    double command_ticks = std::isnan(joint_position_command_) ? 0.0 : joint_position_command_;
+    int32_t target_ticks = static_cast<int32_t>(command_ticks);
+    target_ticks = std::clamp(target_ticks, -static_cast<int32_t>(max_position_), static_cast<int32_t>(max_position_));
     this->target_position(target_ticks);
     return hardware_interface::return_type::OK;
 }
 
 void QevStepperInterface::publish_diagnostics(bool has_fault, const std::string &reason) {
-    diagnostic_msgs::msg::DiagnosticArray diag_msg;
-    diag_msg.header.stamp = node_->now();
+    if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
+        auto &diag_msg = diagnostics_pub_->msg_;
+        diag_msg.header.stamp = node_->now();
+        diag_msg.status.clear();
 
-    diagnostic_msgs::msg::DiagnosticStatus status;
-    status.name = "Steering: Stepper Motor Controller";
-    status.hardware_id = std::to_string(node_id_);
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "Steering: Stepper Motor Controller";
+        status.hardware_id = std::to_string(node_id_);
 
-    if (has_fault) {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-        status.message = "Fault Active: " + reason;
-    } else {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-        status.message = "Operational state: " + current_state_.name;
+        if (has_fault) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+            status.message = "Fault Active: " + reason;
+        } else {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Operational state: " + current_state_.name;
+        }
+
+        status.values.clear();
+        diagnostic_msgs::msg::KeyValue state_val;
+        state_val.key = "Current State";
+        state_val.value = current_state_.name;
+        status.values.push_back(state_val);
+
+        diagnostic_msgs::msg::KeyValue status_word_val;
+        status_word_val.key = "Status Word";
+        status_word_val.value = std::to_string(current_status_word_);
+        status.values.push_back(status_word_val);
+
+        diag_msg.status.push_back(status);
+        diagnostics_pub_->unlockAndPublish();
     }
-
-    diagnostic_msgs::msg::KeyValue state_val;
-    state_val.key = "Current State";
-    state_val.value = current_state_.name;
-    status.values.push_back(state_val);
-
-    diagnostic_msgs::msg::KeyValue status_word_val;
-    status_word_val.key = "Status Word";
-    status_word_val.value = std::to_string(current_status_word_);
-    status.values.push_back(status_word_val);
-
-    diag_msg.status.push_back(status);
-    diagnostics_pub_->publish(diag_msg);
 }
 
 }  // namespace qutms_hw_interfaces

@@ -42,7 +42,9 @@ hardware_interface::CallbackReturn EncosSteeringInterface::on_init(
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=encos_steering_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    
+    auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
     if (!socket_can_) {
         socket_can_ = std::make_unique<SocketCAN>();
@@ -175,38 +177,42 @@ hardware_interface::return_type EncosSteeringInterface::write(const rclcpp::Time
 }
 
 void EncosSteeringInterface::publish_diagnostics() {
-    diagnostic_msgs::msg::DiagnosticArray diag_msg;
-    diag_msg.header.stamp = node_->now();
+    if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
+        auto &diag_msg = diagnostics_pub_->msg_;
+        diag_msg.header.stamp = node_->now();
+        diag_msg.status.clear();
 
-    diagnostic_msgs::msg::DiagnosticStatus status;
-    status.name = "Steering: ENCOS Steering Motor";
-    status.hardware_id = std::to_string(motor_id_);
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "Steering: ENCOS Steering Motor";
+        status.hardware_id = std::to_string(motor_id_);
 
-    if (error_code_ != 0) {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-        status.message = "Fault Active (Code: " + std::to_string(error_code_) + ")";
-    } else {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-        status.message = "Operational";
+        if (error_code_ != 0) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+            status.message = "Fault Active (Code: " + std::to_string(error_code_) + ")";
+        } else {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Operational";
+        }
+
+        status.values.clear();
+        diagnostic_msgs::msg::KeyValue motor_temp_val;
+        motor_temp_val.key = "Motor Temp (°C)";
+        motor_temp_val.value = std::to_string(motor_temp_);
+        status.values.push_back(motor_temp_val);
+
+        diagnostic_msgs::msg::KeyValue mos_temp_val;
+        mos_temp_val.key = "MOS Temp (°C)";
+        mos_temp_val.value = std::to_string(mos_temp_);
+        status.values.push_back(mos_temp_val);
+
+        diagnostic_msgs::msg::KeyValue current_val;
+        current_val.key = "Current (A)";
+        current_val.value = std::to_string(current_);
+        status.values.push_back(current_val);
+
+        diag_msg.status.push_back(status);
+        diagnostics_pub_->unlockAndPublish();
     }
-
-    diagnostic_msgs::msg::KeyValue motor_temp_val;
-    motor_temp_val.key = "Motor Temp (°C)";
-    motor_temp_val.value = std::to_string(motor_temp_);
-    status.values.push_back(motor_temp_val);
-
-    diagnostic_msgs::msg::KeyValue mos_temp_val;
-    mos_temp_val.key = "MOS Temp (°C)";
-    mos_temp_val.value = std::to_string(mos_temp_);
-    status.values.push_back(mos_temp_val);
-
-    diagnostic_msgs::msg::KeyValue current_val;
-    current_val.key = "Current (A)";
-    current_val.value = std::to_string(current_);
-    status.values.push_back(current_val);
-
-    diag_msg.status.push_back(status);
-    diagnostics_pub_->publish(diag_msg);
 }
 
 }  // namespace qutms_hw_interfaces

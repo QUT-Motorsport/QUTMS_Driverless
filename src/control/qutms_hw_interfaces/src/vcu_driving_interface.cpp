@@ -26,35 +26,23 @@ hardware_interface::CallbackReturn VcuDrivingInterface::on_init(
     wheel_radius_ = info_.hardware_parameters.count("wheel_radius")
                         ? std::stod(info_.hardware_parameters.at("wheel_radius"))
                         : 0.2032;
-    kp_ = info_.hardware_parameters.count("Kp") ? std::stod(info_.hardware_parameters.at("Kp")) : 0.05;
-    ki_ = info_.hardware_parameters.count("Ki") ? std::stod(info_.hardware_parameters.at("Ki")) : 0.0;
-    max_integral_torque_ = info_.hardware_parameters.count("max_integral_torque")
-                               ? std::stod(info_.hardware_parameters.at("max_integral_torque"))
-                               : 0.0;
 
     left_wheel_pos_state_ = 0.0;
     left_wheel_vel_state_ = 0.0;
     right_wheel_pos_state_ = 0.0;
     right_wheel_vel_state_ = 0.0;
 
-    left_wheel_vel_cmd_ = 0.0;
-    right_wheel_vel_cmd_ = 0.0;
-
-    integral_error_ = 0.0;
+    left_wheel_eff_cmd_ = std::numeric_limits<double>::quiet_NaN();
+    right_wheel_eff_cmd_ = std::numeric_limits<double>::quiet_NaN();
     prev_accel_ = 0.0;
-    target_steering_angle_ = 0.0;
 
     // Initialize ROS 2 Node
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=vcu_driving_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
 
-    // Subscribe to Ackermann command for target steering angle
-    ackermann_sub_ = node_->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
-        "/control/driving_command", 10,
-        std::bind(&VcuDrivingInterface::ackermann_callback, this, std::placeholders::_1));
-
-    diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
     if (!socket_can_) {
         socket_can_ = std::make_unique<SocketCAN>();
@@ -219,32 +207,31 @@ hardware_interface::return_type VcuDrivingInterface::write(const rclcpp::Time& /
 }
 
 void VcuDrivingInterface::publish_diagnostics() {
-    diagnostic_msgs::msg::DiagnosticArray diag_msg;
-    diag_msg.header.stamp = node_->now();
+    if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
+        auto &diag_msg = diagnostics_pub_->msg_;
+        diag_msg.header.stamp = node_->now();
+        diag_msg.status.clear();
 
-    diagnostic_msgs::msg::DiagnosticStatus status;
-    status.name = "Driving: VCU Heartbeat Interface";
-    status.hardware_id = "VCU_Gateway";
-    status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-    status.message = "Operational";
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "Driving: VCU Heartbeat Interface";
+        status.hardware_id = "VCU_Gateway";
+        status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+        status.message = "Operational";
 
-    diagnostic_msgs::msg::KeyValue target_speed_val;
-    target_speed_val.key = "Target Speed (m/s)";
-    target_speed_val.value = std::to_string(((left_wheel_vel_cmd_ + right_wheel_vel_cmd_) / 2.0) * wheel_radius_);
-    status.values.push_back(target_speed_val);
+        status.values.clear();
+        diagnostic_msgs::msg::KeyValue current_speed_val;
+        current_speed_val.key = "Current Speed (m/s)";
+        current_speed_val.value = std::to_string(((left_wheel_vel_state_ + right_wheel_vel_state_) / 2.0) * wheel_radius_);
+        status.values.push_back(current_speed_val);
 
-    diagnostic_msgs::msg::KeyValue current_speed_val;
-    current_speed_val.key = "Current Speed (m/s)";
-    current_speed_val.value = std::to_string(((left_wheel_vel_state_ + right_wheel_vel_state_) / 2.0) * wheel_radius_);
-    status.values.push_back(current_speed_val);
+        diagnostic_msgs::msg::KeyValue torque_req_val;
+        torque_req_val.key = "Torque Request (%)";
+        torque_req_val.value = std::to_string(prev_accel_ * 100.0);
+        status.values.push_back(torque_req_val);
 
-    diagnostic_msgs::msg::KeyValue torque_req_val;
-    torque_req_val.key = "Torque Request (%)";
-    torque_req_val.value = std::to_string(prev_accel_ * 100.0);
-    status.values.push_back(torque_req_val);
-
-    diag_msg.status.push_back(status);
-    diagnostics_pub_->publish(diag_msg);
+        diag_msg.status.push_back(status);
+        diagnostics_pub_->unlockAndPublish();
+    }
 }
 
 }  // namespace qutms_hw_interfaces

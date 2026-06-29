@@ -12,6 +12,7 @@
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "qutms_hw_interfaces/SocketCAN.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -95,7 +96,7 @@ class SevconDrivingInterface : public hardware_interface::SystemInterface {
 
     // ROS 2 node and publisher for diagnostics
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>> diagnostics_pub_;
 
     uint32_t get_j1939_id(uint8_t pf, uint8_t ps, uint8_t sa);
     void send_hc1(uint8_t motor_id, uint8_t& seq, double torque_demand_nm, uint16_t control_word);

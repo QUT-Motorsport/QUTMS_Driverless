@@ -13,6 +13,7 @@
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "qutms_hw_interfaces/SocketCAN.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -71,7 +72,7 @@ class QevStepperInterface : public hardware_interface::SystemInterface {
 
     // ROS 2 node for publishing diagnostics
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>> diagnostics_pub_;
 
     void configure_c5e();
     void sdo_write(uint16_t index, uint8_t sub_index, uint8_t* data, size_t data_size);

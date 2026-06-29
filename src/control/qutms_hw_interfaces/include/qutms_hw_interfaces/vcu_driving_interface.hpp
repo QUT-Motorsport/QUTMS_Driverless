@@ -13,6 +13,7 @@
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "qutms_hw_interfaces/SocketCAN.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp_lifecycle/state.hpp"

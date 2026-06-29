@@ -64,7 +64,9 @@ hardware_interface::CallbackReturn DtiDrivingInterface::on_init(
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=dti_driving_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    diagnostics_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    
+    auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
+    diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
     if (!socket_can_) {
         socket_can_ = std::make_unique<SocketCAN>();
@@ -272,42 +274,46 @@ void DtiDrivingInterface::send_set_erpm(uint8_t motor_id, int32_t target_erpm) {
 }
 
 void DtiDrivingInterface::publish_diagnostics() {
-    diagnostic_msgs::msg::DiagnosticArray diag_msg;
-    diag_msg.header.stamp = node_->now();
+    if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
+        auto &diag_msg = diagnostics_pub_->msg_;
+        diag_msg.header.stamp = node_->now();
+        diag_msg.status.clear();
 
-    diagnostic_msgs::msg::DiagnosticStatus status;
-    status.name = "Driving: DTI Inverters";
-    status.hardware_id = "DTI_Dual_Setup";
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "Driving: DTI Inverters";
+        status.hardware_id = "DTI_Dual_Setup";
 
-    if (left_fault_code_ != 0 || right_fault_code_ != 0) {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-        // Decode active fault code names
-        std::string fault_msg = "Fault Active: ";
-        if (left_fault_code_ != 0) fault_msg += "Left Code " + std::to_string(left_fault_code_) + " ";
-        if (right_fault_code_ != 0) fault_msg += "Right Code " + std::to_string(right_fault_code_) + " ";
-        status.message = fault_msg;
-    } else {
-        status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-        status.message = "Operational";
+        if (left_fault_code_ != 0 || right_fault_code_ != 0) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+            // Decode active fault code names
+            std::string fault_msg = "Fault Active: ";
+            if (left_fault_code_ != 0) fault_msg += "Left Code " + std::to_string(left_fault_code_) + " ";
+            if (right_fault_code_ != 0) fault_msg += "Right Code " + std::to_string(right_fault_code_) + " ";
+            status.message = fault_msg;
+        } else {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Operational";
+        }
+
+        status.values.clear();
+        diagnostic_msgs::msg::KeyValue dc_v_val;
+        dc_v_val.key = "DC Link Voltage (V)";
+        dc_v_val.value = std::to_string(dc_voltage_);
+        status.values.push_back(dc_v_val);
+
+        diagnostic_msgs::msg::KeyValue inverter_temp_val;
+        inverter_temp_val.key = "Average Controller Temp (°C)";
+        inverter_temp_val.value = std::to_string(inverter_temp_);
+        status.values.push_back(inverter_temp_val);
+
+        diagnostic_msgs::msg::KeyValue motor_temp_val;
+        motor_temp_val.key = "Average Motor Temp (°C)";
+        motor_temp_val.value = std::to_string(motor_temp_);
+        status.values.push_back(motor_temp_val);
+
+        diag_msg.status.push_back(status);
+        diagnostics_pub_->unlockAndPublish();
     }
-
-    diagnostic_msgs::msg::KeyValue dc_v_val;
-    dc_v_val.key = "DC Link Voltage (V)";
-    dc_v_val.value = std::to_string(dc_voltage_);
-    status.values.push_back(dc_v_val);
-
-    diagnostic_msgs::msg::KeyValue inverter_temp_val;
-    inverter_temp_val.key = "Average Controller Temp (°C)";
-    inverter_temp_val.value = std::to_string(inverter_temp_);
-    status.values.push_back(inverter_temp_val);
-
-    diagnostic_msgs::msg::KeyValue motor_temp_val;
-    motor_temp_val.key = "Average Motor Temp (°C)";
-    motor_temp_val.value = std::to_string(motor_temp_);
-    status.values.push_back(motor_temp_val);
-
-    diag_msg.status.push_back(status);
-    diagnostics_pub_->publish(diag_msg);
 }
 
 }  // namespace qutms_hw_interfaces
