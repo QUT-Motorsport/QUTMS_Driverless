@@ -10,10 +10,10 @@ find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(ackermann_msgs REQUIRED)
 find_package(driverless_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(realtime_tools REQUIRED)
 
 # Add compile definitions for CAN_AV, CAN_VESC, and CAN_VCU
 add_compile_definitions(QUTMS_CAN_AV QUTMS_CAN_VESC QUTMS_CAN_VCU)
@@ -56,10 +56,10 @@ ament_target_dependencies(${PROJECT_NAME}
   hardware_interface
   rclcpp
   rclcpp_lifecycle
-  ackermann_msgs
   driverless_msgs
   diagnostic_msgs
   pluginlib
+  realtime_tools
 )
 
 if(BUILD_TESTING)
@@ -88,10 +88,10 @@ ament_export_dependencies(
   hardware_interface
   rclcpp
   rclcpp_lifecycle
-  ackermann_msgs
   driverless_msgs
   diagnostic_msgs
   pluginlib
+  realtime_tools
 )
 
 if(BUILD_TESTING)
