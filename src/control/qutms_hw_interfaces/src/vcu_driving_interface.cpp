@@ -54,15 +54,11 @@ hardware_interface::CallbackReturn VcuDrivingInterface::on_init(
     return CallbackReturn::SUCCESS;
 }
 
-void VcuDrivingInterface::ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
-    target_steering_angle_ = msg->drive.steering_angle;
-}
-
 hardware_interface::CallbackReturn VcuDrivingInterface::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
     if (!socket_can_->setup(can_interface_name_, rclcpp::get_logger("VcuDrivingInterface"))) {
         RCLCPP_ERROR(rclcpp::get_logger("VcuDrivingInterface"), "Failed to setup SocketCAN on %s",
-                     can_interface_name_.c_str());
+             can_interface_name_.c_str());
         return CallbackReturn::ERROR;
     }
     return CallbackReturn::SUCCESS;
@@ -87,11 +83,11 @@ std::vector<hardware_interface::StateInterface> VcuDrivingInterface::export_stat
 
 std::vector<hardware_interface::CommandInterface> VcuDrivingInterface::export_command_interfaces() {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
-    // Export commands
+    // Export effort commands
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_VELOCITY, &left_wheel_vel_cmd_));
+        info_.joints[0].name, hardware_interface::HW_IF_EFFORT, &left_wheel_eff_cmd_));
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_VELOCITY, &right_wheel_vel_cmd_));
+        info_.joints[1].name, hardware_interface::HW_IF_EFFORT, &right_wheel_eff_cmd_));
     return command_interfaces;
 }
 
@@ -141,52 +137,23 @@ hardware_interface::return_type VcuDrivingInterface::read(const rclcpp::Time& /*
         }
     }
 
-    // Spin node to receive Ackermann subscriber callbacks
-    rclcpp::spin_some(node_);
-
     publish_diagnostics();
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type VcuDrivingInterface::write(const rclcpp::Time& /*time*/,
                                                            const rclcpp::Duration& /*period*/) {
-    if (std::isnan(left_wheel_vel_cmd_) || std::isnan(right_wheel_vel_cmd_)) {
-        return hardware_interface::return_type::OK;
+    double target_effort = 0.0;
+    if (!std::isnan(left_wheel_eff_cmd_) && !std::isnan(right_wheel_eff_cmd_)) {
+        target_effort = (left_wheel_eff_cmd_ + right_wheel_eff_cmd_) / 2.0;
     }
-
-    // Average target velocity in rad/s
-    double target_wheel_vel = (left_wheel_vel_cmd_ + right_wheel_vel_cmd_) / 2.0;
-    // Current average velocity in rad/s
-    double current_wheel_vel = (left_wheel_vel_state_ + right_wheel_vel_state_) / 2.0;
-
-    // Convert rad/s to m/s for VCU speed field
-    double target_speed_mps = target_wheel_vel * wheel_radius_;
-    double current_speed_mps = current_wheel_vel * wheel_radius_;
-
-    // Calculate error and control loop
-    double error = target_speed_mps - current_speed_mps;
-    integral_error_ += error;
-
-    // Clip integral error
-    if (ki_ > 0.0) {
-        if (integral_error_ < 0.0) {
-            integral_error_ = 0.0;
-        } else if (integral_error_ > (max_integral_torque_ / ki_)) {
-            integral_error_ = max_integral_torque_ / ki_;
-        }
-    } else {
-        integral_error_ = 0.0;
-    }
-
-    double accel = kp_ * error + ki_ * integral_error_;
-    // Limit acceleration demand
-    accel = std::clamp(accel, -1.0, 1.0);
+    double accel = std::clamp(target_effort, -1.0, 1.0);
+    double target_speed_mps = 25.0; // Use max speed limit so VCU does not throttle torque
 
     // Create Request message
     Request_t request_msg;
     request_msg.torque = static_cast<int16_t>(accel * 100.0);  // convert to percentage
-    request_msg.steering =
-        static_cast<int16_t>(target_steering_angle_ * 10.0);             // convert angle to scale 10 if needed by VCU
+    request_msg.steering = 0; // VCU doesn't control steering (stepper controls it directly)
     request_msg.speed = static_cast<int16_t>(target_speed_mps * 100.0);  // scale 100 for speed
 
     auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);

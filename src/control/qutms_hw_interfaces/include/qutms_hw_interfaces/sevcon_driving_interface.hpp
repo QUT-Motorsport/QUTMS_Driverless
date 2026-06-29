@@ -48,9 +48,9 @@ class SevconDrivingInterface : public hardware_interface::SystemInterface {
     double right_wheel_pos_state_;
     double right_wheel_vel_state_;
 
-    // Commands: velocities for left and right wheels
-    double left_wheel_vel_cmd_;
-    double right_wheel_vel_cmd_;
+    // Commands: efforts for left and right wheels
+    double left_wheel_eff_cmd_;
+    double right_wheel_eff_cmd_;
 
     // Custom state interfaces exported for diagnostics (averaged for the two motors)
     double motor_temp_;
@@ -74,12 +74,6 @@ class SevconDrivingInterface : public hardware_interface::SystemInterface {
     std::string control_mode_;
     double torque_limit_nm_;
     double regen_limit_nm_;
-
-    // PID gains for internal_pid mode
-    double kp_;
-    double ki_;
-    double left_integral_error_;
-    double right_integral_error_;
 
     // State machine management
     uint16_t left_status_word_;

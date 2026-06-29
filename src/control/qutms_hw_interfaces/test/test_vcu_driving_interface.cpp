@@ -44,23 +44,20 @@ class VcuDrivingInterfaceTest : public ::testing::Test {
 
         hardware_interface::ComponentInfo joint_left;
         joint_left.name = "rear_left_wheel_joint";
-        joint_left.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
+        joint_left.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_EFFORT));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_POSITION));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
         info.joints.push_back(joint_left);
 
         hardware_interface::ComponentInfo joint_right;
         joint_right.name = "rear_right_wheel_joint";
-        joint_right.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
+        joint_right.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_EFFORT));
         joint_right.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_POSITION));
         joint_right.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
         info.joints.push_back(joint_right);
 
         info.hardware_parameters["can_interface"] = "vcan0";
         info.hardware_parameters["wheel_radius"] = "0.2";
-        info.hardware_parameters["Kp"] = "0.5";
-        info.hardware_parameters["Ki"] = "0.0";
-        info.hardware_parameters["max_integral_torque"] = "0.0";
 
         mock_can = new NiceMock<MockSocketCAN>();
         interface = std::make_shared<qutms_hw_interfaces::VcuDrivingInterface>();
@@ -120,41 +117,21 @@ TEST_F(VcuDrivingInterfaceTest, test_write_command) {
     auto commands = interface->export_command_interfaces();
     ASSERT_EQ(commands.size(), 2u);
 
-    // Set target velocities: 25.0 rad/s
-    EXPECT_TRUE(commands[0].set_value(25.0));
-    EXPECT_TRUE(commands[1].set_value(25.0));
+    // Set effort commands (0.75 = 75% torque/effort demand)
+    EXPECT_TRUE(commands[0].set_value(0.75));
+    EXPECT_TRUE(commands[1].set_value(0.75));
 
-    // Set mock current velocity state to 20.0 rad/s
-    // Target speed (mps) = 25.0 * 0.2 = 5.0 m/s
-    // Current speed (mps) = 20.0 * 0.2 = 4.0 m/s
-    // Error = 1.0 m/s. Accel = Kp * error = 0.5 * 1.0 = 0.5 (50% torque request)
-
-    // Trigger read to set mock state velocity to 20 rad/s (approx 191 RPM -> 18050 ERPM = 0x00004682)
-    auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
-    driverless_msgs::msg::Can frame_left;
-    frame_left.id = (VESC_CAN_PACKET_STATUS << 8) | 2;
-    frame_left.dlc = 8;
-    frame_left.data = {0x00, 0x00, 0x46, 0x82, 0x00, 0x00, 0x00, 0x00};
-    rx_frames->push_back(frame_left);
-
-    driverless_msgs::msg::Can frame_right;
-    frame_right.id = (VESC_CAN_PACKET_STATUS << 8) | 3;
-    frame_right.dlc = 8;
-    frame_right.data = {0x00, 0x00, 0x46, 0x82, 0x00, 0x00, 0x00, 0x00};
-    rx_frames->push_back(frame_right);
-
-    EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
-    interface->read(time, period);
 
+    // Expecting Compose_Request_Heartbeat to be called with 75% torque request
     EXPECT_CALL(*mock_can, tx(_, _)).WillOnce(Invoke([](driverless_msgs::msg::Can* msg, rclcpp::Logger) {
-        EXPECT_EQ(msg->id, 144621568u);  // VCU request ID (0x089E8000)
+        EXPECT_EQ(msg->id, 144621568u);  // VCU request ID
         EXPECT_EQ(msg->dlc, 8);
 
-        // Torque request should be 50%
-        int16_t torque_pct = static_cast<int16_t>((msg->data[1] << 8) | msg->data[0]);  // assuming layout
-        (void)torque_pct;
+        // Torque percentage is in data[0] and data[1] (16-bit signed int representation of torque percentage, scaled by INT16_MAX / 100.0)
+        int16_t torque_pct = static_cast<int16_t>((msg->data[1] << 8) | msg->data[0]);
+        EXPECT_EQ(torque_pct, 24575); // 75% of INT16_MAX
     }));
 
     EXPECT_EQ(interface->write(time, period), hardware_interface::return_type::OK);

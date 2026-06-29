@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "driverless_msgs/msg/can.hpp"
 #include "hardware_interface/handle.hpp"
@@ -46,29 +45,19 @@ class VcuDrivingInterface : public hardware_interface::SystemInterface {
     double right_wheel_pos_state_;
     double right_wheel_vel_state_;
 
-    // Commands: velocities for left and right wheels
-    double left_wheel_vel_cmd_;
-    double right_wheel_vel_cmd_;
+    // Commands: efforts for left and right wheels
+    double left_wheel_eff_cmd_;
+    double right_wheel_eff_cmd_;
 
     // Configuration parameters
     double wheel_radius_;
-    double kp_;
-    double ki_;
-    double max_integral_torque_;
-
-    // Controller internal states
-    double integral_error_;
-    double prev_accel_;
-
-    // Track steering angle from Ackermann command
-    float target_steering_angle_;
 
     // ROS 2 node and subscriber for Ackermann drive commands
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr ackermann_sub_;
-    rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>> diagnostics_pub_;
 
-    void ackermann_callback(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
+    double prev_accel_;
+
     void publish_diagnostics();
 };
 

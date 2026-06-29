@@ -53,16 +53,13 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_init(
                           ? std::stod(info_.hardware_parameters.at("regen_limit_nm"))
                           : -100.0;
 
-    kp_ = info_.hardware_parameters.count("Kp") ? std::stod(info_.hardware_parameters.at("Kp")) : 5.0;
-    ki_ = info_.hardware_parameters.count("Ki") ? std::stod(info_.hardware_parameters.at("Ki")) : 0.1;
-
     left_wheel_pos_state_ = 0.0;
     left_wheel_vel_state_ = 0.0;
     right_wheel_pos_state_ = 0.0;
     right_wheel_vel_state_ = 0.0;
 
-    left_wheel_vel_cmd_ = 0.0;
-    right_wheel_vel_cmd_ = 0.0;
+    left_wheel_eff_cmd_ = std::numeric_limits<double>::quiet_NaN();
+    right_wheel_eff_cmd_ = std::numeric_limits<double>::quiet_NaN();
 
     motor_temp_ = 0.0;
     inverter_temp_ = 0.0;
@@ -77,9 +74,6 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_init(
     right_fault_code_ = 0;
     left_dc_voltage_ = 0.0;
     right_dc_voltage_ = 0.0;
-
-    left_integral_error_ = 0.0;
-    right_integral_error_ = 0.0;
 
     left_status_word_ = 0;
     right_status_word_ = 0;
@@ -147,10 +141,11 @@ std::vector<hardware_interface::StateInterface> SevconDrivingInterface::export_s
 
 std::vector<hardware_interface::CommandInterface> SevconDrivingInterface::export_command_interfaces() {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
+    // Export effort commands
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_VELOCITY, &left_wheel_vel_cmd_));
+        info_.joints[0].name, hardware_interface::HW_IF_EFFORT, &left_wheel_eff_cmd_));
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_VELOCITY, &right_wheel_vel_cmd_));
+        info_.joints[1].name, hardware_interface::HW_IF_EFFORT, &right_wheel_eff_cmd_));
     return command_interfaces;
 }
 
@@ -250,10 +245,14 @@ hardware_interface::return_type SevconDrivingInterface::read(const rclcpp::Time&
 }
 
 hardware_interface::return_type SevconDrivingInterface::write(const rclcpp::Time& /*time*/,
-                                                              const rclcpp::Duration& /*period*/) {
-    if (std::isnan(left_wheel_vel_cmd_) || std::isnan(right_wheel_vel_cmd_)) {
-        return hardware_interface::return_type::OK;
-    }
+                                                               const rclcpp::Duration& /*period*/) {
+    double left_torque = 0.0;
+    double left_fwd_limit = 0.0;
+    double left_rev_limit = 0.0;
+
+    double right_torque = 0.0;
+    double right_fwd_limit = 0.0;
+    double right_rev_limit = 0.0;
 
     // Check fault reset requirements
     uint8_t left_state = left_status_word_ & 0x0F;
@@ -268,59 +267,30 @@ hardware_interface::return_type SevconDrivingInterface::write(const rclcpp::Time
         cw = 0x0005;  // ENABLE OPERATION
     }
 
-    // Left Motor Write Loop
-    double left_torque = 0.0;
-    double left_fwd_limit = 0.0;
-    double left_rev_limit = 0.0;
+    // Direct effort/torque command mode (from chained PID controller)
+    double left_eff = std::isnan(left_wheel_eff_cmd_) ? 0.0 : left_wheel_eff_cmd_;
+    double right_eff = std::isnan(right_wheel_eff_cmd_) ? 0.0 : right_wheel_eff_cmd_;
 
-    if (control_mode_ == "torque_limits") {
-        left_torque = torque_limit_nm_;
-        double target_rpm = (left_wheel_vel_cmd_ * gear_ratio_ * 60.0) / (2.0 * M_PI);
-        if (target_rpm >= 0.0) {
-            left_fwd_limit = target_rpm;
-            left_rev_limit = 0.0;
-        } else {
-            left_fwd_limit = 0.0;
-            left_rev_limit = target_rpm;
-        }
-    } else {  // internal_pid
-        double err = left_wheel_vel_cmd_ - left_wheel_vel_state_;
-        left_integral_error_ += err;
-        left_torque = kp_ * err + ki_ * left_integral_error_;
-        left_torque = std::clamp(left_torque, regen_limit_nm_, torque_limit_nm_);
-        // Max limits in RPM
-        left_fwd_limit = 5000.0;
-        left_rev_limit = -5000.0;
+    // Scaled to Nm using limits
+    if (left_eff >= 0.0) {
+        left_torque = left_eff * torque_limit_nm_;
+    } else {
+        left_torque = left_eff * (-regen_limit_nm_);
     }
+    left_fwd_limit = 5000.0;
+    left_rev_limit = -5000.0;
+
+    if (right_eff >= 0.0) {
+        right_torque = right_eff * torque_limit_nm_;
+    } else {
+        right_torque = right_eff * (-regen_limit_nm_);
+    }
+    right_fwd_limit = 5000.0;
+    right_rev_limit = -5000.0;
 
     send_hc1(left_motor_id_, left_hc1_seq_, left_torque, cw);
     send_hc2(left_motor_id_, left_hc2_seq_, left_fwd_limit, left_rev_limit);
     send_hc3(left_motor_id_, left_hc3_seq_);
-
-    // Right Motor Write Loop
-    double right_torque = 0.0;
-    double right_fwd_limit = 0.0;
-    double right_rev_limit = 0.0;
-
-    if (control_mode_ == "torque_limits") {
-        right_torque = torque_limit_nm_;
-        double target_rpm = (right_wheel_vel_cmd_ * gear_ratio_ * 60.0) / (2.0 * M_PI);
-        if (target_rpm >= 0.0) {
-            right_fwd_limit = target_rpm;
-            right_rev_limit = 0.0;
-        } else {
-            right_fwd_limit = 0.0;
-            right_rev_limit = target_rpm;
-        }
-    } else {  // internal_pid
-        double err = right_wheel_vel_cmd_ - right_wheel_vel_state_;
-        right_integral_error_ += err;
-        right_torque = kp_ * err + ki_ * right_integral_error_;
-        right_torque = std::clamp(right_torque, regen_limit_nm_, torque_limit_nm_);
-        // Max limits in RPM
-        right_fwd_limit = 5000.0;
-        right_rev_limit = -5000.0;
-    }
 
     send_hc1(right_motor_id_, right_hc1_seq_, right_torque, cw);
     send_hc2(right_motor_id_, right_hc2_seq_, right_fwd_limit, right_rev_limit);

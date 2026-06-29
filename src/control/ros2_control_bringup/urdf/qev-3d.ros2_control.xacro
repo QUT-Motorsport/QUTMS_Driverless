@@ -65,6 +65,7 @@
       <!-- Driving interfaces -->
       <joint name="rear_left_wheel_joint">
         <command_interface name="velocity"/>
+        <command_interface name="effort"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
         <state_interface name="motor_temp"/>
@@ -75,6 +76,7 @@
 
       <joint name="rear_right_wheel_joint">
         <command_interface name="velocity"/>
+        <command_interface name="effort"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>

@@ -55,11 +55,11 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    # Spawner for driving velocity controller
-    driving_velocity_controller_spawner = Node(
+    # Spawner for driving effort controller
+    driving_effort_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["driving_velocity_controller", "--controller-manager", "/controller_manager"],
+        arguments=["driving_effort_controller", "--controller-manager", "/controller_manager"],
         output="screen",
     )
 
@@ -67,7 +67,7 @@ def launch_setup(context, *args, **kwargs):
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
-        driving_velocity_controller_spawner,
+        driving_effort_controller_spawner,
     ]
 
 
