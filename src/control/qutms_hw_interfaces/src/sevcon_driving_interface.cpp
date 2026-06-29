@@ -90,7 +90,7 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_init(
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=sevcon_driving_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    
+
     auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
     diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
@@ -245,7 +245,7 @@ hardware_interface::return_type SevconDrivingInterface::read(const rclcpp::Time&
 }
 
 hardware_interface::return_type SevconDrivingInterface::write(const rclcpp::Time& /*time*/,
-                                                               const rclcpp::Duration& /*period*/) {
+                                                              const rclcpp::Duration& /*period*/) {
     double left_torque = 0.0;
     double left_fwd_limit = 0.0;
     double left_rev_limit = 0.0;
@@ -401,7 +401,7 @@ void SevconDrivingInterface::send_hc3(uint8_t motor_id, uint8_t& seq) {
 
 void SevconDrivingInterface::publish_diagnostics() {
     if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
-        auto &diag_msg = diagnostics_pub_->msg_;
+        auto& diag_msg = diagnostics_pub_->msg_;
         diag_msg.header.stamp = node_->now();
         diag_msg.status.clear();
 
@@ -411,8 +411,8 @@ void SevconDrivingInterface::publish_diagnostics() {
 
         if (left_fault_code_ != 0 || right_fault_code_ != 0) {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-            status.message =
-                "Fault Active (L: " + std::to_string(left_fault_code_) + ", R: " + std::to_string(right_fault_code_) + ")";
+            status.message = "Fault Active (L: " + std::to_string(left_fault_code_) +
+                             ", R: " + std::to_string(right_fault_code_) + ")";
         } else {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
             status.message = "Operational";

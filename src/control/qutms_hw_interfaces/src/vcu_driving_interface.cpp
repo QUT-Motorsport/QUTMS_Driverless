@@ -58,7 +58,7 @@ hardware_interface::CallbackReturn VcuDrivingInterface::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
     if (!socket_can_->setup(can_interface_name_, rclcpp::get_logger("VcuDrivingInterface"))) {
         RCLCPP_ERROR(rclcpp::get_logger("VcuDrivingInterface"), "Failed to setup SocketCAN on %s",
-             can_interface_name_.c_str());
+                     can_interface_name_.c_str());
         return CallbackReturn::ERROR;
     }
     return CallbackReturn::SUCCESS;
@@ -148,12 +148,12 @@ hardware_interface::return_type VcuDrivingInterface::write(const rclcpp::Time& /
         target_effort = (left_wheel_eff_cmd_ + right_wheel_eff_cmd_) / 2.0;
     }
     double accel = std::clamp(target_effort, -1.0, 1.0);
-    double target_speed_mps = 25.0; // Use max speed limit so VCU does not throttle torque
+    double target_speed_mps = 25.0;  // Use max speed limit so VCU does not throttle torque
 
     // Create Request message
     Request_t request_msg;
     request_msg.torque = static_cast<int16_t>(accel * 100.0);  // convert to percentage
-    request_msg.steering = 0; // VCU doesn't control steering (stepper controls it directly)
+    request_msg.steering = 0;  // VCU doesn't control steering (stepper controls it directly)
     request_msg.speed = static_cast<int16_t>(target_speed_mps * 100.0);  // scale 100 for speed
 
     auto request_heartbeat = Compose_Request_Heartbeat(&request_msg);
@@ -175,7 +175,7 @@ hardware_interface::return_type VcuDrivingInterface::write(const rclcpp::Time& /
 
 void VcuDrivingInterface::publish_diagnostics() {
     if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
-        auto &diag_msg = diagnostics_pub_->msg_;
+        auto& diag_msg = diagnostics_pub_->msg_;
         diag_msg.header.stamp = node_->now();
         diag_msg.status.clear();
 
@@ -188,7 +188,8 @@ void VcuDrivingInterface::publish_diagnostics() {
         status.values.clear();
         diagnostic_msgs::msg::KeyValue current_speed_val;
         current_speed_val.key = "Current Speed (m/s)";
-        current_speed_val.value = std::to_string(((left_wheel_vel_state_ + right_wheel_vel_state_) / 2.0) * wheel_radius_);
+        current_speed_val.value =
+            std::to_string(((left_wheel_vel_state_ + right_wheel_vel_state_) / 2.0) * wheel_radius_);
         status.values.push_back(current_speed_val);
 
         diagnostic_msgs::msg::KeyValue torque_req_val;

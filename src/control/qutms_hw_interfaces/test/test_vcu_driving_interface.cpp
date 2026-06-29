@@ -129,9 +129,10 @@ TEST_F(VcuDrivingInterfaceTest, test_write_command) {
         EXPECT_EQ(msg->id, 144621568u);  // VCU request ID
         EXPECT_EQ(msg->dlc, 8);
 
-        // Torque percentage is in data[0] and data[1] (16-bit signed int representation of torque percentage, scaled by INT16_MAX / 100.0)
+        // Torque percentage is in data[0] and data[1] (16-bit signed int representation of torque percentage, scaled by
+        // INT16_MAX / 100.0)
         int16_t torque_pct = static_cast<int16_t>((msg->data[1] << 8) | msg->data[0]);
-        EXPECT_EQ(torque_pct, 24575); // 75% of INT16_MAX
+        EXPECT_EQ(torque_pct, 24575);  // 75% of INT16_MAX
     }));
 
     EXPECT_EQ(interface->write(time, period), hardware_interface::return_type::OK);

@@ -89,11 +89,13 @@ def launch_setup(context, *args, **kwargs):
             output="screen",
         )
 
-        nodes_to_start.extend([
-            drive_pid_controller_spawner,
-            steering_pid_controller_spawner,
-            ackermann_steering_controller_spawner,
-        ])
+        nodes_to_start.extend(
+            [
+                drive_pid_controller_spawner,
+                steering_pid_controller_spawner,
+                ackermann_steering_controller_spawner,
+            ]
+        )
     else:
         # Spawner for Ackermann steering/traction controller in direct mode
         ackermann_steering_direct_controller_spawner = Node(

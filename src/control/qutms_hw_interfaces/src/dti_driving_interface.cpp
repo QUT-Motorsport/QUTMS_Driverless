@@ -64,7 +64,7 @@ hardware_interface::CallbackReturn DtiDrivingInterface::on_init(
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=dti_driving_interface_node"});
     node_ = rclcpp::Node::make_shared("_", options);
-    
+
     auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
     diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
 
@@ -275,7 +275,7 @@ void DtiDrivingInterface::send_set_erpm(uint8_t motor_id, int32_t target_erpm) {
 
 void DtiDrivingInterface::publish_diagnostics() {
     if (diagnostics_pub_ && diagnostics_pub_->trylock()) {
-        auto &diag_msg = diagnostics_pub_->msg_;
+        auto& diag_msg = diagnostics_pub_->msg_;
         diag_msg.header.stamp = node_->now();
         diag_msg.status.clear();
 
