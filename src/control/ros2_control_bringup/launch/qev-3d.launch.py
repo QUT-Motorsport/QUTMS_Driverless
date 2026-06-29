@@ -12,6 +12,7 @@ def launch_setup(context, *args, **kwargs):
     urdf_model = LaunchConfiguration("urdf_model").perform(context)
     base_frame = LaunchConfiguration("base_frame").perform(context)
     display_car = LaunchConfiguration("display_car").perform(context)
+    use_chained_pid = LaunchConfiguration("use_chained_pid").perform(context).lower() == "true"
 
     # Process URDF xacro
     xacro_path = os.path.join(
@@ -57,20 +58,53 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    # Spawner for Ackermann steering/traction controller
-    ackermann_steering_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["ackermann_steering_controller", "--controller-manager", "/controller_manager"],
-        output="screen",
-    )
-
-    return [
+    nodes_to_start = [
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
-        ackermann_steering_controller_spawner,
     ]
+
+    if use_chained_pid:
+        # Spawner for drive PID controller
+        drive_pid_controller_spawner = Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=["drive_pid_controller", "--controller-manager", "/controller_manager"],
+            output="screen",
+        )
+
+        # Spawner for steering PID controller
+        steering_pid_controller_spawner = Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=["steering_pid_controller", "--controller-manager", "/controller_manager"],
+            output="screen",
+        )
+
+        # Spawner for Ackermann steering/traction controller in chained mode
+        ackermann_steering_controller_spawner = Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=["ackermann_steering_controller", "--controller-manager", "/controller_manager"],
+            output="screen",
+        )
+
+        nodes_to_start.extend([
+            drive_pid_controller_spawner,
+            steering_pid_controller_spawner,
+            ackermann_steering_controller_spawner,
+        ])
+    else:
+        # Spawner for Ackermann steering/traction controller in direct mode
+        ackermann_steering_direct_controller_spawner = Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=["ackermann_steering_direct_controller", "--controller-manager", "/controller_manager"],
+            output="screen",
+        )
+        nodes_to_start.append(ackermann_steering_direct_controller_spawner)
+
+    return nodes_to_start
 
 
 def generate_launch_description():
@@ -90,6 +124,11 @@ def generate_launch_description():
                 "display_car",
                 default_value="true",
                 description="Display the car in rviz",
+            ),
+            DeclareLaunchArgument(
+                "use_chained_pid",
+                default_value="true",
+                description="Use chained PID controllers for steering and drive",
             ),
             OpaqueFunction(function=launch_setup),
         ]
