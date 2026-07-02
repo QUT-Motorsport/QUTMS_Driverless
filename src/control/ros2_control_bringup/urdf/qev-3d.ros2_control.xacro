@@ -50,6 +50,9 @@
           <param name="wheel_radius">0.2032</param>
           <param name="pole_pairs">21</param>
         </xacro:if>
+        <xacro:if value="${hardware_interface == 'mock'}">
+          <plugin>mock_components/GenericSystem</plugin>
+        </xacro:if>
       </hardware>
 
       <!-- Steering interfaces -->
