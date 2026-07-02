@@ -119,6 +119,9 @@ hardware_interface::CallbackReturn QevStepperInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
 std::vector<hardware_interface::StateInterface> QevStepperInterface::export_state_interfaces() {
     std::vector<hardware_interface::StateInterface> state_interfaces;
     state_interfaces.emplace_back(hardware_interface::StateInterface(
@@ -137,6 +140,7 @@ std::vector<hardware_interface::CommandInterface> QevStepperInterface::export_co
         info_.joints[0].name, hardware_interface::HW_IF_POSITION, &joint_position_command_));
     return command_interfaces;
 }
+#pragma GCC diagnostic pop
 
 hardware_interface::CallbackReturn QevStepperInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {

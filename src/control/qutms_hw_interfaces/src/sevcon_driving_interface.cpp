@@ -113,6 +113,9 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
 std::vector<hardware_interface::StateInterface> SevconDrivingInterface::export_state_interfaces() {
     std::vector<hardware_interface::StateInterface> state_interfaces;
 
@@ -147,6 +150,7 @@ std::vector<hardware_interface::CommandInterface> SevconDrivingInterface::export
         info_.joints[1].name, hardware_interface::HW_IF_EFFORT, &right_wheel_eff_cmd_));
     return command_interfaces;
 }
+#pragma GCC diagnostic pop
 
 hardware_interface::CallbackReturn SevconDrivingInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
