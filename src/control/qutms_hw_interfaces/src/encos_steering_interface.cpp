@@ -1,6 +1,5 @@
 #include "qutms_hw_interfaces/encos_steering_interface.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -41,7 +40,7 @@ hardware_interface::CallbackReturn EncosSteeringInterface::on_init(
     // Initialize ROS 2 Node for diagnostics
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=encos_steering_interface_node"});
-    node_ = rclcpp::Node::make_shared("_", options);
+    node_ = std::make_shared<rclcpp::Node>("_", options);
 
     auto pub = node_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
     diagnostics_pub_ = std::make_shared<realtime_tools::RealtimePublisher<diagnostic_msgs::msg::DiagnosticArray>>(pub);
