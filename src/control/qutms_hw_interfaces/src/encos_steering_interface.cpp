@@ -65,32 +65,18 @@ hardware_interface::CallbackReturn EncosSteeringInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
-std::vector<hardware_interface::StateInterface> EncosSteeringInterface::export_state_interfaces() {
-    std::vector<hardware_interface::StateInterface> state_interfaces;
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &joint_position_state_));
-    // Export extra state interfaces for diagnostics
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "motor_temp", &motor_temp_));
-    state_interfaces.emplace_back(
-        hardware_interface::StateInterface(info_.joints[0].name, "inverter_temp", &mos_temp_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "fault_code", &fault_code_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "dc_voltage", &dc_voltage_));
-    return state_interfaces;
-}
-
-std::vector<hardware_interface::CommandInterface> EncosSteeringInterface::export_command_interfaces() {
-    std::vector<hardware_interface::CommandInterface> command_interfaces;
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &joint_position_command_));
-    return command_interfaces;
-}
-#pragma GCC diagnostic pop
-
 hardware_interface::CallbackReturn EncosSteeringInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+    joint_position_state_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+    joint_position_command_handle_ =
+        get_command_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+
+    motor_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/motor_temp");
+    mos_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/inverter_temp");
+    fault_code_handle_ = get_state_interface_handle(info_.joints[0].name + "/fault_code");
+    dc_voltage_handle_ = get_state_interface_handle(info_.joints[0].name + "/dc_voltage");
+
     RCLCPP_INFO(rclcpp::get_logger("EncosSteeringInterface"), "Encos Steering Interface activated.");
     return CallbackReturn::SUCCESS;
 }
@@ -134,12 +120,22 @@ hardware_interface::return_type EncosSteeringInterface::read(const rclcpp::Time&
         }
     }
 
+    // Set state handles
+    (void)joint_position_state_handle_->set_value(joint_position_state_, false);
+    (void)motor_temp_handle_->set_value(motor_temp_, false);
+    (void)mos_temp_handle_->set_value(mos_temp_, false);
+    (void)fault_code_handle_->set_value(fault_code_, false);
+    (void)dc_voltage_handle_->set_value(dc_voltage_, false);
+
     publish_diagnostics();
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type EncosSteeringInterface::write(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
+    // Read command values from handles
+    (void)joint_position_command_handle_->get_value(joint_position_command_, false);
+
     if (std::isnan(joint_position_command_)) {
         return hardware_interface::return_type::OK;
     }

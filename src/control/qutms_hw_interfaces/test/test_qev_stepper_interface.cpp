@@ -62,9 +62,26 @@ class QevStepperInterfaceTest : public ::testing::Test {
     }
 
     hardware_interface::CallbackReturn init_interface() {
-        hardware_interface::HardwareComponentInterfaceParams params;
+        hardware_interface::HardwareComponentParams params;
         params.hardware_info = info;
-        return interface->on_init(params);
+        params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+        params.logger = rclcpp::get_logger("TestLogger");
+        return interface->init(params);
+    }
+
+    hardware_interface::CallbackReturn configure_and_activate() {
+        (void)interface->on_export_state_interfaces();
+        (void)interface->on_export_command_interfaces();
+
+        EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
+        rclcpp_lifecycle::State state;
+        if (interface->on_configure(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (interface->on_activate(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::HardwareInfo info;
@@ -73,7 +90,11 @@ class QevStepperInterfaceTest : public ::testing::Test {
 };
 
 TEST_F(QevStepperInterfaceTest, test_init_and_configure) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    hardware_interface::HardwareComponentParams params;
+    params.hardware_info = info;
+    params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+    params.logger = rclcpp::get_logger("TestLogger");
+    EXPECT_EQ(interface->init(params), hardware_interface::CallbackReturn::SUCCESS);
 
     EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
     rclcpp_lifecycle::State state;
@@ -82,27 +103,22 @@ TEST_F(QevStepperInterfaceTest, test_init_and_configure) {
 
 TEST_F(QevStepperInterfaceTest, test_read_and_state_transitions) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
     // Mock status word response representing "Ready to switch on" (0x0021)
-    // SDO read status word response from Node 0x70. CAN ID = 0x580 + 0x70 = 0x5F0
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
     driverless_msgs::msg::Can frame_status;
     frame_status.id = 0x5F0;
     frame_status.dlc = 8;
-    // Object status word is 0x6041 (msg.data[1]=0x41, data[2]=0x60)
-    // Status value: 0x0021 (data[4]=0x21, data[5]=0x00)
     frame_status.data = {0x4B, 0x41, 0x60, 0x00, 0x21, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_status);
 
-    // Also include a position actual value frame (Node ID 0x70, ID = 0x280 + 0x70 = 0x2F0)
     driverless_msgs::msg::Can frame_pos;
     frame_pos.id = 0x2F0;
     frame_pos.dlc = 8;
-    // Position = 500 ticks (bytes 0-3: 0x000001F4)
     frame_pos.data = {0xF4, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_pos);
 
-    // Also include a VCU Transmit Steering calibration frame (reports 8.0 deg steering angle)
     driverless_msgs::msg::Can frame_vcu_steer;
     frame_vcu_steer.id = VCU_TransmitSteering_ID;
     frame_vcu_steer.dlc = 8;
@@ -112,31 +128,24 @@ TEST_F(QevStepperInterfaceTest, test_read_and_state_transitions) {
 
     EXPECT_CALL(*mock_can, rx(_, _)).WillOnce(Return(rx_frames));
 
-    // When desired state is Operation Enabled (0x0027) upon activation
-    rclcpp_lifecycle::State active_state;
-    interface->on_activate(active_state);
-
-    // Check transitions: since state is RTSO (0x21) and we want OE (0x27), state transitions should trigger write of SO
-    // (0x0023) control word
-    EXPECT_CALL(*mock_can, tx(_, _)).Times(2);  // 1 request for status, 1 for transition command
+    // Check transitions
+    EXPECT_CALL(*mock_can, tx(_, _)).Times(2);
 
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    // Check position mapping (reports 8.0 deg steering angle, so position state is 8.0 deg in rad)
-    auto states = interface->export_state_interfaces();
-    EXPECT_DOUBLE_EQ(*states[0].get_optional(), 8.0 * (M_PI / 180.0));
+    // Check position mapping
+    auto pos_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/position");
+    EXPECT_DOUBLE_EQ(*pos_handle->get_optional(), 8.0 * (M_PI / 180.0));
 }
 
 TEST_F(QevStepperInterfaceTest, test_write_position) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 1u);
-
-    // Set position command: 500.0 ticks (since always chained and we removed target ticks algorithm)
-    EXPECT_TRUE(commands[0].set_value(500.0));
+    auto command_handle = interface->get_command_interface_handle("virtual_front_wheel_joint/position");
+    EXPECT_TRUE(command_handle->set_value(500.0));
 
     // Trigger read to change current state to Operation Enabled (0x0027)
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
@@ -163,15 +172,11 @@ TEST_F(QevStepperInterfaceTest, test_write_position) {
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
 
-    // Activate to enable transitions
-    rclcpp_lifecycle::State active_state;
-    interface->on_activate(active_state);
-
     // Read to register state is OE
     interface->read(time, period);
 
     // Write should trigger SDO write to Target Position object (0x607A) with value 500 ticks
-    EXPECT_CALL(*mock_can, tx(_, _)).Times(3);  // 1 for absolute mode, 1 for target value, 1 for trigger bit
+    EXPECT_CALL(*mock_can, tx(_, _)).Times(3);
 
     EXPECT_EQ(interface->write(time, period), hardware_interface::return_type::OK);
 }

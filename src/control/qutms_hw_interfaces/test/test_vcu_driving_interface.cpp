@@ -65,9 +65,26 @@ class VcuDrivingInterfaceTest : public ::testing::Test {
     }
 
     hardware_interface::CallbackReturn init_interface() {
-        hardware_interface::HardwareComponentInterfaceParams params;
+        hardware_interface::HardwareComponentParams params;
         params.hardware_info = info;
-        return interface->on_init(params);
+        params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+        params.logger = rclcpp::get_logger("TestLogger");
+        return interface->init(params);
+    }
+
+    hardware_interface::CallbackReturn configure_and_activate() {
+        (void)interface->on_export_state_interfaces();
+        (void)interface->on_export_command_interfaces();
+
+        EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
+        rclcpp_lifecycle::State state;
+        if (interface->on_configure(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (interface->on_activate(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::HardwareInfo info;
@@ -76,7 +93,11 @@ class VcuDrivingInterfaceTest : public ::testing::Test {
 };
 
 TEST_F(VcuDrivingInterfaceTest, test_init_and_configure) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    hardware_interface::HardwareComponentParams params;
+    params.hardware_info = info;
+    params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+    params.logger = rclcpp::get_logger("TestLogger");
+    EXPECT_EQ(interface->init(params), hardware_interface::CallbackReturn::SUCCESS);
 
     EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
     rclcpp_lifecycle::State state;
@@ -85,15 +106,14 @@ TEST_F(VcuDrivingInterfaceTest, test_init_and_configure) {
 
 TEST_F(VcuDrivingInterfaceTest, test_read_feedback) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
     // Create mock RX CAN frames (VESC status packet 0x09)
-    // Left wheel VESC (ID 2):
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
     driverless_msgs::msg::Can frame_left;
     frame_left.id = (VESC_CAN_PACKET_STATUS << 8) | 2;  // ID = 0x0902
     frame_left.dlc = 8;
-    // ERPM = 1000 RPM (motor) -> 1000 * 21 = 21000 ERPM (approx 0x00005208)
     frame_left.data = {0x00, 0x00, 0x52, 0x08, 0x00, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_left);
 
@@ -103,23 +123,22 @@ TEST_F(VcuDrivingInterfaceTest, test_read_feedback) {
     rclcpp::Duration period(0, 50000000);  // 50ms
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    // Exported states check
-    auto states = interface->export_state_interfaces();
-    ASSERT_EQ(states.size(), 4u);
+    auto left_vel_handle = interface->get_state_interface_handle("rear_left_wheel_joint/velocity");
 
     // Left wheel velocity state: 1000 RPM / 4.50 = 222.2 RPM -> 23.27 rad/s
-    EXPECT_NEAR(*states[1].get_optional(), 23.27, 0.1);
+    EXPECT_NEAR(*left_vel_handle->get_optional(), 23.27, 0.1);
 }
 
 TEST_F(VcuDrivingInterfaceTest, test_write_command) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 2u);
+    auto left_eff_cmd_handle = interface->get_command_interface_handle("rear_left_wheel_joint/effort");
+    auto right_eff_cmd_handle = interface->get_command_interface_handle("rear_right_wheel_joint/effort");
 
     // Set effort commands (0.75 = 75% torque/effort demand)
-    EXPECT_TRUE(commands[0].set_value(0.75));
-    EXPECT_TRUE(commands[1].set_value(0.75));
+    EXPECT_TRUE(left_eff_cmd_handle->set_value(0.75));
+    EXPECT_TRUE(right_eff_cmd_handle->set_value(0.75));
 
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
@@ -129,8 +148,6 @@ TEST_F(VcuDrivingInterfaceTest, test_write_command) {
         EXPECT_EQ(msg->id, 144621568u);  // VCU request ID
         EXPECT_EQ(msg->dlc, 8);
 
-        // Torque percentage is in data[0] and data[1] (16-bit signed int representation of torque percentage, scaled by
-        // INT16_MAX / 100.0)
         int16_t torque_pct = static_cast<int16_t>((msg->data[1] << 8) | msg->data[0]);
         EXPECT_EQ(torque_pct, 24575);  // 75% of INT16_MAX
     }));

@@ -29,8 +29,6 @@ class VcuDrivingInterface : public hardware_interface::SystemInterface {
     hardware_interface::CallbackReturn on_init(
         const hardware_interface::HardwareComponentInterfaceParams& params) override;
     hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
-    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
     hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
@@ -49,6 +47,14 @@ class VcuDrivingInterface : public hardware_interface::SystemInterface {
     // Commands: efforts for left and right wheels
     double left_wheel_eff_cmd_;
     double right_wheel_eff_cmd_;
+
+    // State/Command Handles
+    hardware_interface::StateInterface::SharedPtr left_wheel_pos_handle_;
+    hardware_interface::StateInterface::SharedPtr left_wheel_vel_state_handle_;
+    hardware_interface::StateInterface::SharedPtr right_wheel_pos_handle_;
+    hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_handle_;
+    hardware_interface::CommandInterface::SharedPtr left_wheel_eff_cmd_handle_;
+    hardware_interface::CommandInterface::SharedPtr right_wheel_eff_cmd_handle_;
 
     // Configuration parameters
     double wheel_radius_;

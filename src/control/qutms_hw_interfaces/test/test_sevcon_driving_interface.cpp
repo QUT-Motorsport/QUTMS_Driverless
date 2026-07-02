@@ -45,6 +45,10 @@ class SevconDrivingInterfaceTest : public ::testing::Test {
         joint_left.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_EFFORT));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_POSITION));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
+        joint_left.state_interfaces.push_back(create_interface_info("motor_temp"));
+        joint_left.state_interfaces.push_back(create_interface_info("inverter_temp"));
+        joint_left.state_interfaces.push_back(create_interface_info("fault_code"));
+        joint_left.state_interfaces.push_back(create_interface_info("dc_voltage"));
         info.joints.push_back(joint_left);
 
         hardware_interface::ComponentInfo joint_right;
@@ -70,9 +74,26 @@ class SevconDrivingInterfaceTest : public ::testing::Test {
     }
 
     hardware_interface::CallbackReturn init_interface() {
-        hardware_interface::HardwareComponentInterfaceParams params;
+        hardware_interface::HardwareComponentParams params;
         params.hardware_info = info;
-        return interface->on_init(params);
+        params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+        params.logger = rclcpp::get_logger("TestLogger");
+        return interface->init(params);
+    }
+
+    hardware_interface::CallbackReturn configure_and_activate() {
+        (void)interface->on_export_state_interfaces();
+        (void)interface->on_export_command_interfaces();
+
+        EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
+        rclcpp_lifecycle::State state;
+        if (interface->on_configure(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (interface->on_activate(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::HardwareInfo info;
@@ -81,7 +102,11 @@ class SevconDrivingInterfaceTest : public ::testing::Test {
 };
 
 TEST_F(SevconDrivingInterfaceTest, test_init_and_configure) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    hardware_interface::HardwareComponentParams params;
+    params.hardware_info = info;
+    params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+    params.logger = rclcpp::get_logger("TestLogger");
+    EXPECT_EQ(interface->init(params), hardware_interface::CallbackReturn::SUCCESS);
 
     EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
     rclcpp_lifecycle::State state;
@@ -90,15 +115,14 @@ TEST_F(SevconDrivingInterfaceTest, test_init_and_configure) {
 
 TEST_F(SevconDrivingInterfaceTest, test_read_feedback) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
     // Create mock J1939 HS1 (speed feedback) frame from Left Motor (ID 34 = 0x22)
-    // CAN ID = (6 << 26) | (0x18 << 16) | (0xFF << 8) | 0x22 = 0x18FF22 (in J1939 format)
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
 
     driverless_msgs::msg::Can frame_speed;
     frame_speed.id = (6 << 26) | (0x18 << 16) | (0xFF << 8) | 0x22;
     frame_speed.dlc = 8;
-    // Speed = 1000 RPM (bytes 2-3: 0x03E8)
     frame_speed.data = {0x00, 0x00, 0xE8, 0x03, 0x00, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_speed);
 
@@ -106,7 +130,6 @@ TEST_F(SevconDrivingInterfaceTest, test_read_feedback) {
     driverless_msgs::msg::Can frame_status;
     frame_status.id = (6 << 26) | (0x19 << 16) | (0xFF << 8) | 0x22;
     frame_status.dlc = 8;
-    // Status word: bytes 4-5. State (lower 4 bits of Byte 4 is 0x02)
     frame_status.data = {0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00};
     rx_frames->push_back(frame_status);
 
@@ -116,18 +139,20 @@ TEST_F(SevconDrivingInterfaceTest, test_read_feedback) {
     rclcpp::Duration period(0, 50000000);
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    auto states = interface->export_state_interfaces();
+    auto left_vel_handle = interface->get_state_interface_handle("rear_left_wheel_joint/velocity");
     // 1000 RPM / 4.5 = 222.2 RPM -> 23.27 rad/s
-    EXPECT_NEAR(*states[1].get_optional(), 23.27, 0.1);
+    EXPECT_NEAR(*left_vel_handle->get_optional(), 23.27, 0.1);
 }
 
 TEST_F(SevconDrivingInterfaceTest, test_write_and_state_machine) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 2u);
-    EXPECT_TRUE(commands[0].set_value(0.5));
-    EXPECT_TRUE(commands[1].set_value(0.5));
+    auto left_eff_cmd_handle = interface->get_command_interface_handle("rear_left_wheel_joint/effort");
+    auto right_eff_cmd_handle = interface->get_command_interface_handle("rear_right_wheel_joint/effort");
+
+    EXPECT_TRUE(left_eff_cmd_handle->set_value(0.5));
+    EXPECT_TRUE(right_eff_cmd_handle->set_value(0.5));
 
     // Transition test: Setup mock status representing Shutdown (0x02)
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
@@ -147,10 +172,6 @@ TEST_F(SevconDrivingInterfaceTest, test_write_and_state_machine) {
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
     interface->read(time, period);
-
-    // When activated, desired state is ENABLE (0x0005)
-    rclcpp_lifecycle::State active_state;
-    interface->on_activate(active_state);
 
     // During write, since current state is Shutdown (0x02), state machine should issue ENERGISE (0x0003) command
     EXPECT_CALL(*mock_can, tx(_, _)).Times(6).WillRepeatedly(Invoke([](driverless_msgs::msg::Can* msg, rclcpp::Logger) {
@@ -174,12 +195,14 @@ TEST_F(SevconDrivingInterfaceTest, test_write_and_state_machine) {
 
 TEST_F(SevconDrivingInterfaceTest, test_write_command) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 2u);
+    auto left_eff_cmd_handle = interface->get_command_interface_handle("rear_left_wheel_joint/effort");
+    auto right_eff_cmd_handle = interface->get_command_interface_handle("rear_right_wheel_joint/effort");
+
     // Set effort commands: 0.5 (50% torque limit = 50.0 Nm)
-    EXPECT_TRUE(commands[0].set_value(0.5));
-    EXPECT_TRUE(commands[1].set_value(0.5));
+    EXPECT_TRUE(left_eff_cmd_handle->set_value(0.5));
+    EXPECT_TRUE(right_eff_cmd_handle->set_value(0.5));
 
     // Mock status representing Operation Enabled (0x07) to prevent state machine transitions
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
@@ -199,9 +222,6 @@ TEST_F(SevconDrivingInterfaceTest, test_write_command) {
     rclcpp::Time time;
     rclcpp::Duration period(0, 50000000);
     interface->read(time, period);
-
-    rclcpp_lifecycle::State active_state;
-    interface->on_activate(active_state);
 
     // During write, since current state is OE (0x07) and command is effort 0.5:
     // Torque demand should be 0.5 * 100.0 Nm = 50.0 Nm

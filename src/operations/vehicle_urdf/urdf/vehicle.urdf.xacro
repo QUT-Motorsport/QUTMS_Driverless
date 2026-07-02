@@ -64,7 +64,7 @@
         <origin xyz="-${wheelbase/2} 0 -${base_height/2}" rpy="0 0 ${M_PI/2}"/>
         <axis xyz="1 0 0"/>
         <limit effort="100.0" velocity="100.0"/>
-        <dynamics damM_PIng="0.2"/>
+        <dynamics damping="0.2"/>
       </joint>
 
       <joint name="virtual_front_wheel_joint" type="revolute">
@@ -73,7 +73,7 @@
         <origin xyz="${wheelbase/2} 0 -${base_height/2}" rpy="0 0 ${M_PI/2}"/>
         <axis xyz="0 0 1"/>
         <limit lower="-0.4" upper="0.4" effort="100.0" velocity="0.0"/>
-        <dynamics damM_PIng="0.2"/>
+        <dynamics damping="0.2"/>
       </joint>
     </xacro:macro>
 
@@ -129,7 +129,7 @@
         <child link="${lr_prefix}_rear_wheel"/>
         <axis xyz="0 1 0"/>
         <!-- the real rear wheel joint should mimic the behaviour of the continuous virtual rear joint -->
-        <mimic joint="virtual_rear_wheel_joint" multiplier="1" offset="0"/>
+        <!-- <mimic joint="virtual_rear_wheel_joint" multiplier="1" offset="0"/> -->
         <limit lower="0" upper="0" effort="10000000" velocity="1000000"/>
       </joint>
 

@@ -29,8 +29,6 @@ class SevconDrivingInterface : public hardware_interface::SystemInterface {
     hardware_interface::CallbackReturn on_init(
         const hardware_interface::HardwareComponentInterfaceParams& params) override;
     hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
-    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
     hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
@@ -58,6 +56,20 @@ class SevconDrivingInterface : public hardware_interface::SystemInterface {
     double inverter_temp_;
     double fault_code_;
     double dc_voltage_;
+
+    // State/Command Handles
+    hardware_interface::StateInterface::SharedPtr left_wheel_pos_handle_;
+    hardware_interface::StateInterface::SharedPtr left_wheel_vel_state_handle_;
+    hardware_interface::StateInterface::SharedPtr right_wheel_pos_handle_;
+    hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_handle_;
+    hardware_interface::CommandInterface::SharedPtr left_wheel_eff_cmd_handle_;
+    hardware_interface::CommandInterface::SharedPtr right_wheel_eff_cmd_handle_;
+
+    // Custom diagnostics handles
+    hardware_interface::StateInterface::SharedPtr motor_temp_handle_;
+    hardware_interface::StateInterface::SharedPtr inverter_temp_handle_;
+    hardware_interface::StateInterface::SharedPtr fault_code_handle_;
+    hardware_interface::StateInterface::SharedPtr dc_voltage_handle_;
 
     // Individual motor states
     double left_motor_temp_;

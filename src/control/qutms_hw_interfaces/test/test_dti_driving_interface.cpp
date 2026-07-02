@@ -43,6 +43,10 @@ class DtiDrivingInterfaceTest : public ::testing::Test {
         joint_left.command_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_POSITION));
         joint_left.state_interfaces.push_back(create_interface_info(hardware_interface::HW_IF_VELOCITY));
+        joint_left.state_interfaces.push_back(create_interface_info("motor_temp"));
+        joint_left.state_interfaces.push_back(create_interface_info("inverter_temp"));
+        joint_left.state_interfaces.push_back(create_interface_info("fault_code"));
+        joint_left.state_interfaces.push_back(create_interface_info("dc_voltage"));
         info.joints.push_back(joint_left);
 
         hardware_interface::ComponentInfo joint_right;
@@ -66,9 +70,26 @@ class DtiDrivingInterfaceTest : public ::testing::Test {
     }
 
     hardware_interface::CallbackReturn init_interface() {
-        hardware_interface::HardwareComponentInterfaceParams params;
+        hardware_interface::HardwareComponentParams params;
         params.hardware_info = info;
-        return interface->on_init(params);
+        params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+        params.logger = rclcpp::get_logger("TestLogger");
+        return interface->init(params);
+    }
+
+    hardware_interface::CallbackReturn configure_and_activate() {
+        (void)interface->on_export_state_interfaces();
+        (void)interface->on_export_command_interfaces();
+
+        EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
+        rclcpp_lifecycle::State state;
+        if (interface->on_configure(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (interface->on_activate(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::HardwareInfo info;
@@ -77,7 +98,11 @@ class DtiDrivingInterfaceTest : public ::testing::Test {
 };
 
 TEST_F(DtiDrivingInterfaceTest, test_init_and_configure) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    hardware_interface::HardwareComponentParams params;
+    params.hardware_info = info;
+    params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+    params.logger = rclcpp::get_logger("TestLogger");
+    EXPECT_EQ(interface->init(params), hardware_interface::CallbackReturn::SUCCESS);
 
     EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
     rclcpp_lifecycle::State state;
@@ -88,6 +113,7 @@ TEST_F(DtiDrivingInterfaceTest, test_read_feedback) {
     info.hardware_parameters["left_motor_id"] = "8";
     info.hardware_parameters["right_motor_id"] = "9";
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
     driverless_msgs::msg::Can frame_left;
@@ -108,21 +134,25 @@ TEST_F(DtiDrivingInterfaceTest, test_read_feedback) {
     rclcpp::Duration period(0, 50000000);
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
-    auto states = interface->export_state_interfaces();
+    auto left_vel_handle = interface->get_state_interface_handle("rear_left_wheel_joint/velocity");
+    auto left_dc_volt_handle = interface->get_state_interface_handle("rear_left_wheel_joint/dc_voltage");
+
     // erpm = 94500 -> motor RPM = 94500/21 = 4500 RPM -> wheel velocity = (4500/4.5) * 2pi/60 = 104.72 rad/s
-    EXPECT_NEAR(*states[1].get_optional(), 104.72, 0.1);
-    EXPECT_DOUBLE_EQ(*states[7].get_optional(), 400.0);  // dc_voltage
+    EXPECT_NEAR(*left_vel_handle->get_optional(), 104.72, 0.1);
+    EXPECT_DOUBLE_EQ(*left_dc_volt_handle->get_optional(), 400.0);  // dc_voltage
 }
 
 TEST_F(DtiDrivingInterfaceTest, test_write_command) {
     info.hardware_parameters["left_motor_id"] = "8";
     info.hardware_parameters["right_motor_id"] = "9";
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 2u);
-    EXPECT_TRUE(commands[0].set_value(20.0));  // rad/s
-    EXPECT_TRUE(commands[1].set_value(20.0));  // rad/s
+    auto left_vel_cmd_handle = interface->get_command_interface_handle("rear_left_wheel_joint/velocity");
+    auto right_vel_cmd_handle = interface->get_command_interface_handle("rear_right_wheel_joint/velocity");
+
+    EXPECT_TRUE(left_vel_cmd_handle->set_value(20.0));   // rad/s
+    EXPECT_TRUE(right_vel_cmd_handle->set_value(20.0));  // rad/s
 
     // Target ERPM = (20.0 * 4.5 * 60 / 2pi) * 21 = 18050 ERPM (approx 0x00004682)
 

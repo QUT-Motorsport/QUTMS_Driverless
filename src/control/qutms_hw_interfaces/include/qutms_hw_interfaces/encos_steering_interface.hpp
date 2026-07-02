@@ -8,6 +8,7 @@
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "hardware_interface/handle.hpp"
+#include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "qutms_hw_interfaces/SocketCAN.hpp"
@@ -27,8 +28,6 @@ class EncosSteeringInterface : public hardware_interface::SystemInterface {
     hardware_interface::CallbackReturn on_init(
         const hardware_interface::HardwareComponentInterfaceParams& params) override;
     hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-    std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
-    std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
     hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
@@ -48,6 +47,17 @@ class EncosSteeringInterface : public hardware_interface::SystemInterface {
     double current_;
     double fault_code_;
     double dc_voltage_;
+
+    // State/Command Handles
+    hardware_interface::StateInterface::SharedPtr joint_position_state_handle_;
+    hardware_interface::CommandInterface::SharedPtr joint_position_command_handle_;
+
+    // Custom diagnostics handles
+    hardware_interface::StateInterface::SharedPtr motor_temp_handle_;
+    hardware_interface::StateInterface::SharedPtr mos_temp_handle_;
+    hardware_interface::StateInterface::SharedPtr current_handle_;
+    hardware_interface::StateInterface::SharedPtr fault_code_handle_;
+    hardware_interface::StateInterface::SharedPtr dc_voltage_handle_;
 
     // Target command configuration params
     double target_speed_rpm_;

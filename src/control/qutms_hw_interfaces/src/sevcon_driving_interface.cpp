@@ -113,47 +113,27 @@ hardware_interface::CallbackReturn SevconDrivingInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
-std::vector<hardware_interface::StateInterface> SevconDrivingInterface::export_state_interfaces() {
-    std::vector<hardware_interface::StateInterface> state_interfaces;
-
-    // Left wheel states
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &left_wheel_pos_state_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_VELOCITY, &left_wheel_vel_state_));
-
-    // Right wheel states
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_POSITION, &right_wheel_pos_state_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_VELOCITY, &right_wheel_vel_state_));
-
-    // Export averaged diagnostics as state interfaces on the first joint
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "motor_temp", &motor_temp_));
-    state_interfaces.emplace_back(
-        hardware_interface::StateInterface(info_.joints[0].name, "inverter_temp", &inverter_temp_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "fault_code", &fault_code_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "dc_voltage", &dc_voltage_));
-
-    return state_interfaces;
-}
-
-std::vector<hardware_interface::CommandInterface> SevconDrivingInterface::export_command_interfaces() {
-    std::vector<hardware_interface::CommandInterface> command_interfaces;
-    // Export effort commands
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_EFFORT, &left_wheel_eff_cmd_));
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_EFFORT, &right_wheel_eff_cmd_));
-    return command_interfaces;
-}
-#pragma GCC diagnostic pop
-
 hardware_interface::CallbackReturn SevconDrivingInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+    left_wheel_pos_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+    left_wheel_vel_state_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_VELOCITY);
+    right_wheel_pos_handle_ =
+        get_state_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_POSITION);
+    right_wheel_vel_state_handle_ =
+        get_state_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_VELOCITY);
+
+    left_wheel_eff_cmd_handle_ =
+        get_command_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_EFFORT);
+    right_wheel_eff_cmd_handle_ =
+        get_command_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_EFFORT);
+
+    motor_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/motor_temp");
+    inverter_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/inverter_temp");
+    fault_code_handle_ = get_state_interface_handle(info_.joints[0].name + "/fault_code");
+    dc_voltage_handle_ = get_state_interface_handle(info_.joints[0].name + "/dc_voltage");
+
     desired_control_word_ = 0x0005;  // ENABLE OPERATION
     RCLCPP_INFO(rclcpp::get_logger("SevconDrivingInterface"), "Sevcon Driving Interface activated. Enabling bridge...");
     return CallbackReturn::SUCCESS;
@@ -243,12 +223,27 @@ hardware_interface::return_type SevconDrivingInterface::read(const rclcpp::Time&
     dc_voltage_ = (left_dc_voltage_ + right_dc_voltage_) / 2.0;
     fault_code_ = static_cast<double>(left_fault_code_ > 0 ? left_fault_code_ : right_fault_code_);
 
+    // Set state handles
+    (void)left_wheel_pos_handle_->set_value(left_wheel_pos_state_, false);
+    (void)left_wheel_vel_state_handle_->set_value(left_wheel_vel_state_, false);
+    (void)right_wheel_pos_handle_->set_value(right_wheel_pos_state_, false);
+    (void)right_wheel_vel_state_handle_->set_value(right_wheel_vel_state_, false);
+
+    (void)motor_temp_handle_->set_value(motor_temp_, false);
+    (void)inverter_temp_handle_->set_value(inverter_temp_, false);
+    (void)fault_code_handle_->set_value(fault_code_, false);
+    (void)dc_voltage_handle_->set_value(dc_voltage_, false);
+
     publish_diagnostics();
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type SevconDrivingInterface::write(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
+    // Read command values from handles
+    (void)left_wheel_eff_cmd_handle_->get_value(left_wheel_eff_cmd_, false);
+    (void)right_wheel_eff_cmd_handle_->get_value(right_wheel_eff_cmd_, false);
+
     double left_torque = 0.0;
     double left_fwd_limit = 0.0;
     double left_rev_limit = 0.0;

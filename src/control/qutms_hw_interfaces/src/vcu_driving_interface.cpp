@@ -64,38 +64,21 @@ hardware_interface::CallbackReturn VcuDrivingInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
-std::vector<hardware_interface::StateInterface> VcuDrivingInterface::export_state_interfaces() {
-    std::vector<hardware_interface::StateInterface> state_interfaces;
-    // Export states for left wheel
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &left_wheel_pos_state_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_VELOCITY, &left_wheel_vel_state_));
-
-    // Export states for right wheel
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_POSITION, &right_wheel_pos_state_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_VELOCITY, &right_wheel_vel_state_));
-
-    return state_interfaces;
-}
-
-std::vector<hardware_interface::CommandInterface> VcuDrivingInterface::export_command_interfaces() {
-    std::vector<hardware_interface::CommandInterface> command_interfaces;
-    // Export effort commands
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_EFFORT, &left_wheel_eff_cmd_));
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[1].name, hardware_interface::HW_IF_EFFORT, &right_wheel_eff_cmd_));
-    return command_interfaces;
-}
-#pragma GCC diagnostic pop
-
 hardware_interface::CallbackReturn VcuDrivingInterface::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+    left_wheel_pos_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+    left_wheel_vel_state_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_VELOCITY);
+    right_wheel_pos_handle_ =
+        get_state_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_POSITION);
+    right_wheel_vel_state_handle_ =
+        get_state_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_VELOCITY);
+
+    left_wheel_eff_cmd_handle_ =
+        get_command_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_EFFORT);
+    right_wheel_eff_cmd_handle_ =
+        get_command_interface_handle(info_.joints[1].name + "/" + hardware_interface::HW_IF_EFFORT);
+
     RCLCPP_INFO(rclcpp::get_logger("VcuDrivingInterface"), "VCU Driving Interface activated.");
     return CallbackReturn::SUCCESS;
 }
@@ -141,12 +124,22 @@ hardware_interface::return_type VcuDrivingInterface::read(const rclcpp::Time& /*
         }
     }
 
+    // Set state handles
+    (void)left_wheel_pos_handle_->set_value(left_wheel_pos_state_, false);
+    (void)left_wheel_vel_state_handle_->set_value(left_wheel_vel_state_, false);
+    (void)right_wheel_pos_handle_->set_value(right_wheel_pos_state_, false);
+    (void)right_wheel_vel_state_handle_->set_value(right_wheel_vel_state_, false);
+
     publish_diagnostics();
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type VcuDrivingInterface::write(const rclcpp::Time& /*time*/,
                                                            const rclcpp::Duration& /*period*/) {
+    // Read command values from handles
+    (void)left_wheel_eff_cmd_handle_->get_value(left_wheel_eff_cmd_, false);
+    (void)right_wheel_eff_cmd_handle_->get_value(right_wheel_eff_cmd_, false);
+
     double target_effort = 0.0;
     if (!std::isnan(left_wheel_eff_cmd_) && !std::isnan(right_wheel_eff_cmd_)) {
         target_effort = (left_wheel_eff_cmd_ + right_wheel_eff_cmd_) / 2.0;

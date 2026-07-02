@@ -63,9 +63,26 @@ class EncosSteeringInterfaceTest : public ::testing::Test {
     }
 
     hardware_interface::CallbackReturn init_interface() {
-        hardware_interface::HardwareComponentInterfaceParams params;
+        hardware_interface::HardwareComponentParams params;
         params.hardware_info = info;
-        return interface->on_init(params);
+        params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+        params.logger = rclcpp::get_logger("TestLogger");
+        return interface->init(params);
+    }
+
+    hardware_interface::CallbackReturn configure_and_activate() {
+        (void)interface->on_export_state_interfaces();
+        (void)interface->on_export_command_interfaces();
+
+        EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
+        rclcpp_lifecycle::State state;
+        if (interface->on_configure(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (interface->on_activate(state) != hardware_interface::CallbackReturn::SUCCESS) {
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::HardwareInfo info;
@@ -74,7 +91,11 @@ class EncosSteeringInterfaceTest : public ::testing::Test {
 };
 
 TEST_F(EncosSteeringInterfaceTest, test_init_and_configure) {
-    EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    hardware_interface::HardwareComponentParams params;
+    params.hardware_info = info;
+    params.clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+    params.logger = rclcpp::get_logger("TestLogger");
+    EXPECT_EQ(interface->init(params), hardware_interface::CallbackReturn::SUCCESS);
 
     EXPECT_CALL(*mock_can, setup("vcan0", _)).WillOnce(Return(true));
     rclcpp_lifecycle::State state;
@@ -83,18 +104,9 @@ TEST_F(EncosSteeringInterfaceTest, test_init_and_configure) {
 
 TEST_F(EncosSteeringInterfaceTest, test_read_feedback) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
     // Create a mock RX CAN frame (Type 1 feedback)
-    // Mode (type) is 0x01 (upper 3 bits of byte 0: 0x01 << 5 = 0x20)
-    // Error code: 5 bits = 0x05 (lower 5 bits of byte 0: 0x05)
-    // Byte 0: 0x25
-    // Byte 1-2: Position raw (e.g. 32767 = middle point)
-    // Byte 3: Speed raw
-    // Byte 4: Current raw
-    // Byte 5: Current/Temp extension
-    // Byte 6: Motor Temp raw (e.g. 150 = actual temp 50 degC since temp = (raw - 50)/2)
-    // Byte 7: MOS Temp raw (e.g. 170 = actual temp 60 degC)
-
     auto rx_frames = std::make_shared<std::vector<driverless_msgs::msg::Can>>();
     driverless_msgs::msg::Can frame;
     frame.id = 1;  // Motor ID
@@ -109,26 +121,28 @@ TEST_F(EncosSteeringInterfaceTest, test_read_feedback) {
     EXPECT_EQ(interface->read(time, period), hardware_interface::return_type::OK);
 
     // Exported state interfaces check
-    auto states = interface->export_state_interfaces();
-    ASSERT_EQ(states.size(), 5u);
+    auto pos_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/position");
+    auto motor_temp_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/motor_temp");
+    auto inverter_temp_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/inverter_temp");
+    auto fault_code_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/fault_code");
+    auto dc_voltage_handle = interface->get_state_interface_handle("virtual_front_wheel_joint/dc_voltage");
 
     // Check decrypted values
-    // Middle position raw 32767 / 65535 * 25 - 12.5 is approx 0.0 rad
-    EXPECT_NEAR(*states[0].get_optional(), 0.0, 0.01);
-    EXPECT_DOUBLE_EQ(*states[1].get_optional(), 50.0);  // motor_temp
-    EXPECT_DOUBLE_EQ(*states[2].get_optional(), 60.0);  // inverter_temp
-    EXPECT_DOUBLE_EQ(*states[3].get_optional(), 5.0);   // fault_code (error_code_ is 0x05)
-    EXPECT_DOUBLE_EQ(*states[4].get_optional(), 0.0);   // dc_voltage
+    EXPECT_NEAR(*pos_handle->get_optional(), 0.0, 0.01);
+    EXPECT_DOUBLE_EQ(*motor_temp_handle->get_optional(), 50.0);     // motor_temp
+    EXPECT_DOUBLE_EQ(*inverter_temp_handle->get_optional(), 60.0);  // inverter_temp
+    EXPECT_DOUBLE_EQ(*fault_code_handle->get_optional(), 5.0);      // fault_code (error_code_ is 0x05)
+    EXPECT_DOUBLE_EQ(*dc_voltage_handle->get_optional(), 0.0);      // dc_voltage
 }
 
 TEST_F(EncosSteeringInterfaceTest, test_write_command) {
     EXPECT_EQ(init_interface(), hardware_interface::CallbackReturn::SUCCESS);
+    EXPECT_EQ(configure_and_activate(), hardware_interface::CallbackReturn::SUCCESS);
 
-    auto commands = interface->export_command_interfaces();
-    ASSERT_EQ(commands.size(), 1u);
+    auto command_handle = interface->get_command_interface_handle("virtual_front_wheel_joint/position");
 
     // Set position command: 0.5 rad (approx 28.65 degrees)
-    EXPECT_TRUE(commands[0].set_value(0.5));
+    EXPECT_TRUE(command_handle->set_value(0.5));
 
     EXPECT_CALL(*mock_can, tx(_, _)).WillOnce(Invoke([](driverless_msgs::msg::Can* msg, rclcpp::Logger) {
         EXPECT_EQ(msg->id, 1u);
@@ -140,8 +154,6 @@ TEST_F(EncosSteeringInterfaceTest, test_write_command) {
         // Check float packing
         float target_pos_deg;
         uint32_t pos_bits = 0;
-        // Float target position is at bits 29-60 of the 64-bit word
-        // In msg.data representation, this spans across bytes 0-4
         uint64_t packet = 0;
         for (int i = 0; i < 8; i++) {
             packet |= (static_cast<uint64_t>(msg->data[i]) << (8 * (7 - i)));

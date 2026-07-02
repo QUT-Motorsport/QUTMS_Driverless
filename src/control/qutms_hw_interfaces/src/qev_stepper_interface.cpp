@@ -119,31 +119,18 @@ hardware_interface::CallbackReturn QevStepperInterface::on_configure(
     return CallbackReturn::SUCCESS;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// Suppress deprecation warning for ROS 2 hardware_interface::Handle pointer-based constructors
-std::vector<hardware_interface::StateInterface> QevStepperInterface::export_state_interfaces() {
-    std::vector<hardware_interface::StateInterface> state_interfaces;
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &joint_position_state_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "motor_temp", &motor_temp_));
-    state_interfaces.emplace_back(
-        hardware_interface::StateInterface(info_.joints[0].name, "inverter_temp", &inverter_temp_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "fault_code", &fault_code_));
-    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "dc_voltage", &dc_voltage_));
-    return state_interfaces;
-}
-
-std::vector<hardware_interface::CommandInterface> QevStepperInterface::export_command_interfaces() {
-    std::vector<hardware_interface::CommandInterface> command_interfaces;
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[0].name, hardware_interface::HW_IF_POSITION, &joint_position_command_));
-    return command_interfaces;
-}
-#pragma GCC diagnostic pop
-
 hardware_interface::CallbackReturn QevStepperInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
+    joint_position_state_handle_ =
+        get_state_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+    joint_position_command_handle_ =
+        get_command_interface_handle(info_.joints[0].name + "/" + hardware_interface::HW_IF_POSITION);
+
+    motor_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/motor_temp");
+    inverter_temp_handle_ = get_state_interface_handle(info_.joints[0].name + "/inverter_temp");
+    fault_code_handle_ = get_state_interface_handle(info_.joints[0].name + "/fault_code");
+    dc_voltage_handle_ = get_state_interface_handle(info_.joints[0].name + "/dc_voltage");
+
     desired_state_ = states.at(OE_VAL);
     RCLCPP_INFO(rclcpp::get_logger("QevStepperInterface"), "QEV Stepper Interface activated.");
     return CallbackReturn::SUCCESS;
@@ -287,12 +274,22 @@ hardware_interface::return_type QevStepperInterface::read(const rclcpp::Time & /
         }
     }
 
+    // Set state handles
+    (void)joint_position_state_handle_->set_value(joint_position_state_, false);
+    (void)motor_temp_handle_->set_value(motor_temp_, false);
+    (void)inverter_temp_handle_->set_value(inverter_temp_, false);
+    (void)fault_code_handle_->set_value(fault_code_, false);
+    (void)dc_voltage_handle_->set_value(dc_voltage_, false);
+
     publish_diagnostics(has_fault, fault_reason);
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type QevStepperInterface::write(const rclcpp::Time & /*time*/,
                                                            const rclcpp::Duration & /*period*/) {
+    // Read command values from handles
+    (void)joint_position_command_handle_->get_value(joint_position_command_, false);
+
     double command_ticks = std::isnan(joint_position_command_) ? 0.0 : joint_position_command_;
     int32_t target_ticks = static_cast<int32_t>(command_ticks);
     target_ticks = std::clamp(target_ticks, -static_cast<int32_t>(max_position_), static_cast<int32_t>(max_position_));
