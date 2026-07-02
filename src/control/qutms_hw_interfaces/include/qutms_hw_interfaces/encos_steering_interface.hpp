@@ -1,14 +1,13 @@
 #ifndef QUTMS_HW_INTERFACES__ENCOS_STEERING_INTERFACE_HPP_
 #define QUTMS_HW_INTERFACES__ENCOS_STEERING_INTERFACE_HPP_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
-#include "driverless_msgs/msg/can.hpp"
 #include "hardware_interface/handle.hpp"
-#include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "qutms_hw_interfaces/SocketCAN.hpp"

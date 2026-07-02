@@ -1,6 +1,7 @@
 #ifndef QUTMS_HW_INTERFACES__QEV_STEPPER_INTERFACE_HPP_
 #define QUTMS_HW_INTERFACES__QEV_STEPPER_INTERFACE_HPP_
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>

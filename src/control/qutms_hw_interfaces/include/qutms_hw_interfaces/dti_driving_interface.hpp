@@ -1,6 +1,7 @@
 #ifndef QUTMS_HW_INTERFACES__DTI_DRIVING_INTERFACE_HPP_
 #define QUTMS_HW_INTERFACES__DTI_DRIVING_INTERFACE_HPP_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
