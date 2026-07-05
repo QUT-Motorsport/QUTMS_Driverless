@@ -4,13 +4,11 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "qutms_hw_interfaces/vcu_driving_interface.hpp"
 
 // Include embedded headers from QUTMS_Embedded_Common
-#include "CAN_AV.h"
-#include "CAN_VESC.h"
+#include "CAN_VESC.h"  // IWYU pragma: keep
 
 using ::testing::_;
 using ::testing::Invoke;

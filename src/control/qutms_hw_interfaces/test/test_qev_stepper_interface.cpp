@@ -6,12 +6,10 @@
 
 #include "CAN_VCU.h"
 #include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "qutms_hw_interfaces/qev_stepper_interface.hpp"
 
 using ::testing::_;
-using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Return;
 

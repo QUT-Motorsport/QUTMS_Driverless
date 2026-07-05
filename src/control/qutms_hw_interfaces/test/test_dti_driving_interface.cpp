@@ -4,7 +4,6 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/types/hardware_component_interface_params.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "qutms_hw_interfaces/dti_driving_interface.hpp"
 
