@@ -1,14 +1,24 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="velodyne" params="*origin parent name">
-    <!-- base frame to velodyne base -->
-      <joint name="${name}_base_mount_joint" type="fixed">
-      <xacro:insert_block name="origin" />
+
+  <xacro:macro name="velodyne" params="*origin parent name enable_lidar:=false enable_laserscan:=false">
+
+    <joint name="${name}_base_mount_joint" type="fixed">
+      <xacro:insert_block name="origin"/>
       <parent link="${parent}"/>
       <child link="${name}"/>
     </joint>
 
     <link name="${name}">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia
+          ixx="0.0001" ixy="0.0" ixz="0.0"
+          iyy="0.0001" iyz="0.0"
+          izz="0.0001"/>
+      </inertial>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -16,6 +26,48 @@
         </geometry>
         <material name="black"/>
       </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.0516" length="0.0717"/>
+        </geometry>
+      </collision>
     </link>
+
+    <gazebo reference="${name}">
+      <sensor name="${name}_gpu_lidar" type="gpu_lidar">
+        <pose>0 0 0 0 0 0</pose>
+        <topic>/lidar</topic>
+        <gz_frame_id>${name}</gz_frame_id>
+        <update_rate>20</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>240</samples>
+              <resolution>1</resolution>
+              <min_angle>-1</min_angle>
+              <max_angle>1</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>16</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.25</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.3</min>
+            <max>30.0</max> 
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+      </sensor>
+    </gazebo>
+
   </xacro:macro>
+
 </robot>

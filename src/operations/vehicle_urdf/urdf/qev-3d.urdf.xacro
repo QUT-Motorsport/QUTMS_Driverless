@@ -34,7 +34,39 @@
   <!-- Sensors include -->
   <xacro:include filename="$(find vehicle_urdf)/urdf/sensors.urdf.xacro"/>
   <xacro:velodyne parent="${chassis_link}" name="velodyne">
-    <origin xyz="-0.3 0.0 0.85" rpy="0 0 0"/>
+    <origin xyz="-0.3 0 1.0532" rpy="0 0 0"/>
   </xacro:velodyne>
 
+  <gazebo>
+    <plugin
+      filename="libgazebo_ros_race_car.so"
+      name="gazebo_plugins::eufs_plugins::RaceCarPlugin">
+
+      <command_mode>velocity</command_mode>
+
+      <wheelbase>1.53</wheelbase>
+      <max_speed>20.0</max_speed>
+      <max_accel>8.0</max_accel>
+      <max_decel>12.0</max_decel>
+      <max_steering_deg>35.0</max_steering_deg>
+
+      <update_rate>100.0</update_rate>
+      <publish_rate>50.0</publish_rate>
+      <command_timeout>1.0</command_timeout>
+
+      <map_frame>map</map_frame>
+      <odom_frame>odom</odom_frame>
+      <base_frame>base_link</base_frame>
+
+      <simulate_transform>false</simulate_transform>
+      <publish_ground_truth>true</publish_ground_truth>
+      <simulate_slam>true</simulate_slam>
+
+    </plugin>
+
+    <plugin
+      filename="libgazebo_ros_cone_detection.so"
+      name="gazebo_plugins::eufs_plugins::ConeDetectionPlugin">
+    </plugin>
+  </gazebo>
 </robot>
