@@ -137,11 +137,18 @@ hardware_interface::return_type EncosSteeringInterface::write(const rclcpp::Time
     (void)joint_position_command_handle_->get_value(joint_position_command_, false);
 
     if (std::isnan(joint_position_command_)) {
+        RCLCPP_DEBUG_THROTTLE(rclcpp::get_logger("EncosSteeringInterface"), *node_->get_clock(), 1000,
+                              "Joint position command is NaN - skipping write");
         return hardware_interface::return_type::OK;
     }
 
     // Convert joint position (rad) to output degrees
     float target_pos_deg = static_cast<float>(joint_position_command_ * 180.0 / M_PI);
+
+    RCLCPP_DEBUG_THROTTLE(
+        rclcpp::get_logger("EncosSteeringInterface"), *node_->get_clock(), 500,
+        "Sending ENCOS Position Command: target_pos = %.2f deg (%.4f rad), speed = %.1f RPM, current_limit = %.1f A",
+        target_pos_deg, joint_position_command_, target_speed_rpm_, current_limit_a_);
 
     // Pack ENCOS Position command
     driverless_msgs::msg::Can msg;

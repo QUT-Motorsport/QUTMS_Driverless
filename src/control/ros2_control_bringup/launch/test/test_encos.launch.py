@@ -63,11 +63,19 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    # Node to publish test sine wave commands to steering position controller
+    sine_node = Node(
+        package="ros2_control_bringup",
+        executable="sine_node",
+        output="screen",
+    )
+
     return [
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         steering_position_controller_spawner,
+        sine_node,
     ]
 
 
