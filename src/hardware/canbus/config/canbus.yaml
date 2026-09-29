@@ -3,3 +3,4 @@ canbus_translator_node:
       interface_name: "socketcan" # "tritium"
       interface: "can0" # "192.168.2.125"  # socketcan or tritium can
       base_frame: "base_footprint"
+      steering_motor_id: 1

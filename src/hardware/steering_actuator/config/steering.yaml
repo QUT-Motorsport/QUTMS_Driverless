@@ -1,5 +1,12 @@
 steering_actuator_node:
   ros__parameters:
-    velocity: 5000
-    acceleration: 1000
-    max_position: 8500
+    motor_id: 1
+    speed_rpm: 3276.7
+    current_limit_a: 3.0
+    scale: 1.0
+    steer_offset_deg: 0.0
+    invert: false
+    max_position: 100.0
+    command_timeout_s: 0.5
+    require_driving: true
+    rate_hz: 50.0

@@ -3,8 +3,8 @@
 <package format="3">
     <name>steering_actuator</name>
     <version>0.0.0</version>
-    <description>Nanotec Stepper Management</description>
-    <maintainer email="team@qutmotorsport.com">Alastair Bradford, Thomas Fraser, Alistair English</maintainer>
+    <description>ENCOS joint motor steering actuator</description>
+    <maintainer email="team@qutmotorsport.com">Alexander Bradbury, Alastair Bradford, Thomas Fraser, Alistair English</maintainer>
     <license>MIT</license>
 
     <!-- Messages -->

@@ -44,6 +44,7 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     // publishers
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr can_pub_;
     rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr canopen_pub_;
+    rclcpp::Publisher<driverless_msgs::msg::Can>::SharedPtr steering_pub_;
     // ADD PUBS FOR CAN TOPICS HERE
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr steering_angle_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_pub_;
@@ -57,7 +58,8 @@ class CANTranslator : public rclcpp::Node, public CanInterface {
     rclcpp::CallbackGroup::SharedPtr sub_cb_group_;
 
     std::string ros_base_frame_;
-
+    uint32_t steering_motor_id_;
+    
     // can connection
     std::shared_ptr<CANInterface> can_interface_;
 

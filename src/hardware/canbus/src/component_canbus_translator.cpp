@@ -8,6 +8,7 @@ CANTranslator::~CANTranslator() { can_interface_->deconstruct(); }
 
 CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_translator_node", options) {
     ros_base_frame_ = this->declare_parameter<std::string>("base_frame", "base_link");
+    steering_motor_id_ = this->declare_parameter<int>("steering_motor_id", 1);
 
     // set can interface
     if (!set_interface()) {
@@ -29,6 +30,7 @@ CANTranslator::CANTranslator(const rclcpp::NodeOptions &options) : Node("canbus_
     // publish can messages to ROS system
     can_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canbus_rosbound", QOS_ALL);
     canopen_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/canopen_rosbound", QOS_ALL);
+    steering_pub_ = this->create_publisher<driverless_msgs::msg::Can>("/can/steering_rosbound", QOS_ALL);
 
     // ADD PUBS FOR CAN TOPICS HERE
     // Steering ang
@@ -64,7 +66,11 @@ void CANTranslator::canmsg_timer() {
         uint32_t canopen_index = std::find(canopen_ids.begin(), canopen_ids.end(), msg->id) - canopen_ids.begin();
         if (canopen_index < canopen_ids.size()) {
             canopen_pub_->publish(std::move(msg));
-            return;
+            continue;
+        }
+        if (!msg->id_type && msg->id == steering_motor_id_) {
+            steering_pub_->publish(std::move(msg));
+            continue;
         }
 
         // CAN TRANSLATION OPTIONS

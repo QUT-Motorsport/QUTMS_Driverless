@@ -78,7 +78,7 @@ class EBSTestHandler(ShutdownNode):
                 "set",
                 "steering_actuator_node",
                 "max_position",
-                "2000",
+                "24.4",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
@@ -132,7 +132,7 @@ class EBSTestHandler(ShutdownNode):
                 "set",
                 "steering_actuator_node",
                 "max_position",
-                "2000",
+                "24.4",
             ]
             self.get_logger().info(f"Running Command: {' '.join(command)}")
             cmd = Popen(command)
