@@ -34,6 +34,7 @@ setup(
             "trackdrive_watcher_node = vehicle_bringup.node_trackdrive_watcher:main",
             "inspection_watcher_node = vehicle_bringup.node_inspection_watcher:main",
             "system_watcher_node = vehicle_bringup.node_system_watcher:main",
+            "steering_calibration_node = vehicle_bringup.node_steering_calibration:main",
         ],
     },
 )
