@@ -9,9 +9,12 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    sim_on = DeclareLaunchArgument("sim", default_value=TextSubstitution(text="false"))  
+    
     vehicle_supervisor_node = Node(
         package="vehicle_bringup",
         executable="vehicle_supervisor_node",
+        
     )
 
     system_watcher = Node(
@@ -21,7 +24,8 @@ def generate_launch_description():
 
     system_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "system.launch.py")
+            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "system.launch.py"),
+            condition=IfCondition(LaunchConfiguration('sim'))
         )
     )
 
@@ -34,12 +38,14 @@ def generate_launch_description():
 
     mission_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "mission.launch.py")
+            os.path.join(get_package_share_path("vehicle_bringup"), "launch", "mission.launch.py"),
+            condition=IfCondition(LaunchConfiguration('sim'))
         )
     )
 
     sbg_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_path("nav_bringup"), "launch", "sbg.launch.py"))
+        PythonLaunchDescriptionSource(os.path.join(get_package_share_path("nav_bringup"), "launch", "sbg.launch.py")),
+        
     )
 
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "0")
