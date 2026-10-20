@@ -8,6 +8,8 @@ from launch_ros.descriptions import ComposableNode
 
 def generate_launch_description():
     # safety critical signals should use intra process comms for low latency
+    sim_on = DeclareLaunchArgument("sim", default_value=TextSubstitution(text="false"))  
+    
     scs_container = ComposableNodeContainer(
         name="critcial_signal_container",
         namespace="",
@@ -52,6 +54,7 @@ def generate_launch_description():
         launch_arguments=[
             ("use_zenoh_bridge", "false"),
         ],
+        condition=IfCondition(LaunchConfiguration('sim')),
     )
 
     urdf_launch = IncludeLaunchDescription(
@@ -63,17 +66,20 @@ def generate_launch_description():
             ("base_frame", "base_footprint"),
             ("display_car", "false"),
         ],
+        condition=IfCondition(LaunchConfiguration('sim')),
     )
 
     perception_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource(
             launch_file_path=str(get_package_share_path("perception_bringup") / "launch" / "perception.launch.py")
         ),
+        condition=IfCondition(LaunchConfiguration('viz')),
     )
 
     rosbag_creator_node = Node(
         package="rosbag_creator",
         executable="rosbag_creator_node",
+        condition=IfCondition(LaunchConfiguration('sim')),
     )
 
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
